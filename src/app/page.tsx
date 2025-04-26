@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import Header from './components/common/Header';
 
 const prisma = new PrismaClient();
 
@@ -20,9 +21,10 @@ export default async function Home() {
 
   return (
     <div>
+      <Header />
       <h1>Products</h1>
       <ul>
-        {items.map((item: any) => (
+        {items.map((item: { id: string; title: string }) => (
           <li key={item.id}>{item.title}</li>
         ))}
       </ul>
