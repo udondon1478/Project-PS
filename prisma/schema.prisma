@@ -7,11 +7,310 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Item {
-  id          Int       @id @default(autoincrement())
-  name        String
-  description String?
-  imageUrl    String?
+// ユーザーテーブル
+model User {
+  id                String          @id @default(cuid())
+  email             String          @unique
+  emailVerified DateTime?
+  name              String?
+  image String?
+  preferredLanguage String          @default("ja") // 'ja' or 'en'
+  showImpliedTags   Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  products          Product[]       // ユーザーが登録した商品
+  productTags       ProductTag[]    // ユーザーが付けたタグ
+  likes             ProductLike[]   // ユーザーがいいねした商品
+  views             ProductView[]   // ユーザーが閲覧した商品
+  tagEdits        TagEditHistory[] // ユーザーが行ったタグ編集
+  tagEditVotes    TagEditVote[]    // ユーザーが行った編集評価
+  accounts      Account[]
+  sessions      Session[]
+  productOwners ProductOwner[]
+  tagMetadataEdits TagMetadataHistory[] // ユーザーが行ったタグメタデータ編集
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// 商品テーブル
+model Product {
+  id           String        @id @default(cuid())
+  boothJpUrl   String       @unique // 日本語版URL
+  boothEnUrl   String       @unique // 英語版URL
+  title      String        // 商品タイトル
+  description                String?     @db.Text
+  price        Float         // 価格
+  publishedAt  DateTime         // 作品公開日ISOフォーマット
+  viewCount    Int           @default(0) // 閲覧数
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  userId       String        // 登録したユーザーID
+  user         User          @relation(fields: [userId], references: [id])
+  productOwners ProductOwner[]
+
+  // 画像関連
+  images       ProductImage[] // 複数の商品画像
+
+  productTags  ProductTag[]  // 商品に付けられたタグ
+  likes        ProductLike[] // 商品に対するいいね
+  views        ProductView[] // 商品の閲覧履歴
+  tagEditHistory  TagEditHistory[] // 商品のタグ編集履歴
+
+  sellerName                 String
+  sellerUrl                  String
+  sellerIconUrl              String
+
+  @@index([userId])
+  @@index([viewCount]) // 閲覧数でのソート用
+}
+
+// 商品所有テーブル
+model ProductOwner {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    String   // 所有者のユーザーID
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, productId])
+  @@index([productId])
+  @@index([userId])
+}
+
+// 商品画像テーブル
+model ProductImage {
+  id          String    @id @default(cuid())
+  productId   String
+  imageUrl    String    // 画像URL
+  order       Int       @default(0) // 表示順序
+  caption     String?   // 画像説明
+  isMain      Boolean   @default(false) // メイン画像フラグ
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([productId, order]) // 商品ごとの順序付き画像取得用
+}
+
+// いいねテーブル
+model ProductLike {
+  id          String    @id @default(cuid())
+  productId   String
+  userId      String
+  createdAt   DateTime  @default(now())
+
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, userId]) // 一人のユーザーが同じ商品に複数回いいねできないように
+  @@index([productId])
+  @@index([userId])
+  @@index([createdAt]) // 日付でのソート用
+}
+
+// 閲覧履歴テーブル
+model ProductView {
+  id          String    @id @default(cuid())
+  productId   String
+  userId      String?   // 匿名ユーザーの場合はnull
+  ipAddress   String?   // 匿名ユーザーの場合にIPアドレスを記録（オプション）
+  userAgent   String?   // ブラウザ情報など（オプション）
+  createdAt   DateTime  @default(now())
+
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([productId])
+  @@index([userId])
+  @@index([createdAt]) // 日付でのソート用
+}
+
+// タグテーブル
+model Tag {
+  id           String           @id @default(cuid())
+  canonicalId  String?          // エイリアスの場合、正規タグを指す
+  canonicalTag Tag?             @relation("AliasToCanonical", fields: [canonicalId], references: [id])
+  aliases      Tag[]            @relation("AliasToCanonical")
+  language     String           // 言語コード ('ja' or 'en')
+  name         String           @unique // タグ名は一意とする
+  description  String?          // タグの解説文
+  isAlias      Boolean          @default(false) // エイリアスフラグ
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  productTags  ProductTag[]     // このタグが付けられた商品
+  category  String    // カテゴリ (例: 'character', 'outfit')
+  color     String    // タグの色 (例: '#FF0000')
+  count     Int       @default(0) // タグの使用回数 (将来的な利用のため)
+
+  // タグの翻訳関係
+  sourceTranslations      TagTranslation[] @relation("SourceTag")
+  translatedTranslations  TagTranslation[] @relation("TranslatedTag")
+
+  // タグの含意関係
+  implyingRelations       TagImplication[] @relation("ImplyingTag")
+  impliedRelations        TagImplication[] @relation("ImpliedTag")
+
+  // タグの親子関係
+  parentRelations TagHierarchy[] @relation("ChildTag") // このタグが子である場合の親へのリレーション
+  childRelations  TagHierarchy[] @relation("ParentTag") // このタグが親である場合の子へのリレーション
+
+  // タグメタデータ編集履歴
+  metadataHistory TagMetadataHistory[]
+}
+
+// タグの親子関係テーブル
+model TagHierarchy {
+  id        String   @id @default(cuid())
+  parentId  String
+  childId   String
+  createdAt DateTime @default(now())
+
+  parent Tag @relation("ParentTag", fields: [parentId], references: [id], onDelete: Cascade)
+  child  Tag @relation("ChildTag", fields: [childId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, childId])
+  @@index([parentId])
+  @@index([childId])
+}
+
+// タグメタデータ編集履歴テーブル
+model TagMetadataHistory {
+  id           String    @id @default(cuid())
+  tagId        String    // 対象のタグID
+  editorId     String    // 編集したユーザーID
+  createdAt    DateTime  @default(now()) // 編集日時
+  changeType   String    // 変更の種類 (例: 'description_update', 'implication_added', 'parent_added')
+  oldValue     String?   @db.Text // 変更前の値 (JSON形式などで柔軟に記録)
+  newValue     String?   @db.Text // 変更後の値 (JSON形式などで柔軟に記録)
+  comment      String?   @db.Text // 編集に関するコメント
+
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  editor User @relation(fields: [editorId], references: [id])
+
+  @@index([tagId])
+  @@index([editorId])
+  @@index([createdAt])
+}
+
+// 商品-タグ関連テーブル
+model ProductTag {
+  id         String    @id @default(cuid())
+  productId  String
+  tagId      String
+  userId     String    // タグを付けたユーザー
+  isImplied  Boolean   @default(false) // 含意により自動付与されたタグかどうか
+  createdAt  DateTime  @default(now())
+
+  product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tag        Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id])
+
+  @@unique([productId, tagId])
+  @@index([productId])
+  @@index([tagId])
+  @@index([userId])
+}
+
+// タグ翻訳関係テーブル
+model TagTranslation {
+  id                String    @id @default(cuid())
+  sourceTagId       String    // 元タグID
+  translatedTagId   String    // 翻訳先タグID
+  createdAt         DateTime  @default(now())
+
+  sourceTag         Tag       @relation("SourceTag", fields: [sourceTagId], references: [id], onDelete: Cascade)
+  translatedTag     Tag       @relation("TranslatedTag", fields: [translatedTagId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceTagId, translatedTagId])
+  @@index([sourceTagId])
+  @@index([translatedTagId])
+}
+
+// タグ含意関係テーブル
+model TagImplication {
+  id              String    @id @default(cuid())
+  implyingTagId   String    // 含意するタグID（例：「パンツ」）
+  impliedTagId    String    // 含意されるタグID（例：「衣服」または「下着」）
+  createdAt       DateTime  @default(now())
+
+  implyingTag     Tag       @relation("ImplyingTag", fields: [implyingTagId], references: [id], onDelete: Cascade)
+  impliedTag      Tag       @relation("ImpliedTag", fields: [impliedTagId], references: [id], onDelete: Cascade)
+
+  @@unique([implyingTagId, impliedTagId])
+  @@index([implyingTagId])
+  @@index([impliedTagId])
+}
+
+// タグ編集履歴テーブル
+model TagEditHistory {
+  id              String    @id @default(cuid())
+  productId       String    // 対象商品
+  editorId        String    // 編集したユーザー
+  version         Int       // 編集バージョン（商品ごとに連番）
+  addedTags       String[]  // 追加されたタグのID配列
+  removedTags     String[]  // 削除されたタグのID配列
+  keptTags        String[]  // 維持されたタグのID配列
+  comment         String?   // 編集コメント
+  score           Int       @default(0) // 編集結果に対するスコア/評価
+  createdAt       DateTime  @default(now())
+
+  product         Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  editor          User      @relation(fields: [editorId], references: [id])
+
+  // スコア評価者たち
+  voters          TagEditVote[]
+
+  @@index([productId])
+  @@index([editorId])
+  @@index([productId, version]) // 商品ごとのバージョン履歴検索用
+}
+
+// タグ編集履歴に対する評価テーブル
+model TagEditVote {
+  id              String    @id @default(cuid())
+  historyId       String    // 評価対象の編集履歴
+  userId          String    // 評価したユーザー
+  score           Int       // 評価スコア（例：+1/-1）
+  createdAt       DateTime  @default(now())
+
+  history         TagEditHistory @relation(fields: [historyId], references: [id], onDelete: Cascade)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([historyId, userId]) // 同じユーザーが同じ編集に複数回評価できないように
+  @@index([historyId])
+  @@index([userId])
 }
