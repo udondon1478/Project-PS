@@ -1,3 +1,4 @@
+import SignIn from '@/components/sign-in';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -20,6 +21,7 @@ export default async function Home() {
 
   return (
     <div>
+      <SignIn />
       <h1>Products</h1>
       <ul>
         {items.map((item: any) => (
