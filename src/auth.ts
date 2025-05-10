@@ -10,11 +10,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async signIn({ profile }) {
+    async signIn({ profile, account }) {
       const prisma = new PrismaClient();
       try {
-        // Check if the user already exists in the database
-        if (profile?.email) {
+        if (profile?.email && account?.provider && account?.providerAccountId) {
+          // Check if the user already exists in the database
           const existingUser = await prisma.user.findUnique({
             where: { email: profile.email },
           });
@@ -25,18 +25,55 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               data: {
                 email: profile.email,
                 name: profile.name ?? null,
-                image: typeof profile.image === 'string' ? profile.image : null,
+              },
+            });
+          }
+
+          // Check if the account already exists in the database
+          const existingAccount = await prisma.account.findUnique({
+            where: {
+              provider_providerAccountId: {
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+              },
+            },
+          });
+
+          if (!existingAccount) {
+            // Create a new account in the database
+            await prisma.account.create({
+              data: {
+                userId: existingUser?.id ?? "", // TODO: Handle case where user doesn't exist
+                type: account.type,
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+                access_token: account.access_token,
+                refresh_token: account.refresh_token,
+              },
+            });
+          } else {
+            // Update the account in the database
+            await prisma.account.update({
+              where: {
+                provider_providerAccountId: {
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                },
+              },
+              data: {
+                access_token: account.access_token,
+                refresh_token: account.refresh_token,
               },
             });
           }
 
           return true;
         } else {
-          console.error("Email not found in profile");
+          console.error("Email, provider, or providerAccountId not found in profile or account");
           return false;
         }
       } catch (error) {
-        console.error("Error creating user:", error);
+        console.error("Error creating user or account:", error);
         return false;
       } finally {
         await prisma.$disconnect();
