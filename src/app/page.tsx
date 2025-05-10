@@ -1,4 +1,5 @@
 import SignIn from '@/components/sign-in';
+import SendSessionButton from '@/components/send-session-button'; // SendSessionButtonをインポート
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -22,10 +23,11 @@ export default async function Home() {
   return (
     <div>
       <SignIn />
+      <SendSessionButton /> {/* SendSessionButtonを追加 */}
       <h1>Products</h1>
       <ul>
-        {items.map((item: any) => (
-          <li key={item.id}>{item.title}</li>
+        {items.map((item: { id: string; name: string | null; email: string | null; emailVerified: Date | null; image: string | null }) => (
+          <li key={item.id}>{item.name || item.email}</li> // item.title は存在しないため、name または email を表示
         ))}
       </ul>
 
