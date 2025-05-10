@@ -10,8 +10,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile, email, credentials }) {
-      console.log("signIn", { user, account, profile, email, credentials });
+    async signIn({ profile }) {
       const prisma = new PrismaClient();
       try {
         // Check if the user already exists in the database
@@ -43,15 +42,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         await prisma.$disconnect();
       }
     },
-    async session({ session, user, token }) {
-      console.log("session", { session, user, token });
+    async session({ session, token }) {
       if (session?.user) {
-        session.user.id = token.id;
+        session.user.id = token.id as string;
       }
       return session;
     },
-    async jwt({ token, user, account, profile, isNewUser }) {
-      console.log("jwt", { token, user, account, profile, isNewUser });
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id as string;
       }
