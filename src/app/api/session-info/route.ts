@@ -1,6 +1,8 @@
 import { auth } from "@/auth"; // src/auth.ts から認証設定をインポート
 import { NextResponse } from "next/server";
 
+export const runtime = 'nodejs'; // Edge RuntimeでのPrismaClientエラーを回避
+
 export async function GET() {
   const session = await auth();
 

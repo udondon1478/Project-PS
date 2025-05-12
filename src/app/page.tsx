@@ -16,6 +16,8 @@ async function getUsersAndAccounts() {
   return { users, accounts };
 }
 
+export const runtime = 'nodejs'; // Edge RuntimeでのPrismaClientエラーを回避
+
 export default async function Home() {
   const items = await getItems();
   const { users, accounts } = await getUsersAndAccounts();

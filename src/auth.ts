@@ -1,8 +1,12 @@
 import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
-import { PrismaClient } from "@prisma/client";
- 
+import { PrismaAdapter } from "@auth/prisma-adapter"
+import { prisma } from "@/lib/prisma" // lib/prisma.ts からシングルトンインスタンスをインポート
+
+export const runtime = 'nodejs'; // Edge RuntimeでのPrismaClientエラーを回避
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  adapter: PrismaAdapter(prisma), // Prisma Adapterを追加
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,
@@ -10,47 +14,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async signIn({ profile }) {
-      const prisma = new PrismaClient();
-      try {
-        // Check if the user already exists in the database
-        if (profile?.email) {
-          const existingUser = await prisma.user.findUnique({
-            where: { email: profile.email },
-          });
-
-          if (!existingUser) {
-            // Create a new user in the database
-            await prisma.user.create({
-              data: {
-                email: profile.email,
-                name: profile.name ?? null,
-                image: typeof profile.image === 'string' ? profile.image : null,
-              },
-            });
-          }
-
-          return true;
-        } else {
-          console.error("Email not found in profile");
-          return false;
-        }
-      } catch (error) {
-        console.error("Error creating user:", error);
-        return false;
-      } finally {
-        await prisma.$disconnect();
-      }
-    },
-    async session({ session, token }) {
+    // signIn コールバックはアダプターがユーザーの作成/検索を処理するため、ここでは不要
+    // 必要に応じて、追加の検証や処理を記述することは可能
+    async session({ session, user }) { // token 引数を削除
       if (session?.user) {
-        session.user.id = token.id as string;
+        // アダプター使用時は user オブジェクトに id が含まれる
+        session.user.id = user.id;
       }
       return session;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user }) { // user 引数を追加
       if (user) {
-        token.id = user.id as string;
+        // アダプター使用時は user オブジェクトに id が含まれる
+        token.id = user.id;
       }
       return token;
     },
