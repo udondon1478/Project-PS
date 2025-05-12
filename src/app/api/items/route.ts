@@ -34,8 +34,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "無効なBooth URL形式です。日本語版または英語版のアイテムページのURLを入力してください。" }, { status: 400 });
     }
 
-    // Booth.pmのページからHTMLコンテンツを取得
-    const response = await fetch(url);
+    // URLから言語コードと商品IDを抽出
+    const urlMatch = url.match(/https:\/\/booth\.pm\/(ja|en)\/items\/(\d+)/);
+
+    if (!urlMatch) {
+      // このバリデーションはBooth URL形式バリデーションで既にチェックされているはずだが、念のため
+      return NextResponse.json({ message: "無効なBooth URL形式です。日本語版または英語版のアイテムページのURLを入力してください。" }, { status: 400 });
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const languageCode = urlMatch[1];
+    const productId = urlMatch[2];
+
+    // 日本語版URLと英語版URLを生成 (正規化済み)
+    const boothJpUrl = `https://booth.pm/ja/items/${productId}`;
+    const boothEnUrl = `https://booth.pm/en/items/${productId}`;
+
+    // Booth.pmのページからHTMLコンテンツを取得 (元のURLを使用)
+    const response = await fetch(url); // 元のURLでフェッチ
     if (!response.ok) {
       return NextResponse.json({ message: `Booth.pmからの情報取得に失敗しました。ステータスコード: ${response.status}` }, { status: response.status });
     }
@@ -51,10 +67,24 @@ export async function POST(request: Request) {
     }
 
     const productInfo = JSON.parse(schemaOrgData);
+    console.log("Schema.org Data:", productInfo); // Schema.orgデータをコンソールに出力
 
     // 必要な商品情報を抽出
     const title = productInfo.name || "タイトル不明";
-    const description = productInfo.description || "説明なし";
+    let description = productInfo.description || "説明なし"; // letに変更して再代入可能にする
+
+    // HTML本文から詳細な商品説明を抽出 (前世代コードのロジックを参考に)
+    const descriptionElements = $('.js-market-item-detail-description.description p');
+    let htmlDescription = '';
+    descriptionElements.each((i, elem) => {
+      htmlDescription += $(elem).text() + '\n';
+    });
+    htmlDescription = htmlDescription.trim();
+
+    if (htmlDescription) {
+      description = htmlDescription; // HTMLから取得した説明があれば優先する
+    }
+
     const price = productInfo.offers?.price ? parseFloat(productInfo.offers.price) : 0;
     // Schema.orgデータにpublishedAtがないため、ここでは現在時刻を仮の値とする
     const publishedAt = new Date();
@@ -62,38 +92,65 @@ export async function POST(request: Request) {
     const sellerName = "Unknown";
     const sellerUrl = "";
     const sellerIconUrl = "";
-    // 画像URLはSchema.orgデータに含まれているが、複数画像はHTMLから取得する必要がある
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const imageUrls = productInfo.image ? [productInfo.image] : [];
 
-    // TODO: 複数の商品画像URLをHTMLから取得する処理を追加（必要な場合）
+    // 複数の商品画像URLをHTMLから取得 (data-origin属性から取得)
+    const imageUrls: string[] = [];
+    // メイン画像とサムネイル画像の要素からdata-origin属性を取得
+    $('.market-item-detail-item-image, .primary-image-thumbnails img').each((i, elem) => {
+      const imageUrl = $(elem).attr('data-origin');
+      if (imageUrl && imageUrl.startsWith('https://booth.pximg.net/') && !imageUrls.includes(imageUrl)) {
+        imageUrls.push(imageUrl);
+      }
+    });
 
-    // データベースに商品を登録 (取得した情報を使用)
-    const newItem = await prisma.product.create({ // product モデルを使用
-      data: {
+    // Prismaのupsertを使ってデータベースに保存 (boothJpUrlをキーに)
+    const savedProduct = await prisma.product.upsert({
+      where: { boothJpUrl: boothJpUrl }, // 日本語版URLをキーとして使用
+      update: { // 更新時のデータ
         title: title,
-        description: description,
+        description: description, // HTMLから取得した説明を使用
+        price: price,
+        boothEnUrl: boothEnUrl, // 英語版URLも更新
+        publishedAt: publishedAt, // 取得した公開日、または仮の値
+        sellerName: sellerName, // 取得した販売者名、または仮の値
+        sellerUrl: sellerUrl, // 取得した販売者URL、または仮の値
+        sellerIconUrl: sellerIconUrl, // 取得した販売者アイコンURL、または仮の値
+        images: { // 既存の画像を削除し、新しい画像を作成
+          deleteMany: {}, // 既存の関連画像を全て削除
+          create: imageUrls.map((imageUrl, index) => ({
+            imageUrl: imageUrl,
+            isMain: index === 0, // 最初の画像をメイン画像とみなす
+            order: index, // 表示順序を設定
+          })),
+        },
+      },
+      create: { // 作成時のデータ
+        title: title,
+        description: description, // HTMLから取得した説明を使用
         price: price,
         userId: userId, // 登録ユーザーIDを紐づけ (userId カラムを使用)
-        boothJpUrl: url.includes('/ja/') ? url : "", // 日本語URLなら設定
-        boothEnUrl: url.includes('/en/') ? url : "", // 英語URLなら設定
+        boothJpUrl: boothJpUrl, // 日本語版URLを設定
+        boothEnUrl: boothEnUrl, // 英語版URLを設定
         publishedAt: publishedAt, // 取得した公開日、または仮の値
         sellerName: sellerName, // 取得した販売者名、または仮の値
         sellerUrl: sellerUrl, // 取得した販売者URL、または仮の値
         sellerIconUrl: sellerIconUrl, // 取得した販売者アイコンURL、または仮の値
         images: { // ProductImageモデルに画像を保存
-          create: imageUrls.map(imageUrl => ({
+          create: imageUrls.map((imageUrl, index) => ({
             imageUrl: imageUrl,
-            isMain: true, // Schema.orgの画像はメイン画像とみなす
+            isMain: index === 0, // 最初の画像をメイン画像とみなす
+            order: index, // 表示順序を設定
           })),
         },
       },
-      include: { // 登録した商品情報に画像も含める
+      include: { // 登録/更新した商品情報に画像も含める
         images: true,
       },
     });
 
-    return NextResponse.json(newItem, { status: 201 }); // 登録した商品を返す
+    console.log('Product saved/updated:', savedProduct.id);
+
+    return NextResponse.json(savedProduct, { status: 201 }); // 登録/更新した商品を返す
   } catch (error) {
     console.error("商品登録エラー:", error);
     const errorMessage = error instanceof Error ? error.message : "不明なエラー";
