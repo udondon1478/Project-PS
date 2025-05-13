@@ -72,58 +72,40 @@ export async function POST(request: Request) {
     // 必要な商品情報を抽出
     const title = productInfo.name || "タイトル不明";
     let description = '';
-    // 親要素を特定
-    const parentElement = $('.u-order-0.l-col-3of5.u-pr-500');
-    if (parentElement.length) {
-      // main-info-column を持つ要素を特定
-      const mainInfoColumn = parentElement.find('section.main-info-column');
-      let mainInfoColumnHtml = '';
-      if (mainInfoColumn.length) {
-        mainInfoColumnHtml = mainInfoColumn.prop('outerHTML') || '';
-      }
+    let markdownDescription = '';
 
-      // my-40 を持つ要素を特定
-      let my40Html = '';
-      const nextElement = mainInfoColumn.next();
-      if (nextElement.hasClass('my-40')) {
-        my40Html = nextElement.prop('outerHTML') || '';
-      }
+    // .main-info-column 内の .js-market-item-detail-description description クラスの中の p タグのテキストを抽出
+    const mainDescriptionElements = $('.main-info-column .js-market-item-detail-description.description p');
+    mainDescriptionElements.each((i, elem) => {
+      const paragraphText = $(elem).text();
+      markdownDescription += `${paragraphText}\n\n`; // 段落間に空行を追加
+    });
 
-      let markdownDescription = '';
-
-      // js-market-item-detail-description description クラスの中の p タグのテキストを抽出
-      const descriptionElements = $(mainInfoColumnHtml).find('.js-market-item-detail-description.description p');
-      descriptionElements.each((i, elem) => {
-        const paragraphText = $(elem).text();
-        markdownDescription += `${paragraphText}\n`;
-      });
-
-      // shop__text を持つ要素を抽出
-      const shopTextElements = $(mainInfoColumnHtml + my40Html).find('.shop__text');
+    // .my-40 要素が存在する場合、その中の .shop__text を処理
+    const my40Element = $('.my-40');
+    if (my40Element.length) {
+      const shopTextElements = my40Element.find('.shop__text');
       shopTextElements.each((i, elem) => {
-        // shop__text の中にある h1, h2, h3, h4, h5, h6 を抽出
-        const headingElements = $(elem).find('h1, h2, h3, h4, h5, h6');
-        headingElements.each((i, headingElem) => {
-          // 見出し要素の場合
-          const headingText = $(headingElem).text();
-          // tagName が存在する場合のみ headingLevel を取得
-          let headingLevel = 0;
-          if (headingElem instanceof Element && headingElem.tagName) {
-            headingLevel = parseInt(headingElem.tagName.slice(1)); // h1 なら 1, h2 なら 2
-          }
-          markdownDescription += `${'#'.repeat(headingLevel)} ${headingText}\n`;
-        });
+        // shop__text の中にある最初の見出し (h1-h6) を抽出
+        const headingElement = $(elem).find('h1, h2, h3, h4, h5, h6').first();
+        if (headingElement.length && headingElement.prop('tagName')) { // tagNameが存在するかどうかも確認
+          const headingText = headingElement.text().trim();
+          const headingLevel = parseInt(headingElement.prop('tagName').slice(1));
+          markdownDescription += `${'#'.repeat(headingLevel)} ${headingText}\n\n`; // 見出しと内容の間に空行を追加
+        }
 
         // shop__text の中にある p タグを抽出
         const paragraphElements = $(elem).find('p');
         paragraphElements.each((i, paragraphElem) => {
-          const paragraphText = $(paragraphElem).text();
-          markdownDescription += `${paragraphText}\n`;
+          const paragraphText = $(paragraphElem).text().trim();
+          if (paragraphText) { // 空の段落はスキップ
+            markdownDescription += `${paragraphText}\n\n`; // 段落間に空行を追加
+          }
         });
       });
-
-      description = markdownDescription.trim();
     }
+
+    description = markdownDescription.trim(); // 前後の空白を削除
 
     const price = productInfo.offers?.price ? parseFloat(productInfo.offers.price) : 0;
     // Schema.orgデータにpublishedAtがないため、ここでは現在時刻を仮の値とする
