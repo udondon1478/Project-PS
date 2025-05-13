@@ -24,7 +24,8 @@ export default function RegisterItemPage() {
   const [productData, setProductData] = useState<ProductInfo | null>(null);
   const [status, setStatus] = useState<'initial' | 'loading' | 'existing' | 'new' | 'error'>('initial');
   const [manualTags, setManualTags] = useState<string[]>([]); // 新規登録時の手動タグ
-
+  const [tagInput, setTagInput] = useState(''); // タグ入力フィールド
+  const [tagSuggestions, setTagSuggestions] = useState<string[]>([]); // タグ候補
   const isLoading = status === 'loading'; // ローディング状態を変数で管理
 
   const handleFetchProduct = async (e: React.FormEvent) => {
@@ -236,15 +237,111 @@ export default function RegisterItemPage() {
           {/* タグ入力フォーム */}
           <div className="mt-4">
             <label htmlFor="manualTags" className="block text-lg font-semibold mb-1">
-              タグ (カンマ区切り):
+              タグ:
             </label>
             <input
               type="text"
               id="manualTags"
-              value={manualTags.join(',')}
-              onChange={(e) => setManualTags(e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0))}
+              value={tagInput}
+              onKeyDown={(e) => {
+                if (e.key === ' ') { // 半角スペースが入力された場合
+                  e.preventDefault(); // デフォルトのスペース入力を防ぐ
+                  const tag = tagInput.trim();
+                  if (tag.length > 0 && !manualTags.includes(tag)) {
+                    setManualTags([...manualTags, tag]); // タグをリストに追加
+                    setTagInput(''); // 入力フィールドをクリア
+                    setTagSuggestions([]); // 候補リストをクリア
+                  }
+                } else if (e.key === 'Backspace' && tagInput === '' && manualTags.length > 0) {
+                  // バックスペースでタグを削除
+                  e.preventDefault();
+                  setManualTags(manualTags.slice(0, -1)); // 最後のタグを削除
+                }
+              }}
+              onChange={async (e) => {
+                const input = e.target.value;
+                setTagInput(input);
+
+                // APIを呼び出してタグの候補を取得
+                if (input.length > 0) {
+                  try {
+                    const response = await fetch(`/api/tags/search?query=${input}`);
+                    const data = await response.json();
+                    if (response.ok) {
+                      interface TagType {
+                        id: string;
+                        canonicalId: string | null;
+                        canonicalTag: Record<string, unknown> | null;
+                        aliases: Record<string, unknown>[];
+                        language: string;
+                        name: string;
+                        description: string | null;
+                        isAlias: boolean;
+                        createdAt: string;
+                        updatedAt: string;
+                        productTags: Record<string, unknown>[];
+                        category: string;
+                        color: string;
+                        count: number;
+                        sourceTranslations: Record<string, unknown>[];
+                        translatedTranslations: Record<string, unknown>[];
+                        implyingRelations: Record<string, unknown>[];
+                        impliedRelations: Record<string, unknown>[];
+                        parentRelations: Record<string, unknown>[];
+                        childRelations: Record<string, unknown>[];
+                        metadataHistory: Record<string, unknown>[];
+                      }
+                      setTagSuggestions(data.map((tag: TagType) => tag.name)); // タグ候補をセット
+                    } else {
+                      console.error("タグ候補の取得に失敗:", data.message);
+                      setTagSuggestions([]); // エラー時は候補をクリア
+                    }
+                  } catch (error) {
+                    console.error("タグ候補の取得中にエラーが発生:", error);
+                    setTagSuggestions([]); // エラー時は候補をクリア
+                  }
+                } else {
+                  setTagSuggestions([]); // 入力がない場合は候補をクリア
+                }
+              }}
               className="w-full px-3 py-2 border rounded-md"
             />
+            {/* タグ候補のリスト */}
+            {tagSuggestions.length > 0 && (
+              <ul className="mt-2">
+                {tagSuggestions.map((suggestion) => (
+                  <li
+                    key={suggestion}
+                    onClick={() => {
+                      setTagInput(suggestion); // 候補をクリックしたら入力フィールドにセット
+                      setTagSuggestions([]); // 候補リストをクリア
+                    }}
+                    className="px-3 py-1 rounded-md bg-gray-100 hover:bg-gray-200 cursor-pointer"
+                  >
+                    {suggestion}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {/* 入力済みのタグ (錠剤状表示) */}
+            <div className="flex flex-wrap gap-2 mt-2">
+              {manualTags.map((tag, index) => (
+                <span
+                  key={index}
+                  className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full flex items-center"
+                >
+                  {tag}
+                  <button
+                    onClick={() => {
+                      setManualTags(manualTags.filter((_, i) => i !== index));
+                    }}
+                    className="ml-2 text-blue-600 hover:text-blue-800"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
           </div>
 
           <button onClick={handleCreateProduct} disabled={isLoading} className="mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50">
