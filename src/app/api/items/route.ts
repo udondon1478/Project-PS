@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     const html = await response.text();
 
     // cheerioでHTMLを解析
-    const $ = cheerio.load(html);
+    const $: cheerio.CheerioAPI = cheerio.load(html);
 
     // Schema.orgのJSONデータを抽出・解析
     const schemaOrgData = $('script[type="application/ld+json"]').html();
@@ -71,18 +71,58 @@ export async function POST(request: Request) {
 
     // 必要な商品情報を抽出
     const title = productInfo.name || "タイトル不明";
-    let description = productInfo.description || "説明なし"; // letに変更して再代入可能にする
+    let description = '';
+    // 親要素を特定
+    const parentElement = $('.u-order-0.l-col-3of5.u-pr-500');
+    if (parentElement.length) {
+      // main-info-column を持つ要素を特定
+      const mainInfoColumn = parentElement.find('section.main-info-column');
+      let mainInfoColumnHtml = '';
+      if (mainInfoColumn.length) {
+        mainInfoColumnHtml = mainInfoColumn.prop('outerHTML') || '';
+      }
 
-    // HTML本文から詳細な商品説明を抽出 (前世代コードのロジックを参考に)
-    const descriptionElements = $('.js-market-item-detail-description.description p');
-    let htmlDescription = '';
-    descriptionElements.each((i, elem) => {
-      htmlDescription += $(elem).text() + '\n';
-    });
-    htmlDescription = htmlDescription.trim();
+      // my-40 を持つ要素を特定
+      let my40Html = '';
+      const nextElement = mainInfoColumn.next();
+      if (nextElement.hasClass('my-40')) {
+        my40Html = nextElement.prop('outerHTML') || '';
+      }
 
-    if (htmlDescription) {
-      description = htmlDescription; // HTMLから取得した説明があれば優先する
+      let markdownDescription = '';
+
+      // js-market-item-detail-description description クラスの中の p タグのテキストを抽出
+      const descriptionElements = $(mainInfoColumnHtml).find('.js-market-item-detail-description.description p');
+      descriptionElements.each((i: number, elem: cheerio.Element) => {
+        const paragraphText = $(elem).text();
+        markdownDescription += `${paragraphText}\n`;
+      });
+
+      // shop__text を持つ要素を抽出
+      const shopTextElements = $(mainInfoColumnHtml + my40Html).find('.shop__text');
+      shopTextElements.each((i: number, elem: cheerio.Element) => {
+        // shop__text の中にある h1, h2, h3, h4, h5, h6 を抽出
+        const headingElements = $(elem).find('h1, h2, h3, h4, h5, h6');
+        headingElements.each((i: number, headingElem: cheerio.Element) => {
+          // 見出し要素の場合
+          const headingText = $(headingElem).text();
+          // tagName が存在する場合のみ headingLevel を取得
+          let headingLevel = 0;
+          if (headingElem && $.isTag(headingElem) && headingElem.tagName) {
+            headingLevel = parseInt(headingElem.tagName.slice(1)); // h1 なら 1, h2 なら 2
+          }
+          markdownDescription += `${'#'.repeat(headingLevel)} ${headingText}\n`;
+        });
+
+        // shop__text の中にある p タグを抽出
+        const paragraphElements = $(elem).find('p');
+        paragraphElements.each((i: number, paragraphElem: cheerio.Element) => {
+          const paragraphText = $(paragraphElem).text();
+          markdownDescription += `${paragraphText}\n`;
+        });
+      });
+
+      description = markdownDescription.trim();
     }
 
     const price = productInfo.offers?.price ? parseFloat(productInfo.offers.price) : 0;
@@ -96,7 +136,7 @@ export async function POST(request: Request) {
     // 複数の商品画像URLをHTMLから取得 (data-origin属性から取得)
     const imageUrls: string[] = [];
     // メイン画像とサムネイル画像の要素からdata-origin属性を取得
-    $('.market-item-detail-item-image, .primary-image-thumbnails img').each((i, elem) => {
+    $('.market-item-detail-item-image, .primary-image-thumbnails img').each((i: number, elem: cheerio.Cheerio<cheerio.Element>) => {
       const imageUrl = $(elem).attr('data-origin');
       if (imageUrl && imageUrl.startsWith('https://booth.pximg.net/') && !imageUrls.includes(imageUrl)) {
         imageUrls.push(imageUrl);
