@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     const html = await response.text();
 
     // cheerioでHTMLを解析
-    const $: cheerio.CheerioAPI = cheerio.load(html);
+    const $ = cheerio.load(html);
 
     // Schema.orgのJSONデータを抽出・解析
     const schemaOrgData = $('script[type="application/ld+json"]').html();
@@ -93,22 +93,22 @@ export async function POST(request: Request) {
 
       // js-market-item-detail-description description クラスの中の p タグのテキストを抽出
       const descriptionElements = $(mainInfoColumnHtml).find('.js-market-item-detail-description.description p');
-      descriptionElements.each((i: number, elem: cheerio.Element) => {
+      descriptionElements.each((i, elem) => {
         const paragraphText = $(elem).text();
         markdownDescription += `${paragraphText}\n`;
       });
 
       // shop__text を持つ要素を抽出
       const shopTextElements = $(mainInfoColumnHtml + my40Html).find('.shop__text');
-      shopTextElements.each((i: number, elem: cheerio.Element) => {
+      shopTextElements.each((i, elem) => {
         // shop__text の中にある h1, h2, h3, h4, h5, h6 を抽出
         const headingElements = $(elem).find('h1, h2, h3, h4, h5, h6');
-        headingElements.each((i: number, headingElem: cheerio.Element) => {
+        headingElements.each((i, headingElem) => {
           // 見出し要素の場合
           const headingText = $(headingElem).text();
           // tagName が存在する場合のみ headingLevel を取得
           let headingLevel = 0;
-          if (headingElem && $.isTag(headingElem) && headingElem.tagName) {
+          if (headingElem instanceof Element && headingElem.tagName) {
             headingLevel = parseInt(headingElem.tagName.slice(1)); // h1 なら 1, h2 なら 2
           }
           markdownDescription += `${'#'.repeat(headingLevel)} ${headingText}\n`;
@@ -116,7 +116,7 @@ export async function POST(request: Request) {
 
         // shop__text の中にある p タグを抽出
         const paragraphElements = $(elem).find('p');
-        paragraphElements.each((i: number, paragraphElem: cheerio.Element) => {
+        paragraphElements.each((i, paragraphElem) => {
           const paragraphText = $(paragraphElem).text();
           markdownDescription += `${paragraphText}\n`;
         });
@@ -136,7 +136,7 @@ export async function POST(request: Request) {
     // 複数の商品画像URLをHTMLから取得 (data-origin属性から取得)
     const imageUrls: string[] = [];
     // メイン画像とサムネイル画像の要素からdata-origin属性を取得
-    $('.market-item-detail-item-image, .primary-image-thumbnails img').each((i: number, elem: cheerio.Cheerio<cheerio.Element>) => {
+    $('.market-item-detail-item-image, .primary-image-thumbnails img').each((i, elem) => {
       const imageUrl = $(elem).attr('data-origin');
       if (imageUrl && imageUrl.startsWith('https://booth.pximg.net/') && !imageUrls.includes(imageUrl)) {
         imageUrls.push(imageUrl);
