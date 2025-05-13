@@ -1,77 +1,86 @@
-import SignIn from '@/components/sign-in';
-import SendSessionButton from '@/components/send-session-button'; // SendSessionButtonをインポート
-import { PrismaClient } from '@prisma/client';
+"use client";
+import Image from "next/image";
+import { useEffect, useState } from "react";
 
-const prisma = new PrismaClient();
-
-async function getItems() {
-  const res = await fetch('http://localhost:3000/api/items');
-  const items = await res.json();
-  return items;
+interface Product {
+  id: string;
+  title: string;
+  price: number;
+  mainImageUrl: string | null;
+  tags: string[];
 }
 
-async function getUsersAndAccounts() {
-  const users = await prisma.user.findMany();
-  const accounts = await prisma.account.findMany();
-  return { users, accounts };
-}
+export default function Home() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export const runtime = 'nodejs'; // Edge RuntimeでのPrismaClientエラーを回避
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const response = await fetch('/api/products/latest');
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status}`);
+        }
+        const data: Product[] = await response.json();
+        setProducts(data);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
 
-export default async function Home() {
-  const items = await getItems();
-  const { users, accounts } = await getUsersAndAccounts();
+    fetchProducts();
+  }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
 
   return (
-    <div>
-      <SignIn />
-      <SendSessionButton /> {/* SendSessionButtonを追加 */}
-      <h1>Products</h1>
-      <ul>
-        {items.map((item: { id: string; name: string | null; email: string | null; emailVerified: Date | null; image: string | null }) => (
-          <li key={item.id}>{item.name || item.email}</li> // item.title は存在しないため、name または email を表示
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6">最新の商品</h1>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {products.map((product) => (
+          <div key={product.id} className="border rounded-lg overflow-hidden shadow-lg">
+            <div className="relative w-full h-48">
+              {product.mainImageUrl ? (
+                <Image
+                  src={product.mainImageUrl}
+                  alt={product.title}
+                  layout="fill"
+                  objectFit="cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">
+                  No Image
+                </div>
+              )}
+              <button className="absolute top-2 right-2 bg-white rounded-full p-1 shadow">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-4">
+              <h3 className="font-semibold text-lg mb-2">{product.title}</h3>
+              <div className="flex flex-wrap gap-1 mb-2">
+                {product.tags.map((tag, index) => (
+                  <span key={index} className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <p className="text-gray-700 font-bold">¥{product.price.toLocaleString()}</p>
+            </div>
+          </div>
         ))}
-      </ul>
-
-      <h2>Users</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Email</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user) => (
-            <tr key={user.id}>
-              <td>{user.id}</td>
-              <td>{user.name}</td>
-              <td>{user.email}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <h2>Accounts</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>UserID</th>
-            <th>Type</th>
-          </tr>
-        </thead>
-        <tbody>
-          {accounts.map((account) => (
-            <tr key={account.id}>
-              <td>{account.id}</td>
-              <td>{account.userId}</td>
-              <td>{account.type}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      </div>
     </div>
   );
 }
