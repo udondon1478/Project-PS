@@ -50,132 +50,125 @@ export async function POST(request: Request) {
     const boothJpUrl = `https://booth.pm/ja/items/${productId}`;
     const boothEnUrl = `https://booth.pm/en/items/${productId}`;
 
-    // Booth.pmのページからHTMLコンテンツを取得 (元のURLを使用)
-    const response = await fetch(url); // 元のURLでフェッチ
-    if (!response.ok) {
-      return NextResponse.json({ message: `Booth.pmからの情報取得に失敗しました。ステータスコード: ${response.status}` }, { status: response.status });
-    }
-    const html = await response.text();
-
-    // cheerioでHTMLを解析
-    const $ = cheerio.load(html);
-
-    // Schema.orgのJSONデータを抽出・解析
-    const schemaOrgData = $('script[type="application/ld+json"]').html();
-    if (!schemaOrgData) {
-      return NextResponse.json({ message: "ページから商品情報を取得できませんでした。（Schema.orgデータが見つかりません）" }, { status: 500 });
-    }
-
-    const productInfo = JSON.parse(schemaOrgData);
-    console.log("Schema.org Data:", productInfo); // Schema.orgデータをコンソールに出力
-
-    // 必要な商品情報を抽出
-    const title = productInfo.name || "タイトル不明";
-    let description = '';
-    let markdownDescription = '';
-
-    // .main-info-column 内の .js-market-item-detail-description description クラスの中の p タグのテキストを抽出
-    const mainDescriptionElements = $('.main-info-column .js-market-item-detail-description.description p');
-    mainDescriptionElements.each((i, elem) => {
-      const paragraphText = $(elem).text();
-      markdownDescription += `${paragraphText}\n\n`; // 段落間に空行を追加
+    // データベースに商品が存在するか確認
+    const existingProduct = await prisma.product.findUnique({
+      where: { boothJpUrl: boothJpUrl },
+      include: { images: true }, // 既存の商品情報に画像も含める
     });
 
-    // .my-40 要素が存在する場合、その中の .shop__text を処理
-    const my40Element = $('.my-40');
-    if (my40Element.length) {
-      const shopTextElements = my40Element.find('.shop__text');
-      shopTextElements.each((i, elem) => {
-        // shop__text の中にある最初の見出し (h1-h6) を抽出
-        const headingElement = $(elem).find('h1, h2, h3, h4, h5, h6').first();
-        if (headingElement.length && headingElement.prop('tagName')) { // tagNameが存在するかどうかも確認
-          const headingText = headingElement.text().trim();
-          const headingLevel = parseInt(headingElement.prop('tagName').slice(1));
-          markdownDescription += `${'#'.repeat(headingLevel)} ${headingText}\n\n`; // 見出しと内容の間に空行を追加
-        }
+    if (existingProduct) {
+      // 商品が存在する場合：既存の商品情報を返す
+      console.log('Product already exists:', existingProduct.id);
+      return NextResponse.json({
+        status: 'existing',
+        product: existingProduct,
+        message: 'この商品は既に登録されています。情報を更新しますか？'
+      }, { status: 200 });
+    } else {
+      // 商品が存在しない場合：Booth.pmから情報をスクレイピングして返す
+      console.log('Product not found, scraping Booth.pm...');
 
-        // shop__text の中にある p タグを抽出
-        const paragraphElements = $(elem).find('p');
-        paragraphElements.each((i, paragraphElem) => {
-          const paragraphText = $(paragraphElem).text().trim();
-          if (paragraphText) { // 空の段落はスキップ
-            markdownDescription += `${paragraphText}\n\n`; // 段落間に空行を追加
-          }
-        });
-      });
-    }
-
-    description = markdownDescription.trim(); // 前後の空白を削除
-
-    const price = productInfo.offers?.price ? parseFloat(productInfo.offers.price) : 0;
-    // Schema.orgデータにpublishedAtがないため、ここでは現在時刻を仮の値とする
-    const publishedAt = new Date();
-    // 販売者情報はSchema.orgデータに含まれていないため、仮の値とする
-    const sellerName = "Unknown";
-    const sellerUrl = "";
-    const sellerIconUrl = "";
-
-    // 複数の商品画像URLをHTMLから取得 (data-origin属性から取得)
-    const imageUrls: string[] = [];
-    // メイン画像とサムネイル画像の要素からdata-origin属性を取得
-    $('.market-item-detail-item-image, .primary-image-thumbnails img').each((i, elem) => {
-      const imageUrl = $(elem).attr('data-origin');
-      if (imageUrl && imageUrl.startsWith('https://booth.pximg.net/') && !imageUrls.includes(imageUrl)) {
-        imageUrls.push(imageUrl);
+      // Booth.pmのページからHTMLコンテンツを取得 (元のURLを使用)
+      const response = await fetch(url); // 元のURLでフェッチ
+      if (!response.ok) {
+        return NextResponse.json({ message: `Booth.pmからの情報取得に失敗しました。ステータスコード: ${response.status}` }, { status: response.status });
       }
-    });
+      const html = await response.text();
 
-    // Prismaのupsertを使ってデータベースに保存 (boothJpUrlをキーに)
-    const savedProduct = await prisma.product.upsert({
-      where: { boothJpUrl: boothJpUrl }, // 日本語版URLをキーとして使用
-      update: { // 更新時のデータ
-        title: title,
-        description: description, // HTMLから取得した説明を使用
-        price: price,
-        boothEnUrl: boothEnUrl, // 英語版URLも更新
-        publishedAt: publishedAt, // 取得した公開日、または仮の値
-        sellerName: sellerName, // 取得した販売者名、または仮の値
-        sellerUrl: sellerUrl, // 取得した販売者URL、または仮の値
-        sellerIconUrl: sellerIconUrl, // 取得した販売者アイコンURL、または仮の値
-        images: { // 既存の画像を削除し、新しい画像を作成
-          deleteMany: {}, // 既存の関連画像を全て削除
-          create: imageUrls.map((imageUrl, index) => ({
+      // cheerioでHTMLを解析
+      const $ = cheerio.load(html);
+
+      // Schema.orgのJSONデータを抽出・解析
+      const schemaOrgData = $('script[type="application/ld+json"]').html();
+      if (!schemaOrgData) {
+        return NextResponse.json({ message: "ページから商品情報を取得できませんでした。（Schema.orgデータが見つかりません）" }, { status: 500 });
+      }
+
+      const productInfo = JSON.parse(schemaOrgData);
+      console.log("Schema.org Data:", productInfo); // Schema.orgデータをコンソールに出力
+
+      // 必要な商品情報を抽出
+      const title = productInfo.name || "タイトル不明";
+      let description = '';
+      let markdownDescription = '';
+
+      // .main-info-column 内の .js-market-item-detail-description description クラスの中の p タグのテキストを抽出
+      const mainDescriptionElements = $('.main-info-column .js-market-item-detail-description.description p');
+      mainDescriptionElements.each((i, elem) => {
+        const paragraphText = $(elem).text();
+        markdownDescription += `${paragraphText}\n\n`; // 段落間に空行を追加
+      });
+
+      // .my-40 要素が存在する場合、その中の .shop__text を処理
+      const my40Element = $('.my-40');
+      if (my40Element.length) {
+        const shopTextElements = my40Element.find('.shop__text');
+        shopTextElements.each((i, elem) => {
+          // shop__text の中にある最初の見出し (h1-h6) を抽出
+          const headingElement = $(elem).find('h1, h2, h3, h4, h5, h6').first();
+          const tagName = headingElement.prop('tagName');
+          if (headingElement.length && typeof tagName === 'string') { // tagNameが存在し、かつ文字列であることを確認
+            const headingText = headingElement.text().trim();
+            const headingLevel = parseInt(tagName.slice(1));
+            markdownDescription += `${'#'.repeat(headingLevel)} ${headingText}\n\n`; // 見出しと内容の間に空行を追加
+          }
+
+          // shop__text の中にある p タグを抽出
+          const paragraphElements = $(elem).find('p');
+          paragraphElements.each((i, paragraphElem) => {
+            const paragraphText = $(paragraphElem).text().trim();
+            if (paragraphText) { // 空の段落はスキップ
+              markdownDescription += `${paragraphText}\n\n`; // 段落間に空行を追加
+            }
+          });
+        });
+      }
+
+      description = markdownDescription.trim(); // 前後の空白を削除
+
+      const price = productInfo.offers?.price ? parseFloat(productInfo.offers.price) : 0;
+      // Schema.orgデータにpublishedAtがないため、ここでは現在時刻を仮の値とする
+      const publishedAt = new Date();
+      // 販売者情報はSchema.orgデータに含まれていないため、仮の値とする
+      const sellerName = "Unknown";
+      const sellerUrl = "";
+      const sellerIconUrl = "";
+
+      // 複数の商品画像URLをHTMLから取得 (data-origin属性から取得)
+      const imageUrls: string[] = [];
+      // メイン画像とサムネイル画像の要素からdata-origin属性を取得
+      $('.market-item-detail-item-image, .primary-image-thumbnails img').each((i, elem) => {
+        const imageUrl = $(elem).attr('data-origin');
+        if (imageUrl && imageUrl.startsWith('https://booth.pximg.net/') && !imageUrls.includes(imageUrl)) {
+          imageUrls.push(imageUrl);
+        }
+      });
+
+      // データベースには保存せず、フロントエンドに返す
+      return NextResponse.json({
+        status: 'new',
+        productInfo: {
+          boothJpUrl,
+          boothEnUrl,
+          title,
+          description,
+          price,
+          publishedAt,
+          sellerName,
+          sellerUrl,
+          sellerIconUrl,
+          images: imageUrls.map((imageUrl, index) => ({
             imageUrl: imageUrl,
-            isMain: index === 0, // 最初の画像をメイン画像とみなす
-            order: index, // 表示順序を設定
+            isMain: index === 0,
+            order: index,
           })),
         },
-      },
-      create: { // 作成時のデータ
-        title: title,
-        description: description, // HTMLから取得した説明を使用
-        price: price,
-        userId: userId, // 登録ユーザーIDを紐づけ (userId カラムを使用)
-        boothJpUrl: boothJpUrl, // 日本語版URLを設定
-        boothEnUrl: boothEnUrl, // 英語版URLを設定
-        publishedAt: publishedAt, // 取得した公開日、または仮の値
-        sellerName: sellerName, // 取得した販売者名、または仮の値
-        sellerUrl: sellerUrl, // 取得した販売者URL、または仮の値
-        sellerIconUrl: sellerIconUrl, // 取得した販売者アイコンURL、または仮の値
-        images: { // ProductImageモデルに画像を保存
-          create: imageUrls.map((imageUrl, index) => ({
-            imageUrl: imageUrl,
-            isMain: index === 0, // 最初の画像をメイン画像とみなす
-            order: index, // 表示順序を設定
-          })),
-        },
-      },
-      include: { // 登録/更新した商品情報に画像も含める
-        images: true,
-      },
-    });
-
-    console.log('Product saved/updated:', savedProduct.id);
-
-    return NextResponse.json(savedProduct, { status: 201 }); // 登録/更新した商品を返す
+        message: '新しい商品が見つかりました。タグを入力して登録してください。'
+      }, { status: 200 });
+    }
   } catch (error) {
-    console.error("商品登録エラー:", error);
+    console.error("商品情報取得エラー:", error);
     const errorMessage = error instanceof Error ? error.message : "不明なエラー";
-    return NextResponse.json({ message: "商品登録に失敗しました。", error: errorMessage }, { status: 500 });
+    return NextResponse.json({ message: "商品情報の取得に失敗しました。", error: errorMessage }, { status: 500 });
   }
 }
