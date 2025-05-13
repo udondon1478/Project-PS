@@ -244,8 +244,8 @@ export default function RegisterItemPage() {
               id="manualTags"
               value={tagInput}
               onKeyDown={(e) => {
-                if (e.key === ' ') { // 半角スペースが入力された場合
-                  e.preventDefault(); // デフォルトのスペース入力を防ぐ
+                if (e.key === ' ' || e.key === 'Tab') { // 半角スペースまたはTabキーが入力された場合
+                  e.preventDefault(); // デフォルトのスペース/Tab入力を防ぐ
                   const tag = tagInput.trim();
                   if (tag.length > 0 && !manualTags.includes(tag)) {
                     setManualTags([...manualTags, tag]); // タグをリストに追加
@@ -313,8 +313,11 @@ export default function RegisterItemPage() {
                   <li
                     key={suggestion}
                     onClick={() => {
-                      setTagInput(suggestion); // 候補をクリックしたら入力フィールドにセット
-                      setTagSuggestions([]); // 候補リストをクリア
+                      if (suggestion.length > 0 && !manualTags.includes(suggestion)) {
+                        setManualTags([...manualTags, suggestion]); // 候補をタグとしてリストに追加
+                        setTagInput(''); // 入力フィールドをクリア
+                        setTagSuggestions([]); // 候補リストをクリア
+                      }
                     }}
                     className="px-3 py-1 rounded-md bg-gray-100 hover:bg-gray-200 cursor-pointer"
                   >
