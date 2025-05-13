@@ -48,7 +48,7 @@ export default function Home() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {products.map((product) => (
           <div key={product.id} className="border rounded-lg overflow-hidden shadow-lg">
-            <div className="relative w-full h-48">
+            <div className="relative w-full h-89">
               {product.mainImageUrl ? (
                 <Image
                   src={product.mainImageUrl}
