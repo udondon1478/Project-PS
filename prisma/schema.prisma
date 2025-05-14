@@ -13,6 +13,7 @@ model User {
   email             String          @unique
   emailVerified DateTime?
   name              String?
+  image             String? // この行を追加します
   preferredLanguage String          @default("ja") // 'ja' or 'en'
   showImpliedTags   Boolean         @default(true)
   createdAt         DateTime        @default(now())
@@ -72,7 +73,8 @@ model Product {
   boothEnUrl   String       @unique // 英語版URL
   title      String        // 商品タイトル
   description                String?     @db.Text
-  price        Float         // 価格
+  lowPrice     Float         // 最低価格
+  highPrice    Float         // 最高価格
   publishedAt  DateTime         // 作品公開日ISOフォーマット
   viewCount    Int           @default(0) // 閲覧数
   createdAt    DateTime      @default(now())
@@ -80,6 +82,9 @@ model Product {
   userId       String        // 登録したユーザーID
   user         User          @relation(fields: [userId], references: [id])
   productOwners ProductOwner[]
+
+  sellerId    String? // 販売者モデルへの外部キー (Optionalに変更)
+  seller      Seller?    @relation(fields: [sellerId], references: [id]) // 販売者モデルとのリレーション (Optionalに変更)
 
   // 画像関連
   images       ProductImage[] // 複数の商品画像
@@ -89,9 +94,6 @@ model Product {
   views        ProductView[] // 商品の閲覧履歴
   tagEditHistory  TagEditHistory[] // 商品のタグ編集履歴
 
-  sellerName                 String
-  sellerUrl                  String
-  sellerIconUrl              String
 
   @@index([userId])
   @@index([viewCount]) // 閲覧数でのソート用
@@ -313,4 +315,15 @@ model TagEditVote {
   @@unique([historyId, userId]) // 同じユーザーが同じ編集に複数回評価できないように
   @@index([historyId])
   @@index([userId])
+}
+
+// 販売者テーブル
+model Seller {
+  id        String    @id @default(cuid()) @map("_id")
+  name      String
+  sellerUrl String    @unique // 販売者サイトのURL
+  iconUrl   String? // アイコン画像URLは必須でなければOptionalにする
+  products  Product[] // この販売者が販売する商品リスト
+
+  @@map("sellers") // MongoDBの場合のコレクション名
 }

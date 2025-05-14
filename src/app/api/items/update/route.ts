@@ -97,13 +97,26 @@ export async function POST(request: Request) {
     }
 
 
-    const price = productInfo.offers?.price ? parseFloat(productInfo.offers.price) : existingProduct.price; // 取得できない場合は既存の値を使用
+    let lowPrice = existingProduct.lowPrice;
+    let highPrice = existingProduct.highPrice;
+
+    if (productInfo.offers) {
+      if (Array.isArray(productInfo.offers)) {
+        // 複数価格の場合
+        lowPrice = productInfo.offers[0]?.lowPrice ? parseFloat(productInfo.offers[0].lowPrice) : existingProduct.lowPrice;
+        highPrice = productInfo.offers[0]?.highPrice ? parseFloat(productInfo.offers[0].highPrice) : existingProduct.highPrice;
+      } else if (productInfo.offers.price) {
+        // 単一価格の場合
+        lowPrice = parseFloat(productInfo.offers.price);
+        highPrice = parseFloat(productInfo.offers.price);
+      } else {
+        // offersはあるがprice, lowPrice, highPriceがない場合（想定外のケース）
+        console.warn("Schema.org offers structure is unexpected:", productInfo.offers);
+      }
+    }
     // Schema.orgデータにpublishedAtがないため、ここでは既存の値を使用
-    const publishedAt = existingProduct.publishedAt; // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // Schema.orgデータにpublishedAtがないため、ここでは既存の値を使用
     // 販売者情報はSchema.orgデータに含まれていないため、ここでは既存の値を使用
-    const sellerName = existingProduct.sellerName; // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const sellerUrl = existingProduct.sellerUrl; // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const sellerIconUrl = existingProduct.sellerIconUrl; // eslint-disable-next-line @typescript-eslint/no-unused-vars
 
 
     // 複数の商品画像URLをHTMLから取得 (data-origin属性から取得)
@@ -122,7 +135,8 @@ export async function POST(request: Request) {
       data: {
         title: title,
         description: description,
-        price: price,
+        lowPrice: lowPrice,
+        highPrice: highPrice,
         // publishedAt, // publishedAtは更新しない
         // sellerName, // 販売者情報は更新しない
         // sellerUrl,

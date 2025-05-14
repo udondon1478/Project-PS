@@ -1,10 +1,8 @@
-import { PrismaClient } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { auth } from "@/auth";
+import { prisma } from '@/lib/prisma'; // lib/prismaからシングルトンインスタンスをインポート
 
 export const runtime = 'nodejs';
-
-const prisma = new PrismaClient();
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -17,71 +15,102 @@ export async function POST(request: Request) {
 
   try {
     const { productInfo, tags } = await request.json(); // 商品情報とタグ情報を受け取る
+    const { boothJpUrl, boothEnUrl, title, description, lowPrice, highPrice, publishedAt, sellerName, sellerUrl, sellerIconUrl, images } = productInfo;
 
-    // 必須フィールドのバリデーション (簡易的な例)
-    if (!productInfo || !productInfo.boothJpUrl || !productInfo.title || !tags) {
-      return NextResponse.json({ message: "必須情報が不足しています。" }, { status: 400 });
-    }
-
-    // タグが存在するか確認し、存在しない場合は作成
-    const tagIds: string[] = [];
-    for (const tagName of tags) {
-      const tag = await prisma.tag.upsert({
-        where: { name: tagName },
-        update: {}, // 存在する場合は何もしない
-        create: {
-          name: tagName,
-          language: 'ja', // 仮に日本語とする。必要に応じて言語情報を追加
-          category: 'other', // 仮にotherとする。必要に応じてカテゴリ情報を追加
-          color: '#CCCCCC', // 仮の色
-        },
-      });
-      tagIds.push(tag.id);
-    }
-
-    // 商品をデータベースに新規登録
-    const newProduct = await prisma.product.create({
-      data: {
-        boothJpUrl: productInfo.boothJpUrl,
-        boothEnUrl: productInfo.boothEnUrl,
-        title: productInfo.title,
-        description: productInfo.description,
-        price: productInfo.price,
-        publishedAt: new Date(productInfo.publishedAt), // Dateオブジェクトに変換
-        userId: userId,
-        sellerName: productInfo.sellerName,
-        sellerUrl: productInfo.sellerUrl,
-        sellerIconUrl: productInfo.sellerIconUrl,
-        images: {
-          create: productInfo.images.map((image: { imageUrl: string; isMain: boolean; order: number }) => ({
-            imageUrl: image.imageUrl,
-            isMain: image.isMain,
-            order: image.order,
-          })),
-        },
-        productTags: {
-          create: tagIds.map(tagId => ({
-            tagId: tagId,
-            userId: userId, // タグを付けたユーザーとして登録ユーザーIDを使用
-          })),
-        },
-      },
-      include: {
-        images: true,
-        productTags: {
-          include: {
-            tag: true, // 関連するタグ情報も取得
+    
+        // 必須フィールドのバリデーション
+        if (!productInfo || !productInfo.boothJpUrl || !productInfo.title || !productInfo.sellerUrl || !tags) {
+          return NextResponse.json({ message: "必須情報が不足しています。（販売者情報を含む）" }, { status: 400 });
+        }
+    
+        // タグが存在するか確認し、存在しない場合は作成
+        const tagIds: string[] = [];
+        for (const tagName of tags) {
+          const tag = await prisma.tag.upsert({
+            where: { name: tagName },
+            update: {}, // 存在する場合は何もしない
+            create: {
+              name: tagName,
+              language: 'ja', // 仮に日本語とする。必要に応じて言語情報を追加
+              category: 'other', // 仮にotherとする。必要に応じてカテゴリ情報を追加
+              color: '#CCCCCC', // 仮の色
+            },
+          });
+          tagIds.push(tag.id);
+        }
+    
+        // 販売者が存在するか確認し、存在しない場合は作成
+        let seller = null; // seller変数をifブロックの外で宣言
+    
+        // sellerUrlがリクエストに含まれている場合のみSellerのupsertを行う
+        if (sellerUrl) {
+          seller = await prisma.seller.upsert({
+            where: { sellerUrl: sellerUrl }, // sellerUrlで検索 (ユニーク制約があるため)
+            update: { // 存在する場合、アイコンURLとURLを更新
+              name: sellerName, // nameも更新する可能性があるため追加
+              iconUrl: sellerIconUrl,
+              sellerUrl: sellerUrl, // フィールド名をurlからsellerUrlに修正
+            },
+            create: { // 存在しない場合、新規作成
+              name: sellerName,
+              iconUrl: sellerIconUrl,
+              sellerUrl: sellerUrl, // フィールド名をurlからsellerUrlに修正
+            },
+          });
+        } else {
+          console.warn("Seller URL not found in request, skipping seller upsert.");
+        }
+    
+        // 商品をデータベースに新規登録
+        const newProduct = await prisma.product.create({
+          data: {
+            boothJpUrl: boothJpUrl,
+            boothEnUrl: boothEnUrl,
+            title: title,
+            description: description,
+            lowPrice: lowPrice,
+            highPrice: highPrice,
+            publishedAt: new Date(publishedAt), // Dateオブジェクトに変換
+            user: { // ユーザーリレーションを接続
+              connect: { id: userId }
+            },
+            // 販売者リレーションを接続 (sellerが存在する場合のみ)
+            // sellerUrlが取得できない場合はsellerはnullのままとなり、リレーションは作成されない
+            ...(seller && {
+              seller: {
+                connect: { id: seller.id }
+              }
+            }),
+            images: {
+              create: images.map((image: { imageUrl: string; isMain: boolean; order: number }) => ({
+                imageUrl: image.imageUrl,
+                isMain: image.isMain,
+                order: image.order,
+              })),
+            },
+            productTags: {
+              create: tagIds.map(tagId => ({
+                tagId: tagId,
+                userId: userId, // タグを付けたユーザーとして登録ユーザーIDを使用
+              })),
+            },
           },
-        },
-      },
-    });
-
-    console.log('New product registered:', newProduct.id);
-
-    return NextResponse.json(newProduct, { status: 201 });
-  } catch (error) {
-    console.error("新規商品登録エラー:", error);
-    const errorMessage = error instanceof Error ? error.message : "不明なエラー";
-    return NextResponse.json({ message: "新規商品登録に失敗しました。", error: errorMessage }, { status: 500 });
-  }
-}
+          include: {
+            images: true,
+            productTags: {
+              include: {
+                tag: true, // 関連するタグ情報も取得
+              },
+            },
+          },
+        });
+    
+        console.log('New product registered:', newProduct.id);
+    
+        return NextResponse.json(newProduct, { status: 201 });
+      } catch (error) {
+        console.error("新規商品登録エラー:", error);
+        const errorMessage = error instanceof Error ? error.message : "不明なエラー";
+        return NextResponse.json({ message: "新規商品登録に失敗しました。", error: errorMessage }, { status: 500 });
+      }
+    }

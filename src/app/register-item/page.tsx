@@ -9,7 +9,8 @@ interface ProductInfo {
   boothEnUrl: string;
   title: string;
   description: string;
-  price: number;
+  lowPrice: number;
+  highPrice: number;
   publishedAt: string; // Dateオブジェクトとして扱う場合は変更
   sellerName: string;
   sellerUrl: string;
@@ -184,7 +185,7 @@ export default function RegisterItemPage() {
             </div>
             <div>
               <h3 className="text-lg font-semibold">価格</h3>
-              <p>{productData.price}</p>
+              <p>¥{productData.lowPrice} ~ ¥{productData.highPrice}</p>
             </div>
             <div className="md:col-span-2">
               <h3 className="text-lg font-semibold">説明文</h3>
@@ -217,7 +218,7 @@ export default function RegisterItemPage() {
             </div>
             <div>
               <h3 className="text-lg font-semibold">価格</h3>
-              <p>{productData.price}</p>
+              <p>¥{productData.lowPrice} ~ ¥{productData.highPrice}</p>
             </div>
              <div className="md:col-span-2">
               <h3 className="text-lg font-semibold">説明文</h3>

@@ -23,7 +23,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "認証が必要です。" }, { status: 401 });
   }
 
-  const userId = session.user.id; // ログインユーザーのIDを取得
 
   try {
     const { url } = await request.json(); // リクエストボディからBooth.pmのURLを取得
@@ -126,13 +125,21 @@ export async function POST(request: Request) {
 
       description = markdownDescription.trim(); // 前後の空白を削除
 
-      const price = productInfo.offers?.price ? parseFloat(productInfo.offers.price) : 0;
+      const lowPrice = productInfo.offers?.lowPrice ? parseFloat(productInfo.offers.lowPrice) : 0;
+      const highPrice = productInfo.offers?.highPrice ? parseFloat(productInfo.offers.highPrice) : 0;
       // Schema.orgデータにpublishedAtがないため、ここでは現在時刻を仮の値とする
       const publishedAt = new Date();
-      // 販売者情報はSchema.orgデータに含まれていないため、仮の値とする
-      const sellerName = "Unknown";
-      const sellerUrl = "";
-      const sellerIconUrl = "";
+      // 販売者情報をHTMLからスクレイピング
+      const sellerLinkElement = $('.shop-info a.nav');
+      const sellerNameElement = $('.shop-info .shop-name a.nav');
+      const sellerAvatarElement = $('.shop-info .user-avatar');
+
+      const sellerUrl = sellerLinkElement.attr('href') || "";
+      const sellerName = sellerNameElement.text().trim() || "Unknown";
+      // style属性からurl()内のURLを抽出
+      const sellerIconStyle = sellerAvatarElement.attr('style');
+      const sellerIconUrlMatch = sellerIconStyle ? sellerIconStyle.match(/url\((.*?)\)/) : null;
+      const sellerIconUrl = sellerIconUrlMatch ? sellerIconUrlMatch[1] : "";
 
       // 複数の商品画像URLをHTMLから取得 (data-origin属性から取得)
       const imageUrls: string[] = [];
@@ -152,7 +159,8 @@ export async function POST(request: Request) {
           boothEnUrl,
           title,
           description,
-          price,
+          lowPrice,
+          highPrice,
           publishedAt,
           sellerName,
           sellerUrl,
@@ -171,4 +179,5 @@ export async function POST(request: Request) {
     const errorMessage = error instanceof Error ? error.message : "不明なエラー";
     return NextResponse.json({ message: "商品情報の取得に失敗しました。", error: errorMessage }, { status: 500 });
   }
+
 }
