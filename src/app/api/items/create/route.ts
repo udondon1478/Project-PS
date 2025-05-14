@@ -15,7 +15,8 @@ export async function POST(request: Request) {
 
   try {
     const { productInfo, tags } = await request.json(); // 商品情報とタグ情報を受け取る
-    const { boothJpUrl, boothEnUrl, title, description, lowPrice, highPrice, publishedAt, sellerName, sellerUrl, sellerIconUrl, images } = productInfo;
+    console.log('Received productInfo:', productInfo); // ここにログを追加
+    const { boothJpUrl, boothEnUrl, title, description, publishedAt, sellerName, sellerUrl, sellerIconUrl, images, offers } = productInfo;
 
     
         // 必須フィールドのバリデーション
@@ -68,8 +69,8 @@ export async function POST(request: Request) {
             boothEnUrl: boothEnUrl,
             title: title,
             description: description,
-            lowPrice: lowPrice,
-            highPrice: highPrice,
+            lowPrice: offers && offers['@type'] === 'Offer' && offers.price ? parseFloat(offers.price) || 0 : (productInfo && productInfo.lowPrice ? parseFloat(productInfo.lowPrice) || 0 : 0),
+            highPrice: offers && offers['@type'] === 'Offer' ? parseFloat(offers.price) || 0 : (productInfo && productInfo.highPrice ? parseFloat(productInfo.highPrice) || 0 : 0),
             publishedAt: new Date(publishedAt), // Dateオブジェクトに変換
             user: { // ユーザーリレーションを接続
               connect: { id: userId }

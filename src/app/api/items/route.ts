@@ -125,8 +125,20 @@ export async function POST(request: Request) {
 
       description = markdownDescription.trim(); // 前後の空白を削除
 
-      const lowPrice = productInfo.offers?.lowPrice ? parseFloat(productInfo.offers.lowPrice) : 0;
-      const highPrice = productInfo.offers?.highPrice ? parseFloat(productInfo.offers.highPrice) : 0;
+      let lowPrice = 0;
+      let highPrice = 0;
+
+      if (productInfo.offers && productInfo.offers['@type'] === 'Offer' && productInfo.offers.price) {
+        // 単一価格の場合
+        const price = parseFloat(productInfo.offers.price);
+        lowPrice = price;
+        highPrice = price;
+      } else if (productInfo.offers && productInfo.offers['@type'] === 'AggregateOffer' && productInfo.offers.lowPrice && productInfo.offers.highPrice) {
+        // 複数価格の場合
+        lowPrice = parseFloat(productInfo.offers.lowPrice);
+        highPrice = parseFloat(productInfo.offers.highPrice);
+      }
+
       // Schema.orgデータにpublishedAtがないため、ここでは現在時刻を仮の値とする
       const publishedAt = new Date();
       // 販売者情報をHTMLからスクレイピング
