@@ -15,7 +15,7 @@ export async function POST(request: Request) {
 
   try {
     const { productInfo, tags } = await request.json(); // 商品情報とタグ情報を受け取る
-    console.log('Received productInfo:', productInfo); // ここにログを追加
+    //console.log('Received productInfo:', productInfo); // ここにログを追加
     const { boothJpUrl, boothEnUrl, title, description, publishedAt, sellerName, sellerUrl, sellerIconUrl, images, offers } = productInfo;
 
     
