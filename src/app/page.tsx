@@ -68,7 +68,14 @@ export default function Home() {
               </button>
             </div>
             <div className="p-4">
-              <h3 className="font-semibold text-lg mb-2">{product.title}</h3>
+<div className="flex items-start justify-between w-full h-10 mb-2">
+  <h3 className="flex-grow">{product.title}</h3>
+  <button className="bg-white rounded-full p-1 shadow flex-shrink-0">
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+    </svg>
+  </button>
+</div>
               <div className="flex flex-wrap gap-1 mb-2">
                 {product.tags.map((tag, index) => (
                   <span key={index} className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
