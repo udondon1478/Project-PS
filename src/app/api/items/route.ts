@@ -28,21 +28,23 @@ export async function POST(request: Request) {
     const { url } = await request.json(); // リクエストボディからBooth.pmのURLを取得
 
     // Booth.pmのURL形式をバリデーション
-    const boothUrlRegex = /^https:\/\/booth\.pm\/(ja|en)\/items\/\d+$/;
+    // Booth.pmのURL形式をバリデーション (サブドメインと言語コードをオプション化)
+    const boothUrlRegex = /^https:\/\/(?:[a-zA-Z0-9-]+\.)?booth\.pm\/(?:(ja|en)\/)?items\/\d+$/;
     if (!boothUrlRegex.test(url)) {
-      return NextResponse.json({ message: "無効なBooth URL形式です。日本語版または英語版のアイテムページのURLを入力してください。" }, { status: 400 });
+      return NextResponse.json({ message: "無効なBooth URL形式です。日本語版、又は英語版のBooth.pmのアイテムページのURLを入力してください。" }, { status: 400 });
     }
 
     // URLから言語コードと商品IDを抽出
-    const urlMatch = url.match(/https:\/\/booth\.pm\/(ja|en)\/items\/(\d+)/);
+    // 新しい正規表現はサブドメインと言語コードの有無に対応
+    const urlMatch = url.match(/^https:\/\/(?:[a-zA-Z0-9-]+\.)?booth\.pm\/(?:(ja|en)\/)?items\/(\d+)/);
 
     if (!urlMatch) {
       // このバリデーションはBooth URL形式バリデーションで既にチェックされているはずだが、念のため
-      return NextResponse.json({ message: "無効なBooth URL形式です。日本語版または英語版のアイテムページのURLを入力してください。" }, { status: 400 });
+      return NextResponse.json({ message: "無効なBooth URL形式です。日本語版、又は英語版のBooth.pmのアイテムページのURLを入力してください。" }, { status: 400 });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const languageCode = urlMatch[1];
+    // 新しい正規表現では、言語コードがグループ1 (オプション)、商品IDがグループ2になる
+    // 言語コードは正規化URL生成には使用しないため、productIdのみ抽出
     const productId = urlMatch[2];
 
     // 日本語版URLと英語版URLを生成 (正規化済み)
@@ -67,8 +69,12 @@ export async function POST(request: Request) {
       // 商品が存在しない場合：Booth.pmから情報をスクレイピングして返す
       console.log('Product not found, scraping Booth.pm...');
 
-      // Booth.pmのページからHTMLコンテンツを取得 (元のURLを使用)
-      const response = await fetch(url); // 元のURLでフェッチ
+      // Booth.pmのページからHTMLコンテンツを取得
+      // サブドメインを含むURLの場合は正規化されたURLを使用
+      const subdomainRegex = /^https:\/\/[a-zA-Z0-9-]+\.booth\.pm\//;
+      const fetchUrl = subdomainRegex.test(url) ? boothJpUrl : url; // サブドメインがあれば正規化URL、なければ元のURLを使用
+
+      const response = await fetch(fetchUrl); // 適切なURLでフェッチ
       if (!response.ok) {
         return NextResponse.json({ message: `Booth.pmからの情報取得に失敗しました。ステータスコード: ${response.status}` }, { status: response.status });
       }
