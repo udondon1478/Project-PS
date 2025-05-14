@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { Product, ProductImage, Tag, ProductTag } from '@prisma/client';
+
 
 export async function GET() {
   try {
@@ -31,17 +31,11 @@ export async function GET() {
       },
     });
 
-    // Define a type for the product data with included relations
-    type ProductWithDetails = Product & {
-      images: { imageUrl: string }[];
-      productTags: (ProductTag & { tag: { name: string } })[];
-    };
-
     // Format the response data
-    const formattedProducts = products.map((product: ProductWithDetails) => ({
+    const formattedProducts = products.map((product) => ({
       id: product.id,
       title: product.title,
-      price: product.price,
+      lowPrice: product.lowPrice, // price を lowPrice に変更
       mainImageUrl: product.images.length > 0 ? product.images[0].imageUrl : null,
       tags: product.productTags.map((pt) => pt.tag.name),
     }));

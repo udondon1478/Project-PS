@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 interface Product {
   id: string;
   title: string;
-  price: number;
+  lowPrice: number; // price を lowPrice に変更
   mainImageUrl: string | null;
   tags: string[];
 }
@@ -93,7 +93,7 @@ export default function Home() {
                   </span>
                 ))}
               </div>
-              <p className="text-gray-700 font-bold">¥{product.price.toLocaleString()}</p>
+              <p className="text-gray-700 font-bold">¥{product.lowPrice.toLocaleString()}</p> {/* price を lowPrice に変更 */}
             </div>
           </div>
         ))}
