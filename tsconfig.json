@@ -20,7 +20,9 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
-      "@/lib/*": ["./lib/*"] // @/lib のパスエイリアスを追加
+      "@/lib_shadcn/*": ["./src/lib/*"],
+      "@/lib_prisma/*": ["./lib/*"],
+      "@/components/*": ["./src/components/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

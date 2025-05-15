@@ -1,7 +1,7 @@
 import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
-import { PrismaAdapter } from "@auth/prisma-adapter"
-import { prisma } from "@/lib/prisma" // lib/prisma.ts からシングルトンインスタンスをインポート
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { prisma } from "@/lib_prisma/prisma" // lib/prisma.ts からシングルトンインスタンスをインポート
 
 export const runtime = 'nodejs'; // Edge RuntimeでのPrismaClientエラーを回避
 
