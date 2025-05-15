@@ -16,12 +16,12 @@ export async function POST(request: Request) {
   try {
     const { productInfo, tags } = await request.json(); // 商品情報とタグ情報を受け取る
     //console.log('Received productInfo:', productInfo); // ここにログを追加
-    const { boothJpUrl, boothEnUrl, title, description, publishedAt, sellerName, sellerUrl, sellerIconUrl, images, offers } = productInfo;
+    const { boothJpUrl, boothEnUrl, title, description, lowPrice, highPrice, publishedAt, sellerName, sellerUrl, sellerIconUrl, images, variations } = productInfo;
 
     
         // 必須フィールドのバリデーション
-        if (!productInfo || !productInfo.boothJpUrl || !productInfo.title || !productInfo.sellerUrl || !tags) {
-          return NextResponse.json({ message: "必須情報が不足しています。（販売者情報を含む）" }, { status: 400 });
+        if (!productInfo || !productInfo.boothJpUrl || !productInfo.title || !productInfo.sellerUrl || !tags || !variations) {
+          return NextResponse.json({ message: "必須情報が不足しています。（販売者情報、バリエーション情報を含む）" }, { status: 400 });
         }
     
         // タグが存在するか確認し、存在しない場合は作成
@@ -69,8 +69,8 @@ export async function POST(request: Request) {
             boothEnUrl: boothEnUrl,
             title: title,
             description: description,
-            lowPrice: offers && offers['@type'] === 'Offer' && offers.price ? parseFloat(offers.price) || 0 : (productInfo && productInfo.lowPrice ? parseFloat(productInfo.lowPrice) || 0 : 0),
-            highPrice: offers && offers['@type'] === 'Offer' ? parseFloat(offers.price) || 0 : (productInfo && productInfo.highPrice ? parseFloat(productInfo.highPrice) || 0 : 0),
+            lowPrice: lowPrice, // lowPriceを直接使用
+            highPrice: highPrice, // highPriceを直接使用
             publishedAt: new Date(publishedAt), // Dateオブジェクトに変換
             user: { // ユーザーリレーションを接続
               connect: { id: userId }
@@ -95,6 +95,15 @@ export async function POST(request: Request) {
                 userId: userId, // タグを付けたユーザーとして登録ユーザーIDを使用
               })),
             },
+            variations: { // バリエーション情報を保存
+              create: variations.map((variation: { name: string; price: number; type: string; order: number; isMain: boolean }) => ({
+                name: variation.name,
+                price: variation.price,
+                type: variation.type,
+                order: variation.order,
+                isMain: variation.isMain,
+              })),
+            },
           },
           include: {
             images: true,
@@ -103,6 +112,7 @@ export async function POST(request: Request) {
                 tag: true, // 関連するタグ情報も取得
               },
             },
+            variations: true, // バリエーション情報もインクルード
           },
         });
     

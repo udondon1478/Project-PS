@@ -28,6 +28,11 @@ export async function GET() {
           },
           take: 7, // Limit to 7 tags
         },
+        variations: { // バリエーション情報を含める
+          orderBy: {
+            order: 'asc', // 表示順序でソート
+          },
+        },
       },
     });
 
@@ -35,9 +40,15 @@ export async function GET() {
     const formattedProducts = products.map((product) => ({
       id: product.id,
       title: product.title,
-      lowPrice: product.lowPrice, // price を lowPrice に変更
+      lowPrice: product.lowPrice,
+      highPrice: product.highPrice, // highPriceも追加
       mainImageUrl: product.images.length > 0 ? product.images[0].imageUrl : null,
       tags: product.productTags.map((pt) => pt.tag.name),
+      variations: product.variations.map(v => ({ // バリエーション情報を追加
+        id: v.id,
+        name: v.name,
+        price: v.price,
+      })),
     }));
 
     return NextResponse.json(formattedProducts);

@@ -169,6 +169,25 @@ export async function POST(request: Request) {
         }
       });
 
+      // バリエーション情報を取得
+      const variations: { name: string; price: number; type: string; order: number; isMain: boolean }[] = [];
+
+      // HTMLからバリエーション情報を抽出
+      $('.variations .variation-item').each((i, elem) => {
+        const name = $(elem).find('.variation-name').text().trim();
+        const priceText = $(elem).find('.variation-price').text().trim();
+        const price = parseFloat(priceText.replace('¥', '').replace(',', '').trim());
+        const type = $(elem).find('.u-tpg-caption1').text().trim();
+
+        variations.push({
+          name,
+          price,
+          type,
+          order: i,
+          isMain: i === 0 // 最初のバリエーションをメインとする
+        });
+      });
+
       // データベースには保存せず、フロントエンドに返す
       return NextResponse.json({
         status: 'new',
@@ -188,6 +207,7 @@ export async function POST(request: Request) {
             isMain: index === 0,
             order: index,
           })),
+          variations: variations // バリエーション情報を追加
         },
         message: '新しい商品が見つかりました。タグを入力して登録してください。'
       }, { status: 200 });

@@ -2,13 +2,59 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
 interface Product {
   id: string;
   title: string;
   lowPrice: number; // price を lowPrice に変更
+  highPrice: number; // highPriceを追加
   mainImageUrl: string | null;
   tags: string[];
+  variations?: { // variationsを追加
+    id: string;
+    name: string;
+    price: number;
+  }[];
 }
+
+// 価格表示コンポーネント
+const PriceDisplay = ({ product }: { product: Product }) => {
+  const hasMultipleVariations = product.highPrice > product.lowPrice;
+
+  if (!hasMultipleVariations || !product.variations || product.variations.length === 0) {
+    return <p className="text-gray-700 font-bold">¥{product.lowPrice.toLocaleString()}</p>;
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="text-gray-700 font-bold flex items-center cursor-pointer">
+          ¥{product.lowPrice.toLocaleString()}
+          {' ~ '}¥{product.highPrice.toLocaleString()}
+          <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        {product.variations.map((variation) => (
+          <DropdownMenuItem key={variation.id}>
+            <div className="flex flex-col">
+              <div className="font-medium">{variation.name}</div>
+              <div className="text-gray-700">¥{variation.price.toLocaleString()}</div>
+            </div>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -93,7 +139,7 @@ export default function Home() {
                   </span>
                 ))}
               </div>
-              <p className="text-gray-700 font-bold">¥{product.lowPrice.toLocaleString()}</p> {/* price を lowPrice に変更 */}
+              <PriceDisplay product={product} /> {/* PriceDisplayコンポーネントを使用 */}
             </div>
           </div>
         ))}

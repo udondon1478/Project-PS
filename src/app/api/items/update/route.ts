@@ -129,6 +129,25 @@ export async function POST(request: Request) {
       }
     });
 
+    // バリエーション情報を取得
+    const variations: { name: string; price: number; type: string; order: number; isMain: boolean }[] = [];
+
+    // HTMLからバリエーション情報を抽出
+    $('.variations .variation-item').each((i, elem) => {
+      const name = $(elem).find('.variation-name').text().trim();
+      const priceText = $(elem).find('.variation-price').text().trim();
+      const price = parseFloat(priceText.replace('¥', '').replace(',', '').trim());
+      const type = $(elem).find('.u-tpg-caption1').text().trim();
+
+      variations.push({
+        name,
+        price,
+        type,
+        order: i,
+        isMain: i === 0 // 最初のバリエーションをメインとする
+      });
+    });
+
     // データベースの商品情報を更新
     const updatedProduct = await prisma.product.update({
       where: { id: productId },
@@ -149,6 +168,16 @@ export async function POST(request: Request) {
             order: index, // 表示順序を設定
           })),
         },
+        variations: { // 既存のバリエーションを削除し、新しいバリエーションを作成
+          deleteMany: {}, // 既存の関連バリエーションを全て削除
+          create: variations.map(variation => ({
+            name: variation.name,
+            price: variation.price,
+            type: variation.type,
+            order: variation.order,
+            isMain: variation.isMain,
+          })),
+        },
       },
       include: {
         images: true,
@@ -157,6 +186,7 @@ export async function POST(request: Request) {
             tag: true,
           },
         },
+        variations: true, // バリエーション情報もインクルード
       },
     });
 

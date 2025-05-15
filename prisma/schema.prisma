@@ -94,9 +94,28 @@ model Product {
   views        ProductView[] // 商品の閲覧履歴
   tagEditHistory  TagEditHistory[] // 商品のタグ編集履歴
 
+  variations  ProductVariation[] // 商品バリエーション
 
   @@index([userId])
   @@index([viewCount]) // 閲覧数でのソート用
+}
+
+// 商品バリエーションテーブル
+model ProductVariation {
+  id          String    @id @default(cuid())
+  productId   String
+  name        String    // バリエーション名（例：「【PC】デルタフレア - DELTAFLAIR」）
+  price       Float     // バリエーション価格
+  type        String    @default("download") // 商品タイプ（例：「ダウンロード商品」）
+  order       Int       @default(0) // 表示順序
+  isMain      Boolean   @default(false) // メインバリエーションフラグ
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([productId, order]) // 商品ごとの順序付きバリエーション取得用
 }
 
 // 商品所有テーブル
