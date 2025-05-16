@@ -52,10 +52,19 @@ export default function ProductSearch() {
 
   // Fetch tag suggestions based on input
   useEffect(() => {
+    console.log("useEffect for fetching tags is running"); // デバッグ出力：フック実行開始
     const fetchTags = async () => {
-      const response = await fetch('/api/tags');
-      const data = await response.json();
-      setAllTags(data);
+      try {
+        const response = await fetch('/api/tags');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log("Fetched allTags successfully:", data); // デバッグ出力：成功
+        setAllTags(data);
+      } catch (error) {
+        console.error("Error fetching allTags:", error); // デバッグ出力：失敗
+      }
     };
 
     fetchTags();
@@ -67,9 +76,11 @@ export default function ProductSearch() {
         const filtered = allTags.filter(tag =>
           tag?.toLowerCase().includes(query.toLowerCase()) && !selectedTags.includes(tag)
         );
+        console.log("Tag suggestions for query:", query, filtered); // デバッグ出力
         setTagSuggestions(filtered);
         setIsSuggestionsVisible(true);
       } else {
+        console.log("Clearing tag suggestions for query:", query); // デバッグ出力
         setTagSuggestions([]);
         setIsSuggestionsVisible(false);
       }
@@ -137,16 +148,13 @@ export default function ProductSearch() {
       if (isSuggestionsVisible && tagSuggestions.length > 0) {
         handleAddTag(tagSuggestions[0]); // 最上位の候補を追加
       } else if (searchQuery) { // 候補がない、または表示されていないが、入力がある場合
-        // 完全一致するタグがあれば追加、なければ検索実行
-        // allTags から検索するように変更 (tagSuggestions は空か非表示のため)
         const exactMatch = allTags.find(tag =>
           tag.toLowerCase() === searchQuery.toLowerCase() && !selectedTags.includes(tag)
         );
         if (exactMatch) {
-          handleAddTag(exactMatch);
+          handleAddTag(exactMatch); // 完全一致があればそれを追加
         } else {
-          // 一致するタグがない場合は、現在の入力内容を無視して検索を実行
-          handleSearch();
+          handleAddTag(searchQuery); // 完全一致がなければ入力値をタグとして追加
         }
       } else { // 候補がなく、入力もない場合
          handleSearch(); // 現在の選択タグで検索
