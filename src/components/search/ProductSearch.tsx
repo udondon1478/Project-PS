@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Filter, X } from 'lucide-react';
@@ -35,7 +35,6 @@ const categories = ["アバター", "衣装", "アクセサリー", "ワール�
 const priceRanges = ["無料", "¥1-¥999", "¥1000-¥2999", "¥3000-¥4999", "¥5000以上"];
 
 export default function ProductSearch() {
-  const [allTags, setAllTags] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
@@ -50,51 +49,37 @@ export default function ProductSearch() {
   const router = useRouter(); // useRouterを初期化
   const suggestionsRef = useRef<HTMLUListElement>(null);
 
-  // Fetch tag suggestions based on input
+  // Fetch tag suggestions based on input with debounce
   useEffect(() => {
-    console.log("useEffect for fetching tags is running"); // デバッグ出力：フック実行開始
-    const fetchTags = async () => {
+    if (searchQuery.length === 0) {
+      setTagSuggestions([]);
+      setIsSuggestionsVisible(false);
+      return;
+    }
+
+    const timerId = setTimeout(async () => {
       try {
-        const response = await fetch('/api/tags');
+        const response = await fetch(`/api/tags/search?query=${encodeURIComponent(searchQuery)}`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        console.log("Fetched allTags successfully:", data); // デバッグ出力：成功
-        setAllTags(data);
+        // APIはTagオブジェクトの配列を返すので、nameプロパティを抽出してフィルタリング
+        const filteredSuggestions = data
+          .map((tag: { name: string }) => tag.name) // nameプロパティを抽出
+          .filter((tagName: string) => !selectedTags.includes(tagName)); // 選択済みのタグを除外
+
+        setTagSuggestions(filteredSuggestions);
+        setIsSuggestionsVisible(filteredSuggestions.length > 0);
       } catch (error) {
-        console.error("Error fetching allTags:", error); // デバッグ出力：失敗
-      }
-    };
-
-    fetchTags();
-  }, []);
-
-  const debouncedSetTagSuggestions = useCallback(
-    (query: string) => {
-      if (query.length > 0) {
-        const filtered = allTags.filter(tag =>
-          tag?.toLowerCase().includes(query.toLowerCase()) && !selectedTags.includes(tag)
-        );
-        console.log("Tag suggestions for query:", query, filtered); // デバッグ出力
-        setTagSuggestions(filtered);
-        setIsSuggestionsVisible(true);
-      } else {
-        console.log("Clearing tag suggestions for query:", query); // デバッグ出力
+        console.error("Error fetching tag suggestions:", error);
         setTagSuggestions([]);
         setIsSuggestionsVisible(false);
       }
-    },
-    [allTags, selectedTags]
-  );
-
-  useEffect(() => {
-    const timerId = setTimeout(() => {
-      debouncedSetTagSuggestions(searchQuery);
-    }, 300);
+    }, 300); // 300ms debounce
 
     return () => clearTimeout(timerId);
-  }, [searchQuery, debouncedSetTagSuggestions, allTags, selectedTags]);
+  }, [searchQuery, selectedTags]); // selectedTagsも依存配列に追加
 
   // Handle clicking outside the search input and suggestions list
   useEffect(() => {
@@ -142,14 +127,19 @@ export default function ProductSearch() {
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
+    // 半角スペースでタグを確定
+    if (event.key === ' ' && searchQuery.trim() !== '') {
+      event.preventDefault(); // スペースが入力フィールドに入らないようにする
+      handleAddTag(searchQuery.trim()); // 入力値をタグとして追加
+    } else if (event.key === 'Enter') {
        event.preventDefault();
       // 候補が表示されていて、候補リストに要素がある場合
       if (isSuggestionsVisible && tagSuggestions.length > 0) {
         handleAddTag(tagSuggestions[0]); // 最上位の候補を追加
       } else if (searchQuery) { // 候補がない、または表示されていないが、入力がある場合
-        const exactMatch = allTags.find(tag =>
-          tag.toLowerCase() === searchQuery.toLowerCase() && !selectedTags.includes(tag)
+        // APIから取得したタグ候補の中に完全一致があるか確認
+        const exactMatch = tagSuggestions.find(tag =>
+          tag.toLowerCase() === searchQuery.toLowerCase()
         );
         if (exactMatch) {
           handleAddTag(exactMatch); // 完全一致があればそれを追加
