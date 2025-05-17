@@ -86,15 +86,8 @@ model Product {
   sellerId    String? // 販売者モデルへの外部キー (Optionalに変更)
   seller      Seller?    @relation(fields: [sellerId], references: [id]) // 販売者モデルとのリレーション (Optionalに変更)
 
-// 新しい属性の関連付け
-  ageRatingId String?
-  ageRating   AgeRating? @relation(fields: [ageRatingId], references: [id])
-
-  categoryId String?
-  category   Category? @relation(fields: [categoryId], references: [id])
-  // 画像関連
-  images       ProductImage[] // 複数の商品画像
-
+// 画像関連
+images       ProductImage[] // 複数の商品画像
   productTags  ProductTag[]  // 商品に付けられたタグ
   likes        ProductLike[] // 商品に対するいいね
   views        ProductView[] // 商品の閲覧履歴
@@ -199,10 +192,11 @@ model Tag {
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
   productTags  ProductTag[]     // このタグが付けられた商品
+  type     String    @default("general") // タグの種類 (例: 'age_rating', 'product_category', 'feature', 'general')
   category  String    // カテゴリ (例: 'character', 'outfit')
   color     String    // タグの色 (例: '#FF0000')
   count     Int       @default(0) // タグの使用回数 (将来的な利用のため)
-
+ 
   // タグの翻訳関係
   sourceTranslations      TagTranslation[] @relation("SourceTag")
   translatedTranslations  TagTranslation[] @relation("TranslatedTag")
@@ -349,20 +343,6 @@ model Seller {
   sellerUrl String    @unique // 販売者サイトのURL
   iconUrl   String? // アイコン画像URLは必須でなければOptionalにする
   products  Product[] // この販売者が販売する商品リスト
-
+ 
   @@map("sellers") // MongoDBの場合のコレクション名
-}
-
-// 対象年齢モデル
-model AgeRating {
-  id     String    @id @default(cuid())
-  name   String    @unique // 例: '全年齢', 'R-15', 'R-18', 'NSFW'
-  products Product[]
-}
-
-// カテゴリーモデル
-model Category {
-  id     String    @id @default(cuid())
-  name   String    @unique // 例: 'アバター', '衣装', 'アクセサリー'
-  products Product[]
 }

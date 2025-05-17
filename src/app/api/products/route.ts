@@ -7,13 +7,24 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const tagsParam = searchParams.get('tags');
-    const ageRatingId = searchParams.get('ageRatingId');
-    const categoryName = searchParams.get('categoryName'); // カテゴリー名を検索
+    const ageRatingTagId = searchParams.get('ageRatingTagId'); // 対象年齢タグIDを取得
+    const categoryTagId = searchParams.get('categoryTagId'); // カテゴリータグIDを取得
+    const featureTagIdsParam = searchParams.get('featureTagIds'); // 主要機能タグIDを取得
+ 
     const tagNames = tagsParam ? tagsParam.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : [];
-
+    const featureTagIds = featureTagIdsParam ? featureTagIdsParam.split(',').map(id => id.trim()).filter(id => id.length > 0) : [];
+ 
+    const tagIdsToFilter = [...featureTagIds];
+    if (ageRatingTagId) {
+      tagIdsToFilter.push(ageRatingTagId);
+    }
+    if (categoryTagId) {
+      tagIdsToFilter.push(categoryTagId);
+    }
+ 
     const whereConditions: any[] = [];
-
-    // タグによるフィルタリング
+ 
+    // タグ名によるフィルタリング (手動入力されたタグ)
     if (tagNames.length > 0) {
       whereConditions.push({
         AND: tagNames.map(tagName => ({
@@ -27,36 +38,25 @@ export async function GET(request: Request) {
         }))
       });
     }
-
-    // 対象年齢によるフィルタリング
-    if (ageRatingId) {
-      whereConditions.push({
-        ageRatingId: ageRatingId
-      });
+ 
+    // タグIDによるフィルタリング (対象年齢、カテゴリー、主要機能)
+    if (tagIdsToFilter.length > 0) {
+       whereConditions.push({
+         AND: tagIdsToFilter.map(tagId => ({
+           productTags: {
+             some: {
+               tagId: tagId
+             }
+           }
+         }))
+       });
     }
-
-    // カテゴリーによるフィルタリング (カテゴリー名からIDを検索)
-    if (categoryName) {
-      const category = await prisma.category.findUnique({
-        where: { name: categoryName },
-        select: { id: true }, // IDのみ取得
-      });
-
-      if (category) {
-        whereConditions.push({
-          categoryId: category.id
-        });
-      } else {
-        // 指定されたカテゴリー名が見つからない場合は、その条件ではフィルタリングしない
-        console.warn(`Category with name "${categoryName}" not found.`);
-      }
-    }
-
+ 
     // 検索条件が何も指定されていない場合は空の結果を返す
     if (whereConditions.length === 0) {
        return NextResponse.json([]);
     }
-
+ 
     const products = await prisma.product.findMany({
       where: {
         AND: whereConditions

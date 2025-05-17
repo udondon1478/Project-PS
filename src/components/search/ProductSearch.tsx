@@ -29,9 +29,6 @@ import { useRouter } from 'next/navigation'; // useRouterを追加
 // const allTags: string[] = []; // 重複定義のためコメントアウト
 
 // Define options for dropdowns
-const ageRatings = ["全年齢", "R-15", "R-18"];
-const features = ["Quest対応", "PhysBone対応", "Modular Avatar対応", "SDK3", "SDK2"];
-const categories = ["アバター", "衣装", "アクセサリー", "ワールド", "ギミック", "ツール", "素材", "その他"];
 const priceRanges = ["無料", "¥1-¥999", "¥1000-¥2999", "¥3000-¥4999", "¥5000以上"];
 
 export default function ProductSearch() {
@@ -48,6 +45,50 @@ export default function ProductSearch() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter(); // useRouterを初期化
   const suggestionsRef = useRef<HTMLUListElement>(null);
+
+  // 新しい状態変数を追加
+  const [ageRatingTags, setAgeRatingTags] = useState<{ id: string; name: string }[]>([]);
+  const [categoryTags, setCategoryTags] = useState<{ id: string; name: string }[]>([]);
+  const [featureTags, setFeatureTags] = useState<{ id: string; name: string }[]>([]);
+
+  // 対象年齢、カテゴリー、主要機能タグの選択肢をフェッチ
+  useEffect(() => {
+    const fetchTagsByType = async () => {
+      try {
+        // 対象年齢タグを取得
+        const ageRatingsResponse = await fetch('/api/tags/by-type?type=age_rating');
+        const ageRatingData = await ageRatingsResponse.json();
+        if (ageRatingsResponse.ok) {
+          setAgeRatingTags(ageRatingData);
+        } else {
+          console.error('Failed to fetch age rating tags:', ageRatingData.message);
+        }
+
+        // カテゴリータグを取得
+        const categoriesResponse = await fetch('/api/tags/by-type?type=product_category');
+        const categoryData = await categoriesResponse.json();
+        if (categoriesResponse.ok) {
+          setCategoryTags(categoryData);
+        } else {
+          console.error('Failed to fetch category tags:', categoryData.message);
+        }
+
+        // 主要機能タグを取得
+        const featuresResponse = await fetch('/api/tags/by-type?type=feature');
+        const featureData = await featuresResponse.json();
+        if (featuresResponse.ok) {
+          setFeatureTags(featureData);
+        } else {
+          console.error('Failed to fetch feature tags:', featureData.message);
+        }
+
+      } catch (error) {
+        console.error('Error fetching tags by type:', error);
+      }
+    };
+
+    fetchTagsByType();
+  }, []); // コンポーネントマウント時に一度だけ実行
 
   // Fetch tag suggestions based on input with debounce
   useEffect(() => {
@@ -105,8 +146,10 @@ export default function ProductSearch() {
   const handleAddTag = (tag: string) => {
     if (!selectedTags.includes(tag)) {
       // Ensure only one age rating tag is selected at a time
-      if (ageRatings.includes(tag)) {
-        const existingAgeTag = selectedTags.find(t => ageRatings.includes(t));
+      // ageRatingTags配列に含まれるタグ名を持つタグが既にあれば削除してから追加
+      const ageRatingTagNames = ageRatingTags.map(tag => tag.name);
+      if (ageRatingTagNames.includes(tag)) {
+        const existingAgeTag = selectedTags.find(t => ageRatingTagNames.includes(t));
         if (existingAgeTag) {
           setSelectedTags(prev => [...prev.filter(t => t !== existingAgeTag), tag]);
         } else {
@@ -191,7 +234,7 @@ export default function ProductSearch() {
   };
 
   // Helper to get the currently selected age rating tag
-  const getCurrentAgeTag = () => selectedTags.find(tag => ageRatings.includes(tag));
+  const getCurrentAgeTag = () => selectedTags.find(tag => ageRatingTags.map(t => t.name).includes(tag));
   // Helper to check if a specific feature tag is selected
   const isFeatureTagSelected = (feature: string) => selectedTags.includes(feature);
 
@@ -248,16 +291,16 @@ export default function ProductSearch() {
             <DropdownMenuContent>
               <DropdownMenuLabel>対象年齢を選択</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {ageRatings.map(rating => (
-                <DropdownMenuItem key={rating} onSelect={() => handleAddTag(rating)} disabled={selectedTags.includes(rating)}>
-                  {rating}
+              {ageRatingTags.map(tag => ( // ageRatingTagsを使用
+                <DropdownMenuItem key={tag.id} onSelect={() => handleAddTag(tag.name)} disabled={selectedTags.includes(tag.name)}>
+                  {tag.name}
                 </DropdownMenuItem>
               ))}
                {getCurrentAgeTag() && (
-                 <>
+                <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onSelect={() => handleRemoveTag(getCurrentAgeTag()!)} className="text-red-600">クリア</DropdownMenuItem>
-                 </>
+                </>
                )}
             </DropdownMenuContent>
           </DropdownMenu>
@@ -272,13 +315,13 @@ export default function ProductSearch() {
             <DropdownMenuContent>
               <DropdownMenuLabel>主要機能を選択/解除</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {features.map(feature => (
+              {featureTags.map(tag => ( // featureTagsを使用
                 <DropdownMenuItem
-                  key={feature}
-                  onSelect={() => isFeatureTagSelected(feature) ? handleRemoveTag(feature) : handleAddTag(feature)}
-                  className={`${isFeatureTagSelected(feature) ? 'bg-accent' : ''}`} // Highlight selected
+                  key={tag.id}
+                  onSelect={() => isFeatureTagSelected(tag.name) ? handleRemoveTag(tag.name) : handleAddTag(tag.name)}
+                  className={`${isFeatureTagSelected(tag.name) ? 'bg-accent' : ''}`} // Highlight selected
                 >
-                  {feature} {isFeatureTagSelected(feature) ? <X size={14} className="ml-auto" /> : ''}
+                  {tag.name} {isFeatureTagSelected(tag.name) ? <X size={14} className="ml-auto" /> : ''}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -313,9 +356,9 @@ export default function ProductSearch() {
                          </Button>
                        </DropdownMenuTrigger>
                        <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
-                         {ageRatings.map(rating => (
-                           <DropdownMenuItem key={rating} onSelect={() => handleAddTag(rating)} disabled={selectedTags.includes(rating)} className="text-sm">
-                             {rating}
+                         {ageRatingTags.map(tag => ( // ageRatingTagsを使用
+                           <DropdownMenuItem key={tag.id} onSelect={() => handleAddTag(tag.name)} disabled={selectedTags.includes(tag.name)} className="text-sm">
+                             {tag.name}
                            </DropdownMenuItem>
                          ))}
                          {getCurrentAgeTag() && (
@@ -331,15 +374,15 @@ export default function ProductSearch() {
                      <h4 className="font-medium mb-2 text-sm">主要機能</h4>
                      {/* Use buttons for multi-select in mobile sheet */}
                      <div className="flex flex-wrap gap-2">
-                        {features.map(feature => (
+                        {featureTags.map(tag => ( // featureTagsを使用
                             <Button
-                                key={feature}
-                                variant={isFeatureTagSelected(feature) ? 'default' : 'outline'}
+                                key={tag.id}
+                                variant={isFeatureTagSelected(tag.name) ? 'default' : 'outline'}
                                 size="sm"
-                                onClick={() => isFeatureTagSelected(feature) ? handleRemoveTag(feature) : handleAddTag(feature)}
+                                onClick={() => isFeatureTagSelected(tag.name) ? handleRemoveTag(tag.name) : handleAddTag(tag.name)}
                                 className="text-xs"
                             >
-                                {feature}
+                                {tag.name}
                             </Button>
                         ))}
                      </div>
@@ -358,9 +401,9 @@ export default function ProductSearch() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
-                      {categories.map(cat => (
-                        <DropdownMenuItem key={cat} onSelect={() => handleDetailedFilterChange('category', cat)} className="text-sm">
-                          {cat}
+                      {categoryTags.map(tag => ( // categoryTagsを使用
+                        <DropdownMenuItem key={tag.id} onSelect={() => handleDetailedFilterChange('category', tag.name)} className="text-sm">
+                          {tag.name}
                         </DropdownMenuItem>
                       ))}
                       {detailedFilters.category && (
@@ -403,7 +446,7 @@ export default function ProductSearch() {
             <SheetFooter className="mt-auto pt-4 border-t">
                <Button variant="ghost" onClick={clearAllTagsAndFilters} className="mr-auto">すべてクリア</Button>
                <SheetClose asChild>
-                 <Button onClick={applyFiltersAndSearch}>フィルターを適用</Button>
+                <Button onClick={applyFiltersAndSearch}>フィルターを適用</Button>
                </SheetClose>
             </SheetFooter>
           </SheetContent>

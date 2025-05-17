@@ -29,12 +29,13 @@ export default function RegisterItemPage() {
   const [manualTags, setManualTags] = useState<string[]>([]); // 新規登録時の手動タグ
   const [tagInput, setTagInput] = useState(''); // タグ入力フィールド
   const [tagSuggestions, setTagSuggestions] = useState<string[]>([]); // タグ候補
-  const [ageRatings, setAgeRatings] = useState<{ id: string; name: string }[]>([]); // 対象年齢の選択肢
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]); // カテゴリーの選択肢
-  const [selectedAgeRating, setSelectedAgeRating] = useState<string>(''); // 選択された対象年齢
-  const [selectedCategory, setSelectedCategory] = useState<string>(''); // 選択されたカテゴリー
+  const [ageRatingTags, setAgeRatingTags] = useState<{ id: string; name: string }[]>([]); // 対象年齢タグの選択肢
+  const [categoryTags, setCategoryTags] = useState<{ id: string; name: string }[]>([]); // カテゴリータグの選択肢
+  const [featureTags, setFeatureTags] = useState<{ id: string; name: string }[]>([]); // 主要機能タグの選択肢
+  const [selectedAgeRatingTagId, setSelectedAgeRatingTagId] = useState<string>(''); // 選択された対象年齢タグID
+  const [selectedCategoryTagId, setSelectedCategoryTagId] = useState<string>(''); // 選択されたカテゴリータグID
   const isLoading = status === 'loading'; // ローディング状態を変数で管理
-
+ 
   const handleFetchProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('loading');
@@ -128,6 +129,8 @@ export default function RegisterItemPage() {
         body: JSON.stringify({
           productInfo: productData, // Booth.pmから取得した情報
           tags: manualTags, // ユーザーが手動入力したタグ
+          ageRatingTagId: selectedAgeRatingTagId, // 対象年齢タグIDを追加
+          categoryTagId: selectedCategoryTagId, // カテゴリータグIDを追加
         }),
       });
 
@@ -150,43 +153,60 @@ export default function RegisterItemPage() {
     }
   };
 
-  // 対象年齢とカテゴリーの選択肢をフェッチ
+  // 対象年齢、カテゴリー、主要機能タグの選択肢をフェッチ
   useEffect(() => {
-    const fetchAttributes = async () => {
+    const fetchTagsByType = async () => {
       try {
-        const ageRatingsResponse = await fetch('/api/age-ratings');
-        const ageRatingsData = await ageRatingsResponse.json();
+        // 対象年齢タグを取得
+        const ageRatingsResponse = await fetch('/api/tags/by-type?type=age_rating');
+        const ageRatingData = await ageRatingsResponse.json();
         if (ageRatingsResponse.ok) {
-          console.log('Fetched age ratings data:', ageRatingsData); // ログを追加
-          setAgeRatings(ageRatingsData);
+          console.log('Fetched age rating tags:', ageRatingData);
+          setAgeRatingTags(ageRatingData);
         } else {
-          console.error('Failed to fetch age ratings:', ageRatingsData.message);
+          console.error('Failed to fetch age rating tags:', ageRatingData.message);
         }
  
-        const categoriesResponse = await fetch('/api/categories');
-        const categoriesData = await categoriesResponse.json();
+        // カテゴリータグを取得
+        const categoriesResponse = await fetch('/api/tags/by-type?type=product_category');
+        const categoryData = await categoriesResponse.json();
         if (categoriesResponse.ok) {
-          console.log('Fetched categories data:', categoriesData); // ログを追加
-          setCategories(categoriesData);
+          console.log('Fetched category tags:', categoryData);
+          setCategoryTags(categoryData);
         } else {
-          console.error('Failed to fetch categories:', categoriesData.message);
+          console.error('Failed to fetch category tags:', categoryData.message);
         }
+ 
+        // 主要機能タグを取得
+        const featuresResponse = await fetch('/api/tags/by-type?type=feature');
+        const featureData = await featuresResponse.json();
+        if (featuresResponse.ok) {
+          console.log('Fetched feature tags:', featureData);
+          setFeatureTags(featureData);
+        } else {
+          console.error('Failed to fetch feature tags:', featureData.message);
+        }
+ 
       } catch (error) {
-        console.error('Error fetching attributes:', error);
+        console.error('Error fetching tags by type:', error);
       }
     };
  
-    fetchAttributes();
+    fetchTagsByType();
   }, []); // コンポーネントマウント時に一度だけ実行
  
-  // ageRatingsとcategoriesの状態を確認するログ
+  // 状態を確認するログ (必要に応じて残す)
   useEffect(() => {
-    console.log('Current ageRatings state:', ageRatings);
-  }, [ageRatings]);
+    console.log('Current ageRatingTags state:', ageRatingTags);
+  }, [ageRatingTags]);
  
   useEffect(() => {
-    console.log('Current categories state:', categories);
-  }, [categories]);
+    console.log('Current categoryTags state:', categoryTags);
+  }, [categoryTags]);
+ 
+  useEffect(() => {
+    console.log('Current featureTags state:', featureTags);
+  }, [featureTags]);
 
   return (
     <div style={{ padding: '20px' }}>
@@ -287,18 +307,18 @@ export default function RegisterItemPage() {
             <select
               id="ageRating"
               className="w-full px-3 py-2 border rounded-md"
-              value={selectedAgeRating}
-              onChange={(e) => setSelectedAgeRating(e.target.value)}
+              value={selectedAgeRatingTagId}
+              onChange={(e) => setSelectedAgeRatingTagId(e.target.value)}
             >
               <option value="">選択してください</option>
-              {ageRatings.map((rating) => (
-                <option key={rating.id} value={rating.id}>
-                  {rating.name}
+              {ageRatingTags.map((tag: { id: string; name: string }) => ( // 型アノテーションを追加
+                <option key={tag.id} value={tag.id}>
+                  {tag.name}
                 </option>
               ))}
             </select>
           </div>
-
+ 
           {/* カテゴリー選択 */}
           <div className="mt-4">
             <label htmlFor="category" className="block text-lg font-semibold mb-1">
@@ -307,22 +327,45 @@ export default function RegisterItemPage() {
             <select
               id="category"
               className="w-full px-3 py-2 border rounded-md"
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
+              value={selectedCategoryTagId}
+              onChange={(e) => setSelectedCategoryTagId(e.target.value)}
             >
               <option value="">選択してください</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
+              {categoryTags.map((tag: { id: string; name: string }) => ( // 型アノテーションを追加
+                <option key={tag.id} value={tag.id}>
+                  {tag.name}
                 </option>
               ))}
             </select>
           </div>
-
+ 
+          {/* 主要機能タグ選択 */}
+          <div className="mt-4">
+            <label className="block text-lg font-semibold mb-1">
+              主要機能:
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {featureTags.map((tag) => (
+                <button
+                  key={tag.id}
+                  type="button" // ボタンのデフォルトのsubmitを防ぐ
+                  onClick={() => {
+                    if (!manualTags.includes(tag.name)) {
+                      setManualTags([...manualTags, tag.name]); // タグをリストに追加
+                    }
+                  }}
+                  className="px-3 py-1 border rounded-md text-sm hover:bg-gray-100"
+                >
+                  {tag.name}
+                </button>
+              ))}
+            </div>
+          </div>
+ 
           {/* タグ入力フォーム */}
           <div className="mt-4">
             <label htmlFor="manualTags" className="block text-lg font-semibold mb-1">
-              タグ:
+              その他のタグ:
             </label>
             <input
               type="text"

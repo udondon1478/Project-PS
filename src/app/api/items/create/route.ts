@@ -14,25 +14,44 @@ export async function POST(request: Request) {
   const userId = session.user.id;
 
   try {
-    const { productInfo, tags, ageRatingId, categoryId } = await request.json(); // 商品情報、タグ情報、対象年齢ID、カテゴリーIDを受け取る
+    const { productInfo, tags, ageRatingTagId, categoryTagId } = await request.json(); // 商品情報、タグ情報、対象年齢タグID、カテゴリータグIDを受け取る
     //console.log('Received productInfo:', productInfo); // ここにログを追加
     const { boothJpUrl, boothEnUrl, title, description, lowPrice, highPrice, publishedAt, sellerName, sellerUrl, sellerIconUrl, images, variations } = productInfo;
-
+ 
     
         // 必須フィールドのバリデーション
         if (!productInfo || !boothJpUrl || !title || !sellerUrl || !tags || !variations) {
           return NextResponse.json({ message: "必須情報が不足しています。（販売者情報、バリエーション情報を含む）" }, { status: 400 });
         }
     
+        // 受け取ったタグ名リストに、対象年齢タグIDとカテゴリータグIDに対応するタグ名を追加
+        const allTagNames = [...tags];
+        if (ageRatingTagId) {
+          const ageRatingTag = await prisma.tag.findUnique({ where: { id: ageRatingTagId }, select: { name: true } });
+          if (ageRatingTag) {
+            allTagNames.push(ageRatingTag.name);
+          }
+        }
+        if (categoryTagId) {
+          const categoryTag = await prisma.tag.findUnique({ where: { id: categoryTagId }, select: { name: true } });
+          if (categoryTag) {
+            allTagNames.push(categoryTag.name);
+          }
+        }
+ 
+        // 重複するタグ名を削除
+        const uniqueTagNames = Array.from(new Set(allTagNames));
+ 
         // タグが存在するか確認し、存在しない場合は作成
         const tagIds: string[] = [];
-        for (const tagName of tags) {
+        for (const tagName of uniqueTagNames) {
           const tag = await prisma.tag.upsert({
             where: { name: tagName },
             update: {}, // 存在する場合は何もしない
             create: {
               name: tagName,
               language: 'ja', // 仮に日本語とする。必要に応じて言語情報を追加
+              type: 'general', // デフォルトはgeneralとする。必要に応じて適切なtypeを設定
               category: 'other', // 仮にotherとする。必要に応じてカテゴリ情報を追加
               color: '#CCCCCC', // 仮の色
             },
@@ -79,17 +98,6 @@ export async function POST(request: Request) {
             ...(seller && {
               seller: {
                 connect: { id: seller.id }
-              }
-            }),
-            // 対象年齢とカテゴリーの関連付け
-            ...(ageRatingId && {
-              ageRating: {
-                connect: { id: ageRatingId }
-              }
-            }),
-            ...(categoryId && {
-              category: {
-                connect: { id: categoryId }
               }
             }),
             images: {

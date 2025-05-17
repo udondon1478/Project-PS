@@ -18,54 +18,61 @@ export async function POST(request: Request) {
   // const userId = session.user.id; // 更新処理では直接使用しないが、認証チェックのために取得
 
   try {
-    const { productId, ageRatingId, categoryId } = await request.json(); // 更新対象の商品ID、対象年齢ID、カテゴリーIDを受け取る
+    const { productId, ageRatingTagId, categoryTagId, tags } = await request.json(); // 更新対象の商品ID、対象年齢タグID、カテゴリータグID、手動タグを受け取る
  
     if (!productId) {
       return NextResponse.json({ message: "商品IDが不足しています。" }, { status: 400 });
     }
-
+ 
     // データベースから既存の商品情報を取得し、Booth.pmのURLを取得
     const existingProduct = await prisma.product.findUnique({
       where: { id: productId },
+      include: {
+        productTags: { // 既存のタグ情報を含める
+          select: {
+            tagId: true,
+          },
+        },
+      },
     });
-
+ 
     if (!existingProduct) {
       return NextResponse.json({ message: "指定された商品が見つかりません。" }, { status: 404 });
     }
-
+ 
     const boothUrl = existingProduct.boothJpUrl; // 日本語版URLを使用
-
+    
     // Booth.pmのページからHTMLコンテンツを取得
     const response = await fetch(boothUrl);
     if (!response.ok) {
       return NextResponse.json({ message: `Booth.pmからの情報取得に失敗しました。ステータスコード: ${response.status}` }, { status: response.status });
     }
     const html = await response.text();
-
+ 
     // cheerioでHTMLを解析
     const $ = cheerio.load(html);
-
+ 
     // Schema.orgのJSONデータを抽出・解析
     const schemaOrgData = $('script[type="application/ld+json"]').html();
     if (!schemaOrgData) {
       return NextResponse.json({ message: "ページから商品情報を取得できませんでした。（Schema.orgデータが見つかりません）" }, { status: 500 });
     }
-
+ 
     const productInfo = JSON.parse(schemaOrgData);
     console.log("Schema.org Data for update:", productInfo);
-
+ 
     // 必要な商品情報を抽出
     const title = productInfo.name || existingProduct.title; // 取得できない場合は既存の値を使用
     let description = '';
     let markdownDescription = '';
-
+ 
     // .main-info-column 内の .js-market-item-detail-description description クラスの中の p タグのテキストを抽出
     const mainDescriptionElements = $('.main-info-column .js-market-item-detail-description.description p');
     mainDescriptionElements.each((i, elem) => {
       const paragraphText = $(elem).text();
       markdownDescription += `${paragraphText}\n\n`; // 段落間に空行を追加
     });
-
+ 
     // .my-40 要素が存在する場合、その中の .shop__text を処理
     const my40Element = $('.my-40');
     if (my40Element.length) {
@@ -79,7 +86,7 @@ export async function POST(request: Request) {
           const headingLevel = parseInt(tagName.slice(1));
           markdownDescription += `${'#'.repeat(headingLevel)} ${headingText}\n\n`; // 見出しと内容の間に空行を追加
         }
-
+ 
         // shop__text の中にある p タグを抽出
         const paragraphElements = $(elem).find('p');
         paragraphElements.each((i, paragraphElem) => {
@@ -90,16 +97,16 @@ export async function POST(request: Request) {
         });
       });
     }
-
+ 
     description = markdownDescription.trim(); // 前後の空白を削除
     if (!description) {
         description = existingProduct.description || ''; // 取得できない場合は既存の値を使用
     }
-
-
+ 
+ 
     let lowPrice = existingProduct.lowPrice;
     let highPrice = existingProduct.highPrice;
-
+ 
     if (productInfo.offers) {
       if (Array.isArray(productInfo.offers)) {
         // 複数価格の場合
@@ -117,8 +124,8 @@ export async function POST(request: Request) {
     // Schema.orgデータにpublishedAtがないため、ここでは既存の値を使用
     // Schema.orgデータにpublishedAtがないため、ここでは既存の値を使用
     // 販売者情報はSchema.orgデータに含まれていないため、ここでは既存の値を使用
-
-
+ 
+ 
     // 複数の商品画像URLをHTMLから取得 (data-origin属性から取得)
     const imageUrls: string[] = [];
     // メイン画像とサムネイル画像の要素からdata-origin属性を取得
@@ -128,17 +135,17 @@ export async function POST(request: Request) {
         imageUrls.push(imageUrl);
       }
     });
-
+ 
     // バリエーション情報を取得
     const variations: { name: string; price: number; type: string; order: number; isMain: boolean }[] = [];
-
+ 
     // HTMLからバリエーション情報を抽出
     $('.variations .variation-item').each((i, elem) => {
       const name = $(elem).find('.variation-name').text().trim();
       const priceText = $(elem).find('.variation-price').text().trim();
       const price = parseFloat(priceText.replace('¥', '').replace(',', '').trim());
       const type = $(elem).find('.u-tpg-caption1').text().trim();
-
+ 
       variations.push({
         name,
         price,
@@ -147,7 +154,39 @@ export async function POST(request: Request) {
         isMain: i === 0 // 最初のバリエーションをメインとする
       });
     });
-
+ 
+    // 既存のタグIDを取得
+    const existingTagIds = existingProduct.productTags.map(pt => pt.tagId);
+ 
+    // 更新で受け取った対象年齢タグIDとカテゴリータグIDを既存のタグIDリストに追加
+    const tagIdsToConnect = [...existingTagIds];
+    if (ageRatingTagId && !tagIdsToConnect.includes(ageRatingTagId)) {
+      tagIdsToConnect.push(ageRatingTagId);
+    }
+    if (categoryTagId && !tagIdsToConnect.includes(categoryTagId)) {
+      tagIdsToConnect.push(categoryTagId);
+    }
+ 
+    // 手動で追加されたタグ名をタグIDに変換し、既存のタグIDリストに追加
+    if (tags && Array.isArray(tags)) {
+      for (const tagName of tags) {
+        const tag = await prisma.tag.upsert({
+          where: { name: tagName },
+          update: {},
+          create: {
+            name: tagName,
+            language: 'ja', // 仮に日本語とする。必要に応じて言語情報を追加
+            type: 'general', // デフォルトはgeneralとする。必要に応じて適切なtypeを設定
+            category: 'other', // 仮にotherとする。必要に応じてカテゴリ情報を追加
+            color: '#CCCCCC', // 仮の色
+          },
+        });
+        if (!tagIdsToConnect.includes(tag.id)) {
+          tagIdsToConnect.push(tag.id);
+        }
+      }
+    }
+ 
     // データベースの商品情報を更新
     const updatedProduct = await prisma.product.update({
       where: { id: productId },
@@ -160,13 +199,6 @@ export async function POST(request: Request) {
         // sellerName, // 販売者情報は更新しない
         // sellerUrl,
         // sellerIconUrl,
-        // 対象年齢とカテゴリーの更新
-        ...(ageRatingId !== undefined && {
-          ageRating: ageRatingId === null ? { disconnect: true } : { connect: { id: ageRatingId } }
-        }),
-        ...(categoryId !== undefined && {
-          category: categoryId === null ? { disconnect: true } : { connect: { id: categoryId } }
-        }),
         images: { // 既存の画像を削除し、新しい画像を作成
           deleteMany: {}, // 既存の関連画像を全て削除
           create: imageUrls.map((imageUrl, index) => ({
@@ -185,6 +217,15 @@ export async function POST(request: Request) {
             isMain: variation.isMain,
           })),
         },
+        productTags: { // 既存のタグを維持しつつ、新しいタグを追加
+          deleteMany: { // 既存のタグを全て削除
+            productId: productId,
+          },
+          create: tagIdsToConnect.map(tagId => ({ // 更新後のタグリストで再作成
+            tagId: tagId,
+            userId: existingProduct.userId, // タグを付けたユーザーは既存商品の登録ユーザーとする
+          })),
+        },
       },
       include: {
         images: true,
@@ -196,9 +237,9 @@ export async function POST(request: Request) {
         variations: true, // バリエーション情報もインクルード
       },
     });
-
+ 
     console.log('Product updated:', updatedProduct.id);
-
+ 
     return NextResponse.json(updatedProduct, { status: 200 });
   } catch (error) {
     console.error("商品情報更新エラー:", error);
