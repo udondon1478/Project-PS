@@ -18,8 +18,8 @@ export async function POST(request: Request) {
   // const userId = session.user.id; // 更新処理では直接使用しないが、認証チェックのために取得
 
   try {
-    const { productId } = await request.json(); // 更新対象の商品IDを受け取る
-
+    const { productId, ageRatingId, categoryId } = await request.json(); // 更新対象の商品ID、対象年齢ID、カテゴリーIDを受け取る
+ 
     if (!productId) {
       return NextResponse.json({ message: "商品IDが不足しています。" }, { status: 400 });
     }
@@ -160,6 +160,13 @@ export async function POST(request: Request) {
         // sellerName, // 販売者情報は更新しない
         // sellerUrl,
         // sellerIconUrl,
+        // 対象年齢とカテゴリーの更新
+        ...(ageRatingId !== undefined && {
+          ageRating: ageRatingId === null ? { disconnect: true } : { connect: { id: ageRatingId } }
+        }),
+        ...(categoryId !== undefined && {
+          category: categoryId === null ? { disconnect: true } : { connect: { id: categoryId } }
+        }),
         images: { // 既存の画像を削除し、新しい画像を作成
           deleteMany: {}, // 既存の関連画像を全て削除
           create: imageUrls.map((imageUrl, index) => ({

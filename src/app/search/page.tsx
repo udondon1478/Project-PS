@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation"; // useRouterを追加
 import Image from "next/image"; // next/imageをインポート
 import {
   DropdownMenu,
@@ -18,6 +18,8 @@ interface Product {
   highPrice: number; // highPriceを追加
   mainImageUrl: string | null;
   tags: string[];
+  ageRatingId?: string | null; // 対象年齢IDを追加
+  categoryId?: string | null; // カテゴリーIDを追加
   variations?: { // variationsを追加
     id: string;
     name: string;
@@ -61,18 +63,59 @@ const PriceDisplay = ({ product }: { product: Product }) => {
 
 const SearchResultPage = () => {
   const searchParams = useSearchParams();
+  const router = useRouter(); // useRouterを初期化
   const searchTerm = searchParams.get("tags") || "";
+  const initialAgeRatingId = searchParams.get("ageRatingId") || "";
+  const initialCategoryId = searchParams.get("categoryId") || "";
+
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true); // ローディング状態を追加
   const [error, setError] = useState<string | null>(null); // エラー状態を追加
+  const [ageRatings, setAgeRatings] = useState<{ id: string; name: string }[]>([]); // 対象年齢の選択肢
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]); // カテゴリーの選択肢
+  const [selectedAgeRatingId, setSelectedAgeRatingId] = useState<string>(initialAgeRatingId); // 選択された対象年齢ID
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(initialCategoryId); // 選択されたカテゴリーID
 
+  // 対象年齢とカテゴリーの選択肢をフェッチ
+  useEffect(() => {
+    const fetchAttributes = async () => {
+      try {
+        const ageRatingsResponse = await fetch('/api/age-ratings');
+        const ageRatingsData = await ageRatingsResponse.json();
+        if (ageRatingsResponse.ok) {
+          setAgeRatings(ageRatingsData);
+        } else {
+          console.error('Failed to fetch age ratings:', ageRatingsData.message);
+        }
+
+        const categoriesResponse = await fetch('/api/categories');
+        const categoriesData = await categoriesResponse.json();
+        if (categoriesResponse.ok) {
+          setCategories(categoriesData);
+        } else {
+          console.error('Failed to fetch categories:', categoriesData.message);
+        }
+      } catch (error) {
+        console.error('Error fetching attributes:', error);
+      }
+    };
+
+    fetchAttributes();
+  }, []); // コンポーネントマウント時に一度だけ実行
+
+  // 商品をフェッチ
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true); // フェッチ開始時にローディングをtrueに
       setError(null); // エラーをリセット
       try {
         // 作成したAPIエンドポイントを呼び出す
-        const response = await fetch(`/api/products?tags=${searchTerm}`);
+        const queryParams = new URLSearchParams();
+        if (searchTerm) queryParams.append("tags", searchTerm);
+        if (selectedAgeRatingId) queryParams.append("ageRatingId", selectedAgeRatingId);
+        if (selectedCategoryId) queryParams.append("categoryId", selectedCategoryId);
+
+        const response = await fetch(`/api/products?${queryParams.toString()}`);
         if (!response.ok) {
            throw new Error(`Error: ${response.status}`);
         }
@@ -90,7 +133,17 @@ const SearchResultPage = () => {
     };
 
     fetchProducts();
-  }, [searchTerm]); // searchTerm が変更されたときに再フェッチ
+  }, [searchTerm, selectedAgeRatingId, selectedCategoryId]); // 依存配列に新しい状態変数を追加
+
+  // 検索条件が変更されたらURLを更新
+  useEffect(() => {
+    const queryParams = new URLSearchParams();
+    if (searchTerm) queryParams.append("tags", searchTerm);
+    if (selectedAgeRatingId) queryParams.append("ageRatingId", selectedAgeRatingId);
+    if (selectedCategoryId) queryParams.append("categoryId", selectedCategoryId);
+    router.replace(`/search?${queryParams.toString()}`);
+  }, [searchTerm, selectedAgeRatingId, selectedCategoryId, router]);
+
 
   if (loading) {
     return <div>Loading...</div>; // ローディング表示
@@ -105,7 +158,9 @@ const SearchResultPage = () => {
     return (
       <div className="container mx-auto px-4 py-8 pt-40">
         <p>検索キーワード: {searchTerm}</p>
-        <div>指定されたタグに一致する商品は見つかりませんでした。</div>
+        {selectedAgeRatingId && <p>対象年齢ID: {selectedAgeRatingId}</p>}
+        {selectedCategoryId && <p>カテゴリーID: {selectedCategoryId}</p>}
+        <div>指定された条件に一致する商品は見つかりませんでした。</div>
       </div>
     );
   }
@@ -114,6 +169,50 @@ const SearchResultPage = () => {
   return (
     <div className="container mx-auto px-4 py-8 pt-40"> {/* トップページのデザインに合わせる */}
       <p>検索キーワード: {searchTerm}</p>
+      {selectedAgeRatingId && <p>対象年齢ID: {selectedAgeRatingId}</p>}
+      {selectedCategoryId && <p>カテゴリーID: {selectedCategoryId}</p>}
+
+      {/* 対象年齢選択ドロップダウン */}
+      <div className="mb-4">
+        <label htmlFor="ageRating" className="block text-sm font-medium text-gray-700">
+          対象年齢:
+        </label>
+        <select
+          id="ageRating"
+          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+          value={selectedAgeRatingId}
+          onChange={(e) => setSelectedAgeRatingId(e.target.value)}
+        >
+          <option value="">全て</option>
+          {ageRatings.map((rating) => (
+            <option key={rating.id} value={rating.id}>
+              {rating.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* カテゴリー選択ドロップダウン */}
+      <div className="mb-4">
+        <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+          カテゴリー:
+        </label>
+        <select
+          id="category"
+          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+          value={selectedCategoryId}
+          onChange={(e) => setSelectedCategoryId(e.target.value)}
+        >
+          <option value="">全て</option>
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"> {/* トップページのデザインに合わせる */}
         {products.map((product) => (
           <div

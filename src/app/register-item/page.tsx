@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // useEffectを追加
 
 // 商品情報の型定義 (必要に応じて詳細化)
 interface ProductInfo {
@@ -16,6 +16,8 @@ interface ProductInfo {
   sellerUrl: string;
   sellerIconUrl: string;
   images: { imageUrl: string; isMain: boolean; order: number }[];
+  ageRatingId?: string; // 対象年齢IDを追加
+  categoryId?: string; // カテゴリーIDを追加
   productTags?: { tag: { id: string; name: string } }[]; // 既存商品のタグ情報
 }
 
@@ -27,6 +29,10 @@ export default function RegisterItemPage() {
   const [manualTags, setManualTags] = useState<string[]>([]); // 新規登録時の手動タグ
   const [tagInput, setTagInput] = useState(''); // タグ入力フィールド
   const [tagSuggestions, setTagSuggestions] = useState<string[]>([]); // タグ候補
+  const [ageRatings, setAgeRatings] = useState<{ id: string; name: string }[]>([]); // 対象年齢の選択肢
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]); // カテゴリーの選択肢
+  const [selectedAgeRating, setSelectedAgeRating] = useState<string>(''); // 選択された対象年齢
+  const [selectedCategory, setSelectedCategory] = useState<string>(''); // 選択されたカテゴリー
   const isLoading = status === 'loading'; // ローディング状態を変数で管理
 
   const handleFetchProduct = async (e: React.FormEvent) => {
@@ -144,6 +150,44 @@ export default function RegisterItemPage() {
     }
   };
 
+  // 対象年齢とカテゴリーの選択肢をフェッチ
+  useEffect(() => {
+    const fetchAttributes = async () => {
+      try {
+        const ageRatingsResponse = await fetch('/api/age-ratings');
+        const ageRatingsData = await ageRatingsResponse.json();
+        if (ageRatingsResponse.ok) {
+          console.log('Fetched age ratings data:', ageRatingsData); // ログを追加
+          setAgeRatings(ageRatingsData);
+        } else {
+          console.error('Failed to fetch age ratings:', ageRatingsData.message);
+        }
+ 
+        const categoriesResponse = await fetch('/api/categories');
+        const categoriesData = await categoriesResponse.json();
+        if (categoriesResponse.ok) {
+          console.log('Fetched categories data:', categoriesData); // ログを追加
+          setCategories(categoriesData);
+        } else {
+          console.error('Failed to fetch categories:', categoriesData.message);
+        }
+      } catch (error) {
+        console.error('Error fetching attributes:', error);
+      }
+    };
+ 
+    fetchAttributes();
+  }, []); // コンポーネントマウント時に一度だけ実行
+ 
+  // ageRatingsとcategoriesの状態を確認するログ
+  useEffect(() => {
+    console.log('Current ageRatings state:', ageRatings);
+  }, [ageRatings]);
+ 
+  useEffect(() => {
+    console.log('Current categories state:', categories);
+  }, [categories]);
+
   return (
     <div style={{ padding: '20px' }}>
       <h1>商品登録</h1>
@@ -233,6 +277,46 @@ export default function RegisterItemPage() {
               </div>
             </div>
             {/* 販売者情報などもここに追加可能 */}
+          </div>
+
+          {/* 対象年齢選択 */}
+          <div className="mt-4">
+            <label htmlFor="ageRating" className="block text-lg font-semibold mb-1">
+              対象年齢:
+            </label>
+            <select
+              id="ageRating"
+              className="w-full px-3 py-2 border rounded-md"
+              value={selectedAgeRating}
+              onChange={(e) => setSelectedAgeRating(e.target.value)}
+            >
+              <option value="">選択してください</option>
+              {ageRatings.map((rating) => (
+                <option key={rating.id} value={rating.id}>
+                  {rating.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* カテゴリー選択 */}
+          <div className="mt-4">
+            <label htmlFor="category" className="block text-lg font-semibold mb-1">
+              カテゴリー:
+            </label>
+            <select
+              id="category"
+              className="w-full px-3 py-2 border rounded-md"
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+            >
+              <option value="">選択してください</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* タグ入力フォーム */}

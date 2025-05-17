@@ -14,13 +14,13 @@ export async function POST(request: Request) {
   const userId = session.user.id;
 
   try {
-    const { productInfo, tags } = await request.json(); // 商品情報とタグ情報を受け取る
+    const { productInfo, tags, ageRatingId, categoryId } = await request.json(); // 商品情報、タグ情報、対象年齢ID、カテゴリーIDを受け取る
     //console.log('Received productInfo:', productInfo); // ここにログを追加
     const { boothJpUrl, boothEnUrl, title, description, lowPrice, highPrice, publishedAt, sellerName, sellerUrl, sellerIconUrl, images, variations } = productInfo;
 
     
         // 必須フィールドのバリデーション
-        if (!productInfo || !productInfo.boothJpUrl || !productInfo.title || !productInfo.sellerUrl || !tags || !variations) {
+        if (!productInfo || !boothJpUrl || !title || !sellerUrl || !tags || !variations) {
           return NextResponse.json({ message: "必須情報が不足しています。（販売者情報、バリエーション情報を含む）" }, { status: 400 });
         }
     
@@ -50,7 +50,6 @@ export async function POST(request: Request) {
             update: { // 存在する場合、アイコンURLとURLを更新
               name: sellerName, // nameも更新する可能性があるため追加
               iconUrl: sellerIconUrl,
-              sellerUrl: sellerUrl, // フィールド名をurlからsellerUrlに修正
             },
             create: { // 存在しない場合、新規作成
               name: sellerName,
@@ -80,6 +79,17 @@ export async function POST(request: Request) {
             ...(seller && {
               seller: {
                 connect: { id: seller.id }
+              }
+            }),
+            // 対象年齢とカテゴリーの関連付け
+            ...(ageRatingId && {
+              ageRating: {
+                connect: { id: ageRatingId }
+              }
+            }),
+            ...(categoryId && {
+              category: {
+                connect: { id: categoryId }
               }
             }),
             images: {

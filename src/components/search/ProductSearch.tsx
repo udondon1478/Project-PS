@@ -160,8 +160,19 @@ export default function ProductSearch() {
       tags: selectedTags, // Now includes age/feature tags
       detailedFilters,
     });
-    // Example: router.push(`/search?tags=${selectedTags.join(',')}&category=${detailedFilters.category}&price=${detailedFilters.priceRange}`);
-    router.push(`/search?tags=${selectedTags.join(',')}`); // 検索キーワードを渡すように修正
+
+    const queryParams = new URLSearchParams();
+    if (selectedTags.length > 0) {
+      queryParams.append("tags", selectedTags.join(','));
+    }
+    if (detailedFilters.category) {
+      // カテゴリーはIDではなく名前で検索することを想定
+      // 必要であれば、カテゴリー名からIDを取得する処理を追加
+      queryParams.append("categoryName", detailedFilters.category);
+    }
+    // 価格帯フィルターも必要であればここに追加
+
+    router.push(`/search?${queryParams.toString()}`);
   };
 
   const handleDetailedFilterChange = (filterType: keyof typeof detailedFilters, value: string | null) => {
