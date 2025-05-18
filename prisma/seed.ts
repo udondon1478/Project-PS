@@ -1,10 +1,26 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client'; // Roleをインポート
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // 既存のタグデータをクリア（オプション）
+  // 既存のタグデータをクリア処理はコメントアウトまたは削除（管理画面から管理するため）
   // await prisma.tag.deleteMany();
+
+  // 初期管理者ユーザーの追加 (テスト用)
+  // TODO: 実際の運用では、安全な方法で管理者ユーザーを作成してください。
+  const adminUser = await prisma.user.upsert({
+    where: { email: 'admin@example.com' }, // 管理者として設定したいメールアドレス
+    update: {
+      role: Role.ADMIN,
+    },
+    create: {
+      email: 'admin@example.com',
+      name: 'Admin User',
+      role: Role.ADMIN,
+      // 他の必須フィールドがあればここに追加
+    },
+  });
+  console.log(`Created/Updated admin user with id: ${adminUser.id}`);
  
   // 対象年齢タグの初期データ
   const ageRatingTags = [
@@ -60,7 +76,7 @@ async function main() {
  
   console.log('Seed data inserted successfully');
 }
-
+ 
 main()
   .catch((e) => {
     console.error(e);

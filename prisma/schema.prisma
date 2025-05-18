@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ユーザーの役割を定義するEnum
+enum Role {
+  USER
+  ADMIN
+}
+
 // ユーザーテーブル
 model User {
   id                String          @id @default(cuid())
@@ -18,6 +24,7 @@ model User {
   showImpliedTags   Boolean         @default(true)
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
+  role              Role            @default(USER) // ユーザーの役割を追加
   products          Product[]       // ユーザーが登録した商品
   productTags       ProductTag[]    // ユーザーが付けたタグ
   likes             ProductLike[]   // ユーザーがいいねした商品

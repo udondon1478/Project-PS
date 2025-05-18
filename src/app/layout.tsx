@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "next-auth/react"; // SessionProviderをインポート
 import Header from "@/components/Header";
+import { ThemeProvider } from "@/components/theme-provider"; // ThemeProviderをインポート
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,13 +26,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning> {/* suppressHydrationWarningを追加 */}
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SessionProvider> {/* SessionProviderでラップ */}
-          <Header />
-          {children}
+           <ThemeProvider // ThemeProviderでラップ
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <Header />
+            {children}
+          </ThemeProvider>
         </SessionProvider>
       </body>
     </html>
