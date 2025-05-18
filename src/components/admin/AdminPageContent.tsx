@@ -1,10 +1,9 @@
-// src/components/admin/AdminPageContent.tsx
-'use client'; // クライアントコンポーネントとしてマーク
+'use client';
 
-import { useState } from "react"; // useStateをインポート
-import { Tag } from "@prisma/client"; // Tag型をインポート
-import TagList from "@/components/admin/TagList"; // TagListコンポーネントをインポート
-import TagForm from "@/components/admin/TagForm"; // TagFormコンポーネントをインポート
+import { useState } from "react";
+import { Tag } from "@prisma/client";
+import TagList from "@/components/admin/TagList";
+import TagForm from "@/components/admin/TagForm";
 
 const AdminPageContent = () => {
   const [editingTag, setEditingTag] = useState<Tag | undefined>(undefined); // 編集中のタグを保持するstate

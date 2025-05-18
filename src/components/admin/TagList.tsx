@@ -3,6 +3,11 @@
 
 import { useState, useEffect } from 'react';
 import { Tag } from '@prisma/client'; // PrismaClientのTag型をインポート
+
+// Tagの型を明示的に定義
+interface TagWithType extends Tag {
+  type: string;
+}
 import {
   Table,
   TableBody,
@@ -21,7 +26,7 @@ interface TagListProps {
 }
 
 const TagList = ({ onEditClick }: TagListProps) => { // propsとしてonEditClickを受け取る
-  const [tags, setTags] = useState<Tag[]>([]);
+  const [tags, setTags] = useState<TagWithType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string>(''); // フィルタリング用のstate
@@ -36,7 +41,7 @@ const TagList = ({ onEditClick }: TagListProps) => { // propsとしてonEditClic
         if (!res.ok) {
           throw new Error(`Failed to fetch tags: ${res.statusText}`);
         }
-        const data: Tag[] = await res.json();
+        const data: TagWithType[] = await res.json();
         setTags(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
@@ -95,7 +100,7 @@ const TagList = ({ onEditClick }: TagListProps) => { // propsとしてonEditClic
             <SelectValue placeholder="全てのタイプ" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">全てのタイプ</SelectItem>
+            <SelectItem value="all">全てのタイプ</SelectItem>
             {tagTypes.map(type => (
               <SelectItem key={type} value={type}>{type}</SelectItem>
             ))}
