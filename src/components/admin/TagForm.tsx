@@ -3,6 +3,11 @@
 
 import { useState, useEffect } from 'react';
 import { Tag } from '@prisma/client'; // PrismaClientのTag型をインポート
+
+// Tagの型を明示的に定義 (typeプロパティを含む)
+interface TagWithType extends Tag {
+  type: string;
+}
 import { Button } from "@/components/ui/button"; // shadcn/uiのButtonコンポーネントをインポート
 import { Input } from "@/components/ui/input"; // shadcn/uiのInputコンポーネントをインポート
 import { Textarea } from "@/components/ui/textarea"; // shadcn/uiのTextareaコンポーネントをインポート
@@ -11,12 +16,12 @@ import { Checkbox } from "@/components/ui/checkbox"; // shadcn/uiのCheckboxコ�
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // shadcn/uiのSelectコンポーネントをインポート
 
 interface TagFormProps {
-  initialData?: Tag; // 編集の場合、初期データとしてタグオブジェクトを受け取る
+  initialData?: TagWithType; // 編集の場合、初期データとしてタグオブジェクトを受け取る
   onSuccess: () => void; // 成功時のコールバック
 }
 
 const TagForm = ({ initialData, onSuccess }: TagFormProps) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<TagWithType>({
     id: initialData?.id || '',
     name: initialData?.name || '',
     type: initialData?.type || '',
@@ -180,7 +185,7 @@ const TagForm = ({ initialData, onSuccess }: TagFormProps) => {
             setFormData({ ...formData, isAlias: Boolean(checked) });
           }}
         />
-        <Label htmlFor="isAlias">エイリアs</Label>
+        <Label htmlFor="isAlias">エイリアス</Label>
       </div>
       {formData.isAlias && (
         <div>
