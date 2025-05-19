@@ -30,7 +30,9 @@ const TagList = ({ onEditClick }: TagListProps) => { // propsとしてonEditClic
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string>(''); // フィルタリング用のstate
+  const [allTagTypes, setAllTagTypes] = useState<string[]>([]); // 全てのタグタイプを保持するstate
 
+  // タグ一覧を取得するuseEffect
   useEffect(() => {
     const fetchTags = async () => {
       setLoading(true);
@@ -53,6 +55,25 @@ const TagList = ({ onEditClick }: TagListProps) => { // propsとしてonEditClic
 
     fetchTags();
   }, [filterType]); // filterTypeが変更されたときに再フェッチ
+
+  // 全てのタグタイプを取得するuseEffect (マウント時に一度だけ実行)
+  useEffect(() => {
+    const fetchAllTagTypes = async () => {
+      try {
+        const res = await fetch('/api/admin/tag-types');
+        if (!res.ok) {
+          throw new Error(`Failed to fetch tag types: ${res.statusText}`);
+        }
+        const data: string[] = await res.json();
+        setAllTagTypes(data);
+      } catch (err) {
+        console.error('Error fetching all tag types:', err);
+        // エラーが発生しても、フィルタリングオプションがないよりは良いので、エラーstateは更新しない
+      }
+    };
+
+    fetchAllTagTypes();
+  }, []); // 依存配列を空にして、マウント時に一度だけ実行
 
   const handleDelete = async (id: string) => {
     if (confirm('本当にこのタグを削除しますか？')) {
@@ -85,8 +106,8 @@ const TagList = ({ onEditClick }: TagListProps) => { // propsとしてonEditClic
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
 
-  // タグのタイプを取得 (重複をなくす)
-  const tagTypes = Array.from(new Set(tags.map(tag => tag.type)));
+  // フィルタリングドロップダウンに使用するタグタイプはallTagTypes stateから取得
+  // const tagTypes = Array.from(new Set(tags.map(tag => tag.type))); // この行は不要になる
 
   return (
     <div>
@@ -95,13 +116,13 @@ const TagList = ({ onEditClick }: TagListProps) => { // propsとしてonEditClic
       {/* フィルタリングドロップダウン */}
       <div className="mb-4">
         <label htmlFor="type-filter" className="mr-2">タイプでフィルタ:</label>
-        <Select onValueChange={setFilterType} value={filterType}>
+        <Select onValueChange={(value) => setFilterType(value === 'all' ? '' : value)} value={filterType}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="全てのタイプ" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">全てのタイプ</SelectItem>
-            {tagTypes.map(type => (
+            {allTagTypes.map(type => ( // allTagTypes stateを使用
               <SelectItem key={type} value={type}>{type}</SelectItem>
             ))}
           </SelectContent>
