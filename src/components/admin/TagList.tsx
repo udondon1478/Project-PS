@@ -31,6 +31,9 @@ const TagList = ({ onEditClick }: TagListProps) => { // propsとしてonEditClic
   const [error, setError] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string>(''); // フィルタリング用のstate
   const [allTagTypes, setAllTagTypes] = useState<string[]>([]); // 全てのタグタイプを保持するstate
+  const [currentPage, setCurrentPage] = useState(1); // 現在のページ番号
+  const [itemsPerPage] = useState(20); // 1ページあたりのタグ数
+  const [totalTags, setTotalTags] = useState(0); // 合計タグ数
 
   // タグ一覧を取得するuseEffect
   useEffect(() => {
@@ -38,13 +41,27 @@ const TagList = ({ onEditClick }: TagListProps) => { // propsとしてonEditClic
       setLoading(true);
       setError(null);
       try {
-        const url = filterType ? `/api/admin/tags?type=${filterType}` : '/api/admin/tags';
+        const offset = (currentPage - 1) * itemsPerPage;
+        const limit = itemsPerPage;
+        const baseUrl = '/api/admin/tags';
+        const queryParams = new URLSearchParams();
+
+        if (filterType) {
+          queryParams.append('type', filterType);
+        }
+        queryParams.append('limit', limit.toString());
+        queryParams.append('offset', offset.toString());
+
+        const url = `${baseUrl}?${queryParams.toString()}`;
+
         const res = await fetch(url);
         if (!res.ok) {
           throw new Error(`Failed to fetch tags: ${res.statusText}`);
         }
-        const data: TagWithType[] = await res.json();
-        setTags(data);
+        // APIレスポンスが { tags: TagWithType[], totalTags: number } の形式を想定
+        const data: { tags: TagWithType[], totalTags: number } = await res.json();
+        setTags(data.tags);
+        setTotalTags(data.totalTags);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
         console.error('Error fetching tags:', err);
@@ -54,7 +71,7 @@ const TagList = ({ onEditClick }: TagListProps) => { // propsとしてonEditClic
     };
 
     fetchTags();
-  }, [filterType]); // filterTypeが変更されたときに再フェッチ
+  }, [filterType, currentPage, itemsPerPage]); // filterType, currentPage, itemsPerPageが変更されたときに再フェッチ
 
   // 全てのタグタイプを取得するuseEffect (マウント時に一度だけ実行)
   useEffect(() => {
@@ -167,6 +184,27 @@ const TagList = ({ onEditClick }: TagListProps) => { // propsとしてonEditClic
           ))}
         </TableBody>
       </Table>
+
+      {/* ページネーションUI */}
+      <div className="flex justify-center space-x-4 mt-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+        >
+          前へ
+        </Button>
+        <span>{currentPage} / {Math.ceil(totalTags / itemsPerPage)}</span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(totalTags / itemsPerPage)))}
+          disabled={currentPage === Math.ceil(totalTags / itemsPerPage) || Math.ceil(totalTags / itemsPerPage) === 0}
+        >
+          次へ
+        </Button>
+      </div>
     </div>
   );
 };

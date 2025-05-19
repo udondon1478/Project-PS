@@ -14,10 +14,13 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');
+    const limit = parseInt(searchParams.get('limit') || '20', 10); // デフォルト20
+    const offset = parseInt(searchParams.get('offset') || '0', 10); // デフォルト0
 
     // typeパラメータは必須ではないが、指定があればフィルタリング
     const where = type ? { type: type } : {};
 
+    // タグのリストを取得 (ページネーション適用)
     const tags = await prisma.tag.findMany({
       where: where,
       select: {
@@ -34,10 +37,18 @@ export async function GET(request: Request) {
       },
       orderBy: {
         name: 'asc', // 名前順でソート
-      }
+      },
+      take: limit, // 取得するレコード数
+      skip: offset, // スキップするレコード数
     });
 
-    return NextResponse.json(tags);
+    // 条件に一致するタグの総数を取得
+    const totalTags = await prisma.tag.count({
+      where: where,
+    });
+
+    // タグのリストと総数をレスポンスとして返す
+    return NextResponse.json({ tags, totalTags });
   } catch (error) {
     console.error('Error fetching tags:', error);
     return NextResponse.json({ message: 'タグの取得に失敗しました。' }, { status: 500 });
@@ -54,26 +65,28 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { name, type, category, color, language, description, isAlias, canonicalId } = body;
+    const { name, type, category, color, language, description, isAlias, canonicalId: canonicalTagName } = body; // canonicalIdをcanonicalTagNameとして受け取る
 
     // 必須フィールドの検証
     if (!name || !type || !category || !color || !language) {
       return NextResponse.json({ message: '必須フィールドが不足しています (name, type, category, color, language)。' }, { status: 400 });
     }
 
-    // canonicalIdが指定されている場合は、そのタグが存在するか確認
-    if (isAlias && canonicalId) {
+    let canonicalTagId = null;
+    // canonicalTagNameが指定されている場合は、そのタグ名に対応するIDを取得
+    if (isAlias && canonicalTagName) {
         const canonicalTag = await prisma.tag.findUnique({
-            where: { id: canonicalId },
+            where: { name: canonicalTagName }, // タグ名で検索
             select: { id: true }
         });
         if (!canonicalTag) {
-            return NextResponse.json({ message: '指定された正規タグ (canonicalId) が存在しません。', field: 'canonicalId' }, { status: 400 });
+            return NextResponse.json({ message: `指定された正規タグ名 '${canonicalTagName}' が存在しません。`, field: 'canonicalId' }, { status: 400 });
         }
-    } else if (isAlias && !canonicalId) {
-         return NextResponse.json({ message: 'isAliasがtrueの場合、canonicalIdは必須です。', field: 'canonicalId' }, { status: 400 });
-    } else if (!isAlias && canonicalId) {
-         return NextResponse.json({ message: 'isAliasがfalseの場合、canonicalIdは指定できません。', field: 'canonicalId' }, { status: 400 });
+        canonicalTagId = canonicalTag.id;
+    } else if (isAlias && !canonicalTagName) {
+         return NextResponse.json({ message: 'エイリアスの場合、正規タグ名 (canonicalId) は必須です。', field: 'canonicalId' }, { status: 400 });
+    } else if (!isAlias && canonicalTagName) {
+         return NextResponse.json({ message: 'エイリアスでない場合、正規タグ名 (canonicalId) は指定できません。', field: 'canonicalId' }, { status: 400 });
     }
 
 
@@ -86,7 +99,7 @@ export async function POST(request: Request) {
         language,
         description,
         isAlias: isAlias || false, // デフォルトはfalse
-        canonicalId: isAlias ? canonicalId : null, // isAliasがtrueの場合のみ設定
+        canonicalId: canonicalTagId, // 取得した正規タグIDを設定
       },
     });
 
@@ -111,7 +124,7 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const { id, name, type, category, color, language, description, isAlias, canonicalId } = body;
+    const { id, name, type, category, color, language, description, isAlias, canonicalId: canonicalTagName } = body; // canonicalIdをcanonicalTagNameとして受け取る
 
     // idは必須
     if (!id) {
@@ -119,18 +132,21 @@ export async function PUT(request: Request) {
     }
 
     // canonicalIdが指定されている場合は、そのタグが存在するか確認
-    if (isAlias && canonicalId) {
+    let canonicalTagId = null;
+    // canonicalTagNameが指定されている場合は、そのタグ名に対応するIDを取得
+    if (isAlias && canonicalTagName) {
         const canonicalTag = await prisma.tag.findUnique({
-            where: { id: canonicalId },
+            where: { name: canonicalTagName }, // タグ名で検索
             select: { id: true }
         });
         if (!canonicalTag) {
-            return NextResponse.json({ message: '指定された正規タグ (canonicalId) が存在しません。', field: 'canonicalId' }, { status: 400 });
+            return NextResponse.json({ message: `指定された正規タグ名 '${canonicalTagName}' が存在しません。`, field: 'canonicalId' }, { status: 400 });
         }
-    } else if (isAlias && !canonicalId) {
-         return NextResponse.json({ message: 'isAliasがtrueの場合、canonicalIdは必須です。', field: 'canonicalId' }, { status: 400 });
-    } else if (!isAlias && canonicalId) {
-         return NextResponse.json({ message: 'isAliasがfalseの場合、canonicalIdは指定できません。', field: 'canonicalId' }, { status: 400 });
+        canonicalTagId = canonicalTag.id;
+    } else if (isAlias && !canonicalTagName) {
+         return NextResponse.json({ message: 'エイリアスの場合、正規タグ名 (canonicalId) は必須です。', field: 'canonicalId' }, { status: 400 });
+    } else if (!isAlias && canonicalTagName) {
+         return NextResponse.json({ message: 'エイリアスでない場合、正規タグ名 (canonicalId) は指定できません。', field: 'canonicalId' }, { status: 400 });
     }
 
 
@@ -144,7 +160,7 @@ export async function PUT(request: Request) {
         language,
         description,
         isAlias: isAlias ?? undefined, // undefinedの場合は更新しない
-        canonicalId: isAlias ? canonicalId : null, // isAliasがtrueの場合のみ設定、falseならnull
+        canonicalId: isAlias ? canonicalTagId : null, // 取得した正規タグIDを設定
       },
     });
 
