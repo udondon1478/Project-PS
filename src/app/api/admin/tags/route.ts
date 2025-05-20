@@ -27,13 +27,18 @@ export async function GET(request: Request) {
         id: true,
         name: true,
         type: true, // 管理画面ではtypeも表示
-        category: true, // 管理画面ではcategoryも表示
-        color: true,
         language: true, // 管理画面ではlanguageも表示
         isAlias: true, // 管理画面ではisAliasも表示
         canonicalId: true, // 管理画面ではcanonicalIdも表示
         description: true, // 管理画面ではdescriptionも表示
         count: true, // 管理画面ではcountも表示
+        tagCategory: { // TagCategory モデルを関連付けて取得
+          select: {
+            id: true, // カテゴリIDも必要であれば取得
+            name: true, // カテゴリ名
+            color: true, // カテゴリの色
+          },
+        },
       },
       orderBy: {
         name: 'asc', // 名前順でソート
@@ -65,11 +70,11 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { name, type, category, color, language, description, isAlias, canonicalId: canonicalTagName } = body; // canonicalIdをcanonicalTagNameとして受け取る
+    const { name, type, tagCategoryId, language, description, isAlias, canonicalId: canonicalTagName } = body; // categoryとcolorを削除し、tagCategoryIdを受け取る
 
     // 必須フィールドの検証
-    if (!name || !type || !category || !color || !language) {
-      return NextResponse.json({ message: '必須フィールドが不足しています (name, type, category, color, language)。' }, { status: 400 });
+    if (!name || !type || !tagCategoryId || !language) {
+      return NextResponse.json({ message: '必須フィールドが不足しています (name, type, tagCategoryId, language)。' }, { status: 400 });
     }
 
     let canonicalTagId = null;
@@ -94,8 +99,7 @@ export async function POST(request: Request) {
       data: {
         name,
         type,
-        category,
-        color,
+        tagCategoryId, // tagCategoryId を保存
         language,
         description,
         isAlias: isAlias || false, // デフォルトはfalse
@@ -124,7 +128,7 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const { id, name, type, category, color, language, description, isAlias, canonicalId: canonicalTagName } = body; // canonicalIdをcanonicalTagNameとして受け取る
+    const { id, name, type, tagCategoryId, language, description, isAlias, canonicalId: canonicalTagName } = body; // categoryとcolorを削除し、tagCategoryIdを受け取る
 
     // idは必須
     if (!id) {
@@ -155,8 +159,7 @@ export async function PUT(request: Request) {
       data: {
         name,
         type,
-        category,
-        color,
+        tagCategoryId, // tagCategoryId を保存
         language,
         description,
         isAlias: isAlias ?? undefined, // undefinedの場合は更新しない

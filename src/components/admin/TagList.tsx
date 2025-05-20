@@ -7,6 +7,11 @@ import { Tag } from '@prisma/client'; // PrismaClientのTag型をインポート
 // Tagの型を明示的に定義
 interface TagWithType extends Tag {
   type: string;
+  tagCategory?: { // TagCategory モデルを関連付けて取得するため追加
+    id: string;
+    name: string;
+    color: string;
+  };
 }
 import {
   Table,
@@ -167,8 +172,8 @@ const TagList = ({ onEditClick }: TagListProps) => { // propsとしてonEditClic
             <TableRow key={tag.id}>
               <TableCell className="font-medium">{tag.name}</TableCell>
               <TableCell>{tag.type}</TableCell>
-              <TableCell>{tag.category}</TableCell>
-              <TableCell style={{ color: tag.color }}>{tag.color}</TableCell>
+              <TableCell>{tag.tagCategory?.name || '-'}</TableCell> {/* カテゴリ名を表示 */}
+              <TableCell style={{ color: tag.tagCategory?.color || '#CCCCCC' }}>{tag.tagCategory?.color || '-'}</TableCell> {/* カテゴリの色を表示 */}
               <TableCell>{tag.language}</TableCell>
               <TableCell>{tag.isAlias ? 'はい' : 'いいえ'}</TableCell>
               <TableCell>{tag.canonicalId || '-'}</TableCell>

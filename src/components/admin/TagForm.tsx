@@ -5,9 +5,13 @@ import { useState, useEffect, ChangeEvent, useRef } from 'react';
 import { Tag } from '@prisma/client'; // PrismaClientのTag型をインポート
 import { Checkbox } from "@/components/ui/checkbox"; // shadcn/uiのCheckboxコンポーネントをインポート
 
-// Tagの型を明示的に定義 (typeプロパティを含む)
-interface TagWithType extends Tag {
-  type: string;
+// APIから取得するタグの型定義（関連するカテゴリ情報を含む）
+interface TagWithCategory extends Tag {
+  tagCategory?: {
+    id: string;
+    name: string;
+    color: string;
+  } | null;
 }
 
 // タグ候補APIから返されるタグの簡易型
@@ -22,17 +26,17 @@ import { Label } from "@/components/ui/label"; // shadcn/uiのLabelコンポー�
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // shadcn/uiのSelectコンポーネントをインポート
 
 interface TagFormProps {
-  initialData?: TagWithType; // 編集の場合、初期データとしてタグオブジェクトを受け取る
+  initialData?: TagWithCategory; // 編集の場合、初期データとしてタグオブジェクトを受け取る (TagWithType から TagWithCategory に変更)
   onSuccess: () => void; // 成功時のコールバック
 }
 
 const TagForm = ({ initialData, onSuccess }: TagFormProps) => {
-  const [formData, setFormData] = useState<Partial<TagWithType>>({
+  // initialData の型を TagWithCategory に変更
+  const [formData, setFormData] = useState<Partial<TagWithCategory>>({
     id: initialData?.id || '',
     name: initialData?.name || '',
     type: initialData?.type || '',
-    category: initialData?.category || '',
-    color: initialData?.color || '#CCCCCC', // デフォルトカラー
+    tagCategoryId: initialData?.tagCategory?.id || '', // tagCategoryId を使用
     language: initialData?.language || 'ja', // デフォルト言語
     description: initialData?.description ?? '',
     isAlias: initialData?.isAlias || false,
@@ -45,7 +49,7 @@ const TagForm = ({ initialData, onSuccess }: TagFormProps) => {
   const [tagTypes, setTagTypes] = useState<string[]>([]);
   const [tagCategories, setTagCategories] = useState<{ id: string; name: string; color: string }[]>([]);
   const [isNewType, setIsNewType] = useState(!initialData?.type); // 新規作成時はtrue
-  const [isNewCategory, setIsNewCategory] = useState(!initialData?.category); // 新規作成時はtrue
+  // isNewCategory state は削除
 
   const [canonicalTagSuggestions, setCanonicalTagSuggestions] = useState<TagSuggestion[]>([]);
   const [showCanonicalTagSuggestions, setShowCanonicalTagSuggestions] = useState(false);
@@ -83,12 +87,12 @@ const TagForm = ({ initialData, onSuccess }: TagFormProps) => {
   // 編集モードの場合、initialDataが変更されたらフォームデータを更新
   useEffect(() => {
     if (initialData) {
+      // initialData の型を TagWithCategory に変更
       setFormData({
         id: initialData.id,
         name: initialData.name,
         type: initialData.type,
-        category: initialData.category,
-        color: initialData.color,
+        tagCategoryId: initialData.tagCategory?.id || '', // tagCategoryId を使用
         language: initialData.language,
         description: initialData.description ?? '', // nullish coalescing operator を使用
         isAlias: initialData.isAlias,
@@ -96,7 +100,7 @@ const TagForm = ({ initialData, onSuccess }: TagFormProps) => {
       });
       // 編集時は初期値に基づいて新規入力モードを判定
       setIsNewType(!tagTypes.includes(initialData.type));
-      setIsNewCategory(!tagCategories.some(cat => cat.id === initialData.category));
+      // isNewCategory の設定は削除
 
     } else {
        // 新規作成モードの場合、フォームをリセット
@@ -104,15 +108,14 @@ const TagForm = ({ initialData, onSuccess }: TagFormProps) => {
         id: '',
         name: '',
         type: '',
-        category: '',
-        color: '#CCCCCC',
+        tagCategoryId: '', // tagCategoryId を設定
         language: 'ja',
         description: '',
         isAlias: false,
         canonicalId: '',
       });
       setIsNewType(true); // 新規作成時は最初から新規入力モード
-      setIsNewCategory(true); // 新規作成時は最初から新規入力モード
+      // isNewCategory の設定は削除
     }
   }, [initialData, tagTypes, tagCategories]); // initialData, tagTypes, tagCategories の変更を監視
 
@@ -162,7 +165,7 @@ const TagForm = ({ initialData, onSuccess }: TagFormProps) => {
     });
   };
 
-  const handleCheckboxChange = (name: 'isNewType' | 'isNewCategory', checked: boolean) => {
+  const handleCheckboxChange = (name: 'isNewType', checked: boolean) => { // isNewCategory を削除
     if (name === 'isNewType') {
       setIsNewType(checked);
       if (!checked) {
@@ -176,21 +179,8 @@ const TagForm = ({ initialData, onSuccess }: TagFormProps) => {
          // 新規入力モードON時、タイプをクリア
          setFormData({ ...formData, type: '' });
       }
-    } else if (name === 'isNewCategory') {
-      setIsNewCategory(checked);
-       if (!checked) {
-        // 新規入力モード解除時、既存リストにカテゴリがあれば最初の項目を選択
-        if (tagCategories.length > 0) {
-          setFormData({ ...formData, category: tagCategories[0].id });
-        } else {
-           setFormData({ ...formData, category: '' });
-        }
-      } else {
-         // 新規入力モードON時、カテゴリをクリア
-         setFormData({ ...formData, category: '' });
-      }
     }
-  };
+   };
 
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -227,15 +217,14 @@ const TagForm = ({ initialData, onSuccess }: TagFormProps) => {
             id: '',
             name: '',
             type: '',
-            category: '',
-            color: '#CCCCCC',
+            tagCategoryId: '', // tagCategoryId を設定
             language: 'ja',
             description: '',
             isAlias: false,
             canonicalId: '',
           });
           setIsNewType(true); // フォームクリア後も新規入力モードを維持
-          setIsNewCategory(true); // フォームクリア後も新規入力モードを維持
+          // isNewCategory の設定は削除
       }
 
     } catch (err) {
@@ -280,11 +269,8 @@ const TagForm = ({ initialData, onSuccess }: TagFormProps) => {
         </div>
       </div>
        <div>
-        <Label htmlFor="category">カテゴリ</Label>
-         {isNewCategory ? (
-           <Input id="category" name="category" value={formData.category} onChange={handleChange} required />
-         ) : (
-           <Select onValueChange={(value) => handleSelectChange('category', value)} value={formData.category}>
+        <Label htmlFor="tagCategoryId">カテゴリ</Label> {/* ラベルをtagCategoryIdに変更 */}
+           <Select onValueChange={(value) => handleSelectChange('tagCategoryId', value)} value={formData.tagCategoryId || ''}> {/* tagCategoryId を設定し、nullの場合は空文字列に変換 */}
              <SelectTrigger>
                <SelectValue placeholder="カテゴリを選択" />
              </SelectTrigger>
@@ -294,22 +280,10 @@ const TagForm = ({ initialData, onSuccess }: TagFormProps) => {
                ))}
              </SelectContent>
            </Select>
-         )}
-         <div className="flex items-center space-x-2 mt-2">
-           <Checkbox
-             id="isNewCategory"
-             checked={isNewCategory}
-             onCheckedChange={(checked) => handleCheckboxChange('isNewCategory', Boolean(checked))}
-           />
-           <Label htmlFor="isNewCategory">新規カテゴリを入力</Label>
-         </div>
-      </div>
-      <div>
-        <Label htmlFor="color">色</Label>
-        <Input id="color" name="color" type="color" value={formData.color} onChange={handleChange} required />
-      </div>
-      <div>
-        <Label htmlFor="language">言語</Label>
+       </div>
+       {/* 色の入力フィールドと新規カテゴリ入力関連を削除 */}
+       <div>
+         <Label htmlFor="language">言語</Label>
          <Select onValueChange={(value) => handleSelectChange('language', value)} value={formData.language}>
             <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="言語を選択" />
