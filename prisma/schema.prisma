@@ -199,7 +199,7 @@ model Tag {
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
   productTags  ProductTag[]     // このタグが付けられた商品
-  type     String    @default("general") // タグの種類 (例: 'age_rating', 'product_category', 'feature', 'general')
+  type     String    @default("general") // タグの種類 (例: 'age_rating', 'product_category', 'feature', 'general') - これはタグ自体の分類を示します
   tagCategoryId String? // タグカテゴリへのリレーション (Optionalに変更)
   tagCategory   TagCategory? @relation(fields: [tagCategoryId], references: [id])
   count     Int       @default(0) // タグの使用回数 (将来的な利用のため)
@@ -344,6 +344,7 @@ model TagEditVote {
 }
 
 // タグカテゴリテーブル
+// タグカテゴリテーブル - これはタグをさらに分類するためのカテゴリです
 model TagCategory {
   id        String    @id @default(cuid())
   name      String    @unique // カテゴリ名

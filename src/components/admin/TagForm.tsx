@@ -5,13 +5,13 @@ import { useState, useEffect, ChangeEvent, useRef } from 'react';
 import { Tag } from '@prisma/client'; // PrismaClientのTag型をインポート
 import { Checkbox } from "@/components/ui/checkbox"; // shadcn/uiのCheckboxコンポーネントをインポート
 
-// APIから取得するタグの型定義（関連するカテゴリ情報を含む）
+// APIから取得するタグの型定義（TagモデルにtagCategoryリレーションを含めたもの）
 interface TagWithCategory extends Tag {
   tagCategory?: {
     id: string;
     name: string;
     color: string;
-  } | null;
+    } | null;
 }
 
 // タグ候補APIから返されるタグの簡易型
@@ -47,7 +47,7 @@ const TagForm = ({ initialData, onSuccess }: TagFormProps) => {
   const [success, setSuccess] = useState(false);
 
   const [tagTypes, setTagTypes] = useState<string[]>([]);
-  const [tagCategories, setTagCategories] = useState<{ id: string; name: string; color: string }[]>([]);
+  const [tagCategories, setTagCategories] = useState<{ id: string; name: string; color: string }[]>([]); // TagCategoryモデルのデータを保持
   const [isNewType, setIsNewType] = useState(!initialData?.type); // 新規作成時はtrue
   // isNewCategory state は削除
 
@@ -275,8 +275,9 @@ const TagForm = ({ initialData, onSuccess }: TagFormProps) => {
                <SelectValue placeholder="カテゴリを選択" />
              </SelectTrigger>
              <SelectContent>
-               {tagCategories.map(category => (
-                 <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+               {/* tagCategoriesはTagCategoryモデルのデータ配列です */}
+               {tagCategories.map(tagCategoryOption => (
+                 <SelectItem key={tagCategoryOption.id} value={tagCategoryOption.id}>{tagCategoryOption.name}</SelectItem>
                ))}
              </SelectContent>
            </Select>

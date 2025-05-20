@@ -67,3 +67,11 @@
 - 基本的なパフォーマンス最適化を実装
 - 基本的なアクセシビリティ対応を実装
 - Core Web Vitalsを意識した実装
+
+### 命名規則に関する補足：タグ関連モデル
+
+- `Tag` モデルの `type` フィールドは、タグ自体の種類（例: 'age_rating', 'product_category', 'feature', 'general'）を示します。
+- `TagCategory` モデルは、タグをさらに分類するためのカテゴリ（例: 「アバター」「アクセサリー」など）を示します。
+- コード内で `Tag` モデルの `type` フィールドの値として 'product_category' を扱う場合と、`TagCategory` モデルのデータを扱う場合で、変数名が混同しないように注意してください。
+    - `Tag` モデルの `type` フィールドの値は、そのまま `type` または `tagType` のような変数名で扱うことが推奨されます。
+    - `TagCategory` モデルのデータを扱う場合は、`tagCategory` または `tagCategoryOption` のような変数名を使用し、タグの種類 (`type`) と区別できるようにしてください。
