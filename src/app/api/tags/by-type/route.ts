@@ -19,7 +19,13 @@ export async function GET(request: Request) {
       select: {
         id: true,
         name: true,
-        color: true, // UIで使用する可能性があるので含める
+        tagCategory: { // TagCategory モデルを関連付けて取得
+          select: {
+            id: true,
+            name: true,
+            color: true, // カテゴリの色を取得
+          },
+        },
       },
     });
 

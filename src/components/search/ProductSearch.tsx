@@ -46,10 +46,10 @@ export default function ProductSearch() {
   const router = useRouter(); // useRouterを初期化
   const suggestionsRef = useRef<HTMLUListElement>(null);
 
-  // 新しい状態変数を追加
-  const [ageRatingTags, setAgeRatingTags] = useState<{ id: string; name: string }[]>([]);
-  const [categoryTags, setCategoryTags] = useState<{ id: string; name: string }[]>([]);
-  const [featureTags, setFeatureTags] = useState<{ id: string; name: string }[]>([]);
+  // 新しい状態変数を追加 (カテゴリの色情報を含むように型を変更)
+  const [ageRatingTags, setAgeRatingTags] = useState<{ id: string; name: string; color?: string | null }[]>([]);
+  const [categoryTags, setCategoryTags] = useState<{ id: string; name: string; color?: string | null }[]>([]);
+  const [featureTags, setFeatureTags] = useState<{ id: string; name: string; color?: string | null }[]>([]);
 
   // 対象年齢、カテゴリー、主要機能タグの選択肢をフェッチ
   useEffect(() => {
@@ -59,7 +59,12 @@ export default function ProductSearch() {
         const ageRatingsResponse = await fetch('/api/tags/by-type?type=age_rating');
         const ageRatingData = await ageRatingsResponse.json();
         if (ageRatingsResponse.ok) {
-          setAgeRatingTags(ageRatingData);
+          // APIレスポンスの形式に合わせてデータを変換
+          setAgeRatingTags(ageRatingData.map((tag: { id: string; name: string; tagCategory?: { id: string; name: string; color: string } | null }) => ({
+            id: tag.id,
+            name: tag.name,
+            color: tag.tagCategory?.color || null, // カテゴリの色を取得
+          })));
         } else {
           console.error('Failed to fetch age rating tags:', ageRatingData.message);
         }
@@ -68,7 +73,12 @@ export default function ProductSearch() {
         const categoriesResponse = await fetch('/api/tags/by-type?type=product_category');
         const categoryData = await categoriesResponse.json();
         if (categoriesResponse.ok) {
-          setCategoryTags(categoryData);
+           // APIレスポンスの形式に合わせてデータを変換
+          setCategoryTags(categoryData.map((tag: { id: string; name: string; tagCategory?: { id: string; name: string; color: string } | null }) => ({
+            id: tag.id,
+            name: tag.name,
+            color: tag.tagCategory?.color || null, // カテゴリの色を取得
+          })));
         } else {
           console.error('Failed to fetch category tags:', categoryData.message);
         }
@@ -77,7 +87,12 @@ export default function ProductSearch() {
         const featuresResponse = await fetch('/api/tags/by-type?type=feature');
         const featureData = await featuresResponse.json();
         if (featuresResponse.ok) {
-          setFeatureTags(featureData);
+           // APIレスポンスの形式に合わせてデータを変換
+          setFeatureTags(featureData.map((tag: { id: string; name: string; tagCategory?: { id: string; name: string; color: string } | null }) => ({
+            id: tag.id,
+            name: tag.name,
+            color: tag.tagCategory?.color || null, // カテゴリの色を取得
+          })));
         } else {
           console.error('Failed to fetch feature tags:', featureData.message);
         }
