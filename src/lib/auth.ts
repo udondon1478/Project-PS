@@ -1,8 +1,19 @@
 // src/lib/auth.ts
-import { auth } from "@/auth"; // パスを修正
-import { Role } from "@prisma/client";
+import { auth, type DefaultSession } from "@/auth"; // @/authからインポート
+import { PrismaClient, Prisma } from "@prisma/client"; // PrismaClientとPrisma名前空間をインポート
 import { prisma } from "@/lib_prisma/prisma"; // パスを修正
+import { Role } from "@prisma/client"; // Role Enumを直接インポート
 
+// Auth.jsのSession型を拡張してroleプロパティを追加
+declare module "next-auth" {
+  interface Session {
+    user: {
+      role?: Role; // Role型をインポートして使用
+    } & DefaultSession["user"];
+  }
+}
+
+// isAdmin関数のみをエクスポート
 export const isAdmin = async (): Promise<boolean> => {
   console.log('isAdmin: Checking authentication status...');
   const session = await auth();
@@ -13,8 +24,19 @@ export const isAdmin = async (): Promise<boolean> => {
     return false; // ユーザーが認証されていない
   }
 
-  console.log('isAdmin: User authenticated, fetching user role for ID:', session.user.id);
-  // データベースからユーザーのロールを取得
+  // セッションにroleが含まれているか確認
+  // Auth.jsの設定（例: callbacks.session）でroleをセッションに追加していることを前提とします。
+  // データベースアダプターを使用している場合、userオブジェクトにはデータベースから取得したroleが含まれているはずです。
+  if (session.user.role !== undefined) {
+    console.log('isAdmin: User role from session:', session.user.role);
+    const result = session.user.role === Role.ADMIN; // Role Enumを直接使用
+    console.log('isAdmin: Is admin:', result);
+    return result;
+  }
+
+  // セッションにroleが含まれていない場合（例: データベースアダプターがroleをセッションに含めない設定になっている）、
+  // データベースからユーザーのロールを取得するフォールバック処理
+  console.log('isAdmin: User authenticated, fetching user role from DB for ID:', session.user.id);
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: { role: true },
@@ -22,7 +44,7 @@ export const isAdmin = async (): Promise<boolean> => {
 
   console.log('isAdmin: User from DB:', user);
 
-  const result = user?.role === Role.ADMIN;
+  const result = user?.role === Role.ADMIN; // Role Enumを直接使用
   console.log('isAdmin: Is admin:', result);
   return result;
 };

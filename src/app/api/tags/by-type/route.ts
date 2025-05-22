@@ -6,15 +6,17 @@ const prisma = new PrismaClient();
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const type = searchParams.get('type');
+    const categoryName = searchParams.get('categoryName');
 
-    if (!type) {
-      return NextResponse.json({ message: 'Type parameter is required' }, { status: 400 });
+    if (!categoryName) {
+      return NextResponse.json({ message: 'categoryName parameter is required' }, { status: 400 });
     }
 
     const tags = await prisma.tag.findMany({
       where: {
-        type: type,
+        tagCategory: {
+          name: categoryName,
+        },
       },
       select: {
         id: true,
