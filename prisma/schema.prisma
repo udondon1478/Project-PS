@@ -343,7 +343,6 @@ model TagEditVote {
 }
 
 // タグカテゴリテーブル
-// タグカテゴリテーブル - これはタグをさらに分類するためのカテゴリです
 model TagCategory {
   id        String    @id @default(cuid())
   name      String    @unique // カテゴリ名
