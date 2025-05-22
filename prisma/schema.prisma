@@ -199,11 +199,10 @@ model Tag {
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
   productTags  ProductTag[]     // このタグが付けられた商品
-  type     String    @default("general") // タグの種類 (例: 'age_rating', 'product_category', 'feature', 'general') - これはタグ自体の分類を示します
   tagCategoryId String? // タグカテゴリへのリレーション (Optionalに変更)
   tagCategory   TagCategory? @relation(fields: [tagCategoryId], references: [id])
   count     Int       @default(0) // タグの使用回数 (将来的な利用のため)
- 
+
   // タグの翻訳関係
   sourceTranslations      TagTranslation[] @relation("SourceTag")
   translatedTranslations  TagTranslation[] @relation("TranslatedTag")
