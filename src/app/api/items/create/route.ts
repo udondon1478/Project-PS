@@ -42,6 +42,21 @@ export async function POST(request: Request) {
         // 重複するタグ名を削除
         const uniqueTagNames = Array.from(new Set(allTagNames));
  
+        // タグカテゴリ 'other' を検索
+        // タグカテゴリ 'other' を検索
+        const otherTagCategory = await prisma.tagCategory.findUnique({
+          where: { name: 'other' },
+        });
+
+        if (!otherTagCategory) {
+          // 'other' カテゴリが存在しない場合はエラーハンドリング
+          // TODO: 適切なエラーレスポンスを返す
+          return new Response(JSON.stringify({ error: 'TagCategory "other" not found' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+
         // タグが存在するか確認し、存在しない場合は作成
         const tagIds: string[] = [];
         for (const tagName of uniqueTagNames) {
@@ -51,9 +66,9 @@ export async function POST(request: Request) {
             create: {
               name: tagName,
               language: 'ja', // 仮に日本語とする。必要に応じて言語情報を追加
-              type: 'general', // デフォルトはgeneralとする。必要に応じて適切なtypeを設定
-              category: 'other', // 仮にotherとする。必要に応じてカテゴリ情報を追加
-              color: '#CCCCCC', // 仮の色
+              tagCategory: { // リレーションを使用してカテゴリを接続
+                connect: { id: otherTagCategory.id },
+              },
             },
           });
           tagIds.push(tag.id);

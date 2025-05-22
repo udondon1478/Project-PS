@@ -56,7 +56,7 @@ export default function ProductSearch() {
     const fetchTagsByType = async () => {
       try {
         // 対象年齢タグを取得
-        const ageRatingsResponse = await fetch('/api/tags/by-type?categoryName=対象年齢');
+        const ageRatingsResponse = await fetch('/api/tags/by-type?categoryNames=age_rating');
         const ageRatingData = await ageRatingsResponse.json();
         if (ageRatingsResponse.ok) {
           // APIレスポンスの形式に合わせてデータを変換
@@ -70,7 +70,7 @@ export default function ProductSearch() {
         }
 
         // カテゴリータグを取得
-        const categoriesResponse = await fetch('/api/tags/by-type?categoryName=プロダクトカテゴリ');
+        const categoriesResponse = await fetch('/api/tags/by-type?categoryNames=product_category');
         const categoryData = await categoriesResponse.json();
         if (categoriesResponse.ok) {
            // APIレスポンスの形式に合わせてデータを変換
@@ -84,7 +84,7 @@ export default function ProductSearch() {
         }
 
         // 主要機能タグを取得
-        const featuresResponse = await fetch('/api/tags/by-type?categoryName=主要機能');
+        const featuresResponse = await fetch('/api/tags/by-type?categoryNames=feature');
         const featureData = await featuresResponse.json();
         if (featuresResponse.ok) {
            // APIレスポンスの形式に合わせてデータを変換

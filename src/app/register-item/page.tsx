@@ -158,7 +158,7 @@ export default function RegisterItemPage() {
     const fetchTagsByType = async () => {
       try {
         // 対象年齢タグを取得
-        const ageRatingsResponse = await fetch('/api/tags/by-type?type=age_rating');
+        const ageRatingsResponse = await fetch('/api/tags/by-type?categoryNames=age_rating');
         const ageRatingData = await ageRatingsResponse.json();
         if (ageRatingsResponse.ok) {
           console.log('Fetched age rating tags:', ageRatingData);
@@ -168,7 +168,7 @@ export default function RegisterItemPage() {
         }
  
         // カテゴリータグを取得
-        const categoriesResponse = await fetch('/api/tags/by-type?type=product_category');
+        const categoriesResponse = await fetch('/api/tags/by-type?categoryNames=product_category');
         const categoryData = await categoriesResponse.json();
         if (categoriesResponse.ok) {
           console.log('Fetched category tags:', categoryData);
@@ -178,7 +178,7 @@ export default function RegisterItemPage() {
         }
  
         // 主要機能タグを取得
-        const featuresResponse = await fetch('/api/tags/by-type?type=feature');
+        const featuresResponse = await fetch('/api/tags/by-type?categoryNames=feature');
         const featureData = await featuresResponse.json();
         if (featuresResponse.ok) {
           console.log('Fetched feature tags:', featureData);

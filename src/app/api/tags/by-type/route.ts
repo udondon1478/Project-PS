@@ -6,16 +6,15 @@ const prisma = new PrismaClient();
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const categoryName = searchParams.get('categoryName');
-
-    if (!categoryName) {
-      return NextResponse.json({ message: 'categoryName parameter is required' }, { status: 400 });
-    }
+    const categoryNamesParam = searchParams.get('categoryNames');
+    const categoryNames = categoryNamesParam ? categoryNamesParam.split(',') : [];
 
     const tags = await prisma.tag.findMany({
       where: {
         tagCategory: {
-          name: categoryName,
+          name: {
+            in: categoryNames.length > 0 ? categoryNames : undefined, // categoryNamesが空の場合はフィルタリングしない
+          },
         },
       },
       select: {
