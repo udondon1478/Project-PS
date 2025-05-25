@@ -26,6 +26,7 @@ const SearchResultPage = () => {
   useEffect(() => {
     const fetchTagsByType = async () => {
       try {
+        // 対象年齢タグを取得
         const ageRatingsResponse = await fetch('/api/tags/by-type?categoryName=age_rating');
         const ageRatingData = await ageRatingsResponse.json();
         if (ageRatingsResponse.ok) {
@@ -34,6 +35,7 @@ const SearchResultPage = () => {
           console.error('Failed to fetch age rating tags:', ageRatingData.message);
         }
 
+        // カテゴリータグを取得
         const categoriesResponse = await fetch('/api/tags/by-type?categoryName=product_category');
         const categoryData = await categoriesResponse.json();
         if (categoriesResponse.ok) {
@@ -42,6 +44,7 @@ const SearchResultPage = () => {
           console.error('Failed to fetch category tags:', categoryData.message);
         }
 
+        // 主要機能タグを取得
         const featuresResponse = await fetch('/api/tags/by-type?categoryName=feature');
         const featureData = await featuresResponse.json();
         if (featuresResponse.ok) {
