@@ -41,6 +41,13 @@ async function main() {
     create: { name: '主要機能', color: '#33CCFF' },
   });
 
+  // その他のタグカテゴリの初期データ
+  const otherTagCategory = await prisma.tagCategory.upsert({
+    where: { name: 'other' },
+    update: {},
+    create: { name: 'other', color: '#999999' }, // 仮の色を設定
+  });
+
   // 対象年齢タグの初期データ
   const ageRatingTags = [
     { name: '全年齢', tagCategoryId: ageRatingCategory.id },
@@ -48,7 +55,7 @@ async function main() {
     { name: 'R-18', tagCategoryId: ageRatingCategory.id },
     { name: 'NSFW', tagCategoryId: ageRatingCategory.id },
   ];
-
+ 
   for (const tagData of ageRatingTags) {
     await prisma.tag.upsert({
       where: { name: tagData.name },
@@ -56,7 +63,7 @@ async function main() {
       create: { ...tagData, language: 'ja' },
     });
   }
-
+ 
   // カテゴリータグの初期データ
   const categoryTags = [
     { name: 'アバター', tagCategoryId: productCategory.id },
@@ -67,7 +74,7 @@ async function main() {
     { name: 'ツール', tagCategoryId: productCategory.id },
     { name: 'その他', tagCategoryId: productCategory.id },
   ];
-
+ 
   for (const tagData of categoryTags) {
     await prisma.tag.upsert({
       where: { name: tagData.name },
@@ -75,7 +82,7 @@ async function main() {
       create: { ...tagData, language: 'ja' },
     });
   }
-
+ 
   // 主要機能タグの初期データ
   const featureTags = [
     { name: 'Quest対応', tagCategoryId: featureCategory.id },
@@ -84,7 +91,7 @@ async function main() {
     { name: 'SDK3', tagCategoryId: featureCategory.id },
     { name: 'SDK2', tagCategoryId: featureCategory.id },
   ];
-
+ 
   for (const tagData of featureTags) {
     await prisma.tag.upsert({
       where: { name: tagData.name },
@@ -92,7 +99,7 @@ async function main() {
       create: { ...tagData, language: 'ja' },
     });
   }
-
+ 
   console.log('Seed data inserted successfully');
 }
  

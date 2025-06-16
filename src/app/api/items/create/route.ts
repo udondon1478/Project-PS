@@ -18,9 +18,11 @@ export async function POST(request: Request) {
     //console.log('Received productInfo:', productInfo); // ここにログを追加
     const { boothJpUrl, boothEnUrl, title, description, lowPrice, highPrice, publishedAt, sellerName, sellerUrl, sellerIconUrl, images, variations } = productInfo;
  
+    console.log('Received publishedAt:', publishedAt); // publishedAtの形式を確認するためのログ
     
         // 必須フィールドのバリデーション
         if (!productInfo || !boothJpUrl || !title || !sellerUrl || !tags || !variations) {
+          console.error("必須情報が不足しています。", { productInfo, boothJpUrl, title, sellerUrl, tags, variations });
           return NextResponse.json({ message: "必須情報が不足しています。（販売者情報、バリエーション情報を含む）" }, { status: 400 });
         }
     
@@ -43,14 +45,12 @@ export async function POST(request: Request) {
         const uniqueTagNames = Array.from(new Set(allTagNames));
  
         // タグカテゴリ 'other' を検索
-        // タグカテゴリ 'other' を検索
         const otherTagCategory = await prisma.tagCategory.findUnique({
           where: { name: 'other' },
         });
 
         if (!otherTagCategory) {
-          // 'other' カテゴリが存在しない場合はエラーハンドリング
-          // TODO: 適切なエラーレスポンスを返す
+          console.error('TagCategory "other" not found');
           return new Response(JSON.stringify({ error: 'TagCategory "other" not found' }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' },
@@ -78,6 +78,7 @@ export async function POST(request: Request) {
         let seller = null; // seller変数をifブロックの外で宣言
     
         // sellerUrlがリクエストに含まれている場合のみSellerのupsertを行う
+        // sellerUrlは必須になったため、このelseブロックは基本的には実行されないが、念のため残しておく
         if (sellerUrl) {
           seller = await prisma.seller.upsert({
             where: { sellerUrl: sellerUrl }, // sellerUrlで検索 (ユニーク制約があるため)
@@ -154,6 +155,8 @@ export async function POST(request: Request) {
         return NextResponse.json(newProduct, { status: 201 });
       } catch (error) {
         console.error("新規商品登録エラー:", error);
+        // エラーオブジェクト全体をログ出力
+        console.error(error);
         const errorMessage = error instanceof Error ? error.message : "不明なエラー";
         return NextResponse.json({ message: "新規商品登録に失敗しました。", error: errorMessage }, { status: 500 });
       }
