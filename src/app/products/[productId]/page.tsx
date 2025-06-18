@@ -5,7 +5,16 @@ import { useParams } from 'next/navigation';
 
 interface ProductDetail {
   id: string;
-  // 他のプロパティは仮実装では不要
+  boothJpUrl: string;
+  boothEnUrl: string;
+  title: string;
+  description: string | null;
+  images: {
+    imageUrl: string;
+    caption: string | null;
+    order: number;
+    isMain: boolean;
+  }[];
 }
 
 const ProductDetailPage = () => {
@@ -58,9 +67,38 @@ const ProductDetailPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 pt-40">
-      <h1>商品詳細ページ (仮)</h1>
-      <p>商品ID: {product.id}</p>
-      {/* 他の商品情報は仮実装では表示しない */}
+      <h1 className="text-2xl font-bold mb-4">{product.title}</h1>
+      <p className="mb-2">商品ID: {product.id}</p>
+
+      <div className="mb-4">
+        <h2 className="text-xl font-semibold mb-2">Booth URL</h2>
+        <p>日本語版: <a href={product.boothJpUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{product.boothJpUrl}</a></p>
+        <p>英語版: <a href={product.boothEnUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{product.boothEnUrl}</a></p>
+      </div>
+
+      {product.images && product.images.length > 0 && (
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold mb-2">商品画像</h2>
+          <div className="flex flex-wrap gap-4">
+            {product.images.map((image, index) => (
+              <div key={index} className="border p-2">
+                <img src={image.imageUrl} alt={image.caption || `商品画像 ${index + 1}`} className="max-w-xs h-auto"/>
+                {image.caption && <p className="text-sm mt-1">{image.caption}</p>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="mb-4">
+        <h2 className="text-xl font-semibold mb-2">Description (仮表示)</h2>
+        {product.description ? (
+          <pre className="whitespace-pre-wrap break-words bg-gray-100 p-4 rounded">{product.description}</pre>
+        ) : (
+          <p>Descriptionはありません。</p>
+        )}
+      </div>
+
     </div>
   );
 };

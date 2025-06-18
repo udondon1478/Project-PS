@@ -1,15 +1,31 @@
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib_prisma/prisma'; // Prismaクライアントをインポート
 
 export async function GET(request: Request, { params }: { params: { productId: string } }) {
   const productId = params.productId;
 
-  // 仮のダミーデータ
-  const dummyProduct = {
-    id: productId,
-    title: `仮の商品タイトル (${productId})`,
-    // 他のプロパティは仮実装では省略
-  };
+  try {
+    const product = await prisma.product.findUnique({
+      where: {
+        id: productId,
+      },
+      include: {
+        images: { // 画像情報も取得
+          orderBy: {
+            order: 'asc', // 表示順でソート
+          },
+        },
+      },
+    });
 
-  // ダミーデータをJSON形式で返す
-  return NextResponse.json(dummyProduct);
+    if (!product) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
+
+    // 取得した商品データをJSON形式で返す
+    return NextResponse.json(product);
+  } catch (error) {
+    console.error('Error fetching product:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
 }
