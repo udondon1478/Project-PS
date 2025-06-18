@@ -23,7 +23,18 @@ interface ProductDetail {
     order: number;
     isMain: boolean;
   }[];
-}
+  productTags: { // 商品に紐づくタグ情報
+    tag: { // タグ情報
+      id: string;
+      name: string;
+      tagCategoryId: string;
+      tagCategory: { // タグカテゴリ情報
+        id: string;
+        name: string;
+      };
+    };
+  }[];
+};
 
 const ProductDetailPage = () => {
   const params = useParams();
@@ -35,6 +46,7 @@ const ProductDetailPage = () => {
   const [api, setApi] = useState<CarouselApi>();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slideCount, setSlideCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState(''); // 検索クエリの状態
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -75,6 +87,26 @@ const ProductDetailPage = () => {
       setCurrentSlide(api.selectedScrollSnap() + 1);
     });
   }, [api]);
+
+  // タグを検索クエリに追加する関数
+  const addTagToSearch = (tagName: string) => {
+    setSearchQuery(prevQuery => {
+      const tags = prevQuery.split(' ').filter(tag => tag !== '');
+      if (!tags.includes(tagName)) {
+        return [...tags, tagName].join(' ');
+      }
+      return prevQuery;
+    });
+  };
+
+  // タグを検索クエリから除外する関数
+  const removeTagFromSearch = (tagName: string) => {
+    setSearchQuery(prevQuery => {
+      const tags = prevQuery.split(' ').filter(tag => tag !== '' && tag !== tagName);
+      return tags.join(' ');
+    });
+  };
+
 
   if (loading) {
     return <div>Loading...</div>;
@@ -135,6 +167,34 @@ const ProductDetailPage = () => {
         ) : (
           <p>Descriptionはありません。</p>
         )}
+      </div>
+
+      {/* タグリスト表示 */}
+      {product.productTags && product.productTags.length > 0 && (
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold mb-2">タグ</h2>
+          <div className="flex flex-wrap gap-2">
+            {product.productTags.map(({ tag }) => (
+              <div key={tag.id} className="flex items-center bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700">
+                <button onClick={() => removeTagFromSearch(tag.name)} className="mr-1 text-red-500 hover:text-red-700">-</button>
+                <span>{tag.name}</span>
+                <button onClick={() => addTagToSearch(tag.name)} className="ml-1 text-green-500 hover:text-green-700">+</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 仮の検索バーコンポーネント */}
+      <div className="mb-4">
+        <h2 className="text-xl font-semibold mb-2">検索クエリ (仮)</h2>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="border border-gray-300 rounded-md p-2 w-full"
+          placeholder="タグを検索クエリに追加/除外できます"
+        />
       </div>
 
     </div>

@@ -15,6 +15,15 @@ export async function GET(request: Request, { params }: { params: { productId: s
             order: 'asc', // 表示順でソート
           },
         },
+        productTags: { // 商品に紐づくタグ情報も取得
+          include: {
+            tag: { // タグ情報
+              include: {
+                tagCategory: true, // タグカテゴリ情報
+              },
+            },
+          },
+        },
       },
     });
 
