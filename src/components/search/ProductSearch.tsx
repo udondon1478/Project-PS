@@ -105,6 +105,22 @@ export default function ProductSearch() {
     fetchTagsByType();
   }, []); // コンポーネントマウント時に一度だけ実行
 
+  // セッションストレージからタグを読み込む (コンポーネントマウント時)
+  useEffect(() => {
+    const savedTags = sessionStorage.getItem('polyseek-search-tags');
+    if (savedTags) {
+      try {
+        const parsedTags = JSON.parse(savedTags);
+        if (Array.isArray(parsedTags)) {
+          setSelectedTags(parsedTags);
+        }
+      } catch (error) {
+        console.error("Failed to parse tags from sessionStorage:", error);
+        // エラー時はストレージをクリアするか、デフォルト値に戻すなどの対応も検討
+      }
+    }
+  }, []); // コンポーネントマウント時に一度だけ実行
+
   // Fetch tag suggestions based on input with debounce
   useEffect(() => {
     if (searchQuery.length === 0) {
@@ -153,6 +169,11 @@ export default function ProductSearch() {
     };
   }, []);
 
+
+  // selectedTagsが変更されたらセッションストレージに保存
+  useEffect(() => {
+    sessionStorage.setItem('polyseek-search-tags', JSON.stringify(selectedTags));
+  }, [selectedTags]); // selectedTagsが変更されるたびに実行
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
