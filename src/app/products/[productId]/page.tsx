@@ -2,6 +2,14 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 
 interface ProductDetail {
   id: string;
@@ -24,6 +32,9 @@ const ProductDetailPage = () => {
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [api, setApi] = useState<CarouselApi>();
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [slideCount, setSlideCount] = useState(0);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -53,6 +64,18 @@ const ProductDetailPage = () => {
     }
   }, [productId]); // productIdが変更されたら再フェッチ
 
+  useEffect(() => {
+    if (!api) {
+      return;
+    }
+    setSlideCount(api.scrollSnapList().length);
+    setCurrentSlide(api.selectedScrollSnap() + 1);
+
+    api.on("select", () => {
+      setCurrentSlide(api.selectedScrollSnap() + 1);
+    });
+  }, [api]);
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -79,12 +102,27 @@ const ProductDetailPage = () => {
       {product.images && product.images.length > 0 && (
         <div className="mb-4">
           <h2 className="text-xl font-semibold mb-2">商品画像</h2>
-          <div className="flex flex-wrap gap-4">
-            {product.images.map((image, index) => (
-              <div key={index} className="border p-2">
-                <img src={image.imageUrl} alt={image.caption || `商品画像 ${index + 1}`} className="max-w-xs h-auto"/>
-                {image.caption && <p className="text-sm mt-1">{image.caption}</p>}
-              </div>
+          <Carousel setApi={setApi} opts={{ loop: true }}>
+            <CarouselContent>
+              {product.images.map((image, index) => (
+                <CarouselItem key={index} className="flex justify-center items-center">
+                  <img src={image.imageUrl} alt={image.caption || `商品画像 ${index + 1}`} className="max-w-full h-auto max-h-96 object-contain"/>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious />
+            <CarouselNext />
+          </Carousel>
+          <div className="flex justify-center gap-2 mt-4">
+            {Array.from({ length: slideCount }).map((_, index) => (
+              <button
+                key={index}
+                className={`w-2 h-2 rounded-full ${
+                  index === currentSlide - 1 ? "bg-blue-500" : "bg-gray-300"
+                }`}
+                onClick={() => api?.scrollTo(index)}
+                aria-label={`Go to slide ${index + 1}`}
+              />
             ))}
           </div>
         </div>
