@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient, Prisma } from '@prisma/client'; // Prismaをインポート
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  log: ['query', 'info', 'warn', 'error'], // クエリログを有効化
+});
 
 export async function GET(request: Request) {
   try {

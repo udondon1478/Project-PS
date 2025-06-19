@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Filter, X } from 'lucide-react';
@@ -279,7 +279,7 @@ export default function ProductSearch() {
     }
   };
 
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     setIsFilterSidebarOpen(false);
     console.log("Searching with:", {
       tags: selectedTags,
@@ -302,7 +302,7 @@ export default function ProductSearch() {
     // 価格帯フィルターも必要であればここに追加
 
     router.push(`/search?${queryParams.toString()}`);
-  };
+  }, [selectedTags, selectedNegativeTags, detailedFilters, router]); // 依存配列にステートとrouterを追加
 
   const handleDetailedFilterChange = (filterType: keyof typeof detailedFilters, value: string | null) => {
     setDetailedFilters(prev => ({ ...prev, [filterType]: value }));
