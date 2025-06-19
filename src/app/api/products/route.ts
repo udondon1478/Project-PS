@@ -6,9 +6,16 @@ const prisma = new PrismaClient();
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
+
+    console.log('All searchParams entries:'); // searchParamsの全エントリーをログ出力
+    for (const [key, value] of searchParams.entries()) {
+      console.log(`  ${key}: ${value}`);
+    }
+
     const tagsParam = searchParams.get('tags');
     const negativeTagsParam = searchParams.get('negativeTags'); // マイナス検索タグを取得
-    console.log('Raw negativeTagsParam:', negativeTagsParam); // Raw値をログ出力
+    console.log('Raw negativeTagsParam (get):', negativeTagsParam); // get()で取得したRaw値をログ出力
+
     const ageRatingTagId = searchParams.get('ageRatingTagId'); // 対象年齢タグIDを取得
     const categoryTagId = searchParams.get('categoryTagId'); // カテゴリータグIDを取得
     const featureTagIdsParam = searchParams.get('featureTagIds'); // 主要機能タグIDを取得
