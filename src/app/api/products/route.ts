@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client'; // Prismaをインポート
 
 const prisma = new PrismaClient();
 
@@ -7,13 +7,16 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const tagsParam = searchParams.get('tags');
+    const negativeTagsParam = searchParams.get('negativeTags'); // マイナス検索タグを取得
+    console.log('Raw negativeTagsParam:', negativeTagsParam); // Raw値をログ出力
     const ageRatingTagId = searchParams.get('ageRatingTagId'); // 対象年齢タグIDを取得
     const categoryTagId = searchParams.get('categoryTagId'); // カテゴリータグIDを取得
     const featureTagIdsParam = searchParams.get('featureTagIds'); // 主要機能タグIDを取得
- 
+
     const tagNames = tagsParam ? tagsParam.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : [];
+    const negativeTagNames = negativeTagsParam ? negativeTagsParam.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : []; // マイナス検索タグ名をパース
     const featureTagIds = featureTagIdsParam ? featureTagIdsParam.split(',').map(id => id.trim()).filter(id => id.length > 0) : [];
- 
+
     const tagIdsToFilter = [...featureTagIds];
     if (ageRatingTagId) {
       tagIdsToFilter.push(ageRatingTagId);
@@ -21,10 +24,10 @@ export async function GET(request: Request) {
     if (categoryTagId) {
       tagIdsToFilter.push(categoryTagId);
     }
- 
-    const whereConditions: any[] = [];
- 
-    // タグ名によるフィルタリング (手動入力されたタグ)
+
+    const whereConditions: Prisma.ProductWhereInput[] = []; // 型を修正
+
+    // 通常タグ名によるフィルタリング (手動入力されたタグ)
     if (tagNames.length > 0) {
       whereConditions.push({
         AND: tagNames.map(tagName => ({
@@ -38,7 +41,22 @@ export async function GET(request: Request) {
         }))
       });
     }
- 
+
+    // マイナス検索タグ名によるフィルタリング
+    if (negativeTagNames.length > 0) {
+      whereConditions.push({
+        AND: negativeTagNames.map(negativeTagName => ({
+          productTags: {
+            none: { // noneを使用して指定タグを含まない商品を検索
+              tag: {
+                name: negativeTagName
+              }
+            }
+          }
+        }))
+      });
+    }
+
     // タグIDによるフィルタリング (対象年齢、カテゴリー、主要機能)
     if (tagIdsToFilter.length > 0) {
        whereConditions.push({
@@ -51,12 +69,13 @@ export async function GET(request: Request) {
          }))
        });
     }
- 
+
     // 検索条件が何も指定されていない場合は空の結果を返す
-    if (whereConditions.length === 0) {
+    // ただし、マイナス検索タグのみが指定された場合は検索を実行する
+    if (whereConditions.length === 0 && negativeTagNames.length === 0) {
        return NextResponse.json([]);
     }
- 
+
     const products = await prisma.product.findMany({
       where: {
         AND: whereConditions
@@ -95,7 +114,7 @@ export async function GET(request: Request) {
       })),
     }));
 
-    console.log(`検索タグ: ${tagNames.join(',')}, 検索結果数: ${formattedProducts.length}`);
+    console.log(`検索タグ: ${tagNames.join(',')}, マイナス検索タグ: ${negativeTagNames.join(',')}, 検索結果数: ${formattedProducts.length}`); // ログにマイナス検索タグを追加
 
     return NextResponse.json(formattedProducts);
 
