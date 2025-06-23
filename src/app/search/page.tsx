@@ -18,50 +18,10 @@ const SearchResultPage = () => {
   const [selectedNegativeTags, setSelectedNegativeTags] = useState<string[]>(initialNegativeTags); // negativeTagsステートを追加
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [ageRatingTags, setAgeRatingTags] = useState<{ id: string; name: string }[]>([]);
-  const [categoryTags, setCategoryTags] = useState<{ id: string; name: string }[]>([]);
-  const [featureTags, setFeatureTags] = useState<{ id: string; name: string }[]>([]);
   const [selectedAgeRatingTagId, setSelectedAgeRatingTagId] = useState<string>(initialAgeRatingTagId);
   const [selectedCategoryTagId, setSelectedCategoryTagId] = useState<string>(initialCategoryTagId);
   const [selectedFeatureTagIds, setSelectedFeatureTagIds] = useState<string[]>(initialFeatureTagIds);
 
-  useEffect(() => {
-    const fetchTagsByType = async () => {
-      try {
-        // 対象年齢タグを取得
-        const ageRatingsResponse = await fetch('/api/tags/by-type?categoryName=age_rating');
-        const ageRatingData = await ageRatingsResponse.json();
-        if (ageRatingsResponse.ok) {
-          setAgeRatingTags(ageRatingData);
-        } else {
-          console.error('Failed to fetch age rating tags:', ageRatingData.message);
-        }
-
-        // カテゴリータグを取得
-        const categoriesResponse = await fetch('/api/tags/by-type?categoryName=product_category');
-        const categoryData = await categoriesResponse.json();
-        if (categoriesResponse.ok) {
-          setCategoryTags(categoryData);
-        } else {
-          console.error('Failed to fetch category tags:', categoryData.message);
-        }
-
-        // 主要機能タグを取得
-        const featuresResponse = await fetch('/api/tags/by-type?categoryName=feature');
-        const featureData = await featuresResponse.json();
-        if (featuresResponse.ok) {
-          setFeatureTags(featureData);
-        } else {
-          console.error('Failed to fetch feature tags:', featureData.message);
-        }
-
-      } catch (error) {
-        console.error('Error fetching tags by type:', error);
-      }
-    };
-
-    fetchTagsByType();
-  }, []);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -93,7 +53,7 @@ const SearchResultPage = () => {
     };
 
     fetchProducts();
-  }, [searchTerm, selectedAgeRatingTagId, selectedCategoryTagId, selectedFeatureTagIds, selectedNegativeTags]); // 依存配列にselectedNegativeTagsを追加
+  }, [searchTerm, selectedAgeRatingTagId, selectedCategoryTagId, selectedFeatureTagIds, selectedNegativeTags]); // 依存配列に検索条件関連ステートを含める
 
   useEffect(() => {
     const queryParams = new URLSearchParams();
@@ -105,11 +65,25 @@ const SearchResultPage = () => {
     router.replace(`/search?${queryParams.toString()}`);
   }, [searchTerm, selectedAgeRatingTagId, selectedCategoryTagId, selectedFeatureTagIds, selectedNegativeTags, router]); // 依存配列にselectedNegativeTagsを追加
 
-  const handleFeatureTagToggle = (tagId: string) => {
-    setSelectedFeatureTagIds(prev =>
-      prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
-    );
-  };
+  // URLのクエリパラメータ変更を監視し、ステートを更新
+  useEffect(() => {
+    const currentNegativeTags = searchParams.get("negativeTags")?.split(',') || [];
+    setSelectedNegativeTags(currentNegativeTags);
+
+    const currentAgeRatingTagId = searchParams.get("ageRatingTagId") || "";
+    setSelectedAgeRatingTagId(currentAgeRatingTagId);
+
+    const currentCategoryTagId = searchParams.get("categoryTagId") || "";
+    setSelectedCategoryTagId(currentCategoryTagId);
+
+    const currentFeatureTagIds = searchParams.get("featureTagIds")?.split(',') || [];
+    setSelectedFeatureTagIds(currentFeatureTagIds);
+
+    // searchTerm は useSearchParams から直接取得しているのでステート更新は不要
+
+  }, [searchParams.toString()]); // searchParams の文字列表現が変更されたときに実行
+
+
 
   if (loading) {
     return <div>Loading...</div>;

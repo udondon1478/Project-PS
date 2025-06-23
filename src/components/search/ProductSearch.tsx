@@ -108,32 +108,43 @@ export default function ProductSearch() {
 
   // セッションストレージからタグを読み込む (コンポーネントマウント時)
   // セッションストレージからタグを読み込む (コンポーネントマウント時)
+  // URLのクエリパラメータまたはセッションストレージからタグを読み込む (コンポーネントマウント時)
   useEffect(() => {
-    const savedTags = sessionStorage.getItem('polyseek-search-tags');
-    const savedNegativeTags = sessionStorage.getItem('polyseek-search-negative-tags'); // マイナス検索タグも読み込む
+    const urlSearchParams = new URLSearchParams(window.location.search);
+    const urlTags = urlSearchParams.get("tags")?.split(',').filter(tag => tag.length > 0) || [];
+    const urlNegativeTags = urlSearchParams.get("negativeTags")?.split(',').filter(tag => tag.length > 0) || [];
 
-    if (savedTags) {
-      try {
-        const parsedTags = JSON.parse(savedTags);
-        if (Array.isArray(parsedTags)) {
-          setSelectedTags(parsedTags);
+    if (urlTags.length > 0 || urlNegativeTags.length > 0) {
+      // URLにタグ情報がある場合はURLから読み込む
+      setSelectedTags(urlTags);
+      setSelectedNegativeTags(urlNegativeTags);
+    } else {
+      // URLにタグ情報がない場合はセッションストレージから読み込む
+      const savedTags = sessionStorage.getItem('polyseek-search-tags');
+      const savedNegativeTags = sessionStorage.getItem('polyseek-search-negative-tags');
+
+      if (savedTags) {
+        try {
+          const parsedTags = JSON.parse(savedTags);
+          if (Array.isArray(parsedTags)) {
+            setSelectedTags(parsedTags);
+          }
+        } catch (error) {
+          console.error("Failed to parse tags from sessionStorage:", error);
         }
-      } catch (error) {
-        console.error("Failed to parse tags from sessionStorage:", error);
+      }
+
+      if (savedNegativeTags) {
+        try {
+          const parsedNegativeTags = JSON.parse(savedNegativeTags);
+          if (Array.isArray(parsedNegativeTags)) {
+            setSelectedNegativeTags(parsedNegativeTags);
+          }
+        } catch (error) {
+          console.error("Failed to parse negative tags from sessionStorage:", error);
+        }
       }
     }
-
-    if (savedNegativeTags) { // マイナス検索タグの読み込み
-      try {
-        const parsedNegativeTags = JSON.parse(savedNegativeTags);
-        if (Array.isArray(parsedNegativeTags)) {
-          setSelectedNegativeTags(parsedNegativeTags);
-        }
-      } catch (error) {
-        console.error("Failed to parse negative tags from sessionStorage:", error);
-      }
-    }
-
   }, []); // コンポーネントマウント時に一度だけ実行
 
   // Fetch tag suggestions based on input with debounce
@@ -241,11 +252,28 @@ export default function ProductSearch() {
   };
 
   const handleRemoveTag = (tagToRemove: string, isNegative: boolean = false) => {
+    const currentSearchParams = new URLSearchParams(window.location.search);
+
     if (isNegative) {
-      setSelectedNegativeTags(selectedNegativeTags.filter(tag => tag !== tagToRemove));
+      // マイナスタグの削除
+      const negativeTags = currentSearchParams.get("negativeTags")?.split(',').filter(tag => tag !== tagToRemove) || [];
+      if (negativeTags.length > 0) {
+        currentSearchParams.set("negativeTags", negativeTags.join(','));
+      } else {
+        currentSearchParams.delete("negativeTags");
+      }
+      setSelectedNegativeTags(negativeTags); // ステートも更新してUI表示を即時反映
     } else {
-      setSelectedTags(selectedTags.filter(tag => tag !== tagToRemove));
+      // 通常タグの削除
+      const tags = currentSearchParams.get("tags")?.split(',').filter(tag => tag !== tagToRemove) || [];
+       if (tags.length > 0) {
+        currentSearchParams.set("tags", tags.join(','));
+      } else {
+        currentSearchParams.delete("tags");
+      }
+      setSelectedTags(tags); // ステートも更新してUI表示を即時反映
     }
+
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -301,7 +329,7 @@ export default function ProductSearch() {
     }
     // 価格帯フィルターも必要であればここに追加
 
-    router.push(`/search?${queryParams.toString()}`);
+    router.replace(`/search?${queryParams.toString()}`);
   }, [selectedTags, selectedNegativeTags, detailedFilters, router]); // 依存配列にステートとrouterを追加
 
   const handleDetailedFilterChange = (filterType: keyof typeof detailedFilters, value: string | null) => {
