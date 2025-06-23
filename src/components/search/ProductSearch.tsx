@@ -241,11 +241,30 @@ export default function ProductSearch() {
   };
 
   const handleRemoveTag = (tagToRemove: string, isNegative: boolean = false) => {
+    const currentSearchParams = new URLSearchParams(window.location.search);
+
     if (isNegative) {
-      setSelectedNegativeTags(selectedNegativeTags.filter(tag => tag !== tagToRemove));
+      // マイナスタグの削除
+      const negativeTags = currentSearchParams.get("negativeTags")?.split(',').filter(tag => tag !== tagToRemove) || [];
+      if (negativeTags.length > 0) {
+        currentSearchParams.set("negativeTags", negativeTags.join(','));
+      } else {
+        currentSearchParams.delete("negativeTags");
+      }
+      setSelectedNegativeTags(negativeTags); // ステートも更新してUI表示を即時反映
     } else {
-      setSelectedTags(selectedTags.filter(tag => tag !== tagToRemove));
+      // 通常タグの削除
+      const tags = currentSearchParams.get("tags")?.split(',').filter(tag => tag !== tagToRemove) || [];
+       if (tags.length > 0) {
+        currentSearchParams.set("tags", tags.join(','));
+      } else {
+        currentSearchParams.delete("tags");
+      }
+      setSelectedTags(tags); // ステートも更新してUI表示を即時反映
     }
+
+    // URLを更新して検索結果ページに反映させる
+    router.replace(`/search?${currentSearchParams.toString()}`);
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
