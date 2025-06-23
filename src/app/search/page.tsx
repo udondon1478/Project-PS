@@ -53,7 +53,7 @@ const SearchResultPage = () => {
     };
 
     fetchProducts();
-  }, [searchTerm, selectedAgeRatingTagId, selectedCategoryTagId, selectedFeatureTagIds, selectedNegativeTags]); // 依存配列にselectedNegativeTagsを追加
+  }, [searchTerm, selectedAgeRatingTagId, selectedCategoryTagId, selectedFeatureTagIds, selectedNegativeTags]); // 依存配列に検索条件関連ステートを含める
 
   useEffect(() => {
     const queryParams = new URLSearchParams();
@@ -81,7 +81,7 @@ const SearchResultPage = () => {
 
     // searchTerm は useSearchParams から直接取得しているのでステート更新は不要
 
-  }, [searchParams]); // searchParams が変更されたときに実行
+  }, [searchParams.toString()]); // searchParams の文字列表現が変更されたときに実行
 
 
 

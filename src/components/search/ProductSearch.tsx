@@ -108,32 +108,43 @@ export default function ProductSearch() {
 
   // セッションストレージからタグを読み込む (コンポーネントマウント時)
   // セッションストレージからタグを読み込む (コンポーネントマウント時)
+  // URLのクエリパラメータまたはセッションストレージからタグを読み込む (コンポーネントマウント時)
   useEffect(() => {
-    const savedTags = sessionStorage.getItem('polyseek-search-tags');
-    const savedNegativeTags = sessionStorage.getItem('polyseek-search-negative-tags'); // マイナス検索タグも読み込む
+    const urlSearchParams = new URLSearchParams(window.location.search);
+    const urlTags = urlSearchParams.get("tags")?.split(',').filter(tag => tag.length > 0) || [];
+    const urlNegativeTags = urlSearchParams.get("negativeTags")?.split(',').filter(tag => tag.length > 0) || [];
 
-    if (savedTags) {
-      try {
-        const parsedTags = JSON.parse(savedTags);
-        if (Array.isArray(parsedTags)) {
-          setSelectedTags(parsedTags);
+    if (urlTags.length > 0 || urlNegativeTags.length > 0) {
+      // URLにタグ情報がある場合はURLから読み込む
+      setSelectedTags(urlTags);
+      setSelectedNegativeTags(urlNegativeTags);
+    } else {
+      // URLにタグ情報がない場合はセッションストレージから読み込む
+      const savedTags = sessionStorage.getItem('polyseek-search-tags');
+      const savedNegativeTags = sessionStorage.getItem('polyseek-search-negative-tags');
+
+      if (savedTags) {
+        try {
+          const parsedTags = JSON.parse(savedTags);
+          if (Array.isArray(parsedTags)) {
+            setSelectedTags(parsedTags);
+          }
+        } catch (error) {
+          console.error("Failed to parse tags from sessionStorage:", error);
         }
-      } catch (error) {
-        console.error("Failed to parse tags from sessionStorage:", error);
+      }
+
+      if (savedNegativeTags) {
+        try {
+          const parsedNegativeTags = JSON.parse(savedNegativeTags);
+          if (Array.isArray(parsedNegativeTags)) {
+            setSelectedNegativeTags(parsedNegativeTags);
+          }
+        } catch (error) {
+          console.error("Failed to parse negative tags from sessionStorage:", error);
+        }
       }
     }
-
-    if (savedNegativeTags) { // マイナス検索タグの読み込み
-      try {
-        const parsedNegativeTags = JSON.parse(savedNegativeTags);
-        if (Array.isArray(parsedNegativeTags)) {
-          setSelectedNegativeTags(parsedNegativeTags);
-        }
-      } catch (error) {
-        console.error("Failed to parse negative tags from sessionStorage:", error);
-      }
-    }
-
   }, []); // コンポーネントマウント時に一度だけ実行
 
   // Fetch tag suggestions based on input with debounce
@@ -263,8 +274,6 @@ export default function ProductSearch() {
       setSelectedTags(tags); // ステートも更新してUI表示を即時反映
     }
 
-    // URLを更新して検索結果ページに反映させる
-    router.replace(`/search?${currentSearchParams.toString()}`);
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -320,7 +329,7 @@ export default function ProductSearch() {
     }
     // 価格帯フィルターも必要であればここに追加
 
-    router.push(`/search?${queryParams.toString()}`);
+    router.replace(`/search?${queryParams.toString()}`);
   }, [selectedTags, selectedNegativeTags, detailedFilters, router]); // 依存配列にステートとrouterを追加
 
   const handleDetailedFilterChange = (filterType: keyof typeof detailedFilters, value: string | null) => {
