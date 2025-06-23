@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Filter, X } from 'lucide-react';
@@ -34,7 +34,6 @@ const priceRanges = ["無料", "¥1-¥999", "¥1000-¥2999", "¥3000-¥4999", "�
 export default function ProductSearch() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [selectedNegativeTags, setSelectedNegativeTags] = useState<string[]>([]); // マイナス検索用タグを追加
   const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
   const [isSuggestionsVisible, setIsSuggestionsVisible] = useState(false);
   const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
@@ -107,11 +106,8 @@ export default function ProductSearch() {
   }, []); // コンポーネントマウント時に一度だけ実行
 
   // セッションストレージからタグを読み込む (コンポーネントマウント時)
-  // セッションストレージからタグを読み込む (コンポーネントマウント時)
   useEffect(() => {
     const savedTags = sessionStorage.getItem('polyseek-search-tags');
-    const savedNegativeTags = sessionStorage.getItem('polyseek-search-negative-tags'); // マイナス検索タグも読み込む
-
     if (savedTags) {
       try {
         const parsedTags = JSON.parse(savedTags);
@@ -120,20 +116,9 @@ export default function ProductSearch() {
         }
       } catch (error) {
         console.error("Failed to parse tags from sessionStorage:", error);
+        // エラー時はストレージをクリアするか、デフォルト値に戻すなどの対応も検討
       }
     }
-
-    if (savedNegativeTags) { // マイナス検索タグの読み込み
-      try {
-        const parsedNegativeTags = JSON.parse(savedNegativeTags);
-        if (Array.isArray(parsedNegativeTags)) {
-          setSelectedNegativeTags(parsedNegativeTags);
-        }
-      } catch (error) {
-        console.error("Failed to parse negative tags from sessionStorage:", error);
-      }
-    }
-
   }, []); // コンポーネントマウント時に一度だけ実行
 
   // Fetch tag suggestions based on input with debounce
@@ -154,12 +139,10 @@ export default function ProductSearch() {
         // APIはTagオブジェクトの配列を返すので、nameプロパティを抽出してフィルタリング
         const filteredSuggestions = data
           .map((tag: { name: string }) => tag.name) // nameプロパティを抽出
-          .filter((tagName: string) =>
-            !selectedTags.includes(tagName) && !selectedNegativeTags.includes(tagName) // 選択済みの通常タグとマイナス検索タグを除外
-          );
- 
-         setTagSuggestions(filteredSuggestions);
-         setIsSuggestionsVisible(filteredSuggestions.length > 0);
+          .filter((tagName: string) => !selectedTags.includes(tagName)); // 選択済みのタグを除外
+
+        setTagSuggestions(filteredSuggestions);
+        setIsSuggestionsVisible(filteredSuggestions.length > 0);
       } catch (error) {
         console.error("Error fetching tag suggestions:", error);
         setTagSuggestions([]);
@@ -187,112 +170,79 @@ export default function ProductSearch() {
   }, []);
 
 
-  // selectedTagsとselectedNegativeTagsが変更されたらセッションストレージに保存
+  // selectedTagsが変更されたらセッションストレージに保存
   useEffect(() => {
     sessionStorage.setItem('polyseek-search-tags', JSON.stringify(selectedTags));
-    sessionStorage.setItem('polyseek-search-negative-tags', JSON.stringify(selectedNegativeTags)); // マイナス検索タグも保存
-  }, [selectedTags, selectedNegativeTags]); // 両方のステートを依存配列に追加
+  }, [selectedTags]); // selectedTagsが変更されるたびに実行
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
   };
 
   const handleAddTag = (tag: string) => {
-    const trimmedTag = tag.trim();
-    if (trimmedTag === '') return;
-
-    const isNegative = trimmedTag.startsWith('-');
-    const tagName = isNegative ? trimmedTag.substring(1) : trimmedTag;
-
-    if (tagName === '') return; // プレフィックスのみの場合は追加しない
-
-    // 既に通常タグまたはマイナス検索タグとして追加されていないか確認
-    if (selectedTags.includes(tagName) || selectedNegativeTags.includes(tagName)) {
-      setSearchQuery('');
-      setTagSuggestions([]);
-      setIsSuggestionsVisible(false);
-      searchInputRef.current?.focus();
-      return;
-    }
-
-    if (isNegative) {
-      // マイナス検索タグとして追加
-      setSelectedNegativeTags(prev => [...prev, tagName]);
-    } else {
-      // 通常タグとして追加
-      // 対象年齢タグの場合は一つだけ選択可能にするロジックを維持
+    if (!selectedTags.includes(tag)) {
+      // Ensure only one age rating tag is selected at a time
+      // ageRatingTags配列に含まれるタグ名を持つタグが既にあれば削除してから追加
       const ageRatingTagNames = ageRatingTags.map(tag => tag.name);
-      if (ageRatingTagNames.includes(tagName)) {
+      if (ageRatingTagNames.includes(tag)) {
         const existingAgeTag = selectedTags.find(t => ageRatingTagNames.includes(t));
         if (existingAgeTag) {
-          setSelectedTags(prev => [...prev.filter(t => t !== existingAgeTag), tagName]);
+          setSelectedTags(prev => [...prev.filter(t => t !== existingAgeTag), tag]);
         } else {
-          setSelectedTags(prev => [...prev, tagName]);
+          setSelectedTags(prev => [...prev, tag]);
         }
       } else {
-        setSelectedTags(prev => [...prev, tagName]);
+         setSelectedTags(prev => [...prev, tag]);
       }
     }
-
     setSearchQuery(''); // Clear input after adding tag
     setTagSuggestions([]);
     setIsSuggestionsVisible(false);
     searchInputRef.current?.focus(); // Keep focus on input
   };
 
-  const handleRemoveTag = (tagToRemove: string, isNegative: boolean = false) => {
-    if (isNegative) {
-      setSelectedNegativeTags(selectedNegativeTags.filter(tag => tag !== tagToRemove));
-    } else {
-      setSelectedTags(selectedTags.filter(tag => tag !== tagToRemove));
-    }
+  const handleRemoveTag = (tagToRemove: string) => {
+    setSelectedTags(selectedTags.filter(tag => tag !== tagToRemove));
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    const trimmedQuery = searchQuery.trim();
-    // 半角スペースまたはEnterでタグを確定
-    if ((event.key === ' ' || event.key === 'Enter') && trimmedQuery !== '') {
-      event.preventDefault(); // スペースやEnterが入力フィールドに入らないようにする
-
-      const isNegative = trimmedQuery.startsWith('-');
-      const tagName = isNegative ? trimmedQuery.substring(1) : trimmedQuery;
-
-      if (tagName === '') return; // プレフィックスのみの場合は追加しない
-
-      // 候補が表示されていて、候補リストに要素がある場合 (Enterキーの場合のみ候補から追加)
-      if (event.key === 'Enter' && isSuggestionsVisible && tagSuggestions.length > 0) {
-         // 候補の最初の要素にプレフィックスを付けてhandleAddTagに渡す
-         const tagToAdd = isNegative ? `-${tagSuggestions[0]}` : tagSuggestions[0];
-         handleAddTag(tagToAdd);
-      } else { // 候補がない、または表示されていない、またはスペースキーの場合
-         // 入力値をタグとして追加
-         handleAddTag(trimmedQuery);
+    // 半角スペースでタグを確定
+    if (event.key === ' ' && searchQuery.trim() !== '') {
+      event.preventDefault(); // スペースが入力フィールドに入らないようにする
+      handleAddTag(searchQuery.trim()); // 入力値をタグとして追加
+    } else if (event.key === 'Enter') {
+       event.preventDefault();
+      // 候補が表示されていて、候補リストに要素がある場合
+      if (isSuggestionsVisible && tagSuggestions.length > 0) {
+        handleAddTag(tagSuggestions[0]); // 最上位の候補を追加
+      } else if (searchQuery) { // 候補がない、または表示されていないが、入力がある場合
+        // APIから取得したタグ候補の中に完全一致があるか確認
+        const exactMatch = tagSuggestions.find(tag =>
+          tag.toLowerCase() === searchQuery.toLowerCase()
+        );
+        if (exactMatch) {
+          handleAddTag(exactMatch); // 完全一致があればそれを追加
+        } else {
+          handleAddTag(searchQuery); // 完全一致がなければ入力値をタグとして追加
+        }
+      } else { // 候補がなく、入力もない場合
+         handleSearch(); // 現在の選択タグで検索
       }
-
-    } else if (event.key === 'Backspace' && searchQuery === '' && (selectedTags.length > 0 || selectedNegativeTags.length > 0)) {
-      // 入力フィールドが空で、タグが選択されている場合にBackspaceで最後のタグを削除
-      if (selectedNegativeTags.length > 0) {
-        handleRemoveTag(selectedNegativeTags[selectedNegativeTags.length - 1], true);
-      } else if (selectedTags.length > 0) {
-        handleRemoveTag(selectedTags[selectedTags.length - 1], false);
-      }
+    } else if (event.key === 'Backspace' && searchQuery === '' && selectedTags.length > 0) {
+      handleRemoveTag(selectedTags[selectedTags.length - 1]);
     }
   };
 
-  const handleSearch = useCallback(() => {
+  const handleSearch = () => {
     setIsFilterSidebarOpen(false);
     console.log("Searching with:", {
-      tags: selectedTags,
-      negativeTags: selectedNegativeTags, // マイナス検索タグを追加
+      tags: selectedTags, // Now includes age/feature tags
       detailedFilters,
     });
 
     const queryParams = new URLSearchParams();
     if (selectedTags.length > 0) {
       queryParams.append("tags", selectedTags.join(','));
-    }
-    if (selectedNegativeTags.length > 0) { // マイナス検索タグをクエリパラメータに追加
-      queryParams.append("negativeTags", selectedNegativeTags.join(','));
     }
     if (detailedFilters.category) {
       // カテゴリーはIDではなく名前で検索することを想定
@@ -302,7 +252,7 @@ export default function ProductSearch() {
     // 価格帯フィルターも必要であればここに追加
 
     router.push(`/search?${queryParams.toString()}`);
-  }, [selectedTags, selectedNegativeTags, detailedFilters, router]); // 依存配列にステートとrouterを追加
+  };
 
   const handleDetailedFilterChange = (filterType: keyof typeof detailedFilters, value: string | null) => {
     setDetailedFilters(prev => ({ ...prev, [filterType]: value }));
@@ -310,7 +260,6 @@ export default function ProductSearch() {
 
    const clearAllTagsAndFilters = () => {
     setSelectedTags([]);
-    setSelectedNegativeTags([]); // マイナス検索タグもクリア
     setDetailedFilters({ category: null, priceRange: null });
   };
 
@@ -324,8 +273,6 @@ export default function ProductSearch() {
   const getCurrentAgeTag = () => selectedTags.find(tag => ageRatingTags.map(t => t.name).includes(tag));
   // Helper to check if a specific feature tag is selected
   const isFeatureTagSelected = (feature: string) => selectedTags.includes(feature);
-  // Helper to check if a specific negative tag is selected
-  const isNegativeTagSelected = (tag: string) => selectedNegativeTags.includes(tag);
 
 
   return (
@@ -343,17 +290,9 @@ export default function ProductSearch() {
                 </button>
               </span>
             ))}
-            {selectedNegativeTags.map(tag => ( // マイナス検索タグの表示
-              <span key={`negative-${tag}`} className="flex items-center bg-red-100 text-red-800 text-xs font-medium px-2 py-0.5 rounded whitespace-nowrap line-through"> {/* 取り消し線を追加 */}
-                -{tag} {/* プレフィックスを付けて表示 */}
-                <button onClick={() => handleRemoveTag(tag, true)} className="ml-1 text-red-600 hover:text-red-800">
-                  <X size={12} />
-                </button>
-              </span>
-            ))}
             <Input
               type="text"
-              placeholder="タグで検索 (-でマイナス検索)" // プレースホルダーを更新
+              placeholder="タグで検索..."
               value={searchQuery}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
@@ -366,7 +305,7 @@ export default function ProductSearch() {
               {tagSuggestions.map(tag => (
                 <li
                   key={tag}
-                  onClick={() => handleAddTag(tag)} // サジェストからの追加時はプレフィックスなし
+                  onClick={() => handleAddTag(tag)}
                   className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100"
                 >
                   {tag}
@@ -389,7 +328,7 @@ export default function ProductSearch() {
               <DropdownMenuLabel>対象年齢を選択</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {ageRatingTags.map(tag => ( // ageRatingTagsを使用
-                <DropdownMenuItem key={tag.id} onSelect={() => handleAddTag(tag.name)} disabled={selectedTags.includes(tag.name) || selectedNegativeTags.includes(tag.name)}> {/* マイナス検索タグも考慮 */}
+                <DropdownMenuItem key={tag.id} onSelect={() => handleAddTag(tag.name)} disabled={selectedTags.includes(tag.name)}>
                   {tag.name}
                 </DropdownMenuItem>
               ))}
@@ -415,20 +354,10 @@ export default function ProductSearch() {
               {featureTags.map(tag => ( // featureTagsを使用
                 <DropdownMenuItem
                   key={tag.id}
-                  onSelect={() => {
-                    // 通常タグとマイナス検索タグの両方から追加/削除を判定
-                    if (isFeatureTagSelected(tag.name)) {
-                      handleRemoveTag(tag.name, false);
-                    } else if (isNegativeTagSelected(tag.name)) {
-                      handleRemoveTag(tag.name, true);
-                    }
-                    else {
-                      handleAddTag(tag.name);
-                    }
-                  }}
-                  className={`${isFeatureTagSelected(tag.name) ? 'bg-accent' : isNegativeTagSelected(tag.name) ? 'bg-red-200 line-through' : ''}`} // 選択状態とマイナス検索状態をハイライト
+                  onSelect={() => isFeatureTagSelected(tag.name) ? handleRemoveTag(tag.name) : handleAddTag(tag.name)}
+                  className={`${isFeatureTagSelected(tag.name) ? 'bg-accent' : ''}`} // Highlight selected
                 >
-                  {tag.name} {isFeatureTagSelected(tag.name) || isNegativeTagSelected(tag.name) ? <X size={14} className="ml-auto" /> : ''}
+                  {tag.name} {isFeatureTagSelected(tag.name) ? <X size={14} className="ml-auto" /> : ''}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -464,7 +393,7 @@ export default function ProductSearch() {
                        </DropdownMenuTrigger>
                        <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
                          {ageRatingTags.map(tag => ( // ageRatingTagsを使用
-                           <DropdownMenuItem key={tag.id} onSelect={() => handleAddTag(tag.name)} disabled={selectedTags.includes(tag.name) || selectedNegativeTags.includes(tag.name)} className="text-sm"> {/* マイナス検索タグも考慮 */}
+                           <DropdownMenuItem key={tag.id} onSelect={() => handleAddTag(tag.name)} disabled={selectedTags.includes(tag.name)} className="text-sm">
                              {tag.name}
                            </DropdownMenuItem>
                          ))}
@@ -484,20 +413,10 @@ export default function ProductSearch() {
                         {featureTags.map(tag => ( // featureTagsを使用
                             <Button
                                 key={tag.id}
-                                variant={isFeatureTagSelected(tag.name) ? 'default' : isNegativeTagSelected(tag.name) ? 'destructive' : 'outline'} // マイナス検索タグはdestructive variant
+                                variant={isFeatureTagSelected(tag.name) ? 'default' : 'outline'}
                                 size="sm"
-                                onClick={() => {
-                                  // 通常タグとマイナス検索タグの両方から追加/削除を判定
-                                  if (isFeatureTagSelected(tag.name)) {
-                                    handleRemoveTag(tag.name, false);
-                                  } else if (isNegativeTagSelected(tag.name)) {
-                                    handleRemoveTag(tag.name, true);
-                                  }
-                                  else {
-                                    handleAddTag(tag.name);
-                                  }
-                                }}
-                                className={`text-xs ${isNegativeTagSelected(tag.name) ? 'line-through' : ''}`} // 取り消し線を追加
+                                onClick={() => isFeatureTagSelected(tag.name) ? handleRemoveTag(tag.name) : handleAddTag(tag.name)}
+                                className="text-xs"
                             >
                                 {tag.name}
                             </Button>

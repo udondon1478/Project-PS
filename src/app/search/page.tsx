@@ -12,10 +12,8 @@ const SearchResultPage = () => {
   const initialAgeRatingTagId = searchParams.get("ageRatingTagId") || "";
   const initialCategoryTagId = searchParams.get("categoryTagId") || "";
   const initialFeatureTagIds = searchParams.get("featureTagIds")?.split(',') || [];
-  const initialNegativeTags = searchParams.get("negativeTags")?.split(',') || []; // negativeTagsを取得
 
   const [products, setProducts] = useState<Product[]>([]);
-  const [selectedNegativeTags, setSelectedNegativeTags] = useState<string[]>(initialNegativeTags); // negativeTagsステートを追加
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [ageRatingTags, setAgeRatingTags] = useState<{ id: string; name: string }[]>([]);
@@ -73,7 +71,6 @@ const SearchResultPage = () => {
         if (selectedAgeRatingTagId) queryParams.append("ageRatingTagId", selectedAgeRatingTagId);
         if (selectedCategoryTagId) queryParams.append("categoryTagId", selectedCategoryTagId);
         if (selectedFeatureTagIds.length > 0) queryParams.append("featureTagIds", selectedFeatureTagIds.join(','));
-        if (selectedNegativeTags.length > 0) queryParams.append("negativeTags", selectedNegativeTags.join(',')); // negativeTagsを追加
 
         const response = await fetch(`/api/products?${queryParams.toString()}`);
         if (!response.ok) {
@@ -93,7 +90,7 @@ const SearchResultPage = () => {
     };
 
     fetchProducts();
-  }, [searchTerm, selectedAgeRatingTagId, selectedCategoryTagId, selectedFeatureTagIds, selectedNegativeTags]); // 依存配列にselectedNegativeTagsを追加
+  }, [searchTerm, selectedAgeRatingTagId, selectedCategoryTagId, selectedFeatureTagIds]);
 
   useEffect(() => {
     const queryParams = new URLSearchParams();
@@ -101,9 +98,8 @@ const SearchResultPage = () => {
     if (selectedAgeRatingTagId) queryParams.append("ageRatingTagId", selectedAgeRatingTagId);
     if (selectedCategoryTagId) queryParams.append("categoryTagId", selectedCategoryTagId);
     if (selectedFeatureTagIds.length > 0) queryParams.append("featureTagIds", selectedFeatureTagIds.join(','));
-    if (selectedNegativeTags.length > 0) queryParams.append("negativeTags", selectedNegativeTags.join(',')); // negativeTagsを追加
     router.replace(`/search?${queryParams.toString()}`);
-  }, [searchTerm, selectedAgeRatingTagId, selectedCategoryTagId, selectedFeatureTagIds, selectedNegativeTags, router]); // 依存配列にselectedNegativeTagsを追加
+  }, [searchTerm, selectedAgeRatingTagId, selectedCategoryTagId, selectedFeatureTagIds, router]);
 
   const handleFeatureTagToggle = (tagId: string) => {
     setSelectedFeatureTagIds(prev =>
