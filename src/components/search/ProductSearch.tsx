@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
+
 import { Button } from '@/components/ui/button';
 import { Search, Filter, X } from 'lucide-react';
+import { Slider } from '@/components/ui/slider'; // Sliderコンポーネントをインポート
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,25 +25,39 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useRouter } from 'next/navigation'; // useRouterを追加
+
+
+
+
+import { useRouter, useSearchParams } from 'next/navigation'; // useRouterとuseSearchParamsを追加
 
 // Placeholder for tag suggestions - include age ratings and features
 // const allTags: string[] = []; // 重複定義のためコメントアウト
 
 // Define options for dropdowns
-const priceRanges = ["無料", "¥1-¥999", "¥1000-¥2999", "¥3000-¥4999", "¥5000以上"];
+
 
 export default function ProductSearch() {
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedNegativeTags, setSelectedNegativeTags] = useState<string[]>([]); // マイナス検索用タグを追加
-  const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
+
+
+
+  const searchParams = useSearchParams(); // useSearchParams フックを追加
+  const [tagSuggestions, setTagSuggestions] = useState<string[]>([]); // タグ候補ステートを追加
+  
   const [isSuggestionsVisible, setIsSuggestionsVisible] = useState(false);
   const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
   const [detailedFilters, setDetailedFilters] = useState({
     category: null as string | null,
-    priceRange: null as string | null,
+    // priceRange: null as string | null, // 価格帯はSliderのstateで管理するため削除
   });
+
+  // 価格帯スライダー用のstate
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]); // 初期値は0円から10000円（仮）
+
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter(); // useRouterを初期化
@@ -145,7 +161,21 @@ export default function ProductSearch() {
         }
       }
     }
-  }, []); // コンポーネントマウント時に一度だけ実行
+    // 価格帯の読み込み (URL優先)
+    const urlMinPrice = urlSearchParams.get("minPrice");
+    const urlMaxPrice = urlSearchParams.get("maxPrice");
+    if (urlMinPrice !== null || urlMaxPrice !== null) {
+      const min = urlMinPrice !== null ? parseInt(urlMinPrice, 10) : 0;
+      const max = urlMaxPrice !== null ? parseInt(urlMaxPrice, 10) : 10000; // デフォルト最大値
+      setPriceRange([min, max]);
+    }
+
+
+
+
+
+
+  }, [searchParams.toString(), searchParams]); // URLのクエリパラメータ変更を検知して実行
 
   // Fetch tag suggestions based on input with debounce
   useEffect(() => {
@@ -325,12 +355,15 @@ export default function ProductSearch() {
     if (detailedFilters.category) {
       // カテゴリーはIDではなく名前で検索することを想定
       // 必要であれば、カテゴリー名からIDを取得する処理を追加
+
       queryParams.append("categoryName", detailedFilters.category);
     }
-    // 価格帯フィルターも必要であればここに追加
+    // 価格帯フィルターを追加
+    queryParams.append("minPrice", priceRange[0].toString());
+    queryParams.append("maxPrice", priceRange[1].toString());
 
     router.replace(`/search?${queryParams.toString()}`);
-  }, [selectedTags, selectedNegativeTags, detailedFilters, router]); // 依存配列にステートとrouterを追加
+  }, [selectedTags, selectedNegativeTags, detailedFilters, priceRange, router]); // 依存配列にpriceRangeを追加
 
   const handleDetailedFilterChange = (filterType: keyof typeof detailedFilters, value: string | null) => {
     setDetailedFilters(prev => ({ ...prev, [filterType]: value }));
@@ -339,7 +372,7 @@ export default function ProductSearch() {
    const clearAllTagsAndFilters = () => {
     setSelectedTags([]);
     setSelectedNegativeTags([]); // マイナス検索タグもクリア
-    setDetailedFilters({ category: null, priceRange: null });
+    setDetailedFilters({ category: null });
   };
 
 
@@ -561,29 +594,24 @@ export default function ProductSearch() {
                   </DropdownMenu>
                 </div>
 
+
                 <div>
                   <h4 className="font-medium mb-2 text-sm">価格帯</h4>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="w-full justify-start text-sm">
-                        {detailedFilters.priceRange || "選択してください"}
-                        {detailedFilters.priceRange && <X size={14} className="ml-auto cursor-pointer" onClick={(e) => { e.stopPropagation(); handleDetailedFilterChange('priceRange', null); }} />}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
-                      {priceRanges.map(range => (
-                        <DropdownMenuItem key={range} onSelect={() => handleDetailedFilterChange('priceRange', range)} className="text-sm">
-                          {range}
-                        </DropdownMenuItem>
-                      ))}
-                       {detailedFilters.priceRange && (
-                         <>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onSelect={() => handleDetailedFilterChange('priceRange', null)} className="text-red-600 text-sm">クリア</DropdownMenuItem>
-                         </>
-                       )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {/* 価格帯スライダーを追加 */}
+                  <div className="px-2"> {/* スライダーの左右に余白を追加 */}
+                    <Slider
+                      min={0}
+                      max={10000} // 仮の最大値
+                      step={100} // 仮のステップ
+                      value={priceRange}
+                      onValueChange={(value) => setPriceRange([value[0], value[1]])}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs mt-2">
+                      <span>{priceRange[0]}円</span>
+                      <span>{priceRange[1] >= 10000 ? '10000円以上' : priceRange[1] + '円'}</span>
+                    </div>
+                  </div>
                 </div>
 
               </div>
