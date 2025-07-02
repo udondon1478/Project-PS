@@ -25,7 +25,11 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useRouter } from 'next/navigation'; // useRouterを追加
+
+
+
+
+import { useRouter, useSearchParams } from 'next/navigation'; // useRouterとuseSearchParamsを追加
 
 // Placeholder for tag suggestions - include age ratings and features
 // const allTags: string[] = []; // 重複定義のためコメントアウト
@@ -34,10 +38,16 @@ import { useRouter } from 'next/navigation'; // useRouterを追加
 
 
 export default function ProductSearch() {
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedNegativeTags, setSelectedNegativeTags] = useState<string[]>([]); // マイナス検索用タグを追加
-  const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
+
+
+
+  const searchParams = useSearchParams(); // useSearchParams フックを追加
+  const [tagSuggestions, setTagSuggestions] = useState<string[]>([]); // タグ候補ステートを追加
+  
   const [isSuggestionsVisible, setIsSuggestionsVisible] = useState(false);
   const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
   const [detailedFilters, setDetailedFilters] = useState({
@@ -151,7 +161,21 @@ export default function ProductSearch() {
         }
       }
     }
-  }, []); // コンポーネントマウント時に一度だけ実行
+    // 価格帯の読み込み (URL優先)
+    const urlMinPrice = urlSearchParams.get("minPrice");
+    const urlMaxPrice = urlSearchParams.get("maxPrice");
+    if (urlMinPrice !== null || urlMaxPrice !== null) {
+      const min = urlMinPrice !== null ? parseInt(urlMinPrice, 10) : 0;
+      const max = urlMaxPrice !== null ? parseInt(urlMaxPrice, 10) : 10000; // デフォルト最大値
+      setPriceRange([min, max]);
+    }
+
+
+
+
+
+
+  }, [searchParams.toString(), searchParams]); // URLのクエリパラメータ変更を検知して実行
 
   // Fetch tag suggestions based on input with debounce
   useEffect(() => {

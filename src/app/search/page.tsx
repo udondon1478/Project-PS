@@ -32,8 +32,13 @@ const SearchResultPage = () => {
         if (searchTerm) queryParams.append("tags", searchTerm);
         if (selectedAgeRatingTagId) queryParams.append("ageRatingTagId", selectedAgeRatingTagId);
         if (selectedCategoryTagId) queryParams.append("categoryTagId", selectedCategoryTagId);
+
         if (selectedFeatureTagIds.length > 0) queryParams.append("featureTagIds", selectedFeatureTagIds.join(','));
         if (selectedNegativeTags.length > 0) queryParams.append("negativeTags", selectedNegativeTags.join(',')); // negativeTagsを追加
+        const minPrice = searchParams.get('minPrice'); // URLから最小価格を取得
+        const maxPrice = searchParams.get('maxPrice'); // URLから最大価格を取得
+        if (minPrice) queryParams.append("minPrice", minPrice); // 最小価格をクエリに追加
+        if (maxPrice) queryParams.append("maxPrice", maxPrice); // 最大価格をクエリに追加
 
         const response = await fetch(`/api/products?${queryParams.toString()}`);
         if (!response.ok) {
@@ -53,17 +58,42 @@ const SearchResultPage = () => {
     };
 
     fetchProducts();
-  }, [searchTerm, selectedAgeRatingTagId, selectedCategoryTagId, selectedFeatureTagIds, selectedNegativeTags]); // 依存配列に検索条件関連ステートを含める
+
+  }, [searchTerm, selectedAgeRatingTagId, selectedCategoryTagId, selectedFeatureTagIds, selectedNegativeTags, searchParams.get('minPrice'), searchParams.get('maxPrice')]); // 依存配列に価格帯クエリパラメータを追加
 
   useEffect(() => {
-    const queryParams = new URLSearchParams();
-    if (searchTerm) queryParams.append("tags", searchTerm);
-    if (selectedAgeRatingTagId) queryParams.append("ageRatingTagId", selectedAgeRatingTagId);
-    if (selectedCategoryTagId) queryParams.append("categoryTagId", selectedCategoryTagId);
-    if (selectedFeatureTagIds.length > 0) queryParams.append("featureTagIds", selectedFeatureTagIds.join(','));
-    if (selectedNegativeTags.length > 0) queryParams.append("negativeTags", selectedNegativeTags.join(',')); // negativeTagsを追加
-    router.replace(`/search?${queryParams.toString()}`);
-  }, [searchTerm, selectedAgeRatingTagId, selectedCategoryTagId, selectedFeatureTagIds, selectedNegativeTags, router]); // 依存配列にselectedNegativeTagsを追加
+    const currentSearchParams = new URLSearchParams(window.location.search); // 既存のURLSearchParamsを取得
+    // タグ関連のパラメータを更新または削除
+    if (searchTerm) {
+      currentSearchParams.set("tags", searchTerm);
+    } else {
+      currentSearchParams.delete("tags");
+    }
+    if (selectedAgeRatingTagId) {
+      currentSearchParams.set("ageRatingTagId", selectedAgeRatingTagId);
+    } else {
+      currentSearchParams.delete("ageRatingTagId");
+    }
+    if (selectedCategoryTagId) {
+      currentSearchParams.set("categoryTagId", selectedCategoryTagId);
+    } else {
+      currentSearchParams.delete("categoryTagId");
+    }
+    if (selectedFeatureTagIds.length > 0) {
+      currentSearchParams.set("featureTagIds", selectedFeatureTagIds.join(','));
+    } else {
+      currentSearchParams.delete("featureTagIds");
+    }
+    if (selectedNegativeTags.length > 0) {
+      currentSearchParams.set("negativeTags", selectedNegativeTags.join(','));
+    } else {
+      currentSearchParams.delete("negativeTags");
+    }
+
+    // 価格帯パラメータはそのまま引き継がれる
+
+    router.replace(`/search?${currentSearchParams.toString()}`);
+  }, [searchTerm, selectedAgeRatingTagId, selectedCategoryTagId, selectedFeatureTagIds, selectedNegativeTags, router]);
 
   // URLのクエリパラメータ変更を監視し、ステートを更新
   useEffect(() => {
