@@ -21,6 +21,11 @@ export async function GET(request: Request) {
     const ageRatingTagId = searchParams.get('ageRatingTagId'); // 対象年齢タグIDを取得
     const categoryTagId = searchParams.get('categoryTagId'); // カテゴリータグIDを取得
     const featureTagIdsParam = searchParams.get('featureTagIds'); // 主要機能タグIDを取得
+    const minPriceParam = searchParams.get('minPrice'); // 最小価格を取得
+    const maxPriceParam = searchParams.get('maxPrice'); // 最大価格を取得
+
+    const minPrice = minPriceParam ? parseInt(minPriceParam) : undefined; // 数値に変換、無効な場合はundefined
+    const maxPrice = maxPriceParam ? parseInt(maxPriceParam) : undefined; // 数値に変換、無効な場合はundefined
 
     const tagNames = tagsParam ? tagsParam.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : [];
     const negativeTagNames = negativeTagsParam ? negativeTagsParam.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : []; // マイナス検索タグ名をパース
@@ -79,11 +84,27 @@ export async function GET(request: Request) {
        });
     }
 
+    // 価格帯によるフィルタリング
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      const priceCondition: Prisma.ProductWhereInput = {};
+      if (minPrice !== undefined) {
+        priceCondition.highPrice = { gte: minPrice }; // highPriceが最小価格以上
+      }
+      if (maxPrice !== undefined) {
+        // highPrice >= minPrice かつ lowPrice <= maxPrice の条件でフィルタリング
+        priceCondition.lowPrice = { lte: maxPrice }; // lowPriceが最大価格以下
+      }
+      whereConditions.push(priceCondition);
+    }
+
+
     // 検索条件が何も指定されていない場合は空の結果を返す
     // ただし、マイナス検索タグのみが指定された場合は検索を実行する
+    // 価格帯のみが指定された場合も検索を実行する
     if (whereConditions.length === 0 && negativeTagNames.length === 0) {
        return NextResponse.json([]);
     }
+
 
     const products = await prisma.product.findMany({
       where: {
