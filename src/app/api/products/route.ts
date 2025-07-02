@@ -98,36 +98,29 @@ export async function GET(request: Request) {
     }
 
 
-    // 検索条件が何も指定されていない場合は空の結果を返す
-    // ただし、マイナス検索タグのみが指定された場合は検索を実行する
-    // 価格帯のみが指定された場合も検索を実行する
-    if (whereConditions.length === 0 && negativeTagNames.length === 0) {
-       return NextResponse.json([]);
-    }
-
-
     const products = await prisma.product.findMany({
-      where: {
-        AND: whereConditions
+      where: whereConditions.length > 0 ? { AND: whereConditions } : {},
+      orderBy: { // 並び順を追加
+        createdAt: 'desc', // 作成日時の降順
       },
       include: {
         productTags: {
           include: {
-            tag: true
-          }
+            tag: true,
+          },
         },
         images: {
           where: {
-            isMain: true
+            isMain: true,
           },
-          take: 1
+          take: 1,
         },
-        variations: { // バリエーション情報を含める
+        variations: {
           orderBy: {
             order: 'asc',
           },
         },
-      }
+      },
     });
 
     const formattedProducts = products.map(product => ({
