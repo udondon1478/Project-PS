@@ -23,9 +23,16 @@ export async function GET(request: Request) {
     const featureTagIdsParam = searchParams.get('featureTagIds'); // 主要機能タグIDを取得
     const minPriceParam = searchParams.get('minPrice'); // 最小価格を取得
     const maxPriceParam = searchParams.get('maxPrice'); // 最大価格を取得
+    const isHighPriceParam = searchParams.get('isHighPrice'); // 高額商品フラグを取得
 
-    const minPrice = minPriceParam ? parseInt(minPriceParam) : undefined; // 数値に変換、無効な場合はundefined
-    const maxPrice = maxPriceParam ? parseInt(maxPriceParam) : undefined; // 数値に変換、無効な場合はundefined
+    let minPrice = minPriceParam ? parseInt(minPriceParam) : undefined; // 数値に変換、無効な場合はundefined
+    let maxPrice = maxPriceParam ? parseInt(maxPriceParam) : undefined; // 数値に変換、無効な場合はundefined
+
+    // 高額商品フィルタリングが有効な場合、価格範囲を上書き
+    if (isHighPriceParam === 'true') {
+      minPrice = 10000;
+      maxPrice = 100000; // 100000+ を示す値として設定
+    }
 
     const tagNames = tagsParam ? tagsParam.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : [];
     const negativeTagNames = negativeTagsParam ? negativeTagsParam.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : []; // マイナス検索タグ名をパース
@@ -91,8 +98,11 @@ export async function GET(request: Request) {
         priceCondition.highPrice = { gte: minPrice }; // highPriceが最小価格以上
       }
       if (maxPrice !== undefined) {
-        // highPrice >= minPrice かつ lowPrice <= maxPrice の条件でフィルタリング
-        priceCondition.lowPrice = { lte: maxPrice }; // lowPriceが最大価格以下
+        if (maxPrice === 100000) { // 100000+ の場合
+          // 上限なし
+        } else {
+          priceCondition.lowPrice = { lte: maxPrice }; // lowPriceが最大価格以下
+        }
       }
       whereConditions.push(priceCondition);
     }
