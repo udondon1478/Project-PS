@@ -434,7 +434,7 @@ export default function ProductSearch() {
               </span>
             ))}
             {selectedNegativeTags.map(tag => ( // マイナス検索タグの表示
-              <span key={`negative-${tag}`} className="flex items-center bg-red-100 text-red-800 text-xs font-medium px-2 py-0.5 rounded whitespace-nowrap line-through"> {/* 取り消し線を追加 */}
+              <span key={`negative-${tag}`} className="flex items-center bg-red-100 text-red-800 text-xs font-medium px-2 py-0.5 rounded whitespace-nowrap"> {/* 取り消し線を追加 */}
                 -{tag} {/* プレフィックスを付けて表示 */}
                 <button onClick={() => handleRemoveTag(tag, true)} className="ml-1 text-red-600 hover:text-red-800">
                   <X size={12} />
