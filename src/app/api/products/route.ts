@@ -98,11 +98,10 @@ export async function GET(request: Request) {
         priceCondition.highPrice = { gte: minPrice }; // highPriceが最小価格以上
       }
       if (maxPrice !== undefined) {
-        if (maxPrice === 100000) { // 100000+ の場合
-          // 上限なし
-        } else {
-          priceCondition.lowPrice = { lte: maxPrice }; // lowPriceが最大価格以下
+        if (maxPrice !== 100000) { // 100000+ ではない場合のみlowPriceの上限を適用
+          priceCondition.lowPrice = { lte: maxPrice };
         }
+        // maxPriceが100000の場合は、lowPriceの上限は設定しない（highPriceのgteのみで十分）
       }
       whereConditions.push(priceCondition);
     }

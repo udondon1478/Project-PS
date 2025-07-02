@@ -167,9 +167,18 @@ export default function ProductSearch() {
     // 価格帯の読み込み (URL優先)
     const urlMinPrice = urlSearchParams.get("minPrice");
     const urlMaxPrice = urlSearchParams.get("maxPrice");
-    if (urlMinPrice !== null || urlMaxPrice !== null) {
+    const urlIsHighPrice = urlSearchParams.get("isHighPrice"); // isHighPriceパラメータを取得
+
+    if (urlMinPrice !== null || urlMaxPrice !== null || urlIsHighPrice === 'true') {
       const min = urlMinPrice !== null ? parseInt(urlMinPrice, 10) : 0;
-      const max = urlMaxPrice !== null ? parseInt(urlMaxPrice, 10) : 10000; // デフォルト最大値
+      let max = urlMaxPrice !== null ? parseInt(urlMaxPrice, 10) : 10000; // デフォルト最大値
+
+      if (urlIsHighPrice === 'true') {
+        max = 100000; // 高額商品フィルタリングが有効な場合は最大値を100000に設定
+        setIsHighPriceFilterEnabled(true); // 高額商品フィルタリングを有効にする
+      } else {
+        setIsHighPriceFilterEnabled(false); // 高額商品フィルタリングを無効にする
+      }
       setPriceRange([min, max]);
     }
 
