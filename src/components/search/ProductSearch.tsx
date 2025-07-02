@@ -25,6 +25,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox'; // Checkboxコンポーネントをインポート
 
 
 
@@ -58,6 +59,8 @@ export default function ProductSearch() {
   // 価格帯スライダー用のstate
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]); // 初期値は0円から10000円（仮）
 
+  // 高額商品フィルタリング用のstate
+  const [isHighPriceFilterEnabled, setIsHighPriceFilterEnabled] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter(); // useRouterを初期化
@@ -234,6 +237,20 @@ export default function ProductSearch() {
     sessionStorage.setItem('polyseek-search-negative-tags', JSON.stringify(selectedNegativeTags)); // マイナス検索タグも保存
   }, [selectedTags, selectedNegativeTags]); // 両方のステートを依存配列に追加
 
+  // 高額商品フィルタリングの状態に応じて価格スライダーの範囲と値を更新
+  useEffect(() => {
+    if (isHighPriceFilterEnabled) {
+      // 高額商品フィルタリングがオンの場合
+      setPriceRange([10000, 100000]); // 最低10000円〜最高100000円（仮）
+      // スライダーのmaxとstepもここで動的に変更する必要があるが、
+      // shadcn/uiのSliderコンポーネントはpropsの変更で対応できるか確認が必要。
+      // 一旦stateで管理するが、必要に応じてrefなどを検討。
+    } else {
+      // 高額商品フィルタリングがオフの場合
+      setPriceRange([0, 10000]); // デフォルトの範囲に戻す
+    }
+  }, [isHighPriceFilterEnabled]); // isHighPriceFilterEnabledが変更されたときに実行
+
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
   };
@@ -361,9 +378,12 @@ export default function ProductSearch() {
     // 価格帯フィルターを追加
     queryParams.append("minPrice", priceRange[0].toString());
     queryParams.append("maxPrice", priceRange[1].toString());
+    if (isHighPriceFilterEnabled) {
+      queryParams.append("isHighPrice", "true");
+    }
 
     router.replace(`/search?${queryParams.toString()}`);
-  }, [selectedTags, selectedNegativeTags, detailedFilters, priceRange, router]); // 依存配列にpriceRangeを追加
+  }, [selectedTags, selectedNegativeTags, detailedFilters, priceRange, isHighPriceFilterEnabled, router]); // 依存配列にisHighPriceFilterEnabledを追加
 
   const handleDetailedFilterChange = (filterType: keyof typeof detailedFilters, value: string | null) => {
     setDetailedFilters(prev => ({ ...prev, [filterType]: value }));
@@ -597,19 +617,39 @@ export default function ProductSearch() {
 
                 <div>
                   <h4 className="font-medium mb-2 text-sm">価格帯</h4>
+                  {/* 高額商品フィルタリングチェックボックス */}
+                  <div className="flex items-center space-x-2 px-2 mb-4">
+                    <Checkbox
+                      id="high-price-filter"
+                      checked={isHighPriceFilterEnabled}
+                      onCheckedChange={(checked) => setIsHighPriceFilterEnabled(!!checked)}
+                    />
+                    <label
+                      htmlFor="high-price-filter"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      高額商品のみ (10000円以上)
+                    </label>
+                  </div>
                   {/* 価格帯スライダーを追加 */}
                   <div className="px-2"> {/* スライダーの左右に余白を追加 */}
                     <Slider
-                      min={0}
-                      max={10000} // 仮の最大値
-                      step={100} // 仮のステップ
+                      min={isHighPriceFilterEnabled ? 10000 : 0}
+                      max={isHighPriceFilterEnabled ? 100000 : 10000} // 高額商品フィルタリング時は最大100000
+                      step={isHighPriceFilterEnabled ? 1000 : 100} // 高額商品フィルタリング時はステップを大きく
                       value={priceRange}
                       onValueChange={(value) => setPriceRange([value[0], value[1]])}
-                      className="w-full"
+                      className={`w-full ${isHighPriceFilterEnabled ? '[&>span:first-child]:bg-blue-500' : ''}`} // スライダーの色を動的に変更
                     />
                     <div className="flex justify-between text-xs mt-2">
                       <span>{priceRange[0]}円</span>
-                      <span>{priceRange[1] >= 10000 ? '10000円以上' : priceRange[1] + '円'}</span>
+                      <span>
+                        {isHighPriceFilterEnabled && priceRange[1] >= 100000
+                          ? '100000円以上'
+                          : priceRange[1] >= 10000
+                          ? '10000円以上'
+                          : priceRange[1] + '円'}
+                      </span>
                     </div>
                   </div>
                 </div>
