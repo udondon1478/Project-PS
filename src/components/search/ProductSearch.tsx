@@ -60,7 +60,7 @@ export default function ProductSearch() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]); // 初期値は0円から10000円（仮）
 
   // 高額商品フィルタリング用のstate
-  const [isHighPriceFilterEnabled, setIsHighPriceFilterEnabled] = useState(false);
+  const [isHighPriceFilterEnabled, setIsHighPriceFilterEnabled] = useState(false); // 初期値はfalseに固定
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter(); // useRouterを初期化
@@ -648,7 +648,8 @@ export default function ProductSearch() {
                       step={isHighPriceFilterEnabled ? 1000 : 100} // 高額商品フィルタリング時はステップを大きく
                       value={priceRange}
                       onValueChange={(value) => setPriceRange([value[0], value[1]])}
-                      className={`w-full ${isHighPriceFilterEnabled ? '[&>span:first-child]:bg-blue-500' : ''}`} // スライダーの色を動的に変更
+                      className="w-full"
+                      trackClassName={isHighPriceFilterEnabled ? "bg-blue-500" : "bg-muted"} // トラックの色を動的に変更
                     />
                     <div className="flex justify-between text-xs mt-2">
                       <span>{priceRange[0]}円</span>
