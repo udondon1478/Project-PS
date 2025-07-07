@@ -648,7 +648,9 @@ export default function ProductSearch() {
                       step={isHighPriceFilterEnabled ? 1000 : 100} // 高額商品フィルタリング時はステップを大きく
                       value={priceRange}
                       onValueChange={(value) => setPriceRange([value[0], value[1]])}
-                      className={`w-full ${isHighPriceFilterEnabled ? '[&>span:first-child]:bg-blue-500' : ''}`} // スライダーの色を動的に変更
+                      className="w-full" // スライダーの全体的な幅を制御
+                      rangeClassName={isHighPriceFilterEnabled ? 'bg-blue-500' : ''} // レンジの色を動的に変更
+                      thumbClassName={isHighPriceFilterEnabled ? 'border-blue-700' : ''} // サムの輪郭色のみを動的に変更
                     />
                     <div className="flex justify-between text-xs mt-2">
                       <span>{priceRange[0]}円</span>
