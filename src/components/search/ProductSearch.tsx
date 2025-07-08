@@ -173,13 +173,15 @@ export default function ProductSearch() {
       const min = urlMinPrice !== null ? parseInt(urlMinPrice, 10) : 0;
       let max = urlMaxPrice !== null ? parseInt(urlMaxPrice, 10) : 10000; // デフォルト最大値
 
+      // URLにisHighPriceがtrueで渡された場合
       if (urlIsHighPrice === 'true') {
         max = 100000; // 高額商品フィルタリングが有効な場合は最大値を100000に設定
         setIsHighPriceFilterEnabled(true); // 高額商品フィルタリングを有効にする
-      } else {
+        setPriceRange([min, max]);
+      } else { // 通常の価格範囲指定
         setIsHighPriceFilterEnabled(false); // 高額商品フィルタリングを無効にする
+        setPriceRange([min, max]);
       }
-      setPriceRange([min, max]);
     }
 
 
@@ -385,8 +387,15 @@ export default function ProductSearch() {
       queryParams.append("categoryName", detailedFilters.category);
     }
     // 価格帯フィルターを追加
-    queryParams.append("minPrice", priceRange[0].toString());
-    queryParams.append("maxPrice", priceRange[1].toString());
+    // minPriceが0の場合、minPriceクエリパラメータを省略
+    if (priceRange[0] !== 0) {
+      queryParams.append("minPrice", priceRange[0].toString());
+    }
+    // maxPriceが10000でisHighPriceFilterEnabledがfalseの場合、maxPriceを省略
+    // maxPriceが10000でisHighPriceFilterEnabledがfalseの場合、またはisHighPriceFilterEnabledがtrueかつpriceRange[1]が100000の場合、maxPriceを省略
+    if (!((priceRange[1] === 10000 && !isHighPriceFilterEnabled) || (isHighPriceFilterEnabled && priceRange[1] === 100000))) {
+      queryParams.append("maxPrice", priceRange[1].toString());
+    }
     if (isHighPriceFilterEnabled) {
       queryParams.append("isHighPrice", "true");
     }
