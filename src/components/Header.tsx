@@ -1,8 +1,18 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import Link from 'next/link';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useSession, signIn, signOut } from "next-auth/react"; // next-auth/reactからインポート
+import { useSession, signIn, signOut } from "next-auth/react";
+import { useRouter } from 'next/navigation';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
 import React from 'react';
 import ProductSearch from '@/components/search/ProductSearch'; // Import ProductSearch
@@ -10,9 +20,11 @@ import ProductSearch from '@/components/search/ProductSearch'; // Import Product
 // 認証状態のプレースホルダーは削除
 
 export default function Header() {
-  const { data: session, status } = useSession(); // useSessionフックを使用
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [prevScrollPos, setPrevScrollPos] = useState(0);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
 
     const handleScroll = useCallback(() => {
@@ -53,65 +65,94 @@ export default function Header() {
       {/* Top Navigation Bar */}
       <div className="container mx-auto py-3 px-4 md:px-6 flex items-center justify-between border-b border-gray-200"> {/* Reduced padding slightly, added border */}
         {/* Mobile Navigation (Visible on small screens) */}
-        {status === "authenticated" && ( // 認証済みの場合
-          <div className="md:hidden flex items-center justify-between w-full">
-            <Link href="/profile"> {/* ルートグループを除いたパスに修正 */}
-              <Button variant="ghost" size="sm">プロフィール</Button>
-            </Link>
-            <Link href="/" className="flex items-center">
-              <img src="/pslogo.svg" alt="PolySeek Logo" className="h-6 w-auto" />
-            </Link>
-            <Button variant="ghost" size="sm" onClick={() => signOut()}>ログアウト</Button>
-          </div>
-        )}
-        {status === "unauthenticated" && ( // 未認証の場合
-          <div className="md:hidden flex items-center justify-between w-full">
-             <Button variant="ghost" size="sm" onClick={() => signIn('google')}>Googleログイン</Button>
-             <Button variant="ghost" size="sm" onClick={() => signIn('discord')}>Discordログイン</Button>
-             <Link href="/" className="flex items-center">
-               <img src="/pslogo.svg" alt="PolySeek Logo" className="h-6 w-auto" />
-             </Link>
-             {/* Googleログインのみなので登録ボタンは非表示にするか検討 */}
-             <Link href="/(auth)/register">
-                <Button variant="default" size="sm">登録</Button>
-             </Link>
-          </div>
-        )}
-        {/* status === "loading" の場合は何も表示しないか、ローディング表示を追加 */}
+        {/* Mobile Navigation (Visible on small screens) */}
+        <div className="md:hidden flex items-center justify-between w-full">
+          {status === "authenticated" ? (
+            <>
+              <Link href="/register-item">
+                <Button variant="ghost" size="sm">商品登録</Button>
+              </Link>
+              <Link href="/profile">
+                <Button variant="ghost" size="sm">プロフィール</Button>
+              </Link>
+              <Link href="/" className="flex items-center">
+                <img src="/pslogo.svg" alt="PolySeek Logo" className="h-6 w-auto" />
+              </Link>
+              <Button variant="ghost" size="sm" onClick={() => signOut()}>ログアウト</Button>
+            </>
+          ) : (
+            <>
+              <Dialog open={isRegisterModalOpen} onOpenChange={setIsRegisterModalOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm">商品登録</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>商品登録にはログインが必要です</DialogTitle>
+                    <DialogDescription>
+                      商品登録を行うには、以下のいずれかの方法でログインしてください。
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex flex-col space-y-4">
+                    <Button onClick={() => signIn('google')}>Googleでログイン</Button>
+                    <Button onClick={() => signIn('discord')}>Discordでログイン</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              <Link href="/" className="flex items-center">
+                <img src="/pslogo.svg" alt="PolySeek Logo" className="h-6 w-auto" />
+              </Link>
+              <Button variant="ghost" size="sm" onClick={() => signIn('google')}>Googleログイン</Button>
+              <Button variant="ghost" size="sm" onClick={() => signIn('discord')}>Discordログイン</Button>
+            </>
+          )}
+        </div>
 
         {/* Desktop Navigation (Hidden on small screens) */}
         <Link href="/" className="hidden md:flex items-center space-x-2">
           <img src="/pslogo.svg" alt="PolySeek Logo" className="h-6 w-auto" />
-          <span className="text-xl font-bold">PolySeek</span> {/* Slightly smaller text */}
+          <span className="text-xl font-bold">PolySeek</span>
         </Link>
-        <nav className="hidden md:flex items-center space-x-2"> {/* Reduced space */}
-          {/* 認証状態に応じて表示を切り替え */}
+        <nav className="hidden md:flex items-center space-x-2">
           {status === "loading" && (
-            <div className="h-8 w-20 animate-pulse bg-gray-200 rounded"></div> // ローディング表示例
+            <div className="h-8 w-20 animate-pulse bg-gray-200 rounded"></div>
           )}
-          {status === "unauthenticated" && (
+          {status === "authenticated" ? (
             <React.Fragment>
-              {/* ログインボタン: Googleログインを実行 */}
+              <Link href="/register-item">
+                <Button variant="ghost" size="sm">商品登録</Button>
+              </Link>
+              <Link href="/profile">
+                <Button variant="ghost" size="sm">プロフィール</Button>
+              </Link>
+              <Button variant="ghost" size="sm" onClick={() => signOut()}>
+                ログアウト
+              </Button>
+            </React.Fragment>
+          ) : (
+            <React.Fragment>
+              <Dialog open={isRegisterModalOpen} onOpenChange={setIsRegisterModalOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm">商品登録</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>商品登録にはログインが必要です</DialogTitle>
+                    <DialogDescription>
+                      商品登録を行うには、以下のいずれかの方法でログインしてください。
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex flex-col space-y-4">
+                    <Button onClick={() => signIn('google')}>Googleでログイン</Button>
+                    <Button onClick={() => signIn('discord')}>Discordでログイン</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
               <Button variant="ghost" size="sm" onClick={() => signIn('google')}>
                 Googleログイン
               </Button>
               <Button variant="ghost" size="sm" onClick={() => signIn('discord')}>
                 Discordログイン
-              </Button>
-              {/* Googleログインのみの場合、登録ボタンは不要かもしれない */}
-              <Link href="/(auth)/register">
-                <Button variant="default" size="sm">登録</Button>
-              </Link>
-            </React.Fragment>
-          )}
-          {status === "authenticated" && (
-            <React.Fragment>
-              <Link href="/profile"> {/* ルートグループを除いたパスに修正 */}
-                <Button variant="ghost" size="sm">プロフィール</Button>
-              </Link>
-              {/* ログアウトボタン */}
-              <Button variant="ghost" size="sm" onClick={() => signOut()}>
-                ログアウト
               </Button>
             </React.Fragment>
           )}
