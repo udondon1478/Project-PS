@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     const negativeTagsParam = searchParams.get('negativeTags'); // マイナス検索タグを取得
     console.log('Raw negativeTagsParam (get):', negativeTagsParam); // get()で取得したRaw値をログ出力
 
-    const ageRatingTagId = searchParams.get('ageRatingTagId'); // 対象年齢タグIDを取得
+    const ageRatingTagsParam = searchParams.get('ageRatingTags'); // 対象年齢タグ名を取得
     const categoryTagId = searchParams.get('categoryTagId'); // カテゴリータグIDを取得
     const featureTagIdsParam = searchParams.get('featureTagIds'); // 主要機能タグIDを取得
     const minPriceParam = searchParams.get('minPrice'); // 最小価格を取得
@@ -38,15 +38,69 @@ export async function GET(request: Request) {
     const negativeTagNames = negativeTagsParam ? negativeTagsParam.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : []; // マイナス検索タグ名をパース
     const featureTagIds = featureTagIdsParam ? featureTagIdsParam.split(',').map(id => id.trim()).filter(id => id.length > 0) : [];
 
-    const tagIdsToFilter = [...featureTagIds];
-    if (ageRatingTagId) {
-      tagIdsToFilter.push(ageRatingTagId);
+
+    const whereConditions: Prisma.ProductWhereInput[] = []; // 型を修正
+
+    let ageRatingTagIds: string[] = [];
+    if (ageRatingTagsParam) {
+      const ageRatingTags = ageRatingTagsParam.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+      const tags = await prisma.tag.findMany({
+        where: {
+          name: {
+            in: ageRatingTags,
+          },
+          tagCategory: {
+            name: "age_rating",
+          },
+        },
+        select: {
+          id: true,
+        },
+      });
+      ageRatingTagIds = tags.map(tag => tag.id);
     }
+
+    const tagIdsToFilter = [...featureTagIds];
     if (categoryTagId) {
       tagIdsToFilter.push(categoryTagId);
     }
 
-    const whereConditions: Prisma.ProductWhereInput[] = []; // 型を修正
+    // 年齢制限タグのフィルタリングロジック
+    if (ageRatingTagIds.length > 0) {
+      whereConditions.push({
+        productTags: {
+          some: {
+            tagId: {
+              in: ageRatingTagIds,
+            },
+          },
+        },
+      });
+    } else {
+      // 年齢制限タグが指定されていない場合、デフォルトで「全年齢」のみを表示
+      const allAgeTag = await prisma.tag.findFirst({
+        where: {
+          name: "全年齢",
+          tagCategory: {
+            name: "age_rating",
+          },
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (allAgeTag) {
+        whereConditions.push({
+          productTags: {
+            some: {
+              tagId: allAgeTag.id,
+            },
+          },
+        });
+      }
+    }
+
 
     // 通常タグ名によるフィルタリング (手動入力されたタグ)
     if (tagNames.length > 0) {
@@ -78,7 +132,7 @@ export async function GET(request: Request) {
       });
     }
 
-    // タグIDによるフィルタリング (対象年齢、カテゴリー、主要機能)
+    // タグIDによるフィルタリング (カテゴリー、主要機能)
     if (tagIdsToFilter.length > 0) {
        whereConditions.push({
          AND: tagIdsToFilter.map(tagId => ({

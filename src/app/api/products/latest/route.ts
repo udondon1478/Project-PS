@@ -1,10 +1,36 @@
 import { NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client'; // Prismaをインポート
 import { prisma } from '@/lib_prisma/prisma';
 
 
 export async function GET() {
   try {
+    const allAgeTag = await prisma.tag.findFirst({
+      where: {
+        name: "全年齢",
+        tagCategory: {
+          name: "age_rating",
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    const whereConditions: Prisma.ProductWhereInput[] = [];
+
+    if (allAgeTag) {
+      whereConditions.push({
+        productTags: {
+          some: {
+            tagId: allAgeTag.id,
+          },
+        },
+      });
+    }
+
     const products = await prisma.product.findMany({
+      where: whereConditions.length > 0 ? { AND: whereConditions } : {},
       orderBy: {
         createdAt: 'desc',
       },
