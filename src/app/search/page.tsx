@@ -9,7 +9,7 @@ const SearchResultPage = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const searchTerm = searchParams.get("tags") || "";
-  const initialAgeRatingTagId = searchParams.get("ageRatingTagId") || "";
+  const initialAgeRatingTags = searchParams.get("ageRatingTags")?.split(',') || [];
   const initialCategoryTagId = searchParams.get("categoryTagId") || "";
   const initialFeatureTagIds = searchParams.get("featureTagIds")?.split(',') || [];
   const initialNegativeTags = searchParams.get("negativeTags")?.split(',') || []; // negativeTagsを取得
@@ -18,7 +18,7 @@ const SearchResultPage = () => {
   const [selectedNegativeTags, setSelectedNegativeTags] = useState<string[]>(initialNegativeTags); // negativeTagsステートを追加
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedAgeRatingTagId, setSelectedAgeRatingTagId] = useState<string>(initialAgeRatingTagId);
+  const [selectedAgeRatingTags, setSelectedAgeRatingTags] = useState<string[]>(initialAgeRatingTags);
   const [selectedCategoryTagId, setSelectedCategoryTagId] = useState<string>(initialCategoryTagId);
   const [selectedFeatureTagIds, setSelectedFeatureTagIds] = useState<string[]>(initialFeatureTagIds);
 
@@ -30,7 +30,7 @@ const SearchResultPage = () => {
       try {
         const queryParams = new URLSearchParams();
         if (searchTerm) queryParams.append("tags", searchTerm);
-        if (selectedAgeRatingTagId) queryParams.append("ageRatingTagId", selectedAgeRatingTagId);
+        if (selectedAgeRatingTags.length > 0) queryParams.append("ageRatingTags", selectedAgeRatingTags.join(','));
         if (selectedCategoryTagId) queryParams.append("categoryTagId", selectedCategoryTagId);
 
         if (selectedFeatureTagIds.length > 0) queryParams.append("featureTagIds", selectedFeatureTagIds.join(','));
@@ -59,7 +59,7 @@ const SearchResultPage = () => {
 
     fetchProducts();
 
-  }, [searchTerm, selectedAgeRatingTagId, selectedCategoryTagId, selectedFeatureTagIds, selectedNegativeTags, searchParams.get('minPrice'), searchParams.get('maxPrice')]); // 依存配列に価格帯クエリパラメータを追加
+  }, [searchTerm, selectedAgeRatingTags, selectedCategoryTagId, selectedFeatureTagIds, selectedNegativeTags, searchParams.get('minPrice'), searchParams.get('maxPrice')]); // 依存配列に価格帯クエリパラメータを追加
 
   useEffect(() => {
     const currentSearchParams = new URLSearchParams(window.location.search); // 既存のURLSearchParamsを取得
@@ -69,10 +69,10 @@ const SearchResultPage = () => {
     } else {
       currentSearchParams.delete("tags");
     }
-    if (selectedAgeRatingTagId) {
-      currentSearchParams.set("ageRatingTagId", selectedAgeRatingTagId);
+    if (selectedAgeRatingTags.length > 0) {
+      currentSearchParams.set("ageRatingTags", selectedAgeRatingTags.join(','));
     } else {
-      currentSearchParams.delete("ageRatingTagId");
+      currentSearchParams.delete("ageRatingTags");
     }
     if (selectedCategoryTagId) {
       currentSearchParams.set("categoryTagId", selectedCategoryTagId);
@@ -93,15 +93,15 @@ const SearchResultPage = () => {
     // 価格帯パラメータはそのまま引き継がれる
 
     router.replace(`/search?${currentSearchParams.toString()}`);
-  }, [searchTerm, selectedAgeRatingTagId, selectedCategoryTagId, selectedFeatureTagIds, selectedNegativeTags, router]);
+  }, [searchTerm, selectedAgeRatingTags, selectedCategoryTagId, selectedFeatureTagIds, selectedNegativeTags, router]);
 
   // URLのクエリパラメータ変更を監視し、ステートを更新
   useEffect(() => {
     const currentNegativeTags = searchParams.get("negativeTags")?.split(',') || [];
     setSelectedNegativeTags(currentNegativeTags);
 
-    const currentAgeRatingTagId = searchParams.get("ageRatingTagId") || "";
-    setSelectedAgeRatingTagId(currentAgeRatingTagId);
+    const currentAgeRatingTags = searchParams.get("ageRatingTags")?.split(',') || [];
+    setSelectedAgeRatingTags(currentAgeRatingTags);
 
     const currentCategoryTagId = searchParams.get("categoryTagId") || "";
     setSelectedCategoryTagId(currentCategoryTagId);
@@ -127,7 +127,7 @@ const SearchResultPage = () => {
     return (
       <div className="container mx-auto px-4 py-8 pt-40">
         <p>検索キーワード: {searchTerm}</p>
-        {selectedAgeRatingTagId && <p>対象年齢タグID: {selectedAgeRatingTagId}</p>}
+        {selectedAgeRatingTags.length > 0 && <p>対象年齢タグ: {selectedAgeRatingTags.join(',')}</p>}
         {selectedCategoryTagId && <p>カテゴリータグID: {selectedCategoryTagId}</p>}
         {selectedFeatureTagIds.length > 0 && <p>主要機能タグID: {selectedFeatureTagIds.join(',')}</p>}
         <div>指定された条件に一致する商品は見つかりませんでした。</div>
@@ -138,7 +138,7 @@ const SearchResultPage = () => {
   return (
     <div className="container mx-auto px-4 py-8 pt-40">
       <p>検索キーワード: {searchTerm}</p>
-      {selectedAgeRatingTagId && <p>対象年齢タグID: {selectedAgeRatingTagId}</p>}
+      {selectedAgeRatingTags.length > 0 && <p>対象年齢タグ: {selectedAgeRatingTags.join(',')}</p>}
       {selectedCategoryTagId && <p>カテゴリータグID: {selectedCategoryTagId}</p>}
       {selectedFeatureTagIds.length > 0 && <p>主要機能タグID: {selectedFeatureTagIds.join(',')}</p>}
 

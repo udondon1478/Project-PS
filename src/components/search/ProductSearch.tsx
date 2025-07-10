@@ -70,6 +70,7 @@ export default function ProductSearch() {
   const [ageRatingTags, setAgeRatingTags] = useState<{ id: string; name: string; color?: string | null }[]>([]);
   const [categoryTags, setCategoryTags] = useState<{ id: string; name: string; color?: string | null }[]>([]);
   const [featureTags, setFeatureTags] = useState<{ id: string; name: string; color?: string | null }[]>([]);
+  const [selectedAgeRatingTags, setSelectedAgeRatingTags] = useState<string[]>([]); // 新しく追加
 
   // 対象年齢、カテゴリー、主要機能タグの選択肢をフェッチ
   useEffect(() => {
@@ -132,15 +133,18 @@ export default function ProductSearch() {
     const urlSearchParams = new URLSearchParams(window.location.search);
     const urlTags = urlSearchParams.get("tags")?.split(',').filter(tag => tag.length > 0) || [];
     const urlNegativeTags = urlSearchParams.get("negativeTags")?.split(',').filter(tag => tag.length > 0) || [];
+    const urlAgeRatingTags = urlSearchParams.get("ageRatingTags")?.split(',').filter(tag => tag.length > 0) || [];
 
-    if (urlTags.length > 0 || urlNegativeTags.length > 0) {
+    if (urlTags.length > 0 || urlNegativeTags.length > 0 || urlAgeRatingTags.length > 0) {
       // URLにタグ情報がある場合はURLから読み込む
       setSelectedTags(urlTags);
       setSelectedNegativeTags(urlNegativeTags);
+      setSelectedAgeRatingTags(urlAgeRatingTags);
     } else {
       // URLにタグ情報がない場合はセッションストレージから読み込む
       const savedTags = sessionStorage.getItem('polyseek-search-tags');
       const savedNegativeTags = sessionStorage.getItem('polyseek-search-negative-tags');
+      const savedAgeRatingTags = sessionStorage.getItem('polyseek-search-age-rating-tags');
 
       if (savedTags) {
         try {
@@ -161,6 +165,17 @@ export default function ProductSearch() {
           }
         } catch (error) {
           console.error("Failed to parse negative tags from sessionStorage:", error);
+        }
+      }
+
+      if (savedAgeRatingTags) {
+        try {
+          const parsedAgeRatingTags = JSON.parse(savedAgeRatingTags);
+          if (Array.isArray(parsedAgeRatingTags)) {
+            setSelectedAgeRatingTags(parsedAgeRatingTags);
+          }
+        } catch (error) {
+          console.error("Failed to parse age rating tags from sessionStorage:", error);
         }
       }
     }
@@ -246,7 +261,8 @@ export default function ProductSearch() {
   useEffect(() => {
     sessionStorage.setItem('polyseek-search-tags', JSON.stringify(selectedTags));
     sessionStorage.setItem('polyseek-search-negative-tags', JSON.stringify(selectedNegativeTags)); // マイナス検索タグも保存
-  }, [selectedTags, selectedNegativeTags]); // 両方のステートを依存配列に追加
+    sessionStorage.setItem('polyseek-search-age-rating-tags', JSON.stringify(selectedAgeRatingTags)); // 年齢制限タグも保存
+  }, [selectedTags, selectedNegativeTags, selectedAgeRatingTags]); // 全てのタグステートを依存配列に追加
 
   // 高額商品フィルタリングの状態に応じて価格スライダーの範囲と値を更新
   useEffect(() => {
@@ -292,12 +308,7 @@ export default function ProductSearch() {
       // 対象年齢タグの場合は一つだけ選択可能にするロジックを維持
       const ageRatingTagNames = ageRatingTags.map(tag => tag.name);
       if (ageRatingTagNames.includes(tagName)) {
-        const existingAgeTag = selectedTags.find(t => ageRatingTagNames.includes(t));
-        if (existingAgeTag) {
-          setSelectedTags(prev => [...prev.filter(t => t !== existingAgeTag), tagName]);
-        } else {
-          setSelectedTags(prev => [...prev, tagName]);
-        }
+        setSelectedAgeRatingTags([tagName]); // 年齢制限タグは一つだけ選択
       } else {
         setSelectedTags(prev => [...prev, tagName]);
       }
@@ -311,6 +322,13 @@ export default function ProductSearch() {
 
   const handleRemoveTag = (tagToRemove: string, isNegative: boolean = false) => {
     const currentSearchParams = new URLSearchParams(window.location.search);
+
+    // 年齢制限タグの削除ロジックを追加
+    const ageRatingTagNames = ageRatingTags.map(tag => tag.name);
+    if (ageRatingTagNames.includes(tagToRemove)) {
+      setSelectedAgeRatingTags([]); // 年齢制限タグをクリア
+      return; // 処理を終了
+    }
 
     if (isNegative) {
       // マイナスタグの削除
@@ -380,6 +398,9 @@ export default function ProductSearch() {
     if (selectedNegativeTags.length > 0) { // マイナス検索タグをクエリパラメータに追加
       queryParams.append("negativeTags", selectedNegativeTags.join(','));
     }
+    if (selectedAgeRatingTags.length > 0) { // 年齢制限タグをクエリパラメータに追加
+      queryParams.append("ageRatingTags", selectedAgeRatingTags.join(','));
+    }
     if (detailedFilters.category) {
       // カテゴリーはIDではなく名前で検索することを想定
       // 必要であれば、カテゴリー名からIDを取得する処理を追加
@@ -401,7 +422,7 @@ export default function ProductSearch() {
     }
 
     router.replace(`/search?${queryParams.toString()}`);
-  }, [selectedTags, selectedNegativeTags, detailedFilters, priceRange, isHighPriceFilterEnabled, router]); // 依存配列にisHighPriceFilterEnabledを追加
+  }, [selectedTags, selectedNegativeTags, selectedAgeRatingTags, detailedFilters, priceRange, isHighPriceFilterEnabled, router]); // 依存配列にisHighPriceFilterEnabledとselectedAgeRatingTagsを追加
 
   const handleDetailedFilterChange = (filterType: keyof typeof detailedFilters, value: string | null) => {
     setDetailedFilters(prev => ({ ...prev, [filterType]: value }));
@@ -410,6 +431,7 @@ export default function ProductSearch() {
    const clearAllTagsAndFilters = () => {
     setSelectedTags([]);
     setSelectedNegativeTags([]); // マイナス検索タグもクリア
+    setSelectedAgeRatingTags([]); // 年齢制限タグもクリア
     setDetailedFilters({ category: null });
   };
 
@@ -420,7 +442,7 @@ export default function ProductSearch() {
   };
 
   // Helper to get the currently selected age rating tag
-  const getCurrentAgeTag = () => selectedTags.find(tag => ageRatingTags.map(t => t.name).includes(tag));
+  const getCurrentAgeTag = () => selectedAgeRatingTags.length > 0 ? selectedAgeRatingTags[0] : null;
   // Helper to check if a specific feature tag is selected
   const isFeatureTagSelected = (feature: string) => selectedTags.includes(feature);
   // Helper to check if a specific negative tag is selected
@@ -488,7 +510,7 @@ export default function ProductSearch() {
               <DropdownMenuLabel>対象年齢を選択</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {ageRatingTags.map(tag => ( // ageRatingTagsを使用
-                <DropdownMenuItem key={tag.id} onSelect={() => handleAddTag(tag.name)} disabled={selectedTags.includes(tag.name) || selectedNegativeTags.includes(tag.name)}> {/* マイナス検索タグも考慮 */}
+                <DropdownMenuItem key={tag.id} onSelect={() => handleAddTag(tag.name)} disabled={selectedAgeRatingTags.includes(tag.name)}>
                   {tag.name}
                 </DropdownMenuItem>
               ))}
@@ -563,7 +585,7 @@ export default function ProductSearch() {
                        </DropdownMenuTrigger>
                        <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
                          {ageRatingTags.map(tag => ( // ageRatingTagsを使用
-                           <DropdownMenuItem key={tag.id} onSelect={() => handleAddTag(tag.name)} disabled={selectedTags.includes(tag.name) || selectedNegativeTags.includes(tag.name)} className="text-sm"> {/* マイナス検索タグも考慮 */}
+                           <DropdownMenuItem key={tag.id} onSelect={() => handleAddTag(tag.name)} disabled={selectedAgeRatingTags.includes(tag.name)} className="text-sm">
                              {tag.name}
                            </DropdownMenuItem>
                          ))}
