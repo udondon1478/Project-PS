@@ -92,7 +92,7 @@ graph TD
 
 *   VPS上で、アプリケーションを配置するディレクトリに移動し、Gitリポジトリをクローンします。
     ```bash
-    git clone https://github.com/udondon1478/PolySeek.git
+    git clone --branch feature/deployment-setup https://github.com/udondon1478/PolySeek.git
     cd PolySeek
     ```
 *   依存関係をインストールします。
