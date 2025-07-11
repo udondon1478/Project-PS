@@ -2,6 +2,7 @@
 "use client";
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useRouter } from 'next/navigation';
@@ -76,7 +77,7 @@ export default function Header() {
                 <Button variant="ghost" size="sm">プロフィール</Button>
               </Link>
               <Link href="/" className="flex items-center">
-                <img src="/pslogo.svg" alt="PolySeek Logo" className="h-6 w-auto" />
+                <Image src="/pslogo.svg" alt="PolySeek Logo" width={24} height={24} className="h-6 w-auto" />
               </Link>
               <Button variant="ghost" size="sm" onClick={() => signOut()}>ログアウト</Button>
             </>
@@ -100,7 +101,7 @@ export default function Header() {
                 </DialogContent>
               </Dialog>
               <Link href="/" className="flex items-center">
-                <img src="/pslogo.svg" alt="PolySeek Logo" className="h-6 w-auto" />
+                <Image src="/pslogo.svg" alt="PolySeek Logo" width={24} height={24} className="h-6 w-auto" />
               </Link>
               <Button variant="ghost" size="sm" onClick={() => signIn('google')}>Googleログイン</Button>
               <Button variant="ghost" size="sm" onClick={() => signIn('discord')}>Discordログイン</Button>
@@ -110,7 +111,7 @@ export default function Header() {
 
         {/* Desktop Navigation (Hidden on small screens) */}
         <Link href="/" className="hidden md:flex items-center space-x-2">
-          <img src="/pslogo.svg" alt="PolySeek Logo" className="h-6 w-auto" />
+          <Image src="/pslogo.svg" alt="PolySeek Logo" width={24} height={24} className="h-6 w-auto" />
           <span className="text-xl font-bold">PolySeek</span>
         </Link>
         <nav className="hidden md:flex items-center space-x-2">

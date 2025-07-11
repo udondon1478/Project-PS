@@ -59,7 +59,7 @@ const SearchResultPage = () => {
 
     fetchProducts();
 
-  }, [searchTerm, selectedAgeRatingTags, selectedCategoryTagId, selectedFeatureTagIds, selectedNegativeTags, searchParams.get('minPrice'), searchParams.get('maxPrice')]); // 依存配列に価格帯クエリパラメータを追加
+  }, [searchTerm, selectedAgeRatingTags, selectedCategoryTagId, selectedFeatureTagIds, selectedNegativeTags, searchParams]); // 依存配列にsearchParamsを追加
 
   useEffect(() => {
     const currentSearchParams = new URLSearchParams(window.location.search); // 既存のURLSearchParamsを取得
@@ -111,7 +111,7 @@ const SearchResultPage = () => {
 
     // searchTerm は useSearchParams から直接取得しているのでステート更新は不要
 
-  }, [searchParams.toString()]); // searchParams の文字列表現が変更されたときに実行
+  }, [searchParams]); // searchParams を依存配列に追加
 
 
 

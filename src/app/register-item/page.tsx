@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react'; // useEffectを追加
+import Image from 'next/image';
 
 // 商品情報の型定義 (必要に応じて詳細化)
 interface ProductInfo {
@@ -259,7 +260,7 @@ export default function RegisterItemPage() {
               <h3 className="text-lg font-semibold">画像</h3>
               <div className="flex flex-wrap gap-2">
                 {productData.images.map((image, index) => (
-                  <img key={index} src={image.imageUrl} alt={`商品画像 ${index + 1}`} className="w-24 h-24 object-cover rounded-md" />
+                  <Image key={index} src={image.imageUrl} alt={`商品画像 ${index + 1}`} width={96} height={96} className="w-24 h-24 object-cover rounded-md" />
                 ))}
               </div>
             </div>
@@ -292,7 +293,7 @@ export default function RegisterItemPage() {
               <h3 className="text-lg font-semibold">画像</h3>
               <div className="flex flex-wrap gap-2">
                 {productData.images.map((image, index) => (
-                  <img key={index} src={image.imageUrl} alt={`商品画像 ${index + 1}`} className="w-24 h-24 object-cover rounded-md" />
+                  <Image key={index} src={image.imageUrl} alt={`商品画像 ${index + 1}`} width={96} height={96} className="w-24 h-24 object-cover rounded-md" />
                 ))}
               </div>
             </div>
