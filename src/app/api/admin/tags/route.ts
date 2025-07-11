@@ -1,6 +1,6 @@
 // src/app/api/admin/tags/route.ts
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { isAdmin } from '@/lib/auth'; // isAdminヘルパー関数をインポート
 
 const prisma = new PrismaClient();
@@ -18,7 +18,11 @@ export async function GET(request: Request) {
     const offset = parseInt(searchParams.get('offset') || '0', 10); // デフォルト0
 
     // typeパラメータは必須ではないが、指定があればフィルタリング
-    const where = type ? { type: type } : {};
+    const where: Prisma.TagWhereInput = type ? {
+      tagCategory: {
+        name: type,
+      },
+    } : {};
 
     // タグのリストを取得 (ページネーション適用)
     const tags = await prisma.tag.findMany({
@@ -26,7 +30,6 @@ export async function GET(request: Request) {
       select: {
         id: true,
         name: true,
-        type: true, // 管理画面ではtypeも表示
         language: true, // 管理画面ではlanguageも表示
         isAlias: true, // 管理画面ではisAliasも表示
         canonicalId: true, // 管理画面ではcanonicalIdも表示
@@ -70,11 +73,11 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { name, type, tagCategoryId, language, description, isAlias, canonicalId: canonicalTagName } = body; // categoryとcolorを削除し、tagCategoryIdを受け取る
+    const { name, tagCategoryId, language, description, isAlias, canonicalId: canonicalTagName } = body; // categoryとcolorを削除し、tagCategoryIdを受け取る
 
     // 必須フィールドの検証
-    if (!name || !type || !tagCategoryId || !language) {
-      return NextResponse.json({ message: '必須フィールドが不足しています (name, type, tagCategoryId, language)。' }, { status: 400 });
+    if (!name || !tagCategoryId || !language) {
+      return NextResponse.json({ message: '必須フィールドが不足しています (name, tagCategoryId, language)。' }, { status: 400 });
     }
 
     let canonicalTagId = null;
@@ -98,7 +101,6 @@ export async function POST(request: Request) {
     const newTag = await prisma.tag.create({
       data: {
         name,
-        type,
         tagCategoryId, // tagCategoryId を保存
         language,
         description,
@@ -128,7 +130,7 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const { id, name, type, tagCategoryId, language, description, isAlias, canonicalId: canonicalTagName } = body; // categoryとcolorを削除し、tagCategoryIdを受け取る
+    const { id, name, tagCategoryId, language, description, isAlias, canonicalId: canonicalTagName } = body; // categoryとcolorを削除し、tagCategoryIdを受け取る
 
     // idは必須
     if (!id) {
@@ -158,7 +160,6 @@ export async function PUT(request: Request) {
       where: { id: id },
       data: {
         name,
-        type,
         tagCategoryId, // tagCategoryId を保存
         language,
         description,

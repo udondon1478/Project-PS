@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useRouter } from 'next/navigation';
 import {
@@ -162,7 +162,9 @@ export default function Header() {
 
       {/* Product Search Component - Placed below the top navigation bar */}
       {/* The ProductSearch component itself handles padding and background */}
-      <ProductSearch />
+      <Suspense fallback={<div>Loading search bar...</div>}>
+        <ProductSearch />
+      </Suspense>
 
     </header>
   );

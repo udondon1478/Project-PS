@@ -12,19 +12,18 @@ export async function GET() {
   }
 
   try {
-    // Tagテーブルからユニークなtypeのリストを取得
-    const tagTypes = await prisma.tag.findMany({
+    // TagCategoryテーブルからすべてのカテゴリ名を取得
+    const tagCategories = await prisma.tagCategory.findMany({
       select: {
-        type: true,
+        name: true,
       },
-      distinct: ['type'], // typeでユニークな値を取得
       orderBy: {
-        type: 'asc', // タイプ名でソート
+        name: 'asc', // カテゴリ名でソート
       },
     });
 
     // 結果を文字列の配列に変換
-    const types = tagTypes.map(tag => tag.type);
+    const types = tagCategories.map(category => category.name);
 
     return NextResponse.json(types);
   } catch (error) {

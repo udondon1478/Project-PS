@@ -35,5 +35,17 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-Test commit message with emoji.
-This is a test line.
+## Recent Changes
+
+`npm run build` 時に発生していた複数の型エラーとビルドエラーを解決しました。主な変更点は以下の通りです。
+
+*   **`src/app/api/products/[productId]/route.ts`**: `GET` 関数の `params` 引数の型を `Promise` でラップするように修正しました。
+*   **`src/app/api/admin/tag-types/route.ts`**: `Tag` モデルに存在しない `type` プロパティを参照していた問題を修正し、`TagCategory` モデルからカテゴリ名を取得するように変更しました。
+*   **`src/app/api/admin/tags/route.ts`**: `Tag` モデルに存在しない `type` プロパティを参照していた `where` 句と `select` 句、および `POST`/`PUT` メソッドの `type` 参照を修正しました。また、`Prisma` 名前空間のインポートを追加しました。
+*   **`src/app/api/categories/route.ts`**: `Category` モデルに存在しない `category` プロパティを参照していた問題を修正し、`TagCategory` モデルからカテゴリを取得するように変更しました。
+*   **`src/app/api/items/update/route.ts`**: 新しいタグを作成する際に `Tag` モデルに存在しない `type`, `category`, `color` プロパティを設定しようとしていた問題を修正し、デフォルトの `general` カテゴリを `upsert` で作成し、その `id` を `tagCategoryId` として使用するように変更しました。
+*   **`src/components/admin/TagForm.tsx`**: `Tag` モデルに存在しない `type` プロパティを参照していた問題を修正し、`isNewType` 状態と `handleCheckboxChange` 関数、および関連するUI要素を削除しました。
+*   **`src/components/theme-provider.tsx`**: `next-themes/dist/types` からの `ThemeProviderProps` のインポートパスを `next-themes` から直接インポートするように修正しました。
+*   **`src/app/search/page.tsx`**: `useSearchParams()` の使用によるビルドエラーを解決するため、`src/components/search/SearchContent.tsx` を削除し、`src/app/search/page.tsx` をサーバーコンポーネントとして `searchParams` prop を `Promise` で受け取るように修正しました。また、未使用の `redirect` インポートを削除しました。
+*   **`src/components/Header.tsx`**: `ProductSearch` コンポーネントが `useSearchParams` を使用していることによるビルドエラーを解決するため、`ProductSearch` を `<Suspense>` でラップし、`Suspense` を `react` からインポートするように修正しました。
+*   **`src/app/dev/page.tsx`**: 開発専用ページであり、ビルド時に `fetch failed` エラーを引き起こしていたため、このファイルを削除しました。

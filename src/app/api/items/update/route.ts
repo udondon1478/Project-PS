@@ -18,6 +18,16 @@ export async function POST(request: Request) {
   // const userId = session.user.id; // 更新処理では直接使用しないが、認証チェックのために取得
 
   try {
+    // 'general' カテゴリが存在しない場合は作成し、IDを取得
+    const generalTagCategory = await prisma.tagCategory.upsert({
+      where: { name: 'general' },
+      update: {},
+      create: {
+        name: 'general',
+        color: '#CCCCCC', // デフォルトの色
+      },
+    });
+
     const { productId, ageRatingTagId, categoryTagId, tags } = await request.json(); // 更新対象の商品ID、対象年齢タグID、カテゴリータグID、手動タグを受け取る
  
     if (!productId) {
@@ -176,9 +186,7 @@ export async function POST(request: Request) {
           create: {
             name: tagName,
             language: 'ja', // 仮に日本語とする。必要に応じて言語情報を追加
-            type: 'general', // デフォルトはgeneralとする。必要に応じて適切なtypeを設定
-            category: 'other', // 仮にotherとする。必要に応じてカテゴリ情報を追加
-            color: '#CCCCCC', // 仮の色
+            tagCategoryId: generalTagCategory.id, // 取得または作成したgeneralカテゴリのID
           },
         });
         if (!tagIdsToConnect.includes(tag.id)) {
