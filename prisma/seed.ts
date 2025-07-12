@@ -21,24 +21,24 @@ async function main() {
     },
   });
   console.log(`Created/Updated admin user with id: ${adminUser.id}`);
- 
+
   // タグカテゴリの初期データを作成
   const ageRatingCategory = await prisma.tagCategory.upsert({
-    where: { name: '対象年齢' },
+    where: { name: 'age_rating' },
     update: {},
-    create: { name: '対象年齢', color: '#CCCCCC' },
+    create: { name: 'age_rating', color: '#CCCCCC' },
   });
 
   const productCategory = await prisma.tagCategory.upsert({
-    where: { name: '商品カテゴリ' },
+    where: { name: 'product_category' },
     update: {},
-    create: { name: '商品カテゴリ', color: '#00CC99' },
+    create: { name: 'product_category', color: '#00CC99' },
   });
 
   const featureCategory = await prisma.tagCategory.upsert({
-    where: { name: '主要機能' },
+    where: { name: 'feature' },
     update: {},
-    create: { name: '主要機能', color: '#33CCFF' },
+    create: { name: 'feature', color: '#33CCFF' },
   });
 
   // その他のタグカテゴリの初期データ
@@ -51,11 +51,8 @@ async function main() {
   // 対象年齢タグの初期データ
   const ageRatingTags = [
     { name: '全年齢', tagCategoryId: ageRatingCategory.id },
-    { name: 'R-15', tagCategoryId: ageRatingCategory.id },
-    { name: 'R-18', tagCategoryId: ageRatingCategory.id },
-    { name: 'NSFW', tagCategoryId: ageRatingCategory.id },
   ];
- 
+
   for (const tagData of ageRatingTags) {
     await prisma.tag.upsert({
       where: { name: tagData.name },
@@ -63,7 +60,7 @@ async function main() {
       create: { ...tagData, language: 'ja' },
     });
   }
- 
+
   // カテゴリータグの初期データ
   const categoryTags = [
     { name: 'アバター', tagCategoryId: productCategory.id },
@@ -74,7 +71,7 @@ async function main() {
     { name: 'ツール', tagCategoryId: productCategory.id },
     { name: 'その他', tagCategoryId: productCategory.id },
   ];
- 
+
   for (const tagData of categoryTags) {
     await prisma.tag.upsert({
       where: { name: tagData.name },
@@ -82,7 +79,7 @@ async function main() {
       create: { ...tagData, language: 'ja' },
     });
   }
- 
+
   // 主要機能タグの初期データ
   const featureTags = [
     { name: 'Quest対応', tagCategoryId: featureCategory.id },
@@ -91,7 +88,7 @@ async function main() {
     { name: 'SDK3', tagCategoryId: featureCategory.id },
     { name: 'SDK2', tagCategoryId: featureCategory.id },
   ];
- 
+
   for (const tagData of featureTags) {
     await prisma.tag.upsert({
       where: { name: tagData.name },
@@ -99,10 +96,10 @@ async function main() {
       create: { ...tagData, language: 'ja' },
     });
   }
- 
+
   console.log('Seed data inserted successfully');
 }
- 
+
 main()
   .catch((e) => {
     console.error(e);

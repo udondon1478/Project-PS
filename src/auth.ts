@@ -13,6 +13,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     }),
   ],
+  trustHost: true, // ホストの信頼を有効化
   callbacks: {
     // signIn コールバックはアダプターがユーザーの作成/検索を処理するため、ここでは不要
     // 必要に応じて、追加の検証や処理を記述することは可能

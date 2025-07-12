@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib_prisma/prisma'; // Prismaクライアントをインポート
 
-export async function GET(request: Request, { params }: { params: { productId: string } }) {
-  const productId = params.productId;
+export async function GET(request: Request, { params }: { params: Promise<{ productId: string }> }) {
+  const { productId } = await params;
 
   try {
     const product = await prisma.product.findUnique({

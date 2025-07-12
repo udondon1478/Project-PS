@@ -204,7 +204,7 @@ export default function ProductSearch() {
 
 
 
-  }, [searchParams.toString(), searchParams]); // URLのクエリパラメータ変更を検知して実行
+  }, [searchParams]); // URLのクエリパラメータ変更を検知して実行
 
   // Fetch tag suggestions based on input with debounce
   useEffect(() => {
@@ -238,7 +238,7 @@ export default function ProductSearch() {
     }, 300); // 300ms debounce
 
     return () => clearTimeout(timerId);
-  }, [searchQuery, selectedTags]); // selectedTagsも依存配列に追加
+  }, [searchQuery, selectedTags, selectedNegativeTags]); // selectedNegativeTagsも依存配列に追加
 
   // Handle clicking outside the search input and suggestions list
   useEffect(() => {

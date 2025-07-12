@@ -35,7 +35,6 @@ const TagForm = ({ initialData, onSuccess }: TagFormProps) => {
   const [formData, setFormData] = useState<Partial<TagWithCategory>>({
     id: initialData?.id || '',
     name: initialData?.name || '',
-    type: initialData?.type || '',
     tagCategoryId: initialData?.tagCategory?.id || '', // tagCategoryId を使用
     language: initialData?.language || 'ja', // デフォルト言語
     description: initialData?.description ?? '',
@@ -46,10 +45,7 @@ const TagForm = ({ initialData, onSuccess }: TagFormProps) => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const [tagTypes, setTagTypes] = useState<string[]>([]);
   const [tagCategories, setTagCategories] = useState<{ id: string; name: string; color: string }[]>([]);
-  const [isNewType, setIsNewType] = useState(!initialData?.type); // 新規作成時はtrue
-  // isNewCategory state は削除
 
   const [canonicalTagSuggestions, setCanonicalTagSuggestions] = useState<TagSuggestion[]>([]);
   const [showCanonicalTagSuggestions, setShowCanonicalTagSuggestions] = useState(false);
@@ -59,14 +55,6 @@ const TagForm = ({ initialData, onSuccess }: TagFormProps) => {
   useEffect(() => {
     const fetchTagOptions = async () => {
       try {
-        // タグタイプを取得
-        const typesResponse = await fetch('/api/admin/tag-types');
-        const typesData = await typesResponse.json();
-        if (typesResponse.ok) {
-          setTagTypes(typesData);
-        } else {
-          console.error('Failed to fetch tag types:', typesData.message);
-        }
 
         // カテゴリを取得 (product_category タイプに限定)
         const categoriesResponse = await fetch('/api/tags/by-type?type=product_category');
@@ -91,33 +79,26 @@ const TagForm = ({ initialData, onSuccess }: TagFormProps) => {
       setFormData({
         id: initialData.id,
         name: initialData.name,
-        type: initialData.type,
         tagCategoryId: initialData.tagCategory?.id || '', // tagCategoryId を使用
         language: initialData.language,
         description: initialData.description ?? '', // nullish coalescing operator を使用
         isAlias: initialData.isAlias,
         canonicalId: initialData.canonicalId ?? '', // nullish coalescing operator を使用
       });
-      // 編集時は初期値に基づいて新規入力モードを判定
-      setIsNewType(!tagTypes.includes(initialData.type));
-      // isNewCategory の設定は削除
 
     } else {
        // 新規作成モードの場合、フォームをリセット
        setFormData({
         id: '',
         name: '',
-        type: '',
         tagCategoryId: '', // tagCategoryId を設定
         language: 'ja',
         description: '',
         isAlias: false,
         canonicalId: '',
       });
-      setIsNewType(true); // 新規作成時は最初から新規入力モード
-      // isNewCategory の設定は削除
     }
-  }, [initialData, tagTypes, tagCategories]); // initialData, tagTypes, tagCategories の変更を監視
+  }, [initialData, tagCategories]); // initialData, tagCategories の変更を監視
 
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -165,23 +146,6 @@ const TagForm = ({ initialData, onSuccess }: TagFormProps) => {
     });
   };
 
-  const handleCheckboxChange = (name: 'isNewType', checked: boolean) => { // isNewCategory を削除
-    if (name === 'isNewType') {
-      setIsNewType(checked);
-      if (!checked) {
-        // 新規入力モード解除時、既存リストにタイプがあれば最初の項目を選択
-        if (tagTypes.length > 0) {
-          setFormData({ ...formData, type: tagTypes[0] });
-        } else {
-          setFormData({ ...formData, type: '' });
-        }
-      } else {
-         // 新規入力モードON時、タイプをクリア
-         setFormData({ ...formData, type: '' });
-      }
-    }
-   };
-
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -216,15 +180,12 @@ const TagForm = ({ initialData, onSuccess }: TagFormProps) => {
          setFormData({
             id: '',
             name: '',
-            type: '',
             tagCategoryId: '', // tagCategoryId を設定
             language: 'ja',
             description: '',
             isAlias: false,
             canonicalId: '',
           });
-          setIsNewType(true); // フォームクリア後も新規入力モードを維持
-          // isNewCategory の設定は削除
       }
 
     } catch (err) {
@@ -244,31 +205,6 @@ const TagForm = ({ initialData, onSuccess }: TagFormProps) => {
         <Input id="name" name="name" value={formData.name} onChange={handleChange} required />
       </div>
       <div>
-        <Label htmlFor="type">タイプ</Label>
-        {isNewType ? (
-          <Input id="type" name="type" value={formData.type} onChange={handleChange} required />
-        ) : (
-          <Select onValueChange={(value) => handleSelectChange('type', value)} value={formData.type}>
-            <SelectTrigger>
-              <SelectValue placeholder="タイプを選択" />
-            </SelectTrigger>
-            <SelectContent>
-              {tagTypes.map(type => (
-                <SelectItem key={type} value={type}>{type}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-        <div className="flex items-center space-x-2 mt-2">
-          <Checkbox
-            id="isNewType"
-            checked={isNewType}
-            onCheckedChange={(checked) => handleCheckboxChange('isNewType', Boolean(checked))}
-          />
-          <Label htmlFor="isNewType">新規タイプを入力</Label>
-        </div>
-      </div>
-       <div>
         <Label htmlFor="tagCategoryId">カテゴリ</Label> {/* ラベルをtagCategoryIdに変更 */}
            <Select onValueChange={(value) => handleSelectChange('tagCategoryId', value)} value={formData.tagCategoryId || ''}> {/* tagCategoryId を設定し、nullの場合は空文字列に変換 */}
              <SelectTrigger>

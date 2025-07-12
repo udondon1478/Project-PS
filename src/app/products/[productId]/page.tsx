@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import Image from 'next/image';
 import {
   Carousel,
   CarouselContent,
@@ -138,7 +139,7 @@ const ProductDetailPage = () => {
             <CarouselContent>
               {product.images.map((image, index) => (
                 <CarouselItem key={index} className="flex justify-center items-center">
-                  <img src={image.imageUrl} alt={image.caption || `商品画像 ${index + 1}`} className="max-w-full h-auto max-h-96 object-contain"/>
+                  <Image src={image.imageUrl} alt={image.caption || `商品画像 ${index + 1}`} width={500} height={500} className="max-w-full h-auto max-h-96 object-contain"/>
                 </CarouselItem>
               ))}
             </CarouselContent>
