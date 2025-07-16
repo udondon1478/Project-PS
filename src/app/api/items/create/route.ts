@@ -17,6 +17,8 @@ export async function POST(request: Request) {
     const { productInfo, tags, ageRatingTagId, categoryTagId } = await request.json(); // 商品情報、タグ情報、対象年齢タグID、カテゴリータグIDを受け取る
     //console.log('Received productInfo:', productInfo); // ここにログを追加
     const { boothJpUrl, boothEnUrl, title, description, lowPrice, highPrice, publishedAt, sellerName, sellerUrl, sellerIconUrl, images, variations } = productInfo;
+    console.log('Received productInfo in create API:', productInfo); // 追加
+    console.log('Validation check values:', { boothJpUrl, title, sellerUrl, tags, variations }); // 追加
  
     console.log('Received publishedAt:', publishedAt); // publishedAtの形式を確認するためのログ
     
@@ -147,6 +149,7 @@ export async function POST(request: Request) {
               },
             },
             variations: true, // バリエーション情報もインクルード
+            seller: true, // sellerリレーションを含める
           },
         });
     
