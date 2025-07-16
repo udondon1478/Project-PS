@@ -1,64 +1,52 @@
 import { PrismaClient } from '@prisma/client';
 import { NextResponse } from 'next/server';
-import { auth } from "@/auth"; // Auth.jsのauth関数をインポート
-import fetch from 'node-fetch'; // node-fetchをインポート
-import * as cheerio from 'cheerio'; // cheerioをインポート
+import { auth } from "@/auth";
+import fetch from 'node-fetch';
+import * as cheerio from 'cheerio';
 
-export const runtime = 'nodejs'; // Edge RuntimeでのPrismaClientエラーを回避
+export const runtime = 'nodejs';
 
 const prisma = new PrismaClient();
 
 export async function GET() {
-  const items = await prisma.user.findMany(); // User を user に修正
+  const items = await prisma.user.findMany();
   console.log(items);
   return NextResponse.json(items);
 }
 
 // 商品登録APIエンドポイント (POST)
 export async function POST(request: Request) {
-  const session = await auth(); // セッション情報を取得
+  const session = await auth();
 
-  // ログインしているか確認
   if (!session || !session.user || !session.user.id) {
     return NextResponse.json({ message: "認証が必要です。" }, { status: 401 });
   }
 
-
   try {
-    const { url } = await request.json(); // リクエストボディからBooth.pmのURLを取得
+    const { url } = await request.json();
 
-    // Booth.pmのURL形式をバリデーション
-    // Booth.pmのURL形式をバリデーション (サブドメインと言語コードをオプション化)
     const boothUrlRegex = /^https:\/\/(?:[a-zA-Z0-9-]+\.)?booth\.pm\/(?:(ja|en)\/)?items\/\d+$/;
     if (!boothUrlRegex.test(url)) {
       return NextResponse.json({ message: "無効なBooth URL形式です。日本語版、又は英語版のBooth.pmのアイテムページのURLを入力してください。" }, { status: 400 });
     }
 
-    // URLから言語コードと商品IDを抽出
-    // 新しい正規表現はサブドメインと言語コードの有無に対応
     const urlMatch = url.match(/^https:\/\/(?:[a-zA-Z0-9-]+\.)?booth\.pm\/(?:(ja|en)\/)?items\/(\d+)/);
 
     if (!urlMatch) {
-      // このバリデーションはBooth URL形式バリデーションで既にチェックされているはずだが、念のため
       return NextResponse.json({ message: "無効なBooth URL形式です。日本語版、又は英語版のBooth.pmのアイテムページのURLを入力してください。" }, { status: 400 });
     }
 
-    // 新しい正規表現では、言語コードがグループ1 (オプション)、商品IDがグループ2になる
-    // 言語コードは正規化URL生成には使用しないため、productIdのみ抽出
     const productId = urlMatch[2];
 
-    // 日本語版URLと英語版URLを生成 (正規化済み)
     const boothJpUrl = `https://booth.pm/ja/items/${productId}`;
     const boothEnUrl = `https://booth.pm/en/items/${productId}`;
 
-    // データベースに商品が存在するか確認
     const existingProduct = await prisma.product.findUnique({
       where: { boothJpUrl: boothJpUrl },
-      include: { images: true }, // 既存の商品情報に画像も含める
+      include: { images: true },
     });
 
     if (existingProduct) {
-      // 商品が存在する場合：既存の商品情報を返す
       console.log('Product already exists:', existingProduct.id);
       return NextResponse.json({
         status: 'existing',
@@ -66,102 +54,36 @@ export async function POST(request: Request) {
         message: 'この商品は既に登録されています。情報を更新しますか？'
       }, { status: 200 });
     } else {
-      // 商品が存在しない場合：Booth.pmから情報をスクレイピングして返す
       console.log('Product not found, scraping Booth.pm...');
 
-      // Booth.pmのページからHTMLコンテンツを取得
-      // サブドメインを含むURLの場合は正規化されたURLを使用
       const subdomainRegex = /^https:\/\/[a-zA-Z0-9-]+\.booth\.pm\//;
-      const fetchUrl = subdomainRegex.test(url) ? boothJpUrl : url; // サブドメインがあれば正規化URL、なければ元のURLを使用
+      const fetchUrl = subdomainRegex.test(url) ? boothJpUrl : url;
 
-      const response = await fetch(fetchUrl); // 適切なURLでフェッチ
+      const response = await fetch(fetchUrl, {
+        headers: {
+          'Cookie': 'adult=t'
+        }
+      });
       if (!response.ok) {
         return NextResponse.json({ message: `Booth.pmからの情報取得に失敗しました。ステータスコード: ${response.status}` }, { status: response.status });
       }
       const html = await response.text();
 
-      // cheerioでHTMLを解析
       const $ = cheerio.load(html);
 
-      // Schema.orgのJSONデータを抽出・解析
-      const schemaOrgData = $('script[type="application/ld+json"]').html();
-      if (!schemaOrgData) {
-        return NextResponse.json({ message: "ページから商品情報を取得できませんでした。（Schema.orgデータが見つかりません）" }, { status: 500 });
-      }
-
-      const productInfo = JSON.parse(schemaOrgData);
-      console.log("Schema.org Data:", productInfo); // Schema.orgデータをコンソールに出力
-
-      // 必要な商品情報を抽出
-      const title = productInfo.name || "タイトル不明";
-      let description = '';
-      let markdownDescription = '';
-
-      // .main-info-column 内の .js-market-item-detail-description description クラスの中の p タグのテキストを抽出
-      const mainDescriptionElements = $('.main-info-column .js-market-item-detail-description.description p');
-      mainDescriptionElements.each((i, elem) => {
-        const paragraphText = $(elem).text();
-        markdownDescription += `${paragraphText}\n\n`; // 段落間に空行を追加
-      });
-
-      // .my-40 要素が存在する場合、その中の .shop__text を処理
-      const my40Element = $('.my-40');
-      if (my40Element.length) {
-        const shopTextElements = my40Element.find('.shop__text');
-        shopTextElements.each((i, elem) => {
-          // shop__text の中にある最初の見出し (h1-h6) を抽出
-          const headingElement = $(elem).find('h1, h2, h3, h4, h5, h6').first();
-          const tagName = headingElement.prop('tagName');
-          if (headingElement.length && typeof tagName === 'string') { // tagNameが存在し、かつ文字列であることを確認
-            const headingText = headingElement.text().trim();
-            const headingLevel = parseInt(tagName.slice(1));
-            markdownDescription += `${'#'.repeat(headingLevel)} ${headingText}\n\n`; // 見出しと内容の間に空行を追加
-          }
-
-          // shop__text の中にある p タグを抽出
-          const paragraphElements = $(elem).find('p');
-          paragraphElements.each((i, paragraphElem) => {
-            const paragraphText = $(paragraphElem).text().trim();
-            if (paragraphText) { // 空の段落はスキップ
-              markdownDescription += `${paragraphText}\n\n`; // 段落間に空行を追加
-            }
-          });
-        });
-      }
-
-      description = markdownDescription.trim(); // 前後の空白を削除
-
-      let lowPrice = 0;
-      let highPrice = 0;
-
-      if (productInfo.offers && productInfo.offers['@type'] === 'Offer' && productInfo.offers.price) {
-        // 単一価格の場合
-        const price = parseFloat(productInfo.offers.price);
-        lowPrice = price;
-        highPrice = price;
-      } else if (productInfo.offers && productInfo.offers['@type'] === 'AggregateOffer' && productInfo.offers.lowPrice && productInfo.offers.highPrice) {
-        // 複数価格の場合
-        lowPrice = parseFloat(productInfo.offers.lowPrice);
-        highPrice = parseFloat(productInfo.offers.highPrice);
-      }
-
-      // Schema.orgデータにpublishedAtがないため、ここでは現在時刻を仮の値とする
-      const publishedAt = new Date();
-      // 販売者情報をHTMLからスクレイピング
-      const sellerLinkElement = $('.shop-info a.nav');
-      const sellerNameElement = $('.shop-info .shop-name a.nav');
-      const sellerAvatarElement = $('.shop-info .user-avatar');
-
-      const sellerUrl = sellerLinkElement.attr('href') || "";
-      const sellerName = sellerNameElement.text().trim() || "Unknown";
-      // style属性からurl()内のURLを抽出
-      const sellerIconStyle = sellerAvatarElement.attr('style');
-      const sellerIconUrlMatch = sellerIconStyle ? sellerIconStyle.match(/url\((.*?)\)/) : null;
-      const sellerIconUrl = sellerIconUrlMatch ? sellerIconUrlMatch[1] : "";
+      let productInfo: any; // productInfoを初期化
+      let title: string = "タイトル不明";
+      let description: string = '';
+      let markdownDescription: string = '';
+      let lowPrice: number = 0;
+      let highPrice: number = 0;
+      let publishedAt: Date = new Date(); // デフォルトで現在時刻
+      let sellerName: string = "Unknown";
+      let sellerUrl: string = "";
+      let sellerIconUrl: string = "";
 
       // 複数の商品画像URLをHTMLから取得 (data-origin属性から取得)
       const imageUrls: string[] = [];
-      // メイン画像とサムネイル画像の要素からdata-origin属性を取得
       $('.market-item-detail-item-image, .primary-image-thumbnails img').each((i, elem) => {
         const imageUrl = $(elem).attr('data-origin');
         if (imageUrl && imageUrl.startsWith('https://booth.pximg.net/') && !imageUrls.includes(imageUrl)) {
@@ -171,8 +93,6 @@ export async function POST(request: Request) {
 
       // バリエーション情報を取得
       const variations: { name: string; price: number; type: string; order: number; isMain: boolean }[] = [];
-
-      // HTMLからバリエーション情報を抽出
       $('.variations .variation-item').each((i, elem) => {
         const name = $(elem).find('.variation-name').text().trim();
         const priceText = $(elem).find('.variation-price').text().trim();
@@ -184,11 +104,130 @@ export async function POST(request: Request) {
           price,
           type,
           order: i,
-          isMain: i === 0 // 最初のバリエーションをメインとする
+          isMain: i === 0
         });
       });
 
-      // データベースには保存せず、フロントエンドに返す
+      const schemaOrgData = $('script[type="application/ld+json"]').html();
+
+      if (!schemaOrgData) {
+        console.warn("Schema.orgデータが見つかりませんでした。HTMLから情報を抽出します。");
+
+        // タイトル
+        title = $('title').text().replace(/ - BOOTH$/, '') || "タイトル不明";
+
+        // 価格 (バリエーションから取得を優先)
+        if (variations.length > 0) {
+          lowPrice = Math.min(...variations.map(v => v.price));
+          highPrice = Math.max(...variations.map(v => v.price));
+        } else {
+          const priceText = $('.price').text().trim();
+          if (priceText) {
+            const priceValue = parseFloat(priceText.replace('¥', '').replace(',', ''));
+            if (!isNaN(priceValue)) {
+              lowPrice = priceValue;
+              highPrice = priceValue;
+            }
+          }
+        }
+
+        // 販売者情報
+        sellerName = $('.shop-name').text().trim() || "Unknown";
+        sellerUrl = $('.shop-name a.nav').attr('href') || ""; // 修正
+        const sellerAvatarElement = $('.shop-info .user-avatar');
+        const sellerIconStyle = sellerAvatarElement.attr('style');
+        const sellerIconUrlMatch = sellerIconStyle ? sellerIconStyle.match(/url\((.*?)\)/) : null;
+        sellerIconUrl = sellerIconUrlMatch ? sellerIconUrlMatch[1] : "";
+
+        // publishedAtはHTMLから取得が困難なため、デフォルト値を使用
+      } else {
+        productInfo = JSON.parse(schemaOrgData);
+        console.log("Schema.org Data:", productInfo);
+
+        // Schema.orgからタイトルを抽出
+        title = productInfo.name || "タイトル不明";
+
+        // Schema.orgから価格を抽出
+        if (productInfo.offers && productInfo.offers['@type'] === 'Offer' && productInfo.offers.price) {
+          const price = parseFloat(productInfo.offers.price);
+          lowPrice = price;
+          highPrice = price;
+        } else if (productInfo.offers && productInfo.offers['@type'] === 'AggregateOffer' && productInfo.offers.lowPrice && productInfo.offers.highPrice) {
+          lowPrice = parseFloat(productInfo.offers.lowPrice);
+          highPrice = parseFloat(productInfo.offers.highPrice);
+        } else {
+          console.warn("Schema.org offers structure is unexpected:", productInfo.offers);
+        }
+
+        // Schema.orgから価格が取得できなかった場合、バリエーションから取得を試みる
+        if ((lowPrice === 0 && highPrice === 0) && variations.length > 0) {
+          lowPrice = Math.min(...variations.map(v => v.price));
+          highPrice = Math.max(...variations.map(v => v.price));
+        }
+
+        // Schema.orgデータにpublishedAtがないため、ここでは現在時刻を仮の値とする
+        // 販売者情報はSchema.orgデータに含まれていないため、ここではHTMLからスクレイピング
+        const sellerLinkElement = $('.shop-info a.nav');
+        const sellerNameElement = $('.shop-info .shop-name a.nav');
+        const sellerAvatarElement = $('.shop-info .user-avatar');
+
+        sellerUrl = sellerLinkElement.attr('href') || "";
+        sellerName = sellerNameElement.text().trim() || "Unknown";
+        const sellerIconStyle = sellerAvatarElement.attr('style');
+        const sellerIconUrlMatch = sellerIconStyle ? sellerIconStyle.match(/url\((.*?)\)/) : null;
+        sellerIconUrl = sellerIconUrlMatch ? sellerIconUrlMatch[1] : "";
+      }
+
+      // .main-info-column 内の .js-market-item-detail-description description クラスの中の p タグのテキストを抽出
+      const mainDescriptionElements = $('.main-info-column .js-market-item-detail-description.description p');
+      mainDescriptionElements.each((i, elem) => {
+        const paragraphText = $(elem).text();
+        markdownDescription += `${paragraphText}\n\n`;
+      });
+
+      // .my-40 要素が存在する場合、その中の .shop__text を処理
+      const my40Element = $('.my-40');
+      if (my40Element.length) {
+        const shopTextElements = my40Element.find('.shop__text');
+        shopTextElements.each((i, elem) => {
+          const headingElement = $(elem).find('h1, h2, h3, h4, h5, h6').first();
+          const tagName = headingElement.prop('tagName');
+          if (headingElement.length && typeof tagName === 'string') {
+            const headingText = headingElement.text().trim();
+            const headingLevel = parseInt(tagName.slice(1));
+            markdownDescription += `${'#'.repeat(headingLevel)} ${headingText}\n\n`;
+          }
+          const paragraphElements = $(elem).find('p');
+          paragraphElements.each((i, paragraphElem) => {
+            const paragraphText = $(paragraphElem).text().trim();
+            if (paragraphText) {
+              markdownDescription += `${paragraphText}\n\n`;
+            }
+          });
+        });
+      }
+
+      description = markdownDescription.trim();
+
+      console.log('ProductInfo to be returned to frontend:', {
+        boothJpUrl,
+        boothEnUrl,
+        title,
+        description,
+        lowPrice,
+        highPrice,
+        publishedAt,
+        sellerName,
+        sellerUrl,
+        sellerIconUrl,
+        images: imageUrls.map((imageUrl, index) => ({
+          imageUrl: imageUrl,
+          isMain: index === 0,
+          order: index,
+        })),
+        variations: variations
+      }); // 追加
+
       return NextResponse.json({
         status: 'new',
         productInfo: {
@@ -207,7 +246,7 @@ export async function POST(request: Request) {
             isMain: index === 0,
             order: index,
           })),
-          variations: variations // バリエーション情報を追加
+          variations: variations
         },
         message: '新しい商品が見つかりました。タグを入力して登録してください。'
       }, { status: 200 });
@@ -217,5 +256,4 @@ export async function POST(request: Request) {
     const errorMessage = error instanceof Error ? error.message : "不明なエラー";
     return NextResponse.json({ message: "商品情報の取得に失敗しました。", error: errorMessage }, { status: 500 });
   }
-
 }
