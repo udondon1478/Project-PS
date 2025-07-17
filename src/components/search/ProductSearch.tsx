@@ -216,7 +216,17 @@ export default function ProductSearch() {
 
     const timerId = setTimeout(async () => {
       try {
-        const response = await fetch(`/api/tags/search?query=${encodeURIComponent(searchQuery)}`);
+        // マイナス検索のプレフィックスを考慮してクエリを調整
+        const isNegativeSearch = searchQuery.startsWith('-');
+        const actualQuery = isNegativeSearch ? searchQuery.substring(1) : searchQuery;
+
+        if (actualQuery.length === 0) { // プレフィックスのみの場合は候補を表示しない
+          setTagSuggestions([]);
+          setIsSuggestionsVisible(false);
+          return;
+        }
+
+        const response = await fetch(`/api/tags/search?query=${encodeURIComponent(actualQuery)}`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -227,9 +237,9 @@ export default function ProductSearch() {
           .filter((tagName: string) =>
             !selectedTags.includes(tagName) && !selectedNegativeTags.includes(tagName) // 選択済みの通常タグとマイナス検索タグを除外
           );
- 
-         setTagSuggestions(filteredSuggestions);
-         setIsSuggestionsVisible(filteredSuggestions.length > 0);
+
+       setTagSuggestions(filteredSuggestions);
+       setIsSuggestionsVisible(filteredSuggestions.length > 0);
       } catch (error) {
         console.error("Error fetching tag suggestions:", error);
         setTagSuggestions([]);
