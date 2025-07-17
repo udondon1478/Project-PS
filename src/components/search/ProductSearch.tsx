@@ -216,7 +216,17 @@ export default function ProductSearch() {
 
     const timerId = setTimeout(async () => {
       try {
-        const response = await fetch(`/api/tags/search?query=${encodeURIComponent(searchQuery)}`);
+        // マイナス検索のプレフィックスを考慮してクエリを調整
+        const isNegativeSearch = searchQuery.startsWith('-');
+        const actualQuery = isNegativeSearch ? searchQuery.substring(1) : searchQuery;
+
+        if (actualQuery.length === 0) { // プレフィックスのみの場合は候補を表示しない
+          setTagSuggestions([]);
+          setIsSuggestionsVisible(false);
+          return;
+        }
+
+        const response = await fetch(`/api/tags/search?query=${encodeURIComponent(actualQuery)}`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -227,9 +237,9 @@ export default function ProductSearch() {
           .filter((tagName: string) =>
             !selectedTags.includes(tagName) && !selectedNegativeTags.includes(tagName) // 選択済みの通常タグとマイナス検索タグを除外
           );
- 
-         setTagSuggestions(filteredSuggestions);
-         setIsSuggestionsVisible(filteredSuggestions.length > 0);
+
+       setTagSuggestions(filteredSuggestions);
+       setIsSuggestionsVisible(filteredSuggestions.length > 0);
       } catch (error) {
         console.error("Error fetching tag suggestions:", error);
         setTagSuggestions([]);
@@ -487,7 +497,7 @@ export default function ProductSearch() {
               {tagSuggestions.map(tag => (
                 <li
                   key={tag}
-                  onClick={() => handleAddTag(tag)} // サジェストからの追加時はプレフィックスなし
+                  onClick={() => handleAddTag(searchQuery.startsWith('-') ? `-${tag}` : tag)} // マイナス検索のプレフィックスを考慮してタグを追加
                   className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100"
                 >
                   {tag}
