@@ -497,7 +497,7 @@ export default function ProductSearch() {
               {tagSuggestions.map(tag => (
                 <li
                   key={tag}
-                  onClick={() => handleAddTag(tag)} // サジェストからの追加時はプレフィックスなし
+                  onClick={() => handleAddTag(searchQuery.startsWith('-') ? `-${tag}` : tag)} // マイナス検索のプレフィックスを考慮してタグを追加
                   className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100"
                 >
                   {tag}
