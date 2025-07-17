@@ -1,5 +1,14 @@
 import { PrismaClient } from '@prisma/client';
+import { SchemaOrgProduct, SchemaOrgOffer, SchemaOrgAggregateOffer } from '@/types/product';
 import { NextResponse } from 'next/server';
+
+function isSchemaOrgOffer(offers: unknown): offers is SchemaOrgOffer {
+  return typeof offers === 'object' && offers !== null && '@type' in offers && offers['@type'] === 'Offer';
+}
+
+function isSchemaOrgAggregateOffer(offers: unknown): offers is SchemaOrgAggregateOffer {
+  return typeof offers === 'object' && offers !== null && '@type' in offers && offers['@type'] === 'AggregateOffer';
+}
 import { auth } from "@/auth";
 import fetch from 'node-fetch';
 import * as cheerio from 'cheerio';
@@ -66,7 +75,7 @@ export async function POST(request: Request) {
     // cheerioでHTMLを解析
     const $ = cheerio.load(html);
 
-    let productInfo: any; // productInfoを初期化 (any型を許容)
+    let productInfo: SchemaOrgProduct; // productInfoを初期化
     let title: string = existingProduct.title;
     let description: string = '';
     let markdownDescription: string = '';
@@ -78,6 +87,10 @@ export async function POST(request: Request) {
 
     // Schema.orgのJSONデータを抽出・解析
     const schemaOrgData = $('script[type="application/ld+json"]').html();
+    if (!schemaOrgData) {
+      return NextResponse.json({ message: "ページから商品情報を取得できませんでした。（Schema.orgデータが見つかりません）" }, { status: 500 });
+    }
+    productInfo = JSON.parse(schemaOrgData) as SchemaOrgProduct;
 
     if (!schemaOrgData) {
       console.warn("Schema.orgデータが見つかりませんでした。HTMLから情報を抽出します。");
@@ -112,12 +125,13 @@ export async function POST(request: Request) {
 
       // Schema.orgから価格を抽出
       if (productInfo.offers) {
-        if (Array.isArray(productInfo.offers)) {
-          lowPrice = productInfo.offers[0]?.lowPrice ? parseFloat(productInfo.offers[0].lowPrice) : existingProduct.lowPrice;
-          highPrice = productInfo.offers[0]?.highPrice ? parseFloat(productInfo.offers[0].highPrice) : existingProduct.highPrice;
-        } else if (productInfo.offers.price) {
-          lowPrice = parseFloat(productInfo.offers.price);
-          highPrice = parseFloat(productInfo.offers.price);
+        if (isSchemaOrgOffer(productInfo.offers)) {
+          const price = parseFloat(productInfo.offers.price);
+          lowPrice = price;
+          highPrice = price;
+        } else if (isSchemaOrgAggregateOffer(productInfo.offers)) {
+          lowPrice = parseFloat(productInfo.offers.lowPrice);
+          highPrice = parseFloat(productInfo.offers.highPrice);
         } else {
           console.warn("Schema.org offers structure is unexpected:", productInfo.offers);
         }

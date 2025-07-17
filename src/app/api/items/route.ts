@@ -1,3 +1,12 @@
+import { SchemaOrgProduct, SchemaOrgOffer, SchemaOrgAggregateOffer } from '@/types/product';
+function isSchemaOrgOffer(offers: unknown): offers is SchemaOrgOffer {
+  return typeof offers === 'object' && offers !== null && '@type' in offers && offers['@type'] === 'Offer';
+}
+
+function isSchemaOrgAggregateOffer(offers: unknown): offers is SchemaOrgAggregateOffer {
+  return typeof offers === 'object' && offers !== null && '@type' in offers && offers['@type'] === 'AggregateOffer';
+}
+
 import { PrismaClient } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { auth } from "@/auth";
@@ -71,13 +80,13 @@ export async function POST(request: Request) {
 
       const $ = cheerio.load(html);
 
-      let productInfo: any; // productInfoを初期化
+      let productInfo: SchemaOrgProduct; // productInfoを初期化
       let title: string = "タイトル不明";
       let description: string = '';
       let markdownDescription: string = '';
       let lowPrice: number = 0;
       let highPrice: number = 0;
-      let publishedAt: Date = new Date(); // デフォルトで現在時刻
+      const publishedAt: Date = new Date(); // デフォルトで現在時刻
       let sellerName: string = "Unknown";
       let sellerUrl: string = "";
       let sellerIconUrl: string = "";
@@ -141,18 +150,18 @@ export async function POST(request: Request) {
 
         // publishedAtはHTMLから取得が困難なため、デフォルト値を使用
       } else {
-        productInfo = JSON.parse(schemaOrgData);
+        productInfo = JSON.parse(schemaOrgData) as SchemaOrgProduct;
         console.log("Schema.org Data:", productInfo);
 
         // Schema.orgからタイトルを抽出
         title = productInfo.name || "タイトル不明";
 
         // Schema.orgから価格を抽出
-        if (productInfo.offers && productInfo.offers['@type'] === 'Offer' && productInfo.offers.price) {
+        if (isSchemaOrgOffer(productInfo.offers)) {
           const price = parseFloat(productInfo.offers.price);
           lowPrice = price;
           highPrice = price;
-        } else if (productInfo.offers && productInfo.offers['@type'] === 'AggregateOffer' && productInfo.offers.lowPrice && productInfo.offers.highPrice) {
+        } else if (isSchemaOrgAggregateOffer(productInfo.offers)) {
           lowPrice = parseFloat(productInfo.offers.lowPrice);
           highPrice = parseFloat(productInfo.offers.highPrice);
         } else {

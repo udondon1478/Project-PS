@@ -13,3 +13,27 @@ export interface Product {
     price: number;
   }[];
 }
+export interface SchemaOrgOffer {
+  "@type": "Offer";
+  priceCurrency: string;
+  price: string;
+  availability: string;
+  url: string;
+}
+
+export interface SchemaOrgAggregateOffer {
+  "@type": "AggregateOffer";
+  lowPrice: string;
+  highPrice: string;
+  priceCurrency: string;
+  offerCount: string;
+}
+
+export interface SchemaOrgProduct {
+  "@context": string;
+  "@type": "Product";
+  name: string;
+  description: string;
+  image: string | string[];
+  offers: SchemaOrgOffer | SchemaOrgAggregateOffer;
+}
