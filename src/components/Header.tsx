@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import {
   Dialog,
   DialogContent,
@@ -23,6 +24,8 @@ import ProductSearch from '@/components/search/ProductSearch'; // Import Product
 export default function Header() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { theme, systemTheme } = useTheme(); // Add useTheme hook
+  const [mounted, setMounted] = useState(false); // Add mounted state
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [prevScrollPos, setPrevScrollPos] = useState(0);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
@@ -47,6 +50,7 @@ export default function Header() {
     }, [prevScrollPos]);
 
   useEffect(() => {
+    setMounted(true); // Set mounted to true after component mounts
     window.addEventListener('scroll', handleScroll);
 
     return () => {
@@ -54,17 +58,21 @@ export default function Header() {
     };
   }, [handleScroll]);
 
+  if (!mounted) { // Render nothing until mounted to prevent hydration mismatch
+    return null;
+  }
+
   return (
     // Apply bg-white to the outer header to ensure ProductSearch background blends correctly
     <header
       ref={headerRef}
-      className={`fixed top-0 left-0 w-full bg-white z-50 transition-transform duration-300 ease-in-out ${ // Added z-index and ease
+      className={`fixed top-0 left-0 w-full bg-white dark:bg-gray-900 z-50 transition-transform duration-300 ease-in-out ${ // Added z-index and ease
         isHeaderVisible ? 'translate-y-0' : '-translate-y-full' // Use -translate-y-full for clarity
       }`}
       style={{ boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }} // Apply shadow here if needed consistently
     >
       {/* Top Navigation Bar */}
-      <div className="container mx-auto py-3 px-4 md:px-6 flex items-center justify-between border-b border-gray-200"> {/* Reduced padding slightly, added border */}
+      <div className="container mx-auto py-3 px-4 md:px-6 flex items-center justify-between border-b border-gray-200 dark:border-gray-700"> {/* Reduced padding slightly, added border */}
         {/* Mobile Navigation (Visible on small screens) */}
         {/* Mobile Navigation (Visible on small screens) */}
         <div className="md:hidden flex items-center justify-between w-full">
@@ -77,7 +85,7 @@ export default function Header() {
                 <Button variant="ghost" size="sm">プロフィール</Button>
               </Link>
               <Link href="/" className="flex items-center">
-                <Image src="/pslogo.svg" alt="PolySeek Logo" width={24} height={24} className="h-6 w-auto" />
+                <Image src={(theme === 'dark' || (theme === 'system' && systemTheme === 'dark')) ? "/pslogo-white.svg" : "/pslogo.svg"} alt="PolySeek Logo" width={24} height={24} className="h-6 w-auto" />
               </Link>
               <Button variant="ghost" size="sm" onClick={() => signOut()}>ログアウト</Button>
             </>
@@ -101,7 +109,7 @@ export default function Header() {
                 </DialogContent>
               </Dialog>
               <Link href="/" className="flex items-center">
-                <Image src="/pslogo.svg" alt="PolySeek Logo" width={24} height={24} className="h-6 w-auto" />
+                <Image src={(theme === 'dark' || (theme === 'system' && systemTheme === 'dark')) ? "/pslogo-white.svg" : "/pslogo.svg"} alt="PolySeek Logo" width={24} height={24} className="h-6 w-auto" />
               </Link>
               <Button variant="ghost" size="sm" onClick={() => signIn('google')}>Googleログイン</Button>
               <Button variant="ghost" size="sm" onClick={() => signIn('discord')}>Discordログイン</Button>
@@ -111,8 +119,8 @@ export default function Header() {
 
         {/* Desktop Navigation (Hidden on small screens) */}
         <Link href="/" className="hidden md:flex items-center space-x-2">
-          <Image src="/pslogo.svg" alt="PolySeek Logo" width={24} height={24} className="h-6 w-auto" />
-          <span className="text-xl font-bold">PolySeek</span>
+          <Image src={(theme === 'dark' || (theme === 'system' && systemTheme === 'dark')) ? "/pslogo-white.svg" : "/pslogo.svg"} alt="PolySeek Logo" width={24} height={24} className="h-6 w-auto" />
+          <span className="text-xl font-bold text-gray-900 dark:text-white">PolySeek</span>
         </Link>
         <nav className="hidden md:flex items-center space-x-2">
           {status === "loading" && (
