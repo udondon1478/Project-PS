@@ -51,6 +51,9 @@ async function main() {
   // 対象年齢タグの初期データ
   const ageRatingTags = [
     { name: '全年齢', tagCategoryId: ageRatingCategory.id },
+    { name: 'R-15', tagCategoryId: ageRatingCategory.id },
+    { name: 'R-18', tagCategoryId: ageRatingCategory.id },
+    { name: 'NSFW', tagCategoryId: ageRatingCategory.id },
   ];
 
   for (const tagData of ageRatingTags) {
