@@ -460,12 +460,12 @@ export default function ProductSearch() {
 
 
   return (
-    <div className="p-4 bg-gray-100 border-b border-gray-200">
+    <div className="p-4 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
       <div className="container mx-auto flex items-center gap-2 md:gap-4">
         {/* Search Bar and Tag Input */}
         <div className="relative flex-grow" ref={searchInputRef}>
-          <div className="flex items-center border border-gray-300 rounded-md bg-white p-1 flex-wrap gap-1 min-h-[40px]">
-            <Search className="h-5 w-5 text-gray-400 mx-1 flex-shrink-0" />
+          <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 p-1 flex-wrap gap-1 min-h-[40px]">
+            <Search className="h-5 w-5 text-gray-400 dark:text-gray-300 mx-1 flex-shrink-0" />
             {selectedTags.map(tag => (
               <span key={tag} className="flex items-center bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded whitespace-nowrap">
                 {tag}
@@ -493,7 +493,7 @@ export default function ProductSearch() {
             />
           </div>
           {isSuggestionsVisible && tagSuggestions.length > 0 && (
-            <ul ref={suggestionsRef} className="absolute z-20 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg">
+            <ul ref={suggestionsRef} className="absolute z-20 w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg">
               {tagSuggestions.map(tag => (
                 <li
                   key={tag}
