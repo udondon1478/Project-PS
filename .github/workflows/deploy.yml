@@ -24,4 +24,3 @@ jobs:
           npm run build
           npx prisma migrate deploy
           pm2 restart polyseek-app
-          EOF
