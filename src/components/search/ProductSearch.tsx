@@ -318,7 +318,10 @@ export default function ProductSearch() {
       // 対象年齢タグの場合は一つだけ選択可能にするロジックを維持
       const ageRatingTagNames = ageRatingTags.map(tag => tag.name);
       if (ageRatingTagNames.includes(tagName)) {
-        setSelectedAgeRatingTags([tagName]); // 年齢制限タグは一つだけ選択
+        // 年齢制限タグの場合、既に選択されていなければ追加
+        if (!selectedAgeRatingTags.includes(tagName)) {
+          setSelectedAgeRatingTags(prev => [...prev, tagName]);
+        }
       } else {
         setSelectedTags(prev => [...prev, tagName]);
       }
@@ -336,8 +339,8 @@ export default function ProductSearch() {
     // 年齢制限タグの削除ロジックを追加
     const ageRatingTagNames = ageRatingTags.map(tag => tag.name);
     if (ageRatingTagNames.includes(tagToRemove)) {
-      setSelectedAgeRatingTags([]); // 年齢制限タグをクリア
-      return; // 処理を終了
+      setSelectedAgeRatingTags(prev => prev.filter(tag => tag !== tagToRemove)); // 特定の年齢制限タグを削除
+      // 処理を続行し、URLパラメータも更新できるようにする
     }
 
     if (isNegative) {
@@ -451,8 +454,6 @@ export default function ProductSearch() {
      setIsFilterSidebarOpen(false);
   };
 
-  // Helper to get the currently selected age rating tag
-  const getCurrentAgeTag = () => selectedAgeRatingTags.length > 0 ? selectedAgeRatingTags[0] : null;
   // Helper to check if a specific feature tag is selected
   const isFeatureTagSelected = (feature: string) => selectedTags.includes(feature);
   // Helper to check if a specific negative tag is selected
@@ -512,24 +513,43 @@ export default function ProductSearch() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="text-sm whitespace-nowrap">
-                {getCurrentAgeTag() || "対象年齢"}
-                {getCurrentAgeTag() && <X size={14} className="ml-1 cursor-pointer" onClick={(e) => { e.stopPropagation(); handleRemoveTag(getCurrentAgeTag()!); }} />}
+                {selectedAgeRatingTags.length > 0
+                  ? `対象年齢: ${selectedAgeRatingTags.map(tagId => ageRatingTags.find(t => t.name === tagId)?.name || tagId).join(', ')}`
+                  : "対象年齢"}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuLabel>対象年齢を選択</DropdownMenuLabel>
+              <DropdownMenuLabel>対象年齢</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {ageRatingTags.map(tag => ( // ageRatingTagsを使用
-                <DropdownMenuItem key={tag.id} onSelect={() => handleAddTag(tag.name)} disabled={selectedAgeRatingTags.includes(tag.name)}>
-                  {tag.name}
+              {ageRatingTags.map(tag => (
+                <DropdownMenuItem key={tag.id} onSelect={(e) => e.preventDefault()}> {/* Prevent closing on select */}
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`age-rating-${tag.id}`}
+                      checked={selectedAgeRatingTags.includes(tag.name)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedAgeRatingTags(prev => [...prev, tag.name]);
+                        } else {
+                          setSelectedAgeRatingTags(prev => prev.filter(name => name !== tag.name));
+                        }
+                      }}
+                    />
+                    <label
+                      htmlFor={`age-rating-${tag.id}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      {tag.name}
+                    </label>
+                  </div>
                 </DropdownMenuItem>
               ))}
-               {getCurrentAgeTag() && (
+              {selectedAgeRatingTags.length > 0 && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={() => handleRemoveTag(getCurrentAgeTag()!)} className="text-red-600">クリア</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setSelectedAgeRatingTags([])} className="text-red-600">クリア</DropdownMenuItem>
                 </>
-               )}
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -589,20 +609,39 @@ export default function ProductSearch() {
                      <DropdownMenu>
                        <DropdownMenuTrigger asChild>
                          <Button variant="outline" className="w-full justify-start text-sm">
-                           {getCurrentAgeTag() || "選択してください"}
-                           {getCurrentAgeTag() && <X size={14} className="ml-auto cursor-pointer" onClick={(e) => { e.stopPropagation(); handleRemoveTag(getCurrentAgeTag()!); }} />}
+                           {selectedAgeRatingTags.length > 0
+                             ? `対象年齢: ${selectedAgeRatingTags.map(tagId => ageRatingTags.find(t => t.name === tagId)?.name || tagId).join(', ')}`
+                             : "対象年齢"}
                          </Button>
                        </DropdownMenuTrigger>
                        <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
-                         {ageRatingTags.map(tag => ( // ageRatingTagsを使用
-                           <DropdownMenuItem key={tag.id} onSelect={() => handleAddTag(tag.name)} disabled={selectedAgeRatingTags.includes(tag.name)} className="text-sm">
-                             {tag.name}
+                         {ageRatingTags.map(tag => (
+                           <DropdownMenuItem key={tag.id} onSelect={(e) => e.preventDefault()}> {/* Prevent closing on select */}
+                             <div className="flex items-center space-x-2">
+                               <Checkbox
+                                 id={`mobile-age-rating-${tag.id}`}
+                                 checked={selectedAgeRatingTags.includes(tag.name)}
+                                 onCheckedChange={(checked) => {
+                                   if (checked) {
+                                     setSelectedAgeRatingTags(prev => [...prev, tag.name]);
+                                   } else {
+                                     setSelectedAgeRatingTags(prev => prev.filter(name => name !== tag.name));
+                                   }
+                                 }}
+                               />
+                               <label
+                                 htmlFor={`mobile-age-rating-${tag.id}`}
+                                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                               >
+                                 {tag.name}
+                               </label>
+                             </div>
                            </DropdownMenuItem>
                          ))}
-                         {getCurrentAgeTag() && (
+                         {selectedAgeRatingTags.length > 0 && (
                            <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onSelect={() => handleRemoveTag(getCurrentAgeTag()!)} className="text-red-600 text-sm">クリア</DropdownMenuItem>
+                             <DropdownMenuSeparator />
+                             <DropdownMenuItem onSelect={() => setSelectedAgeRatingTags([])} className="text-red-600 text-sm">クリア</DropdownMenuItem>
                            </>
                          )}
                        </DropdownMenuContent>
