@@ -17,10 +17,10 @@ jobs:
       - name: Deploy via SSH
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-          export PATH=$PATH:/home/ubuntu/.nvm/versions/node/v22.17.0/bin/pm2
           cd /home/ubuntu/PolySeek/
           git pull origin main
           npm install
           npm run build
           npx prisma migrate deploy
-          pm2 restart polyseek-app
+          /home/ubuntu/.nvm/versions/node/v22.17.0/bin/pm2 restart polyseek-app
+          EOF
