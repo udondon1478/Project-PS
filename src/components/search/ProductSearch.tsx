@@ -344,36 +344,9 @@ export default function ProductSearch() {
     setSelectedTags(newSelectedTags);
     setSelectedNegativeTags(newSelectedNegativeTags);
     setSelectedAgeRatingTags(newSelectedAgeRatingTags);
-
-    // URLSearchParamsを更新
-    const currentSearchParams = new URLSearchParams(window.location.search);
-    const queryParams = new URLSearchParams();
-    if (newSelectedTags.length > 0) {
-      queryParams.append("tags", newSelectedTags.join(','));
-    }
-    if (newSelectedNegativeTags.length > 0) {
-      queryParams.append("negativeTags", newSelectedNegativeTags.join(','));
-    }
-    if (newSelectedAgeRatingTags.length > 0) {
-      queryParams.append("ageRatingTags", newSelectedAgeRatingTags.join(','));
-    }
-
-    // 価格帯フィルターと高額商品フィルタリングの状態を維持
-    const minPrice = currentSearchParams.get("minPrice");
-    const maxPrice = currentSearchParams.get("maxPrice");
-    const isHighPrice = currentSearchParams.get("isHighPrice");
-    const categoryName = currentSearchParams.get("categoryName");
-
-    if (minPrice) queryParams.append("minPrice", minPrice);
-    if (maxPrice) queryParams.append("maxPrice", maxPrice);
-    if (isHighPrice) queryParams.append("isHighPrice", isHighPrice);
-    if (categoryName) queryParams.append("categoryName", categoryName);
-
-    router.replace(`/search?${queryParams.toString()}`);
   };
 
   const handleRemoveTag = (tagToRemove: string, isNegative: boolean = false) => {
-    const currentSearchParams = new URLSearchParams(window.location.search);
     let newSelectedTags = [...selectedTags];
     let newSelectedNegativeTags = [...selectedNegativeTags];
     let newSelectedAgeRatingTags = [...selectedAgeRatingTags];
@@ -390,31 +363,6 @@ export default function ProductSearch() {
       newSelectedTags = newSelectedTags.filter(tag => tag !== tagToRemove);
       setSelectedTags(newSelectedTags);
     }
-
-    // URLSearchParamsを更新
-    const queryParams = new URLSearchParams();
-    if (newSelectedTags.length > 0) {
-      queryParams.append("tags", newSelectedTags.join(','));
-    }
-    if (newSelectedNegativeTags.length > 0) {
-      queryParams.append("negativeTags", newSelectedNegativeTags.join(','));
-    }
-    if (newSelectedAgeRatingTags.length > 0) {
-      queryParams.append("ageRatingTags", newSelectedAgeRatingTags.join(','));
-    }
-
-    // 価格帯フィルターと高額商品フィルタリングの状態を維持
-    const minPrice = currentSearchParams.get("minPrice");
-    const maxPrice = currentSearchParams.get("maxPrice");
-    const isHighPrice = currentSearchParams.get("isHighPrice");
-    const categoryName = currentSearchParams.get("categoryName");
-
-    if (minPrice) queryParams.append("minPrice", minPrice);
-    if (maxPrice) queryParams.append("maxPrice", maxPrice);
-    if (isHighPrice) queryParams.append("isHighPrice", isHighPrice);
-    if (categoryName) queryParams.append("categoryName", categoryName);
-
-    router.replace(`/search?${queryParams.toString()}`);
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
