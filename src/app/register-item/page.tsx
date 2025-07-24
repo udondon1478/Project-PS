@@ -210,7 +210,7 @@ export default function RegisterItemPage() {
   }, [featureTags]);
 
   return (
-    <div style={{ padding: '20px' }}>
+    <div className="container mx-auto px-4 py-8 pt-40">
       <h1>商品登録</h1>
 
       {/* URL入力フォーム */}
