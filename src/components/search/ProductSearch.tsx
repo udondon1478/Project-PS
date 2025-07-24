@@ -38,11 +38,24 @@ import { useRouter, useSearchParams } from 'next/navigation'; // useRouterとuse
 // Define options for dropdowns
 
 
-export default function ProductSearch() {
-
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [selectedNegativeTags, setSelectedNegativeTags] = useState<string[]>([]); // マイナス検索用タグを追加
+export default function ProductSearch({
+  initialSearchQuery = '',
+  initialSelectedTags = [],
+  initialSelectedNegativeTags = [],
+  onSearchQueryChange,
+  onSelectedTagsChange,
+  onSelectedNegativeTagsChange,
+}: {
+  initialSearchQuery?: string;
+  initialSelectedTags?: string[];
+  initialSelectedNegativeTags?: string[];
+  onSearchQueryChange?: (query: string) => void;
+  onSelectedTagsChange?: (tags: string[]) => void;
+  onSelectedNegativeTagsChange?: (tags: string[]) => void;
+}) {
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
+  const [selectedTags, setSelectedTags] = useState<string[]>(initialSelectedTags);
+  const [selectedNegativeTags, setSelectedNegativeTags] = useState<string[]>(initialSelectedNegativeTags); // マイナス検索用タグを追加
   const [isComposing, setIsComposing] = useState(false); // IME変換中かどうかを管理するstateを追加
 
 
@@ -291,6 +304,7 @@ export default function ProductSearch() {
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
+    onSearchQueryChange?.(event.target.value);
   };
 
   const handleAddTag = (tag: string) => {
@@ -344,6 +358,9 @@ export default function ProductSearch() {
     setSelectedTags(newSelectedTags);
     setSelectedNegativeTags(newSelectedNegativeTags);
     setSelectedAgeRatingTags(newSelectedAgeRatingTags);
+
+    onSelectedTagsChange?.(newSelectedTags);
+    onSelectedNegativeTagsChange?.(newSelectedNegativeTags);
   };
 
   const handleRemoveTag = (tagToRemove: string, isNegative: boolean = false) => {
@@ -356,12 +373,15 @@ export default function ProductSearch() {
     if (ageRatingTagNames.includes(tagToRemove)) {
       newSelectedAgeRatingTags = newSelectedAgeRatingTags.filter(tag => tag !== tagToRemove);
       setSelectedAgeRatingTags(newSelectedAgeRatingTags);
+      onSelectedTagsChange?.(newSelectedAgeRatingTags); // 年齢制限タグの変更も通知
     } else if (isNegative) {
       newSelectedNegativeTags = newSelectedNegativeTags.filter(tag => tag !== tagToRemove);
       setSelectedNegativeTags(newSelectedNegativeTags);
+      onSelectedNegativeTagsChange?.(newSelectedNegativeTags);
     } else {
       newSelectedTags = newSelectedTags.filter(tag => tag !== tagToRemove);
       setSelectedTags(newSelectedTags);
+      onSelectedTagsChange?.(newSelectedTags);
     }
   };
 

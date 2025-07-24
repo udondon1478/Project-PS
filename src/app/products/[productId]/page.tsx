@@ -1,8 +1,9 @@
 "use client"; // Client Componentとしてマーク
 
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation'; // useRouterとuseSearchParamsを追加
 import Image from 'next/image';
+import ProductSearch from '@/components/search/ProductSearch'; // ProductSearchをインポート
 import {
   Carousel,
   CarouselContent,
@@ -47,7 +48,6 @@ const ProductDetailPage = () => {
   const [api, setApi] = useState<CarouselApi>();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slideCount, setSlideCount] = useState(0);
-  const [searchQuery, setSearchQuery] = useState(''); // 検索クエリの状態
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -89,27 +89,66 @@ const ProductDetailPage = () => {
     });
   }, [api]);
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // URLのクエリパラメータを更新するヘルパー関数
+  const updateQueryParams = useCallback((newTags: string[], newNegativeTags: string[]) => {
+    const currentParams = new URLSearchParams(searchParams.toString());
+    if (newTags.length > 0) {
+      currentParams.set('tags', newTags.join(','));
+    } else {
+      currentParams.delete('tags');
+    }
+    if (newNegativeTags.length > 0) {
+      currentParams.set('negativeTags', newNegativeTags.join(','));
+    } else {
+      currentParams.delete('negativeTags');
+    }
+    router.push(`?${currentParams.toString()}`, { scroll: false });
+  }, [router, searchParams]);
+
   // タグを検索クエリに追加する関数
   const addTagToSearch = (tagName: string) => {
-    setSearchQuery(prevQuery => {
-      const tags = prevQuery.split(' ').filter(tag => tag !== '');
-      if (!tags.includes(tagName)) {
-        return [...tags, tagName].join(' ');
-      }
-      return prevQuery;
-    });
+    const currentTags = searchParams.get('tags')?.split(',').filter(tag => tag.length > 0) || [];
+    const currentNegativeTags = searchParams.get('negativeTags')?.split(',').filter(tag => tag.length > 0) || [];
+
+    if (!currentTags.includes(tagName)) {
+      const newTags = [...currentTags, tagName];
+      updateQueryParams(newTags, currentNegativeTags);
+    }
+  };
+
+  // マイナス検索タグを検索クエリに追加する関数
+  const addNegativeTagToSearch = (tagName: string) => {
+    const currentTags = searchParams.get('tags')?.split(',').filter(tag => tag.length > 0) || [];
+    const currentNegativeTags = searchParams.get('negativeTags')?.split(',').filter(tag => tag.length > 0) || [];
+
+    if (!currentNegativeTags.includes(tagName)) {
+      const newNegativeTags = [...currentNegativeTags, tagName];
+      updateQueryParams(currentTags, newNegativeTags);
+    }
   };
 
   // タグを検索クエリから除外する関数
   const removeTagFromSearch = (tagName: string) => {
-    setSearchQuery(prevQuery => {
-      const tags = prevQuery.split(' ').filter(tag => tag !== '' && tag !== tagName);
-      return tags.join(' ');
-    });
+    const currentTags = searchParams.get('tags')?.split(',').filter(tag => tag.length > 0) || [];
+    const currentNegativeTags = searchParams.get('negativeTags')?.split(',').filter(tag => tag.length > 0) || [];
+
+    const newTags = currentTags.filter(tag => tag !== tagName);
+    updateQueryParams(newTags, currentNegativeTags);
   };
 
+  // マイナス検索タグを検索クエリから除外する関数
+  const removeNegativeTagFromSearch = (tagName: string) => {
+    const currentTags = searchParams.get('tags')?.split(',').filter(tag => tag.length > 0) || [];
+    const currentNegativeTags = searchParams.get('negativeTags')?.split(',').filter(tag => tag.length > 0) || [];
 
-  if (loading) {
+    const newNegativeTags = currentNegativeTags.filter(tag => tag !== tagName);
+    updateQueryParams(currentTags, newNegativeTags);
+  };
+
+ if (loading) {
     return <div>Loading...</div>;
   }
 
@@ -177,7 +216,7 @@ const ProductDetailPage = () => {
           <div className="flex flex-wrap gap-2">
             {product.productTags.map(({ tag }) => (
               <div key={tag.id} className="flex items-center bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700">
-                <button onClick={() => removeTagFromSearch(tag.name)} className="mr-1 text-red-500 hover:text-red-700">-</button>
+                <button onClick={() => addNegativeTagToSearch(tag.name)} className="mr-1 text-red-500 hover:text-red-700">-</button>
                 <span>{tag.name}</span>
                 <button onClick={() => addTagToSearch(tag.name)} className="ml-1 text-green-500 hover:text-green-700">+</button>
               </div>
@@ -185,20 +224,7 @@ const ProductDetailPage = () => {
           </div>
         </div>
       )}
-
-      {/* 仮の検索バーコンポーネント */}
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold mb-2">検索クエリ (仮)</h2>
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="border border-gray-300 rounded-md p-2 w-full"
-          placeholder="タグを検索クエリに追加/除外できます"
-        />
-      </div>
-
-    </div>
+   </div>
   );
 };
 
