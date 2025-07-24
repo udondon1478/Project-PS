@@ -30,6 +30,7 @@ export default function RegisterItemPage() {
   const [manualTags, setManualTags] = useState<string[]>([]); // 新規登録時の手動タグ
   const [tagInput, setTagInput] = useState(''); // タグ入力フィールド
   const [tagSuggestions, setTagSuggestions] = useState<string[]>([]); // タグ候補
+  const [isComposing, setIsComposing] = useState(false); // IME変換中かどうかを管理するstateを追加
   const [ageRatingTags, setAgeRatingTags] = useState<{ id: string; name: string }[]>([]); // 対象年齢タグの選択肢
   const [categoryTags, setCategoryTags] = useState<{ id: string; name: string }[]>([]); // カテゴリータグの選択肢
   const [featureTags, setFeatureTags] = useState<{ id: string; name: string }[]>([]); // 主要機能タグの選択肢
@@ -372,9 +373,16 @@ export default function RegisterItemPage() {
               type="text"
               id="manualTags"
               value={tagInput}
+              onCompositionStart={() => setIsComposing(true)} // IME変換開始
+              onCompositionEnd={() => setIsComposing(false)}   // IME変換終了
               onKeyDown={(e) => {
-                if (e.key === ' ' || e.key === 'Tab') { // 半角スペースまたはTabキーが入力された場合
-                  e.preventDefault(); // デフォルトのスペース/Tab入力を防ぐ
+                // IME変換中はスペース、Enter、Tabキーでのタグ確定を抑制
+                if ((e.key === ' ' || e.key === 'Enter' || e.key === 'Tab') && isComposing) {
+                  return;
+                }
+
+                if ((e.key === ' ' || e.key === 'Tab' || e.key === 'Enter') && tagInput.trim() !== '') { // 半角スペース、Tabキー、またはEnterキーが入力された場合
+                  e.preventDefault(); // デフォルトのスペース/Tab/Enter入力を防ぐ
                   const tag = tagInput.trim();
                   if (tag.length > 0 && !manualTags.includes(tag)) {
                     setManualTags([...manualTags, tag]); // タグをリストに追加
