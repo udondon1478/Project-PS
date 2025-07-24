@@ -311,20 +311,28 @@ export default function ProductSearch() {
       return;
     }
 
+    let newSelectedTags = [...selectedTags];
+    let newSelectedNegativeTags = [...selectedNegativeTags];
+    let newSelectedAgeRatingTags = [...selectedAgeRatingTags];
+
     if (isNegative) {
       // マイナス検索タグとして追加
-      setSelectedNegativeTags(prev => [...prev, tagName]);
+      if (!newSelectedNegativeTags.includes(tagName)) {
+        newSelectedNegativeTags = [...newSelectedNegativeTags, tagName];
+      }
     } else {
       // 通常タグとして追加
       // 対象年齢タグの場合は一つだけ選択可能にするロジックを維持
       const ageRatingTagNames = ageRatingTags.map(tag => tag.name);
       if (ageRatingTagNames.includes(tagName)) {
         // 年齢制限タグの場合、既に選択されていなければ追加
-        if (!selectedAgeRatingTags.includes(tagName)) {
-          setSelectedAgeRatingTags(prev => [...prev, tagName]);
+        if (!newSelectedAgeRatingTags.includes(tagName)) {
+          newSelectedAgeRatingTags = [...newSelectedAgeRatingTags, tagName];
         }
       } else {
-        setSelectedTags(prev => [...prev, tagName]);
+        if (!newSelectedTags.includes(tagName)) {
+          newSelectedTags = [...newSelectedTags, tagName];
+        }
       }
     }
 
@@ -332,38 +340,29 @@ export default function ProductSearch() {
     setTagSuggestions([]);
     setIsSuggestionsVisible(false);
     searchInputRef.current?.focus(); // Keep focus on input
+
+    setSelectedTags(newSelectedTags);
+    setSelectedNegativeTags(newSelectedNegativeTags);
+    setSelectedAgeRatingTags(newSelectedAgeRatingTags);
   };
 
   const handleRemoveTag = (tagToRemove: string, isNegative: boolean = false) => {
-    const currentSearchParams = new URLSearchParams(window.location.search);
+    let newSelectedTags = [...selectedTags];
+    let newSelectedNegativeTags = [...selectedNegativeTags];
+    let newSelectedAgeRatingTags = [...selectedAgeRatingTags];
 
-    // 年齢制限タグの削除ロジックを追加
     const ageRatingTagNames = ageRatingTags.map(tag => tag.name);
+
     if (ageRatingTagNames.includes(tagToRemove)) {
-      setSelectedAgeRatingTags(prev => prev.filter(tag => tag !== tagToRemove)); // 特定の年齢制限タグを削除
-      // 処理を続行し、URLパラメータも更新できるようにする
-    }
-
-    if (isNegative) {
-      // マイナスタグの削除
-      const negativeTags = currentSearchParams.get("negativeTags")?.split(',').filter(tag => tag !== tagToRemove) || [];
-      if (negativeTags.length > 0) {
-        currentSearchParams.set("negativeTags", negativeTags.join(','));
-      } else {
-        currentSearchParams.delete("negativeTags");
-      }
-      setSelectedNegativeTags(negativeTags); // ステートも更新してUI表示を即時反映
+      newSelectedAgeRatingTags = newSelectedAgeRatingTags.filter(tag => tag !== tagToRemove);
+      setSelectedAgeRatingTags(newSelectedAgeRatingTags);
+    } else if (isNegative) {
+      newSelectedNegativeTags = newSelectedNegativeTags.filter(tag => tag !== tagToRemove);
+      setSelectedNegativeTags(newSelectedNegativeTags);
     } else {
-      // 通常タグの削除
-      const tags = currentSearchParams.get("tags")?.split(',').filter(tag => tag !== tagToRemove) || [];
-       if (tags.length > 0) {
-        currentSearchParams.set("tags", tags.join(','));
-      } else {
-        currentSearchParams.delete("tags");
-      }
-      setSelectedTags(tags); // ステートも更新してUI表示を即時反映
+      newSelectedTags = newSelectedTags.filter(tag => tag !== tagToRemove);
+      setSelectedTags(newSelectedTags);
     }
-
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
