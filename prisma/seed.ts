@@ -69,7 +69,7 @@ async function main() {
     { name: 'アバター', tagCategoryId: productCategory.id },
     { name: '衣装', tagCategoryId: productCategory.id },
     { name: 'アクセサリー', tagCategoryId: productCategory.id },
-    { name: 'ホーム', tagCategoryId: productCategory.id },
+    { name: 'プロップ', tagCategoryId: productCategory.id },
     { name: 'ワールド', tagCategoryId: productCategory.id },
     { name: 'ツール', tagCategoryId: productCategory.id },
     { name: 'その他', tagCategoryId: productCategory.id },
