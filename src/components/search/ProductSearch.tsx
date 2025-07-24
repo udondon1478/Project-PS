@@ -43,6 +43,7 @@ export default function ProductSearch() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedNegativeTags, setSelectedNegativeTags] = useState<string[]>([]); // マイナス検索用タグを追加
+  const [isComposing, setIsComposing] = useState(false); // IME変換中かどうかを管理するstateを追加
 
 
 
@@ -367,9 +368,14 @@ export default function ProductSearch() {
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     const trimmedQuery = searchQuery.trim();
-    // 半角スペースまたはEnterでタグを確定
-    if ((event.key === ' ' || event.key === 'Enter') && trimmedQuery !== '') {
-      event.preventDefault(); // スペースやEnterが入力フィールドに入らないようにする
+    // IME変換中はスペースキーまたはEnterキーでのタグ確定を抑制
+    if ((event.key === ' ' || event.key === 'Enter') && isComposing) {
+      return;
+    }
+
+    // 半角スペース、Enter、またはTabでタグを確定
+    if ((event.key === ' ' || (event.key === 'Enter' && !isComposing) || (event.key === 'Tab' && !isComposing)) && trimmedQuery !== '') {
+      event.preventDefault(); // スペース、Enter、Tabが入力フィールドに入らないようにする
 
       const isNegative = trimmedQuery.startsWith('-');
       const tagName = isNegative ? trimmedQuery.substring(1) : trimmedQuery;
@@ -489,6 +495,8 @@ export default function ProductSearch() {
               value={searchQuery}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
+              onCompositionStart={() => setIsComposing(true)} // IME変換開始
+              onCompositionEnd={() => setIsComposing(false)}   // IME変換終了
               onFocus={() => searchQuery.length > 0 && setIsSuggestionsVisible(true)}
               className="flex-grow border-none focus:ring-0 focus:outline-none p-1 h-auto text-sm min-w-[100px]"
             />
