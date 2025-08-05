@@ -3,7 +3,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation'; // useRouterとuseSearchParamsを追加
 import Image from 'next/image';
-import ProductSearch from '@/components/search/ProductSearch'; // ProductSearchをインポート
 import {
   Carousel,
   CarouselContent,
@@ -130,23 +129,6 @@ const ProductDetailPage = () => {
     }
   };
 
-  // タグを検索クエリから除外する関数
-  const removeTagFromSearch = (tagName: string) => {
-    const currentTags = searchParams.get('tags')?.split(',').filter(tag => tag.length > 0) || [];
-    const currentNegativeTags = searchParams.get('negativeTags')?.split(',').filter(tag => tag.length > 0) || [];
-
-    const newTags = currentTags.filter(tag => tag !== tagName);
-    updateQueryParams(newTags, currentNegativeTags);
-  };
-
-  // マイナス検索タグを検索クエリから除外する関数
-  const removeNegativeTagFromSearch = (tagName: string) => {
-    const currentTags = searchParams.get('tags')?.split(',').filter(tag => tag.length > 0) || [];
-    const currentNegativeTags = searchParams.get('negativeTags')?.split(',').filter(tag => tag.length > 0) || [];
-
-    const newNegativeTags = currentNegativeTags.filter(tag => tag !== tagName);
-    updateQueryParams(currentTags, newNegativeTags);
-  };
 
  if (loading) {
     return <div>Loading...</div>;
