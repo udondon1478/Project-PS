@@ -1,6 +1,7 @@
 "use client"; // Client Componentとしてマーク
 
 import React, { useEffect, useState, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { useParams, useRouter, useSearchParams } from 'next/navigation'; // useRouterとuseSearchParamsを追加
 import Image from 'next/image';
 import {
@@ -185,7 +186,9 @@ const ProductDetailPage = () => {
       <div className="mb-4">
         <h2 className="text-xl font-semibold mb-2">Description (仮表示)</h2>
         {product.description ? (
-          <pre className="whitespace-pre-wrap break-words bg-gray-100 p-4 rounded">{product.description}</pre>
+          <div className="prose">
+            <ReactMarkdown>{product.description}</ReactMarkdown>
+          </div>
         ) : (
           <p>Descriptionはありません。</p>
         )}
