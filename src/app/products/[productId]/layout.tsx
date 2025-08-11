@@ -9,8 +9,9 @@ export async function generateMetadata({ params }: { params: { productId: string
   const productId = params.productId;
   let productTitle = "商品詳細"; // デフォルトタイトル
 
+  const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/products/${productId}`, {
+    const response = await fetch(`${baseUrl}/api/products/${productId}`, {
       cache: 'no-store', // 常に最新のデータを取得
     });
     if (response.ok) {
