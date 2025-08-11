@@ -2,6 +2,8 @@ import React from "react";
 import ProductGrid from "@/components/ProductGrid"; // ProductGridコンポーネントをインポート
 import { Product } from "@/types/product"; // Product型をインポート
 
+import { Metadata } from 'next';
+
 interface SearchPageProps {
   searchParams?: Promise<{
     tags?: string;
@@ -12,6 +14,25 @@ interface SearchPageProps {
     minPrice?: string;
     maxPrice?: string;
   }>;
+}
+
+export async function generateMetadata({ searchParams }: SearchPageProps): Promise<Metadata> {
+  const resolvedSearchParams = await searchParams;
+  const searchTerm = resolvedSearchParams?.tags || "";
+  const negativeSearchTerm = resolvedSearchParams?.negativeTags || "";
+  let title = "検索結果";
+
+  if (searchTerm && negativeSearchTerm) {
+    title = `検索: ${searchTerm} -${negativeSearchTerm}`;
+  } else if (searchTerm) {
+    title = `検索: ${searchTerm}`;
+  } else if (negativeSearchTerm) {
+    title = `検索: -${negativeSearchTerm}`;
+  }
+
+  return {
+    title: title,
+  };
 }
 
 const SearchPage = async ({ searchParams }: SearchPageProps) => {
