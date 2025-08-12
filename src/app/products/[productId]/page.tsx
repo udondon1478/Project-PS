@@ -12,6 +12,15 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button"; // Buttonコンポーネントも必要
+import TagEditor from "@/components/TagEditor"; // TagEditorコンポーネントをインポート
 
 interface ProductDetail {
   id: string;
@@ -35,6 +44,21 @@ interface ProductDetail {
         name: string;
       };
     };
+  }[];
+  tagEditHistory: { // タグ編集履歴
+    id: string;
+    editor: { // 編集者情報
+      id: string;
+      name: string | null;
+      image: string | null;
+    };
+    version: number;
+    addedTags: string[]; // 追加されたタグのID配列
+    removedTags: string[]; // 削除されたタグのID配列
+    keptTags: string[]; // 維持されたタグのID配列
+    comment: string | null;
+    score: number;
+    createdAt: string; // ISO文字列として取得
   }[];
 };
 
@@ -208,9 +232,153 @@ const ProductDetailPage = () => {
               </div>
             ))}
           </div>
+          {/* タグ編集ボタンとモーダル */}
+          <div className="mt-4">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline">タグを編集</Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>タグを編集</DialogTitle>
+                </DialogHeader>
+                {product.productTags && (
+                  <TagEditor
+                    initialTags={product.productTags.map(pt => pt.tag)}
+                    onTagsChange={async (newTags) => {
+                      try {
+                        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+                        const response = await fetch(`${baseUrl}/api/products/${productId}/tags`, {
+                          method: 'PUT',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({ tags: newTags }),
+                        });
+
+                        if (!response.ok) {
+                          throw new Error(`Error: ${response.status}`);
+                        }
+
+                        // タグ更新成功後、商品情報を再フェッチしてUIを更新
+                        const reFetchResponse = await fetch(`${baseUrl}/api/products/${productId}`);
+                        if (!reFetchResponse.ok) {
+                          throw new Error(`Error re-fetching product: ${reFetchResponse.status}`);
+                        }
+                        const reFetchedData: ProductDetail = await reFetchResponse.json();
+                        setProduct(reFetchedData);
+
+                        console.log("Tags updated successfully!");
+                      } catch (err) {
+                        console.error("Failed to update tags:", err);
+                        // エラーハンドリング（ユーザーへの通知など）
+                      }
+                    }}
+                  />
+                )}
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       )}
-   </div>
+
+      {/* タグ編集履歴表示 */}
+      {product.tagEditHistory && product.tagEditHistory.length > 0 && (
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold mb-2">タグ編集履歴</h2>
+          <div className="space-y-4">
+            {product.tagEditHistory.map((history) => (
+              <div key={history.id} className="border p-4 rounded-lg shadow-sm">
+                <p className="text-sm text-gray-500">
+                  バージョン: {history.version} | 編集者: {history.editor.name || '不明なユーザー'} |
+                  日時: {new Date(history.createdAt).toLocaleString()}
+                </p>
+                {history.comment && (
+                  <p className="mt-2 text-gray-700">コメント: {history.comment}</p>
+                )}
+                <div className="mt-2">
+                  {history.addedTags.length > 0 && (
+                    <p className="text-green-600">追加タグ: {history.addedTags.join(', ')}</p>
+                  )}
+                  {history.removedTags.length > 0 && (
+                    <p className="text-red-600">削除タグ: {history.removedTags.join(', ')}</p>
+                  )}
+                  {history.keptTags.length > 0 && (
+                    <p className="text-gray-600">維持タグ: {history.keptTags.join(', ')}</p>
+                  )}
+                </div>
+                <div className="flex items-center mt-2">
+                  <span className="font-semibold mr-2">評価: {history.score}</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mr-2"
+                    onClick={async () => {
+                      try {
+                        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+                        const response = await fetch(`${baseUrl}/api/tag-edit-history/${history.id}/vote`, {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({ score: 1 }),
+                        });
+                        if (!response.ok) {
+                          throw new Error(`Error: ${response.status}`);
+                        }
+                        console.log("Vote +1 recorded!");
+                        // UIを更新するために再フェッチ
+                        const reFetchResponse = await fetch(`${baseUrl}/api/products/${productId}`);
+                        if (!reFetchResponse.ok) {
+                          throw new Error(`Error re-fetching product: ${reFetchResponse.status}`);
+                        }
+                        const reFetchedData: ProductDetail = await reFetchResponse.json();
+                        setProduct(reFetchedData);
+                      } catch (err) {
+                        console.error("Failed to record vote:", err);
+                      }
+                    }}
+                  >
+                    👍
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+                        const response = await fetch(`${baseUrl}/api/tag-edit-history/${history.id}/vote`, {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({ score: -1 }),
+                        });
+                        if (!response.ok) {
+                          throw new Error(`Error: ${response.status}`);
+                        }
+                        console.log("Vote -1 recorded!");
+                        // UIを更新するために再フェッチ
+                        const reFetchResponse = await fetch(`${baseUrl}/api/products/${productId}`);
+                        if (!reFetchResponse.ok) {
+                          throw new Error(`Error re-fetching product: ${reFetchResponse.status}`);
+                        }
+                        const reFetchedData: ProductDetail = await reFetchResponse.json();
+                        setProduct(reFetchedData);
+                      } catch (err) {
+                        console.error("Failed to record vote:", err);
+                      }
+                    }}
+                  >
+                    👎
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
