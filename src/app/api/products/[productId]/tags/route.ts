@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth'; // authをインポート
-
-const prisma = new PrismaClient();
 
 export async function PUT(
   req: NextRequest,
@@ -123,7 +122,5 @@ export async function PUT(
   } catch (error) {
     console.error('Error updating tags:', error);
     return NextResponse.json({ error: 'Failed to update tags' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }

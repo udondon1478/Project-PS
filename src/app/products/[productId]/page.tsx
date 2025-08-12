@@ -72,6 +72,7 @@ const ProductDetailPage = () => {
   const [api, setApi] = useState<CarouselApi>();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slideCount, setSlideCount] = useState(0);
+  const [isTagEditorOpen, setIsTagEditorOpen] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -236,7 +237,7 @@ const ProductDetailPage = () => {
           </div>
           {/* タグ編集ボタンとモーダル */}
           <div className="mt-4">
-            <Dialog>
+            <Dialog open={isTagEditorOpen} onOpenChange={setIsTagEditorOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline">タグを編集</Button>
               </DialogTrigger>
@@ -269,6 +270,7 @@ const ProductDetailPage = () => {
                         }
                         const reFetchedData: ProductDetail = await reFetchResponse.json();
                         setProduct(reFetchedData);
+                        setIsTagEditorOpen(false); // モーダルを閉じる
 
                         console.log("Tags updated successfully!");
                       } catch (err) {

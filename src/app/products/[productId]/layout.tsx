@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { prisma } from '@/lib_prisma/prisma';
+import { prisma } from '@/lib/prisma';
 
 export async function generateMetadata({ params }: { params: Promise<{ productId: string }> }): Promise<Metadata> {
   const { productId } = await params;

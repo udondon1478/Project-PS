@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth'; // authをインポート
-
-const prisma = new PrismaClient();
 
 export async function POST(
   req: NextRequest,
@@ -75,7 +74,5 @@ export async function POST(
   } catch (error) {
     console.error('Error recording vote:', error);
     return NextResponse.json({ error: 'Failed to record vote' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }

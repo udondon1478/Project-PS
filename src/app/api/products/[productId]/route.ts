@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib_prisma/prisma'; // Prismaクライアントをインポート
+import { prisma } from '@/lib/prisma'; // Prismaクライアントをインポート
 
 export async function GET(request: Request, context: { params: Promise<{ productId: string }> }) {
   const { productId } = await context.params;
