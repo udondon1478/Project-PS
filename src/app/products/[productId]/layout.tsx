@@ -5,8 +5,8 @@ interface ProductDetail {
   title: string;
 }
 
-export async function generateMetadata({ params }: { params: { productId: string } }): Promise<Metadata> {
-  const productId = params.productId;
+export async function generateMetadata({ params }: { params: Promise<{ productId: string }> }): Promise<Metadata> {
+  const { productId } = await params;
   let productTitle = "商品詳細"; // デフォルトタイトル
 
   const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
