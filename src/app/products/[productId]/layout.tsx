@@ -1,22 +1,17 @@
 import { Metadata } from 'next';
-
-interface ProductDetail {
-  id: string;
-  title: string;
-}
+import { prisma } from '@/lib_prisma/prisma';
 
 export async function generateMetadata({ params }: { params: Promise<{ productId: string }> }): Promise<Metadata> {
   const { productId } = await params;
   let productTitle = "商品詳細"; // デフォルトタイトル
 
-  const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
   try {
-    const response = await fetch(`${baseUrl}/api/products/${productId}`, {
-      cache: 'no-store', // 常に最新のデータを取得
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+      select: { title: true },
     });
-    if (response.ok) {
-      const data: ProductDetail = await response.json();
-      productTitle = data.title;
+    if (product) {
+      productTitle = product.title;
     }
   } catch (error) {
     console.error("Failed to fetch product for metadata:", error);

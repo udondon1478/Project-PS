@@ -84,7 +84,9 @@ const ProductDetailPage = () => {
         if (!response.ok) {
           throw new Error(`Error: ${response.status}`);
         }
-        const data: ProductDetail = await response.json();
+        const text = await response.text();
+        console.log("API Response:", text);
+        const data: ProductDetail = JSON.parse(text);
         setProduct(data);
       } catch (err: unknown) {
         if (err instanceof Error) {
