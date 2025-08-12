@@ -80,8 +80,7 @@ const ProductDetailPage = () => {
       setError(null);
       try {
         // 仮のAPIエンドポイントからデータを取得
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-        const response = await fetch(`${baseUrl}/api/products/${productId}`);
+        const response = await fetch(`/api/products/${productId}`);
         if (!response.ok) {
           throw new Error(`Error: ${response.status}`);
         }
@@ -250,8 +249,7 @@ const ProductDetailPage = () => {
                     initialTags={product.productTags.map(pt => pt.tag)}
                     onTagsChange={async (newTags) => {
                       try {
-                        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-                        const response = await fetch(`${baseUrl}/api/products/${productId}/tags`, {
+                        const response = await fetch(`/api/products/${productId}/tags`, {
                           method: 'PUT',
                           headers: {
                             'Content-Type': 'application/json',
@@ -264,7 +262,7 @@ const ProductDetailPage = () => {
                         }
 
                         // タグ更新成功後、商品情報を再フェッチしてUIを更新
-                        const reFetchResponse = await fetch(`${baseUrl}/api/products/${productId}`);
+                        const reFetchResponse = await fetch(`/api/products/${productId}`);
                         if (!reFetchResponse.ok) {
                           throw new Error(`Error re-fetching product: ${reFetchResponse.status}`);
                         }
@@ -319,8 +317,7 @@ const ProductDetailPage = () => {
                     className="mr-2"
                     onClick={async () => {
                       try {
-                        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-                        const response = await fetch(`${baseUrl}/api/tag-edit-history/${history.id}/vote`, {
+                        const response = await fetch(`/api/tag-edit-history/${history.id}/vote`, {
                           method: 'POST',
                           headers: {
                             'Content-Type': 'application/json',
@@ -332,7 +329,7 @@ const ProductDetailPage = () => {
                         }
                         console.log("Vote +1 recorded!");
                         // UIを更新するために再フェッチ
-                        const reFetchResponse = await fetch(`${baseUrl}/api/products/${productId}`);
+                        const reFetchResponse = await fetch(`/api/products/${productId}`);
                         if (!reFetchResponse.ok) {
                           throw new Error(`Error re-fetching product: ${reFetchResponse.status}`);
                         }
@@ -350,8 +347,7 @@ const ProductDetailPage = () => {
                     size="sm"
                     onClick={async () => {
                       try {
-                        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-                        const response = await fetch(`${baseUrl}/api/tag-edit-history/${history.id}/vote`, {
+                        const response = await fetch(`/api/tag-edit-history/${history.id}/vote`, {
                           method: 'POST',
                           headers: {
                             'Content-Type': 'application/json',
@@ -363,7 +359,7 @@ const ProductDetailPage = () => {
                         }
                         console.log("Vote -1 recorded!");
                         // UIを更新するために再フェッチ
-                        const reFetchResponse = await fetch(`${baseUrl}/api/products/${productId}`);
+                        const reFetchResponse = await fetch(`/api/products/${productId}`);
                         if (!reFetchResponse.ok) {
                           throw new Error(`Error re-fetching product: ${reFetchResponse.status}`);
                         }
