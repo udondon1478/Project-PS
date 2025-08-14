@@ -316,25 +316,27 @@ const ProductDetailPage = () => {
                         タグ編集履歴を閲覧
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
-                      <DialogHeader>
+                    <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
+                      <DialogHeader className="flex-shrink-0">
                         <DialogTitle>タグ編集履歴</DialogTitle>
                       </DialogHeader>
-                      <ScrollArea className="flex-grow">
-                        <div className="space-y-4 pr-6">
-                          {product.tagEditHistory && product.tagEditHistory.length > 0 ? (
-                            product.tagEditHistory.map((history) => (
-                              <TagEditHistoryItem
-                                key={history.id}
-                                history={history}
-                                onVote={handleVote}
-                              />
-                            ))
-                          ) : (
-                            <p>編集履歴はありません。</p>
-                          )}
-                        </div>
-                      </ScrollArea>
+                      <div className="flex-grow min-h-0">
+                        <ScrollArea className="h-full">
+                          <div className="space-y-4 pr-6">
+                            {product.tagEditHistory && product.tagEditHistory.length > 0 ? (
+                              product.tagEditHistory.map((history) => (
+                                <TagEditHistoryItem
+                                  key={history.id}
+                                  history={history}
+                                  onVote={handleVote}
+                                />
+                              ))
+                            ) : (
+                              <p>編集履歴はありません。</p>
+                            )}
+                          </div>
+                        </ScrollArea>
+                      </div>
                     </DialogContent>
                   </Dialog>
                 </div>
