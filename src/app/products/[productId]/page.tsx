@@ -19,8 +19,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button"; // Buttonコンポーネントも必要
+import { Button } from "@/components/ui/button";
 import TagEditor from "@/components/TagEditor"; // TagEditorコンポーネントをインポート
+import { ScrollArea } from "@/components/ui/scroll-area"; // ScrollAreaをインポート
+import { PlusCircle, MinusCircle, Info } from 'lucide-react'; // アイコンをインポート
 
 interface ProductDetail {
   id: string;
@@ -74,35 +76,32 @@ const ProductDetailPage = () => {
   const [slideCount, setSlideCount] = useState(0);
   const [isTagEditorOpen, setIsTagEditorOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchProduct = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        // 仮のAPIエンドポイントからデータを取得
-        const response = await fetch(`/api/products/${productId}`);
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status}`);
-        }
-        const text = await response.text();
-        console.log("API Response:", text);
-        const data: ProductDetail = JSON.parse(text);
-        setProduct(data);
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError('An unknown error occurred');
-        }
-      } finally {
-        setLoading(false);
+  const fetchProduct = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/products/${productId}`);
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
       }
-    };
+      const data: ProductDetail = await response.json();
+      setProduct(data);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An unknown error occurred');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [productId]);
 
+  useEffect(() => {
     if (productId) {
       fetchProduct();
     }
-  }, [productId]); // productIdが変更されたら再フェッチ
+  }, [productId, fetchProduct]);
 
   useEffect(() => {
     if (!api) {
@@ -119,7 +118,6 @@ const ProductDetailPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // URLのクエリパラメータを更新するヘルパー関数
   const updateQueryParams = useCallback((newTags: string[], newNegativeTags: string[]) => {
     const currentParams = new URLSearchParams(searchParams.toString());
     if (newTags.length > 0) {
@@ -132,10 +130,10 @@ const ProductDetailPage = () => {
     } else {
       currentParams.delete('negativeTags');
     }
+    // 検索ページに遷移せず、現在のページのURLクエリパラメータのみを更新
     router.push(`?${currentParams.toString()}`, { scroll: false });
   }, [router, searchParams]);
 
-  // タグを検索クエリに追加する関数
   const addTagToSearch = (tagName: string) => {
     const currentTags = searchParams.get('tags')?.split(',').filter(tag => tag.length > 0) || [];
     const currentNegativeTags = searchParams.get('negativeTags')?.split(',').filter(tag => tag.length > 0) || [];
@@ -146,238 +144,194 @@ const ProductDetailPage = () => {
     }
   };
 
-  // マイナス検索タグを検索クエリに追加する関数
   const addNegativeTagToSearch = (tagName: string) => {
     const currentTags = searchParams.get('tags')?.split(',').filter(tag => tag.length > 0) || [];
     const currentNegativeTags = searchParams.get('negativeTags')?.split(',').filter(tag => tag.length > 0) || [];
 
-    if (!currentNegativeTags.includes(tagName)) {
+    if (!currentNegativeTags.includes(tagName) && !currentTags.includes(tagName)) {
       const newNegativeTags = [...currentNegativeTags, tagName];
       updateQueryParams(currentTags, newNegativeTags);
+    }
+  };
+  
+  const handleTagsUpdate = async (newTags: { id: string; name: string; }[]) => {
+    try {
+      const response = await fetch(`/api/products/${productId}/tags`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tags: newTags }),
+      });
+
+      if (!response.ok) throw new Error(`Error: ${response.status}`);
+      
+      await fetchProduct(); // 商品情報を再フェッチ
+      setIsTagEditorOpen(false); // モーダルを閉じる
+      console.log("Tags updated successfully!");
+    } catch (err) {
+      console.error("Failed to update tags:", err);
+      // TODO: ユーザーへのエラー通知
     }
   };
 
 
  if (loading) {
-    return <div>Loading...</div>;
+    return <div className="container mx-auto px-4 py-8 pt-40 text-center">Loading...</div>;
   }
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return <div className="container mx-auto px-4 py-8 pt-40 text-center text-red-500">Error: {error}</div>;
   }
 
   if (!product) {
-    return <div>Product not found.</div>;
+    return <div className="container mx-auto px-4 py-8 pt-40 text-center">Product not found.</div>;
   }
 
   return (
     <div className="container mx-auto px-4 py-8 pt-40">
-      <h1 className="text-2xl font-bold mb-4">{product.title}</h1>
-      <p className="mb-2">商品ID: {product.id}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* === メインコンテンツエリア === */}
+        <main className="lg:col-span-9">
+          <h1 className="text-3xl font-extrabold mb-4 tracking-tight">{product.title}</h1>
+          <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">商品ID: {product.id}</p>
 
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold mb-2">Booth URL</h2>
-        <p>日本語版: <a href={product.boothJpUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{product.boothJpUrl}</a></p>
-        <p>英語版: <a href={product.boothEnUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{product.boothEnUrl}</a></p>
-      </div>
+          <section className="mb-8">
+            <h2 className="text-xl font-semibold mb-3">Booth URL</h2>
+            <div className="space-y-1 text-sm">
+              <p>日本語版: <a href={product.boothJpUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{product.boothJpUrl}</a></p>
+              <p>英語版: <a href={product.boothEnUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{product.boothEnUrl}</a></p>
+            </div>
+          </section>
 
-      {product.images && product.images.length > 0 && (
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold mb-2">商品画像</h2>
-          <Carousel setApi={setApi} opts={{ loop: true }}>
-            <CarouselContent>
-              {product.images.map((image, index) => (
-                <CarouselItem key={index} className="flex justify-center items-center">
-                  <Image src={image.imageUrl} alt={image.caption || `商品画像 ${index + 1}`} width={500} height={500} className="max-w-full h-auto max-h-96 object-contain"/>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious />
-            <CarouselNext />
-          </Carousel>
-          <div className="flex justify-center gap-2 mt-4">
-            {Array.from({ length: slideCount }).map((_, index) => (
-              <button
-                key={index}
-                className={`w-2 h-2 rounded-full ${
-                  index === currentSlide - 1 ? "bg-blue-500" : "bg-gray-300"
-                }`}
-                onClick={() => api?.scrollTo(index)}
-                aria-label={`Go to slide ${index + 1}`}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold mb-2">Description (仮表示)</h2>
-        {product.description ? (
-          <div className="prose">
-            <ReactMarkdown>{product.description}</ReactMarkdown>
-          </div>
-        ) : (
-          <p>Descriptionはありません。</p>
-        )}
-      </div>
-
-      {/* タグリスト表示 */}
-      {product.productTags && product.productTags.length > 0 && (
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold mb-2">タグ</h2>
-          <div className="flex flex-wrap gap-2">
-            {product.productTags.map(({ tag }) => (
-              <div key={tag.id} className="flex items-center bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700">
-                <button onClick={() => addNegativeTagToSearch(tag.name)} className="mr-1 text-red-500 hover:text-red-700">-</button>
-                <span>{tag.name}</span>
-                <button onClick={() => addTagToSearch(tag.name)} className="ml-1 text-green-500 hover:text-green-700">+</button>
-              </div>
-            ))}
-          </div>
-          {/* タグ編集ボタンとモーダル */}
-          <div className="mt-4">
-            <Dialog open={isTagEditorOpen} onOpenChange={setIsTagEditorOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline">タグを編集</Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>タグを編集</DialogTitle>
-                </DialogHeader>
-                {product.productTags && (
-                  <TagEditor
-                    initialTags={product.productTags.map(pt => pt.tag)}
-                    onTagsChange={async (newTags) => {
-                      try {
-                        const response = await fetch(`/api/products/${productId}/tags`, {
-                          method: 'PUT',
-                          headers: {
-                            'Content-Type': 'application/json',
-                          },
-                          body: JSON.stringify({ tags: newTags }),
-                        });
-
-                        if (!response.ok) {
-                          throw new Error(`Error: ${response.status}`);
-                        }
-
-                        // タグ更新成功後、商品情報を再フェッチしてUIを更新
-                        const reFetchResponse = await fetch(`/api/products/${productId}`);
-                        if (!reFetchResponse.ok) {
-                          throw new Error(`Error re-fetching product: ${reFetchResponse.status}`);
-                        }
-                        const reFetchedData: ProductDetail = await reFetchResponse.json();
-                        setProduct(reFetchedData);
-                        setIsTagEditorOpen(false); // モーダルを閉じる
-
-                        console.log("Tags updated successfully!");
-                      } catch (err) {
-                        console.error("Failed to update tags:", err);
-                        // エラーハンドリング（ユーザーへの通知など）
-                      }
-                    }}
+          {product.images && product.images.length > 0 && (
+            <section className="mb-8">
+              <h2 className="text-xl font-semibold mb-3">商品画像</h2>
+              <Carousel setApi={setApi} opts={{ loop: true }} className="w-full max-w-2xl mx-auto">
+                <CarouselContent>
+                  {product.images.map((image, index) => (
+                    <CarouselItem key={index} className="flex justify-center items-center">
+                      <Image src={image.imageUrl} alt={image.caption || `商品画像 ${index + 1}`} width={600} height={600} className="max-w-full h-auto max-h-[600px] object-contain rounded-lg shadow-md"/>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious />
+                <CarouselNext />
+              </Carousel>
+              <div className="flex justify-center gap-2 mt-4">
+                {Array.from({ length: slideCount }).map((_, index) => (
+                  <button
+                    key={index}
+                    className={`w-2.5 h-2.5 rounded-full transition-colors ${
+                      index === currentSlide - 1 ? "bg-blue-500" : "bg-gray-300 dark:bg-gray-600 hover:bg-gray-400"
+                    }`}
+                    onClick={() => api?.scrollTo(index)}
+                    aria-label={`Go to slide ${index + 1}`}
                   />
-                )}
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-      )}
+                ))}
+              </div>
+            </section>
+          )}
 
-      {/* タグ編集履歴表示 */}
-      {product.tagEditHistory && product.tagEditHistory.length > 0 && (
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold mb-2">タグ編集履歴</h2>
-          <div className="space-y-4">
-            {product.tagEditHistory.map((history) => (
-              <div key={history.id} className="border p-4 rounded-lg shadow-sm">
-                <p className="text-sm text-gray-500">
-                  バージョン: {history.version} | 編集者: {history.editor.name || '不明なユーザー'} |
-                  日時: {new Date(history.createdAt).toLocaleString()}
-                </p>
-                {history.comment && (
-                  <p className="mt-2 text-gray-700">コメント: {history.comment}</p>
-                )}
-                <div className="mt-2">
-                  {history.addedTags.length > 0 && (
-                    <p className="text-green-600">追加タグ: {history.addedTags.join(', ')}</p>
-                  )}
-                  {history.removedTags.length > 0 && (
-                    <p className="text-red-600">削除タグ: {history.removedTags.join(', ')}</p>
-                  )}
-                  {history.keptTags.length > 0 && (
-                    <p className="text-gray-600">維持タグ: {history.keptTags.join(', ')}</p>
-                  )}
-                </div>
-                <div className="flex items-center mt-2">
-                  <span className="font-semibold mr-2">評価: {history.score}</span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mr-2"
-                    onClick={async () => {
-                      try {
-                        const response = await fetch(`/api/tag-edit-history/${history.id}/vote`, {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json',
-                          },
-                          body: JSON.stringify({ score: 1 }),
-                        });
-                        if (!response.ok) {
-                          throw new Error(`Error: ${response.status}`);
-                        }
-                        console.log("Vote +1 recorded!");
-                        // UIを更新するために再フェッチ
-                        const reFetchResponse = await fetch(`/api/products/${productId}`);
-                        if (!reFetchResponse.ok) {
-                          throw new Error(`Error re-fetching product: ${reFetchResponse.status}`);
-                        }
-                        const reFetchedData: ProductDetail = await reFetchResponse.json();
-                        setProduct(reFetchedData);
-                      } catch (err) {
-                        console.error("Failed to record vote:", err);
-                      }
-                    }}
-                  >
-                    👍
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={async () => {
-                      try {
-                        const response = await fetch(`/api/tag-edit-history/${history.id}/vote`, {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json',
-                          },
-                          body: JSON.stringify({ score: -1 }),
-                        });
-                        if (!response.ok) {
-                          throw new Error(`Error: ${response.status}`);
-                        }
-                        console.log("Vote -1 recorded!");
-                        // UIを更新するために再フェッチ
-                        const reFetchResponse = await fetch(`/api/products/${productId}`);
-                        if (!reFetchResponse.ok) {
-                          throw new Error(`Error re-fetching product: ${reFetchResponse.status}`);
-                        }
-                        const reFetchedData: ProductDetail = await reFetchResponse.json();
-                        setProduct(reFetchedData);
-                      } catch (err) {
-                        console.error("Failed to record vote:", err);
-                      }
-                    }}
-                  >
-                    👎
-                  </Button>
+          <section className="mb-8">
+            <h2 className="text-xl font-semibold mb-3">Description</h2>
+            {product.description ? (
+              <div className="prose dark:prose-invert max-w-none bg-gray-50 dark:bg-gray-800/50 p-6 rounded-lg border dark:border-gray-700">
+                <ReactMarkdown>{product.description}</ReactMarkdown>
+              </div>
+            ) : (
+              <p className="text-gray-500 dark:text-gray-400">Descriptionはありません。</p>
+            )}
+          </section>
+
+          {product.tagEditHistory && product.tagEditHistory.length > 0 && (
+            <section className="mb-4">
+              <h2 className="text-xl font-semibold mb-3">タグ編集履歴</h2>
+              <div className="space-y-4">
+                {product.tagEditHistory.map((history) => (
+                  <div key={history.id} className="border dark:border-gray-700 p-4 rounded-lg shadow-sm bg-white dark:bg-gray-800/50">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      バージョン: {history.version} | 編集者: {history.editor.name || '不明なユーザー'} |
+                      日時: {new Date(history.createdAt).toLocaleString()}
+                    </p>
+                    {history.comment && (
+                      <p className="mt-2 text-gray-700 dark:text-gray-300">コメント: {history.comment}</p>
+                    )}
+                    <div className="mt-2 text-sm">
+                      {history.addedTags.length > 0 && (
+                        <p className="text-green-600">追加タグ: {history.addedTags.join(', ')}</p>
+                      )}
+                      {history.removedTags.length > 0 && (
+                        <p className="text-red-600">削除タグ: {history.removedTags.join(', ')}</p>
+                      )}
+                      {history.keptTags.length > 0 && (
+                        <p className="text-gray-600 dark:text-gray-400">維持タグ: {history.keptTags.join(', ')}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center mt-2">
+                      <span className="font-semibold mr-2">評価: {history.score}</span>
+                      <Button variant="outline" size="sm" className="mr-2" onClick={async () => { /* 投票ロジック */ }}>👍</Button>
+                      <Button variant="outline" size="sm" onClick={async () => { /* 投票ロジック */ }}>👎</Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </main>
+
+        {/* === 右サイドバー (タグリスト) === */}
+        <aside className="lg:col-span-3">
+          <div className="sticky top-32">
+            <h2 className="text-xl font-semibold mb-4">タグ</h2>
+            {product.productTags && product.productTags.length > 0 ? (
+              <div className="flex flex-col h-full">
+                <ScrollArea className="flex-grow h-[calc(100vh-350px)] w-full rounded-md border dark:border-gray-700 bg-white dark:bg-gray-800/50">
+                  <div className="p-2">
+                    {product.productTags.map(({ tag }) => (
+                      <div key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-accent dark:hover:bg-gray-700/50 transition-colors">
+                        <span className="text-sm font-medium pr-2">{tag.name}</span>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/50" onClick={() => addNegativeTagToSearch(tag.name)}>
+                            <MinusCircle size={16} />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-green-500 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/50" onClick={() => addTagToSearch(tag.name)}>
+                            <PlusCircle size={16} />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-500 hover:text-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/50">
+                            <Info size={16} />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+                <div className="mt-4 flex-shrink-0">
+                  <Dialog open={isTagEditorOpen} onOpenChange={setIsTagEditorOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="w-full">タグを編集</Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>タグを編集</DialogTitle>
+                      </DialogHeader>
+                      {product.productTags && (
+                        <TagEditor
+                          initialTags={product.productTags.map(pt => pt.tag)}
+                          onTagsChange={handleTagsUpdate}
+                        />
+                      )}
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </div>
-            ))}
+            ) : (
+              <div className="text-center py-10 border-2 border-dashed rounded-lg text-sm text-gray-500 dark:text-gray-400">
+                <p>この商品にはまだタグがありません。</p>
+                <Button variant="link" onClick={() => setIsTagEditorOpen(true)}>最初のタグを追加する</Button>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        </aside>
+      </div>
     </div>
   );
 };
