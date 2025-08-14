@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { cn } from "@/lib/utils";
@@ -69,6 +69,12 @@ const TagEditHistoryItem: React.FC<TagEditHistoryItemProps> = ({ history, tagMap
   const [currentScore, setCurrentScore] = useState(history.score);
   const [currentUserVote, setCurrentUserVote] = useState(history.userVote);
   const [isVoting, setIsVoting] = useState(false);
+  const [displayDate, setDisplayDate] = useState('');
+
+  useEffect(() => {
+    // Format the date only on the client-side after hydration to avoid mismatch
+    setDisplayDate(new Date(history.createdAt).toLocaleString());
+  }, [history.createdAt]);
 
   const handleVote = useCallback(async (newScore: 1 | -1) => {
     if (isVoting) return;
@@ -130,7 +136,7 @@ const TagEditHistoryItem: React.FC<TagEditHistoryItemProps> = ({ history, tagMap
         <div>
           <p className="font-semibold">{history.editor.name || '不明なユーザー'}</p>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            バージョン: {history.version} | 日時: {new Date(history.createdAt).toLocaleString()}
+            バージョン: {history.version} | 日時: {displayDate}
           </p>
         </div>
       </div>
