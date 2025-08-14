@@ -45,8 +45,37 @@ export async function GET(request: Request, context: { params: Promise<{ product
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    // 取得した商品データをJSON形式で返す
-    return NextResponse.json(product);
+    // --- Fetch tag names for history ---
+    const tagIdToNameMap: { [key: string]: string } = {};
+    if (product.tagEditHistory && product.tagEditHistory.length > 0) {
+      const tagIds = new Set<string>();
+      product.tagEditHistory.forEach(history => {
+        history.addedTags.forEach(id => tagIds.add(id));
+        history.removedTags.forEach(id => tagIds.add(id));
+        history.keptTags.forEach(id => tagIds.add(id));
+      });
+
+      if (tagIds.size > 0) {
+        const tags = await prisma.tag.findMany({
+          where: {
+            id: {
+              in: Array.from(tagIds),
+            },
+          },
+          select: {
+            id: true,
+            name: true,
+          },
+        });
+
+        tags.forEach(tag => {
+          tagIdToNameMap[tag.id] = tag.name;
+        });
+      }
+    }
+
+    // Return the product data along with the tag name map
+    return NextResponse.json({ product, tagIdToNameMap });
   } catch (error) {
     console.error('Error fetching product:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

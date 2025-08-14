@@ -70,6 +70,7 @@ const ProductDetailPage = () => {
   const productId = params.productId as string; // URLからproductIdを取得
 
   const [product, setProduct] = useState<ProductDetail | null>(null);
+  const [tagMap, setTagMap] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [api, setApi] = useState<CarouselApi>();
@@ -85,8 +86,9 @@ const ProductDetailPage = () => {
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }
-      const data: ProductDetail = await response.json();
-      setProduct(data);
+      const { product: productData, tagIdToNameMap } = await response.json();
+      setProduct(productData);
+      setTagMap(tagIdToNameMap);
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -329,6 +331,7 @@ const ProductDetailPage = () => {
                                   key={history.id}
                                   history={history}
                                   onVote={handleVote}
+                                  tagMap={tagMap}
                                 />
                               ))
                             ) : (

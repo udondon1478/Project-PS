@@ -15,9 +15,9 @@ interface TagEditHistory {
   id: string;
   editor: HistoryEditor;
   version: number;
-  addedTags: string[];
-  removedTags: string[];
-  keptTags: string[];
+  addedTags: string[]; // These are IDs
+  removedTags: string[]; // These are IDs
+  keptTags: string[]; // These are IDs
   comment: string | null;
   score: number;
   createdAt: string;
@@ -26,27 +26,33 @@ interface TagEditHistory {
 interface TagEditHistoryItemProps {
   history: TagEditHistory;
   onVote: (historyId: string, score: number) => Promise<void>;
+  tagMap: { [key: string]: string };
 }
 
 const TAG_DISPLAY_LIMIT = 5;
 
-const TagList: React.FC<{ tags: string[], colorClass: string }> = ({ tags, colorClass }) => {
+const TagList: React.FC<{
+  tagIds: string[],
+  colorClass: string,
+  tagMap: { [key: string]: string }
+}> = ({ tagIds, colorClass, tagMap }) => {
   const [showAll, setShowAll] = useState(false);
 
-  if (tags.length === 0) {
+  if (tagIds.length === 0) {
     return null;
   }
 
-  const displayedTags = showAll ? tags : tags.slice(0, TAG_DISPLAY_LIMIT);
+  const tagNames = tagIds.map(id => tagMap[id] || id); // Fallback to ID if name not found
+  const displayedTags = showAll ? tagNames : tagNames.slice(0, TAG_DISPLAY_LIMIT);
 
   return (
     <div>
       <p className={colorClass}>
         {displayedTags.join(', ')}
       </p>
-      {tags.length > TAG_DISPLAY_LIMIT && (
+      {tagNames.length > TAG_DISPLAY_LIMIT && (
         <Button variant="link" size="sm" onClick={() => setShowAll(!showAll)}>
-          {showAll ? '一部を隠す' : `...あと ${tags.length - TAG_DISPLAY_LIMIT} 件全て表示`}
+          {showAll ? '一部を隠す' : `...あと ${tagNames.length - TAG_DISPLAY_LIMIT} 件全て表示`}
         </Button>
       )}
     </div>
@@ -54,7 +60,7 @@ const TagList: React.FC<{ tags: string[], colorClass: string }> = ({ tags, color
 };
 
 
-const TagEditHistoryItem: React.FC<TagEditHistoryItemProps> = ({ history, onVote }) => {
+const TagEditHistoryItem: React.FC<TagEditHistoryItemProps> = ({ history, onVote, tagMap }) => {
   return (
     <div className="border dark:border-gray-700 p-4 rounded-lg shadow-sm bg-white dark:bg-gray-800/50">
       <div className="flex items-center mb-2">
@@ -81,19 +87,19 @@ const TagEditHistoryItem: React.FC<TagEditHistoryItemProps> = ({ history, onVote
         {history.addedTags.length > 0 && (
           <div>
             <span className="font-semibold text-green-600">追加タグ:</span>
-            <TagList tags={history.addedTags} colorClass="text-green-600" />
+            <TagList tagIds={history.addedTags} colorClass="text-green-600" tagMap={tagMap} />
           </div>
         )}
         {history.removedTags.length > 0 && (
           <div>
             <span className="font-semibold text-red-600">削除タグ:</span>
-            <TagList tags={history.removedTags} colorClass="text-red-600" />
+            <TagList tagIds={history.removedTags} colorClass="text-red-600" tagMap={tagMap} />
           </div>
         )}
         {history.keptTags.length > 0 && (
           <div>
             <span className="font-semibold text-gray-600 dark:text-gray-400">維持タグ:</span>
-            <TagList tags={history.keptTags} colorClass="text-gray-600 dark:text-gray-400" />
+            <TagList tagIds={history.keptTags} colorClass="text-gray-600 dark:text-gray-400" tagMap={tagMap} />
           </div>
         )}
       </div>
