@@ -16,7 +16,20 @@ const nextConfig: NextConfig = {
     ]
   },
   images: {
-    domains: ['booth.pximg.net'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'booth.pximg.net',
+        port: '',
+        pathname: '**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        port: '',
+        pathname: '**',
+      },
+    ],
   },
 };
 
