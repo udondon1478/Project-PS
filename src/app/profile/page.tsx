@@ -23,7 +23,7 @@ export default async function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto p-4 md:p-6">
+    <div className="container mx-auto px-4 py-8 pt-40">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Edit Profile</h1>
         <Link href={`/users/${user.id}`}>
