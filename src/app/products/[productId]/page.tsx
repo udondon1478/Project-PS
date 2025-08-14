@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import TagEditor from "@/components/TagEditor"; // TagEditorコンポーネントをインポート
+import TagEditHistoryItem from "@/components/TagEditHistoryItem"; // TagEditHistoryItemコンポーネントをインポート
 import { ScrollArea } from "@/components/ui/scroll-area"; // ScrollAreaをインポート
 import { PlusCircle, MinusCircle, Info } from 'lucide-react'; // アイコンをインポート
 
@@ -75,6 +76,7 @@ const ProductDetailPage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slideCount, setSlideCount] = useState(0);
   const [isTagEditorOpen, setIsTagEditorOpen] = useState(false);
+  const [isHistoryVisible, setIsHistoryVisible] = useState(false); // 履歴表示用のstate
 
   const fetchProduct = useCallback(async () => {
     setLoading(true);
@@ -173,6 +175,49 @@ const ProductDetailPage = () => {
     }
   };
 
+  const handleVote = async (historyId: string, score: number) => {
+    try {
+      const response = await fetch(`/api/tag-edit-history/${historyId}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ score }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error: ${response.status}`);
+      }
+
+      // Optimistically update the UI
+      setProduct(prevProduct => {
+        if (!prevProduct) return null;
+
+        const newHistory = prevProduct.tagEditHistory.map(h => {
+          if (h.id === historyId) {
+            // This is a simplified update. A more robust solution would
+            // get the new score from the API response.
+            // For now, just refetching the product data is safer.
+            return { ...h, score: h.score + score }; // This is not accurate if user changes vote
+          }
+          return h;
+        });
+
+        // For simplicity and accuracy, let's just refetch the product data
+        // to get the latest scores.
+        fetchProduct();
+
+        return {
+          ...prevProduct,
+          tagEditHistory: newHistory,
+        };
+      });
+
+    } catch (err) {
+      console.error("Failed to vote:", err);
+      // TODO: Show error to user
+    }
+  };
+
 
  if (loading) {
     return <div className="container mx-auto px-4 py-8 pt-40 text-center">Loading...</div>;
@@ -242,36 +287,16 @@ const ProductDetailPage = () => {
             )}
           </section>
 
-          {product.tagEditHistory && product.tagEditHistory.length > 0 && (
+          {isHistoryVisible && product.tagEditHistory && product.tagEditHistory.length > 0 && (
             <section className="mb-4">
               <h2 className="text-xl font-semibold mb-3">タグ編集履歴</h2>
               <div className="space-y-4">
                 {product.tagEditHistory.map((history) => (
-                  <div key={history.id} className="border dark:border-gray-700 p-4 rounded-lg shadow-sm bg-white dark:bg-gray-800/50">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      バージョン: {history.version} | 編集者: {history.editor.name || '不明なユーザー'} |
-                      日時: {new Date(history.createdAt).toLocaleString()}
-                    </p>
-                    {history.comment && (
-                      <p className="mt-2 text-gray-700 dark:text-gray-300">コメント: {history.comment}</p>
-                    )}
-                    <div className="mt-2 text-sm">
-                      {history.addedTags.length > 0 && (
-                        <p className="text-green-600">追加タグ: {history.addedTags.join(', ')}</p>
-                      )}
-                      {history.removedTags.length > 0 && (
-                        <p className="text-red-600">削除タグ: {history.removedTags.join(', ')}</p>
-                      )}
-                      {history.keptTags.length > 0 && (
-                        <p className="text-gray-600 dark:text-gray-400">維持タグ: {history.keptTags.join(', ')}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center mt-2">
-                      <span className="font-semibold mr-2">評価: {history.score}</span>
-                      <Button variant="outline" size="sm" className="mr-2" onClick={async () => { /* 投票ロジック */ }}>👍</Button>
-                      <Button variant="outline" size="sm" onClick={async () => { /* 投票ロジック */ }}>👎</Button>
-                    </div>
-                  </div>
+                  <TagEditHistoryItem
+                    key={history.id}
+                    history={history}
+                    onVote={handleVote}
+                  />
                 ))}
               </div>
             </section>
@@ -304,7 +329,7 @@ const ProductDetailPage = () => {
                     ))}
                   </div>
                 </ScrollArea>
-                <div className="mt-4 flex-shrink-0">
+                <div className="mt-4 flex-shrink-0 space-y-2">
                   <Dialog open={isTagEditorOpen} onOpenChange={setIsTagEditorOpen}>
                     <DialogTrigger asChild>
                       <Button variant="outline" className="w-full">タグを編集</Button>
@@ -321,6 +346,9 @@ const ProductDetailPage = () => {
                       )}
                     </DialogContent>
                   </Dialog>
+                  <Button variant="outline" className="w-full" onClick={() => setIsHistoryVisible(!isHistoryVisible)}>
+                    {isHistoryVisible ? 'タグ編集履歴を隠す' : 'タグ編集履歴を閲覧'}
+                  </Button>
                 </div>
               </div>
             ) : (
