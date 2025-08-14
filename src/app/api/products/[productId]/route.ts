@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma'; // Prismaクライアントをインポート
+import { auth } from '@/auth'; // authをインポート
 
 export async function GET(request: Request, context: { params: Promise<{ productId: string }> }) {
   const { productId } = await context.params;
+  const session = await auth(); // セッション情報を取得
+  const userId = session?.user?.id;
 
   try {
     const product = await prisma.product.findUnique({
@@ -45,6 +48,38 @@ export async function GET(request: Request, context: { params: Promise<{ product
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
+    // --- Fetch user's votes for the history items ---
+    const userVotesMap: { [key: string]: { score: number } } = {};
+    if (userId && product.tagEditHistory.length > 0) {
+      const historyIds = product.tagEditHistory.map(h => h.id);
+      const votes = await prisma.tagEditVote.findMany({
+        where: {
+          userId: userId,
+          historyId: {
+            in: historyIds,
+          },
+        },
+        select: {
+          historyId: true,
+          score: true,
+        },
+      });
+      votes.forEach(vote => {
+        userVotesMap[vote.historyId] = { score: vote.score };
+      });
+    }
+
+    // --- Augment history with user's vote ---
+    const tagEditHistoryWithVotes = product.tagEditHistory.map(history => ({
+      ...history,
+      userVote: userVotesMap[history.id] || null,
+    }));
+
+    const productData = {
+      ...product,
+      tagEditHistory: tagEditHistoryWithVotes,
+    };
+
     // --- Fetch tag names for history ---
     const tagIdToNameMap: { [key: string]: string } = {};
     if (product.tagEditHistory && product.tagEditHistory.length > 0) {
@@ -75,7 +110,7 @@ export async function GET(request: Request, context: { params: Promise<{ product
     }
 
     // Return the product data along with the tag name map
-    return NextResponse.json({ product, tagIdToNameMap });
+    return NextResponse.json({ product: productData, tagIdToNameMap });
   } catch (error) {
     console.error('Error fetching product:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

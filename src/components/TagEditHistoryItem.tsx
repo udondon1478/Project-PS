@@ -1,14 +1,19 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
+import { cn } from "@/lib/utils";
 
 // Define the types for the props
 interface HistoryEditor {
   id: string;
   name: string | null;
   image: string | null;
+}
+
+interface UserVote {
+  score: number;
 }
 
 interface TagEditHistory {
@@ -21,11 +26,11 @@ interface TagEditHistory {
   comment: string | null;
   score: number;
   createdAt: string;
+  userVote: UserVote | null; // User's vote on this history item
 }
 
 interface TagEditHistoryItemProps {
   history: TagEditHistory;
-  onVote: (historyId: string, score: number) => Promise<void>;
   tagMap: { [key: string]: string };
 }
 
@@ -60,7 +65,58 @@ const TagList: React.FC<{
 };
 
 
-const TagEditHistoryItem: React.FC<TagEditHistoryItemProps> = ({ history, onVote, tagMap }) => {
+const TagEditHistoryItem: React.FC<TagEditHistoryItemProps> = ({ history, tagMap }) => {
+  const [currentScore, setCurrentScore] = useState(history.score);
+  const [currentUserVote, setCurrentUserVote] = useState(history.userVote);
+  const [isVoting, setIsVoting] = useState(false);
+
+  const handleVote = useCallback(async (newScore: 1 | -1) => {
+    if (isVoting) return;
+    setIsVoting(true);
+
+    const previousVote = currentUserVote;
+    const previousScore = currentScore;
+
+    // Optimistic update
+    let optimisticScore = previousScore;
+    if (previousVote) { // If there was a vote
+      if (previousVote.score === newScore) { // If clicking the same button (undo vote)
+        optimisticScore -= newScore;
+        setCurrentUserVote(null);
+      } else { // If changing vote
+        optimisticScore += (newScore - previousVote.score);
+        setCurrentUserVote({ score: newScore });
+      }
+    } else { // If no previous vote
+      optimisticScore += newScore;
+      setCurrentUserVote({ score: newScore });
+    }
+    setCurrentScore(optimisticScore);
+
+    try {
+      const response = await fetch(`/api/tag-edit-history/${history.id}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ score: newScore }),
+      });
+
+      if (!response.ok) {
+        // Revert on failure
+        const errorData = await response.json();
+        console.error("Failed to vote:", errorData.error);
+        setCurrentScore(previousScore);
+        setCurrentUserVote(previousVote);
+      }
+    } catch (err) {
+      console.error("Failed to vote:", err);
+      // Revert on failure
+      setCurrentScore(previousScore);
+      setCurrentUserVote(previousVote);
+    } finally {
+      setIsVoting(false);
+    }
+  }, [history.id, isVoting, currentScore, currentUserVote]);
+
   return (
     <div className="border dark:border-gray-700 p-4 rounded-lg shadow-sm bg-white dark:bg-gray-800/50">
       <div className="flex items-center mb-2">
@@ -105,11 +161,28 @@ const TagEditHistoryItem: React.FC<TagEditHistoryItemProps> = ({ history, onVote
       </div>
 
       <div className="flex items-center mt-3">
-        <span className="font-semibold mr-2">評価: {history.score}</span>
-        <Button variant="outline" size="sm" className="mr-2" onClick={() => onVote(history.id, 1)}>
+        <span className="font-semibold mr-2">評価: {currentScore}</span>
+        <Button
+          variant="outline"
+          size="sm"
+          className={cn(
+            "mr-2",
+            currentUserVote?.score === 1 && "bg-blue-100 dark:bg-blue-900/50 border-blue-400"
+          )}
+          onClick={() => handleVote(1)}
+          disabled={isVoting}
+        >
           👍
         </Button>
-        <Button variant="outline" size="sm" onClick={() => onVote(history.id, -1)}>
+        <Button
+          variant="outline"
+          size="sm"
+          className={cn(
+            currentUserVote?.score === -1 && "bg-blue-100 dark:bg-blue-900/50 border-blue-400"
+          )}
+          onClick={() => handleVote(-1)}
+          disabled={isVoting}
+        >
           👎
         </Button>
       </div>

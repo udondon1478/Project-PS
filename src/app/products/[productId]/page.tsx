@@ -62,6 +62,7 @@ interface ProductDetail {
     comment: string | null;
     score: number;
     createdAt: string; // ISO文字列として取得
+    userVote: { score: number } | null; // ユーザーの投票情報
   }[];
 };
 
@@ -79,6 +80,8 @@ const ProductDetailPage = () => {
   const [isTagEditorOpen, setIsTagEditorOpen] = useState(false);
 
   const fetchProduct = useCallback(async () => {
+    // Note: We don't reset product state here to avoid UI flicker on re-fetch.
+    // The loading state will handle showing a loading indicator.
     setLoading(true);
     setError(null);
     try {
@@ -175,30 +178,6 @@ const ProductDetailPage = () => {
       // TODO: ユーザーへのエラー通知
     }
   };
-
-  const handleVote = async (historyId: string, score: number) => {
-    try {
-      const response = await fetch(`/api/tag-edit-history/${historyId}/vote`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ score }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Error: ${response.status}`);
-      }
-
-      // For simplicity and accuracy, let's just refetch the product data
-      // to get the latest scores.
-      fetchProduct();
-
-    } catch (err) {
-      console.error("Failed to vote:", err);
-      // TODO: Show error to user
-    }
-  };
-
 
  if (loading) {
     return <div className="container mx-auto px-4 py-8 pt-40 text-center">Loading...</div>;
@@ -330,7 +309,6 @@ const ProductDetailPage = () => {
                                 <TagEditHistoryItem
                                   key={history.id}
                                   history={history}
-                                  onVote={handleVote}
                                   tagMap={tagMap}
                                 />
                               ))
