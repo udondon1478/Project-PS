@@ -24,6 +24,20 @@ export async function GET(request: Request, context: { params: Promise<{ product
             },
           },
         },
+        tagEditHistory: {
+          include: {
+            editor: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+              },
+            },
+          },
+          orderBy: {
+            version: 'desc',
+          },
+        },
       },
     });
 
