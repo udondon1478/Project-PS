@@ -76,7 +76,6 @@ const ProductDetailPage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slideCount, setSlideCount] = useState(0);
   const [isTagEditorOpen, setIsTagEditorOpen] = useState(false);
-  const [isHistoryVisible, setIsHistoryVisible] = useState(false); // 履歴表示用のstate
 
   const fetchProduct = useCallback(async () => {
     setLoading(true);
@@ -155,7 +154,7 @@ const ProductDetailPage = () => {
       updateQueryParams(currentTags, newNegativeTags);
     }
   };
-  
+
   const handleTagsUpdate = async (newTags: { id: string; name: string; }[]) => {
     try {
       const response = await fetch(`/api/products/${productId}/tags`, {
@@ -165,7 +164,7 @@ const ProductDetailPage = () => {
       });
 
       if (!response.ok) throw new Error(`Error: ${response.status}`);
-      
+
       await fetchProduct(); // 商品情報を再フェッチ
       setIsTagEditorOpen(false); // モーダルを閉じる
       console.log("Tags updated successfully!");
@@ -188,29 +187,9 @@ const ProductDetailPage = () => {
         throw new Error(errorData.error || `Error: ${response.status}`);
       }
 
-      // Optimistically update the UI
-      setProduct(prevProduct => {
-        if (!prevProduct) return null;
-
-        const newHistory = prevProduct.tagEditHistory.map(h => {
-          if (h.id === historyId) {
-            // This is a simplified update. A more robust solution would
-            // get the new score from the API response.
-            // For now, just refetching the product data is safer.
-            return { ...h, score: h.score + score }; // This is not accurate if user changes vote
-          }
-          return h;
-        });
-
-        // For simplicity and accuracy, let's just refetch the product data
-        // to get the latest scores.
-        fetchProduct();
-
-        return {
-          ...prevProduct,
-          tagEditHistory: newHistory,
-        };
-      });
+      // For simplicity and accuracy, let's just refetch the product data
+      // to get the latest scores.
+      fetchProduct();
 
     } catch (err) {
       console.error("Failed to vote:", err);
@@ -286,21 +265,6 @@ const ProductDetailPage = () => {
               <p className="text-gray-500 dark:text-gray-400">Descriptionはありません。</p>
             )}
           </section>
-
-          {isHistoryVisible && product.tagEditHistory && product.tagEditHistory.length > 0 && (
-            <section className="mb-4">
-              <h2 className="text-xl font-semibold mb-3">タグ編集履歴</h2>
-              <div className="space-y-4">
-                {product.tagEditHistory.map((history) => (
-                  <TagEditHistoryItem
-                    key={history.id}
-                    history={history}
-                    onVote={handleVote}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
         </main>
 
         {/* === 右サイドバー (タグリスト) === */}
@@ -346,9 +310,33 @@ const ProductDetailPage = () => {
                       )}
                     </DialogContent>
                   </Dialog>
-                  <Button variant="outline" className="w-full" onClick={() => setIsHistoryVisible(!isHistoryVisible)}>
-                    {isHistoryVisible ? 'タグ編集履歴を隠す' : 'タグ編集履歴を閲覧'}
-                  </Button>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="w-full" disabled={!product.tagEditHistory || product.tagEditHistory.length === 0}>
+                        タグ編集履歴を閲覧
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
+                      <DialogHeader>
+                        <DialogTitle>タグ編集履歴</DialogTitle>
+                      </DialogHeader>
+                      <ScrollArea className="flex-grow">
+                        <div className="space-y-4 pr-6">
+                          {product.tagEditHistory && product.tagEditHistory.length > 0 ? (
+                            product.tagEditHistory.map((history) => (
+                              <TagEditHistoryItem
+                                key={history.id}
+                                history={history}
+                                onVote={handleVote}
+                              />
+                            ))
+                          ) : (
+                            <p>編集履歴はありません。</p>
+                          )}
+                        </div>
+                      </ScrollArea>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </div>
             ) : (
