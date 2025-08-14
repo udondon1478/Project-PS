@@ -25,15 +25,15 @@ export default async function ProfilePage() {
   return (
     <div className="container mx-auto px-4 py-8 pt-40">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Edit Profile</h1>
+        <h1 className="text-3xl font-bold">プロフィールの編集</h1>
         <Link href={`/users/${user.id}`}>
-          <Button variant="outline">View My Public Profile</Button>
+          <Button variant="outline">公開プロフィールを見る</Button>
         </Link>
       </div>
 
       <div className="grid md:grid-cols-3 gap-8">
         <div className="md:col-span-1">
-          <h2 className="text-xl font-semibold mb-2">Profile Picture</h2>
+          <h2 className="text-xl font-semibold mb-2">プロフィールアイコン</h2>
           {user.image ? (
             <Image
               src={user.image}
@@ -50,7 +50,7 @@ export default async function ProfilePage() {
         </div>
 
         <div className="md:col-span-2">
-           <h2 className="text-xl font-semibold mb-4">Account Details</h2>
+           <h2 className="text-xl font-semibold mb-4">アカウント詳細</h2>
           <ProfileForm user={user} />
         </div>
       </div>

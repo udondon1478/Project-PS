@@ -45,7 +45,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-md">
       <div className="space-y-2">
-        <Label htmlFor="name">Username</Label>
+        <Label htmlFor="name">ユーザー名</Label>
         <Input
           id="name"
           value={name}
@@ -54,7 +54,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="gyazoUrl">New Profile Icon (Gyazo URL)</Label>
+        <Label htmlFor="gyazoUrl">新しいプロフィールアイコンのURL (Gyazo URL)</Label>
         <Input
           id="gyazoUrl"
           placeholder="https://gyazo.com/..."
@@ -62,7 +62,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
           onChange={(e) => setGyazoUrl(e.target.value)}
         />
         <p className="text-sm text-gray-500">
-          Provide a Gyazo page URL to update your profile icon. Leave blank to keep the current icon.
+          GyazoのページURLを指定してプロフィールアイコンを更新します。現在のアイコンを保持するには空白のままにしてください。
         </p>
       </div>
 
@@ -70,7 +70,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
       {success && <p className="text-green-500">{success}</p>}
 
       <Button type="submit" disabled={isLoading}>
-        {isLoading ? 'Saving...' : 'Save Changes'}
+        {isLoading ? 'Saving...' : '変更を保存'}
       </Button>
     </form>
   );

@@ -52,7 +52,7 @@ export default async function UserProfilePage({ params }: Props) {
   }));
 
   return (
-    <div className="container mx-auto p-4 md:p-6">
+    <div className="container mx-auto px-4 py-8 pt-40">
       <div className="flex items-center space-x-4 mb-8">
         {user.image ? (
           <Image
@@ -69,11 +69,11 @@ export default async function UserProfilePage({ params }: Props) {
         )}
         <div>
           <h1 className="text-3xl font-bold">{user.name ?? 'Anonymous User'}</h1>
-          <p className="text-gray-600">Member since {new Date(user.createdAt).toLocaleDateString()}</p>
+          <p className="text-gray-600">アカウント登録日 {new Date(user.createdAt).toLocaleDateString()}</p>
         </div>
       </div>
 
-      <h2 className="text-2xl font-semibold mt-8 border-b pb-2 mb-4">Registered Products</h2>
+      <h2 className="text-2xl font-semibold mt-8 border-b pb-2 mb-4">登録商品</h2>
       <UserProductList products={formattedProducts} />
     </div>
   );
