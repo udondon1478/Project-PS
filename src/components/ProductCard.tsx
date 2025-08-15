@@ -1,18 +1,54 @@
-import React from 'react';
-import Image from 'next/image';
-import PriceDisplay from './PriceDisplay'; // PriceDisplayコンポーネントをインポート
+"use client";
 
-import { Product } from "@/types/product"; // Product型をインポート
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
+import PriceDisplay from './PriceDisplay';
+import { Product } from "@/types/product";
+import { Heart } from 'lucide-react'; // lucide-reactからHeartアイコンをインポート
 
 interface ProductCardProps {
   product: Product;
-  showLikeButton?: boolean; // いいねボタン表示の制御用props
+  showLikeButton?: boolean;
 }
 
 const ProductCard = ({ product, showLikeButton = false }: ProductCardProps) => {
+  const [isLiked, setIsLiked] = useState(product.isLiked || false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    setIsLiked(product.isLiked || false);
+  }, [product.isLiked]);
+
+  const handleLikeClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault(); // aタグの遷移を防ぐ
+    if (isProcessing) return;
+
+    setIsProcessing(true);
+    const originalIsLiked = isLiked;
+    setIsLiked(!originalIsLiked); // Optimistic update
+
+    try {
+      const method = !originalIsLiked ? 'POST' : 'DELETE';
+      const response = await fetch(`/api/products/${product.id}/like`, {
+        method: method,
+      });
+
+      if (!response.ok) {
+        // If the API call fails, revert the state
+        setIsLiked(originalIsLiked);
+        console.error('Failed to update like status');
+      }
+    } catch (error) {
+      setIsLiked(originalIsLiked);
+      console.error('An error occurred:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <div className="border rounded-lg overflow-hidden shadow-lg">
-      <div className="relative w-full h-89">
+      <a href={`/products/${product.id}`} className="block relative w-full h-89">
         {product.mainImageUrl ? (
           <Image
             src={product.mainImageUrl}
@@ -25,7 +61,7 @@ const ProductCard = ({ product, showLikeButton = false }: ProductCardProps) => {
             No Image
           </div>
         )}
-      </div>
+      </a>
       <div className="p-4">
         <div className="flex items-start justify-between w-full h-10 mb-2">
           <a href={`/products/${product.id}`} className="flex-grow overflow-hidden"
@@ -39,10 +75,16 @@ const ProductCard = ({ product, showLikeButton = false }: ProductCardProps) => {
             </h3>
           </a>
           {showLikeButton && (
-            <button className="bg-white rounded-full p-1 shadow flex-shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
+            <button
+              onClick={handleLikeClick}
+              disabled={isProcessing}
+              className="bg-white rounded-full p-1 shadow flex-shrink-0 disabled:opacity-50"
+              aria-label={isLiked ? "Unlike this product" : "Like this product"}
+            >
+              <Heart
+                className={`h-5 w-5 ${isLiked ? 'text-red-500' : 'text-gray-400'}`}
+                fill={isLiked ? 'currentColor' : 'none'}
+              />
             </button>
           )}
         </div>

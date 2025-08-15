@@ -1,10 +1,12 @@
 export interface Product {
   id: string;
-  title: string;
+  title:string;
   lowPrice: number;
   highPrice: number;
   mainImageUrl: string | null;
   tags: string[];
+  isLiked?: boolean;
+  isOwned?: boolean;
   ageRatingId?: string | null;
   categoryId?: string | null;
   variations?: {

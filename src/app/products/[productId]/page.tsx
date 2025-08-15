@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { useParams, useRouter, useSearchParams } from 'next/navigation'; // useRouterとuseSearchParamsを追加
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import {
   Carousel,
@@ -20,10 +20,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import TagEditor from "@/components/TagEditor"; // TagEditorコンポーネントをインポート
-import TagEditHistoryItem from "@/components/TagEditHistoryItem"; // TagEditHistoryItemコンポーネントをインポート
-import { ScrollArea } from "@/components/ui/scroll-area"; // ScrollAreaをインポート
-import { PlusCircle, MinusCircle, Info } from 'lucide-react'; // アイコンをインポート
+import TagEditor from "@/components/TagEditor";
+import TagEditHistoryItem from "@/components/TagEditHistoryItem";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { PlusCircle, MinusCircle, Info, Heart, Check } from 'lucide-react';
 
 interface ProductDetail {
   id: string;
@@ -31,6 +31,8 @@ interface ProductDetail {
   boothEnUrl: string;
   title: string;
   description: string | null;
+  isLiked?: boolean;
+  isOwned?: boolean;
   images: {
     imageUrl: string;
     caption: string | null;
@@ -79,6 +81,12 @@ const ProductDetailPage = () => {
   const [slideCount, setSlideCount] = useState(0);
   const [isTagEditorOpen, setIsTagEditorOpen] = useState(false);
 
+  // Like and Own states
+  const [isLiked, setIsLiked] = useState(false);
+  const [isOwned, setIsOwned] = useState(false);
+  const [isProcessingLike, setIsProcessingLike] = useState(false);
+  const [isProcessingOwn, setIsProcessingOwn] = useState(false);
+
   const fetchProduct = useCallback(async () => {
     // Note: We don't reset product state here to avoid UI flicker on re-fetch.
     // The loading state will handle showing a loading indicator.
@@ -91,6 +99,8 @@ const ProductDetailPage = () => {
       }
       const { product: productData, tagIdToNameMap } = await response.json();
       setProduct(productData);
+      setIsLiked(productData.isLiked || false);
+      setIsOwned(productData.isOwned || false);
       setTagMap(tagIdToNameMap);
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -179,6 +189,50 @@ const ProductDetailPage = () => {
     }
   };
 
+  const handleLikeToggle = async () => {
+    if (isProcessingLike) return;
+    setIsProcessingLike(true);
+    const originalIsLiked = isLiked;
+    setIsLiked(!originalIsLiked);
+
+    try {
+      const response = await fetch(`/api/products/${productId}/like`, {
+        method: !originalIsLiked ? 'POST' : 'DELETE',
+      });
+      if (!response.ok) {
+        setIsLiked(originalIsLiked);
+        // TODO: Show error toast
+      }
+    } catch (error) {
+      setIsLiked(originalIsLiked);
+      // TODO: Show error toast
+    } finally {
+      setIsProcessingLike(false);
+    }
+  };
+
+  const handleOwnToggle = async () => {
+    if (isProcessingOwn) return;
+    setIsProcessingOwn(true);
+    const originalIsOwned = isOwned;
+    setIsOwned(!originalIsOwned);
+
+    try {
+      const response = await fetch(`/api/products/${productId}/own`, {
+        method: !originalIsOwned ? 'POST' : 'DELETE',
+      });
+      if (!response.ok) {
+        setIsOwned(originalIsOwned);
+        // TODO: Show error toast
+      }
+    } catch (error) {
+      setIsOwned(originalIsOwned);
+      // TODO: Show error toast
+    } finally {
+      setIsProcessingOwn(false);
+    }
+  };
+
  if (loading) {
     return <div className="container mx-auto px-4 py-8 pt-40 text-center">Loading...</div>;
   }
@@ -251,6 +305,26 @@ const ProductDetailPage = () => {
         {/* === 右サイドバー (タグリスト) === */}
         <aside className="lg:col-span-3">
           <div className="sticky top-32">
+            <div className="space-y-2 mb-6">
+              <Button
+                onClick={handleLikeToggle}
+                disabled={isProcessingLike}
+                variant={isLiked ? "default" : "outline"}
+                className="w-full"
+              >
+                <Heart className="mr-2 h-4 w-4" fill={isLiked ? "currentColor" : "none"} />
+                {isLiked ? '欲しいものから外す' : '欲しいものに追加'}
+              </Button>
+              <Button
+                onClick={handleOwnToggle}
+                disabled={isProcessingOwn}
+                variant={isOwned ? "default" : "outline"}
+                className="w-full"
+              >
+                <Check className="mr-2 h-4 w-4" />
+                {isOwned ? '所有済みから外す' : '所有済みにする'}
+              </Button>
+            </div>
             <h2 className="text-xl font-semibold mb-4">タグ</h2>
             {product.productTags && product.productTags.length > 0 ? (
               <div className="flex flex-col h-full">

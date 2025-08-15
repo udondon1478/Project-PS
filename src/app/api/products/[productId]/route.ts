@@ -27,6 +27,12 @@ export async function GET(request: Request, context: { params: Promise<{ product
             },
           },
         },
+        likes: {
+          where: { userId: userId ?? '' },
+        },
+        productOwners: {
+          where: { userId: userId ?? '' },
+        },
         tagEditHistory: {
           include: {
             editor: {
@@ -77,6 +83,8 @@ export async function GET(request: Request, context: { params: Promise<{ product
 
     const productData = {
       ...product,
+      isLiked: product.likes.length > 0,
+      isOwned: product.productOwners.length > 0,
       tagEditHistory: tagEditHistoryWithVotes,
     };
 
