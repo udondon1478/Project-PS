@@ -50,157 +50,80 @@ export async function GET(request: Request) {
     const negativeTagNames = negativeTagsParam ? negativeTagsParam.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : [];
     const featureTagIds = featureTagIdsParam ? featureTagIdsParam.split(',').map(id => id.trim()).filter(id => id.length > 0) : [];
 
-    const whereConditions: Prisma.ProductWhereInput[] = [];
+    const andConditions: Prisma.ProductWhereInput[] = [];
 
     if (filterParam === 'liked' && userId) {
-      whereConditions.push({
-        id: {
-          in: userLikedProducts,
-        },
-      });
-    }
-
-    if (filterParam === 'owned' && userId) {
-      whereConditions.push({
-        id: {
-          in: userOwnedProducts,
-        },
-      });
+      andConditions.push({ id: { in: userLikedProducts } });
+    } else if (filterParam === 'owned' && userId) {
+      andConditions.push({ id: { in: userOwnedProducts } });
     }
 
     let ageRatingTagIds: string[] = [];
     if (ageRatingTagsParam) {
       const ageRatingTags = ageRatingTagsParam.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
-      const tags = await prisma.tag.findMany({
-        where: {
-          name: {
-            in: ageRatingTags,
-          },
-          tagCategory: {
-            name: "age_rating",
-          },
-        },
-        select: {
-          id: true,
-        },
+      if (ageRatingTags.length > 0) {
+        const tags = await prisma.tag.findMany({
+          where: { name: { in: ageRatingTags }, tagCategory: { name: "age_rating" } },
+          select: { id: true },
+        });
+        ageRatingTagIds = tags.map(tag => tag.id);
+      }
+    }
+
+    if (ageRatingTagIds.length > 0) {
+      andConditions.push({ productTags: { some: { tagId: { in: ageRatingTagIds } } } });
+    } else {
+      const allAgeTag = await prisma.tag.findFirst({
+        where: { name: "全年齢", tagCategory: { name: "age_rating" } },
+        select: { id: true },
       });
-      ageRatingTagIds = tags.map(tag => tag.id);
+      if (allAgeTag) {
+        andConditions.push({ productTags: { some: { tagId: allAgeTag.id } } });
+      }
+    }
+
+    if (tagNames.length > 0) {
+      andConditions.push(...tagNames.map(tagName => ({
+        productTags: { some: { tag: { name: tagName } } }
+      })));
+    }
+
+    if (negativeTagNames.length > 0) {
+      andConditions.push(...negativeTagNames.map(negativeTagName => ({
+        productTags: { none: { tag: { name: negativeTagName } } }
+      })));
     }
 
     const tagIdsToFilter = [...featureTagIds];
     if (categoryTagId) {
       tagIdsToFilter.push(categoryTagId);
     }
-
-    if (ageRatingTagIds.length > 0) {
-      whereConditions.push({
-        productTags: {
-          some: {
-            tagId: {
-              in: ageRatingTagIds,
-            },
-          },
-        },
-      });
-    } else {
-      const allAgeTag = await prisma.tag.findFirst({
-        where: {
-          name: "全年齢",
-          tagCategory: {
-            name: "age_rating",
-          },
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      if (allAgeTag) {
-        whereConditions.push({
-          productTags: {
-            some: {
-              tagId: allAgeTag.id,
-            },
-          },
-        });
-      }
-    }
-
-    if (tagNames.length > 0) {
-      whereConditions.push({
-        AND: tagNames.map(tagName => ({
-          productTags: {
-            some: {
-              tag: {
-                name: tagName
-              }
-            }
-          }
-        }))
-      });
-    }
-
-    if (negativeTagNames.length > 0) {
-      whereConditions.push({
-        AND: negativeTagNames.map(negativeTagName => ({
-          productTags: {
-            none: {
-              tag: {
-                name: negativeTagName
-              }
-            }
-          }
-        }))
-      });
-    }
-
     if (tagIdsToFilter.length > 0) {
-       whereConditions.push({
-         AND: tagIdsToFilter.map(tagId => ({
-           productTags: {
-             some: {
-               tagId: tagId
-             }
-           }
-         }))
-       });
+      andConditions.push(...tagIdsToFilter.map(tagId => ({
+        productTags: { some: { tagId: tagId } }
+      })));
     }
 
-    if (minPrice !== undefined || maxPrice !== undefined) {
-      const priceCondition: Prisma.ProductWhereInput = {};
-      if (minPrice !== undefined) {
-        priceCondition.highPrice = { gte: minPrice };
-      }
-      if (maxPrice !== undefined) {
-        if (maxPrice !== 100000) {
-          priceCondition.lowPrice = { lte: maxPrice };
-        }
-      }
-      whereConditions.push(priceCondition);
+    const priceCondition: Prisma.ProductWhereInput = {};
+    if (minPrice !== undefined) {
+      priceCondition.highPrice = { gte: minPrice };
     }
+    if (maxPrice !== undefined && maxPrice !== 100000) {
+      priceCondition.lowPrice = { lte: maxPrice };
+    }
+    if (Object.keys(priceCondition).length > 0) {
+      andConditions.push(priceCondition);
+    }
+
+    const where: Prisma.ProductWhereInput = andConditions.length > 0 ? { AND: andConditions } : {};
 
     const products = await prisma.product.findMany({
-      where: whereConditions.length > 0 ? { AND: whereConditions } : {},
-      orderBy: {
-        createdAt: 'desc',
-      },
+      where,
+      orderBy: { createdAt: 'desc' },
       include: {
-        productTags: {
-          include: {
-            tag: true,
-          },
-        },
-        images: {
-          where: {
-            isMain: true,
-          },
-          take: 1,
-        },
-        variations: {
-          orderBy: {
-            order: 'asc',
-          },
-        },
+        productTags: { include: { tag: true } },
+        images: { where: { isMain: true }, take: 1 },
+        variations: { orderBy: { order: 'asc' } },
       },
     });
 
