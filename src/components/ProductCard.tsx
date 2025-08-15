@@ -4,37 +4,39 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import PriceDisplay from './PriceDisplay';
 import { Product } from "@/types/product";
-import { Heart } from 'lucide-react'; // lucide-reactからHeartアイコンをインポート
+import { Heart, Archive } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
   showLikeButton?: boolean;
+  showOwnButton?: boolean;
 }
 
-const ProductCard = ({ product, showLikeButton = false }: ProductCardProps) => {
+const ProductCard = ({ product, showLikeButton = false, showOwnButton = false }: ProductCardProps) => {
   const [isLiked, setIsLiked] = useState(product.isLiked || false);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isOwned, setIsOwned] = useState(product.isOwned || false);
+  const [isProcessingLike, setIsProcessingLike] = useState(false);
+  const [isProcessingOwn, setIsProcessingOwn] = useState(false);
 
   useEffect(() => {
     setIsLiked(product.isLiked || false);
   }, [product.isLiked]);
 
-  const handleLikeClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault(); // aタグの遷移を防ぐ
-    if (isProcessing) return;
+  useEffect(() => {
+    setIsOwned(product.isOwned || false);
+  }, [product.isOwned]);
 
-    setIsProcessing(true);
+  const handleLikeClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    if (isProcessingLike) return;
+    setIsProcessingLike(true);
     const originalIsLiked = isLiked;
-    setIsLiked(!originalIsLiked); // Optimistic update
+    setIsLiked(!originalIsLiked);
 
     try {
       const method = !originalIsLiked ? 'POST' : 'DELETE';
-      const response = await fetch(`/api/products/${product.id}/like`, {
-        method: method,
-      });
-
+      const response = await fetch(`/api/products/${product.id}/like`, { method });
       if (!response.ok) {
-        // If the API call fails, revert the state
         setIsLiked(originalIsLiked);
         console.error('Failed to update like status');
       }
@@ -42,7 +44,29 @@ const ProductCard = ({ product, showLikeButton = false }: ProductCardProps) => {
       setIsLiked(originalIsLiked);
       console.error('An error occurred:', error);
     } finally {
-      setIsProcessing(false);
+      setIsProcessingLike(false);
+    }
+  };
+
+  const handleOwnClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    if (isProcessingOwn) return;
+    setIsProcessingOwn(true);
+    const originalIsOwned = isOwned;
+    setIsOwned(!originalIsOwned);
+
+    try {
+      const method = !originalIsOwned ? 'POST' : 'DELETE';
+      const response = await fetch(`/api/products/${product.id}/own`, { method });
+      if (!response.ok) {
+        setIsOwned(originalIsOwned);
+        console.error('Failed to update own status');
+      }
+    } catch (error) {
+      setIsOwned(originalIsOwned);
+      console.error('An error occurred:', error);
+    } finally {
+      setIsProcessingOwn(false);
     }
   };
 
@@ -65,28 +89,39 @@ const ProductCard = ({ product, showLikeButton = false }: ProductCardProps) => {
       <div className="p-4">
         <div className="flex items-start justify-between w-full h-10 mb-2">
           <a href={`/products/${product.id}`} className="flex-grow overflow-hidden"
-             style={{
-               display: '-webkit-box',
-               WebkitLineClamp: 2,
-               WebkitBoxOrient: 'vertical',
-             }}>
+             style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
             <h3 className="font-medium line-clamp-2 hover:underline">
               {product.title}
             </h3>
           </a>
-          {showLikeButton && (
-            <button
-              onClick={handleLikeClick}
-              disabled={isProcessing}
-              className="bg-white rounded-full p-1 shadow flex-shrink-0 disabled:opacity-50"
-              aria-label={isLiked ? "Unlike this product" : "Like this product"}
-            >
-              <Heart
-                className={`h-5 w-5 ${isLiked ? 'text-red-500' : 'text-gray-400'}`}
-                fill={isLiked ? 'currentColor' : 'none'}
-              />
-            </button>
-          )}
+          <div className="flex items-center space-x-1 flex-shrink-0">
+            {showOwnButton && (
+              <button
+                onClick={handleOwnClick}
+                disabled={isProcessingOwn}
+                className="bg-white rounded-full p-1 shadow disabled:opacity-50"
+                aria-label={isOwned ? "Remove from owned" : "Add to owned"}
+              >
+                <Archive
+                  className={`h-5 w-5 ${isOwned ? 'text-blue-500' : 'text-gray-400'}`}
+                  fill={isOwned ? 'currentColor' : 'none'}
+                />
+              </button>
+            )}
+            {showLikeButton && (
+              <button
+                onClick={handleLikeClick}
+                disabled={isProcessingLike}
+                className="bg-white rounded-full p-1 shadow disabled:opacity-50"
+                aria-label={isLiked ? "Unlike this product" : "Like this product"}
+              >
+                <Heart
+                  className={`h-5 w-5 ${isLiked ? 'text-red-500' : 'text-gray-400'}`}
+                  fill={isLiked ? 'currentColor' : 'none'}
+                />
+              </button>
+            )}
+          </div>
         </div>
         <div className="flex flex-wrap gap-1 mb-2">
           {product.tags.map((tag, index) => (
