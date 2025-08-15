@@ -72,7 +72,7 @@ export default async function LikesPage() {
     <div className="container mx-auto px-4 py-8 pt-40">
       <h1 className="text-2xl font-bold mb-6">いいねした商品</h1>
       {products.length > 0 ? (
-        <ProductGrid products={products} showLikeButton={true} />
+        <ProductGrid products={products} showLikeButton={true} showOwnButton={true} />
       ) : (
         <p>いいねした商品はありません。</p>
       )}
