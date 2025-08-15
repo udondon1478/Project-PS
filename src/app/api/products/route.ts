@@ -44,11 +44,29 @@ export async function GET(request: Request) {
       maxPrice = 100000;
     }
 
+    const filterParam = searchParams.get('filter');
+
     const tagNames = tagsParam ? tagsParam.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : [];
     const negativeTagNames = negativeTagsParam ? negativeTagsParam.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : [];
     const featureTagIds = featureTagIdsParam ? featureTagIdsParam.split(',').map(id => id.trim()).filter(id => id.length > 0) : [];
 
     const whereConditions: Prisma.ProductWhereInput[] = [];
+
+    if (filterParam === 'liked' && userId) {
+      whereConditions.push({
+        id: {
+          in: userLikedProducts,
+        },
+      });
+    }
+
+    if (filterParam === 'owned' && userId) {
+      whereConditions.push({
+        id: {
+          in: userOwnedProducts,
+        },
+      });
+    }
 
     let ageRatingTagIds: string[] = [];
     if (ageRatingTagsParam) {
