@@ -103,8 +103,7 @@ const ProductCard = ({ product, showLikeButton = false, showOwnButton = false }:
                 aria-label={isOwned ? "Remove from owned" : "Add to owned"}
               >
                 <Archive
-                  className={`h-5 w-5 ${isOwned ? 'text-blue-500' : 'text-gray-400'}`}
-                  fill={isOwned ? 'currentColor' : 'none'}
+                  className={`h-5 w-5 ${isOwned ? 'text-blue-600 fill-blue-200' : 'text-gray-400'}`}
                 />
               </button>
             )}
