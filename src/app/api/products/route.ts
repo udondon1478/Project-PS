@@ -161,6 +161,29 @@ export async function GET(request: Request) {
       whereConditions.push(priceCondition);
     }
 
+    const likedParam = searchParams.get('liked');
+    const ownedParam = searchParams.get('owned');
+
+    if (userId && likedParam === 'true') {
+      whereConditions.push({
+        likes: {
+          some: {
+            userId: userId,
+          },
+        },
+      });
+    }
+
+    if (userId && ownedParam === 'true') {
+      whereConditions.push({
+        productOwners: {
+          some: {
+            userId: userId,
+          },
+        },
+      });
+    }
+
     const products = await prisma.product.findMany({
       where: whereConditions.length > 0 ? { AND: whereConditions } : {},
       orderBy: {
