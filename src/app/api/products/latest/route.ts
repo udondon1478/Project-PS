@@ -1,15 +1,35 @@
 import { NextResponse } from 'next/server';
-import { Prisma } from '@prisma/client'; // Prismaをインポート
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib_prisma/prisma';
-
+import { auth } from '@/auth';
 
 export async function GET() {
   try {
+    const session = await auth();
+    const userId = session?.user?.id;
+
+    let userLikedProducts: string[] = [];
+    let userOwnedProducts: string[] = [];
+
+    if (userId) {
+      const liked = await prisma.productLike.findMany({
+        where: { userId },
+        select: { productId: true },
+      });
+      userLikedProducts = liked.map((p) => p.productId);
+
+      const owned = await prisma.productOwner.findMany({
+        where: { userId },
+        select: { productId: true },
+      });
+      userOwnedProducts = owned.map((p) => p.productId);
+    }
+
     const allAgeTag = await prisma.tag.findFirst({
       where: {
-        name: "全年齢",
+        name: '全年齢',
         tagCategory: {
-          name: "age_rating",
+          name: 'age_rating',
         },
       },
       select: {
@@ -42,7 +62,7 @@ export async function GET() {
           select: {
             imageUrl: true,
           },
-          take: 1, // Assuming only one main image per product
+          take: 1,
         },
         productTags: {
           include: {
@@ -52,29 +72,30 @@ export async function GET() {
               },
             },
           },
-          take: 7, // Limit to 7 tags
+          take: 7,
         },
-        variations: { // バリエーション情報を含める
+        variations: {
           orderBy: {
-            order: 'asc', // 表示順序でソート
+            order: 'asc',
           },
         },
       },
     });
 
-    // Format the response data
     const formattedProducts = products.map((product) => ({
       id: product.id,
       title: product.title,
       lowPrice: product.lowPrice,
-      highPrice: product.highPrice, // highPriceも追加
+      highPrice: product.highPrice,
       mainImageUrl: product.images.length > 0 ? product.images[0].imageUrl : null,
       tags: product.productTags.map((pt) => pt.tag.name),
-      variations: product.variations.map(v => ({ // バリエーション情報を追加
+      variations: product.variations.map((v) => ({
         id: v.id,
         name: v.name,
         price: v.price,
       })),
+      isLiked: userId ? userLikedProducts.includes(product.id) : false,
+      isOwned: userId ? userOwnedProducts.includes(product.id) : false,
     }));
 
     return NextResponse.json(formattedProducts);

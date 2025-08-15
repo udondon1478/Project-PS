@@ -1,45 +1,54 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient, Prisma } from '@prisma/client'; // Prismaをインポート
-
-const prisma = new PrismaClient({
-  log: ['query', 'info', 'warn', 'error'], // クエリログを有効化
-});
+import { Prisma } from '@prisma/client';
+import { prisma } from '@/lib_prisma/prisma';
+import { auth } from '@/auth';
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
+    const session = await auth();
+    const userId = session?.user?.id;
 
-    console.log('All searchParams entries:'); // searchParamsの全エントリーをログ出力
-    for (const [key, value] of searchParams.entries()) {
-      console.log(`  ${key}: ${value}`);
+    let userLikedProducts: string[] = [];
+    let userOwnedProducts: string[] = [];
+
+    if (userId) {
+      const liked = await prisma.productLike.findMany({
+        where: { userId },
+        select: { productId: true },
+      });
+      userLikedProducts = liked.map((p) => p.productId);
+
+      const owned = await prisma.productOwner.findMany({
+        where: { userId },
+        select: { productId: true },
+      });
+      userOwnedProducts = owned.map((p) => p.productId);
     }
 
+    const { searchParams } = new URL(request.url);
+
     const tagsParam = searchParams.get('tags');
-    const negativeTagsParam = searchParams.get('negativeTags'); // マイナス検索タグを取得
-    console.log('Raw negativeTagsParam (get):', negativeTagsParam); // get()で取得したRaw値をログ出力
+    const negativeTagsParam = searchParams.get('negativeTags');
+    const ageRatingTagsParam = searchParams.get('ageRatingTags');
+    const categoryTagId = searchParams.get('categoryTagId');
+    const featureTagIdsParam = searchParams.get('featureTagIds');
+    const minPriceParam = searchParams.get('minPrice');
+    const maxPriceParam = searchParams.get('maxPrice');
+    const isHighPriceParam = searchParams.get('isHighPrice');
 
-    const ageRatingTagsParam = searchParams.get('ageRatingTags'); // 対象年齢タグ名を取得
-    const categoryTagId = searchParams.get('categoryTagId'); // カテゴリータグIDを取得
-    const featureTagIdsParam = searchParams.get('featureTagIds'); // 主要機能タグIDを取得
-    const minPriceParam = searchParams.get('minPrice'); // 最小価格を取得
-    const maxPriceParam = searchParams.get('maxPrice'); // 最大価格を取得
-    const isHighPriceParam = searchParams.get('isHighPrice'); // 高額商品フラグを取得
+    let minPrice = minPriceParam ? parseInt(minPriceParam) : undefined;
+    let maxPrice = maxPriceParam ? parseInt(maxPriceParam) : undefined;
 
-    let minPrice = minPriceParam ? parseInt(minPriceParam) : undefined; // 数値に変換、無効な場合はundefined
-    let maxPrice = maxPriceParam ? parseInt(maxPriceParam) : undefined; // 数値に変換、無効な場合はundefined
-
-    // 高額商品フィルタリングが有効な場合、価格範囲を上書き
     if (isHighPriceParam === 'true') {
       minPrice = 10000;
-      maxPrice = 100000; // 100000+ を示す値として設定
+      maxPrice = 100000;
     }
 
     const tagNames = tagsParam ? tagsParam.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : [];
-    const negativeTagNames = negativeTagsParam ? negativeTagsParam.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : []; // マイナス検索タグ名をパース
+    const negativeTagNames = negativeTagsParam ? negativeTagsParam.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : [];
     const featureTagIds = featureTagIdsParam ? featureTagIdsParam.split(',').map(id => id.trim()).filter(id => id.length > 0) : [];
 
-
-    const whereConditions: Prisma.ProductWhereInput[] = []; // 型を修正
+    const whereConditions: Prisma.ProductWhereInput[] = [];
 
     let ageRatingTagIds: string[] = [];
     if (ageRatingTagsParam) {
@@ -65,7 +74,6 @@ export async function GET(request: Request) {
       tagIdsToFilter.push(categoryTagId);
     }
 
-    // 年齢制限タグのフィルタリングロジック
     if (ageRatingTagIds.length > 0) {
       whereConditions.push({
         productTags: {
@@ -77,7 +85,6 @@ export async function GET(request: Request) {
         },
       });
     } else {
-      // 年齢制限タグが指定されていない場合、デフォルトで「全年齢」のみを表示
       const allAgeTag = await prisma.tag.findFirst({
         where: {
           name: "全年齢",
@@ -101,8 +108,6 @@ export async function GET(request: Request) {
       }
     }
 
-
-    // 通常タグ名によるフィルタリング (手動入力されたタグ)
     if (tagNames.length > 0) {
       whereConditions.push({
         AND: tagNames.map(tagName => ({
@@ -117,12 +122,11 @@ export async function GET(request: Request) {
       });
     }
 
-    // マイナス検索タグ名によるフィルタリング
     if (negativeTagNames.length > 0) {
       whereConditions.push({
         AND: negativeTagNames.map(negativeTagName => ({
           productTags: {
-            none: { // noneを使用して指定タグを含まない商品を検索
+            none: {
               tag: {
                 name: negativeTagName
               }
@@ -132,7 +136,6 @@ export async function GET(request: Request) {
       });
     }
 
-    // タグIDによるフィルタリング (カテゴリー、主要機能)
     if (tagIdsToFilter.length > 0) {
        whereConditions.push({
          AND: tagIdsToFilter.map(tagId => ({
@@ -145,26 +148,23 @@ export async function GET(request: Request) {
        });
     }
 
-    // 価格帯によるフィルタリング
     if (minPrice !== undefined || maxPrice !== undefined) {
       const priceCondition: Prisma.ProductWhereInput = {};
       if (minPrice !== undefined) {
-        priceCondition.highPrice = { gte: minPrice }; // highPriceが最小価格以上
+        priceCondition.highPrice = { gte: minPrice };
       }
       if (maxPrice !== undefined) {
-        if (maxPrice !== 100000) { // 100000+ ではない場合のみlowPriceの上限を適用
+        if (maxPrice !== 100000) {
           priceCondition.lowPrice = { lte: maxPrice };
         }
-        // maxPriceが100000の場合は、lowPriceの上限は設定しない（highPriceのgteのみで十分）
       }
       whereConditions.push(priceCondition);
     }
 
-
     const products = await prisma.product.findMany({
       where: whereConditions.length > 0 ? { AND: whereConditions } : {},
-      orderBy: { // 並び順を追加
-        createdAt: 'desc', // 作成日時の降順
+      orderBy: {
+        createdAt: 'desc',
       },
       include: {
         productTags: {
@@ -190,24 +190,22 @@ export async function GET(request: Request) {
       id: product.id,
       title: product.title,
       lowPrice: product.lowPrice,
-      highPrice: product.highPrice, // highPriceも追加
+      highPrice: product.highPrice,
       mainImageUrl: product.images.length > 0 ? product.images[0].imageUrl : null,
       tags: product.productTags.map(pt => pt.tag.name),
-      variations: product.variations.map(v => ({ // バリエーション情報を追加
+      variations: product.variations.map(v => ({
         id: v.id,
         name: v.name,
         price: v.price,
       })),
+      isLiked: userId ? userLikedProducts.includes(product.id) : false,
+      isOwned: userId ? userOwnedProducts.includes(product.id) : false,
     }));
-
-    console.log(`検索タグ: ${tagNames.join(',')}, マイナス検索タグ: ${negativeTagNames.join(',')}, 検索結果数: ${formattedProducts.length}`); // ログにマイナス検索タグを追加
 
     return NextResponse.json(formattedProducts);
 
   } catch (error) {
     console.error('商品検索APIエラー:', error);
     return NextResponse.json({ error: '商品の取得に失敗しました' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }
