@@ -15,6 +15,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
 import React from 'react';
 import ProductSearch from '@/components/search/ProductSearch'; // Import ProductSearch
@@ -81,9 +87,22 @@ export default function Header() {
               <Link href="/register-item">
                 <Button variant="ghost" size="sm">商品登録</Button>
               </Link>
-              <Link href="/profile">
-                <Button variant="ghost" size="sm">プロフィール</Button>
-              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">プロフィール</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem>
+                    <Link href="/profile">プロフィール編集</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Link href="/profile/likes">いいねした商品</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Link href="/profile/owned">所有済み商品</Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Link href="/" className="flex items-center">
                 <Image src={(theme === 'dark' || (theme === 'system' && systemTheme === 'dark')) ? "/pslogo-white.svg" : "/pslogo.svg"} alt="PolySeek Logo" width={24} height={24} className="h-6 w-auto" />
               </Link>
@@ -131,9 +150,22 @@ export default function Header() {
               <Link href="/register-item">
                 <Button variant="ghost" size="sm">商品登録</Button>
               </Link>
-              <Link href="/profile">
-                <Button variant="ghost" size="sm">プロフィール</Button>
-              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">プロフィール</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem>
+                    <Link href="/profile">プロフィール編集</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Link href="/profile/likes">いいねした商品</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Link href="/profile/owned">所有済み商品</Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button variant="ghost" size="sm" onClick={() => signOut()}>
                 ログアウト
               </Button>
