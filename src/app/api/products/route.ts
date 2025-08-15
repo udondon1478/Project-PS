@@ -12,13 +12,13 @@ export async function GET(request: Request) {
     let userOwnedProducts: string[] = [];
 
     if (userId) {
-      const liked = await prisma.userLikedProduct.findMany({
+      const liked = await prisma.productLike.findMany({
         where: { userId },
         select: { productId: true },
       });
       userLikedProducts = liked.map((p) => p.productId);
 
-      const owned = await prisma.userOwnedProduct.findMany({
+      const owned = await prisma.productOwner.findMany({
         where: { userId },
         select: { productId: true },
       });
