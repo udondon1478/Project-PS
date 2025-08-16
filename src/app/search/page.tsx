@@ -2,7 +2,7 @@ import React from "react";
 import ProductGrid from "@/components/ProductGrid";
 import { Product } from "@/types/product";
 import { Metadata } from 'next';
-import { prisma } from '@/lib/prisma'; // Prismaクライアントをインポート
+import { prisma } from '@/lib_prisma/prisma'; // Prismaクライアントをインポート
 import { auth } from '@/auth'; // authヘルパーをインポート
 import { Prisma } from '@prisma/client'; // Prismaの型をインポート
 
