@@ -24,6 +24,8 @@ import TagEditor from "@/components/TagEditor";
 import TagEditHistoryItem from "@/components/TagEditHistoryItem";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PlusCircle, MinusCircle, Info, Heart, Check } from 'lucide-react';
+import { TagDescriptionEditor } from '@/components/TagDescriptionEditor';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ProductDetail {
   id: string;
@@ -48,6 +50,7 @@ interface ProductDetail {
     tag: { // タグ情報
       id: string;
       name: string;
+      description: string | null;
       tagCategoryId: string;
       tagCategory: { // タグカテゴリ情報
         id: string;
@@ -85,6 +88,8 @@ const ProductDetailPage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slideCount, setSlideCount] = useState(0);
   const [isTagEditorOpen, setIsTagEditorOpen] = useState(false);
+  const [isDescriptionEditorOpen, setIsDescriptionEditorOpen] = useState(false);
+  const [selectedTag, setSelectedTag] = useState<ProductDetail['productTags'][0]['tag'] | null>(null);
 
   // Like and Own states
   const [isLiked, setIsLiked] = useState(false);
@@ -138,6 +143,11 @@ const ProductDetailPage = () => {
 
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const handleEditDescription = (tag: ProductDetail['productTags'][0]['tag']) => {
+    setSelectedTag(tag);
+    setIsDescriptionEditorOpen(true);
+  };
 
   const updateQueryParams = useCallback((newTags: string[], newNegativeTags: string[]) => {
     const currentParams = new URLSearchParams(searchParams.toString());
@@ -348,85 +358,102 @@ const ProductDetailPage = () => {
               </Button>
             </div>
             <h2 className="text-xl font-semibold mb-4">タグ</h2>
-            {product.productTags && product.productTags.length > 0 ? (
-              <div className="flex flex-col h-full">
-                <ScrollArea className="flex-grow h-[calc(100vh-350px)] w-full rounded-md border dark:border-gray-700 bg-white dark:bg-gray-800/50">
-                  <div className="p-2">
-                    {product.productTags.map(({ tag }) => (
-                      <div key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-accent dark:hover:bg-gray-700/50 transition-colors">
-                        <span className="text-sm font-medium pr-2">{tag.name}</span>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/50" onClick={() => addNegativeTagToSearch(tag.name)}>
-                            <MinusCircle size={16} />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-green-500 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/50" onClick={() => addTagToSearch(tag.name)}>
-                            <PlusCircle size={16} />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-500 hover:text-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/50">
-                            <Info size={16} />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-                <div className="mt-4 flex-shrink-0 space-y-2">
-                  <Dialog open={isTagEditorOpen} onOpenChange={setIsTagEditorOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" className="w-full">タグを編集</Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
-                      <DialogHeader>
-                        <DialogTitle>タグを編集</DialogTitle>
-                      </DialogHeader>
-                      {product.productTags && (
-                        <TagEditor
-                          initialTags={product.productTags.map(pt => pt.tag)}
-                          onTagsChange={handleTagsUpdate}
-                        />
-                      )}
-                    </DialogContent>
-                  </Dialog>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" className="w-full" disabled={!product.tagEditHistory || product.tagEditHistory.length === 0}>
-                        タグ編集履歴を閲覧
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
-                      <DialogHeader className="flex-shrink-0">
-                        <DialogTitle>タグ編集履歴</DialogTitle>
-                      </DialogHeader>
-                      <div className="flex-grow min-h-0">
-                        <ScrollArea className="h-full">
-                          <div className="space-y-4 pr-6">
-                            {product.tagEditHistory && product.tagEditHistory.length > 0 ? (
-                              product.tagEditHistory.map((history) => (
-                                <TagEditHistoryItem
-                                  key={history.id}
-                                  history={history}
-                                  tagMap={tagMap}
-                                />
-                              ))
-                            ) : (
-                              <p>編集履歴はありません。</p>
-                            )}
+            <TooltipProvider>
+              {product.productTags && product.productTags.length > 0 ? (
+                <div className="flex flex-col h-full">
+                  <ScrollArea className="flex-grow h-[calc(100vh-350px)] w-full rounded-md border dark:border-gray-700 bg-white dark:bg-gray-800/50">
+                    <div className="p-2">
+                      {product.productTags.map(({ tag }) => (
+                        <div key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-accent dark:hover:bg-gray-700/50 transition-colors">
+                          <span className="text-sm font-medium pr-2">{tag.name}</span>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/50" onClick={() => addNegativeTagToSearch(tag.name)}>
+                              <MinusCircle size={16} />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-green-500 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/50" onClick={() => addTagToSearch(tag.name)}>
+                              <PlusCircle size={16} />
+                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-500 hover:text-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/50" onClick={() => handleEditDescription(tag)}>
+                                  <Info size={16} />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{tag.description || 'No description available.'}</p>
+                              </TooltipContent>
+                            </Tooltip>
                           </div>
-                        </ScrollArea>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                  <div className="mt-4 flex-shrink-0 space-y-2">
+                    <Dialog open={isTagEditorOpen} onOpenChange={setIsTagEditorOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="w-full">タグを編集</Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                          <DialogTitle>タグを編集</DialogTitle>
+                        </DialogHeader>
+                        {product.productTags && (
+                          <TagEditor
+                            initialTags={product.productTags.map(pt => pt.tag)}
+                            onTagsChange={handleTagsUpdate}
+                          />
+                        )}
+                      </DialogContent>
+                    </Dialog>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="w-full" disabled={!product.tagEditHistory || product.tagEditHistory.length === 0}>
+                          タグ編集履歴を閲覧
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
+                        <DialogHeader className="flex-shrink-0">
+                          <DialogTitle>タグ編集履歴</DialogTitle>
+                        </DialogHeader>
+                        <div className="flex-grow min-h-0">
+                          <ScrollArea className="h-full">
+                            <div className="space-y-4 pr-6">
+                              {product.tagEditHistory && product.tagEditHistory.length > 0 ? (
+                                product.tagEditHistory.map((history) => (
+                                  <TagEditHistoryItem
+                                    key={history.id}
+                                    history={history}
+                                    tagMap={tagMap}
+                                  />
+                                ))
+                              ) : (
+                                <p>編集履歴はありません。</p>
+                              )}
+                            </div>
+                          </ScrollArea>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="text-center py-10 border-2 border-dashed rounded-lg text-sm text-gray-500 dark:text-gray-400">
-                <p>この商品にはまだタグがありません。</p>
-                <Button variant="link" onClick={() => setIsTagEditorOpen(true)}>最初のタグを追加する</Button>
-              </div>
-            )}
+              ) : (
+                <div className="text-center py-10 border-2 border-dashed rounded-lg text-sm text-gray-500 dark:text-gray-400">
+                  <p>この商品にはまだタグがありません。</p>
+                  <Button variant="link" onClick={() => setIsTagEditorOpen(true)}>最初のタグを追加する</Button>
+                </div>
+              )}
+            </TooltipProvider>
           </div>
         </aside>
       </div>
+      <TagDescriptionEditor
+        tag={selectedTag}
+        open={isDescriptionEditorOpen}
+        onOpenChange={setIsDescriptionEditorOpen}
+        onSuccess={() => {
+          fetchProduct();
+        }}
+      />
     </div>
   );
 };

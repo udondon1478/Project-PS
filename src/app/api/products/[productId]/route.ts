@@ -21,9 +21,18 @@ export async function GET(request: Request, context: { params: Promise<{ product
         },
         productTags: { // 商品に紐づくタグ情報も取得
           include: {
-            tag: { // タグ情報
-              include: {
-                tagCategory: true, // タグカテゴリ情報
+            tag: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                tagCategoryId: true,
+                tagCategory: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
               },
             },
           },
