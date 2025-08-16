@@ -75,6 +75,8 @@ export default function ProductSearch({
 
   // 高額商品フィルタリング用のstate
   const [isHighPriceFilterEnabled, setIsHighPriceFilterEnabled] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isOwned, setIsOwned] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter(); // useRouterを初期化
@@ -197,6 +199,11 @@ export default function ProductSearch({
     const urlMinPrice = urlSearchParams.get("minPrice");
     const urlMaxPrice = urlSearchParams.get("maxPrice");
     const urlIsHighPrice = urlSearchParams.get("isHighPrice"); // isHighPriceパラメータを取得
+    const urlIsLiked = urlSearchParams.get("liked") === 'true';
+    const urlIsOwned = urlSearchParams.get("owned") === 'true';
+
+    setIsLiked(urlIsLiked);
+    setIsOwned(urlIsOwned);
 
     if (urlMinPrice !== null || urlMaxPrice !== null || urlIsHighPrice === 'true') {
       const min = urlMinPrice !== null ? parseInt(urlMinPrice, 10) : 0;
@@ -212,11 +219,6 @@ export default function ProductSearch({
         setPriceRange([min, max]);
       }
     }
-
-
-
-
-
 
   }, [searchParams]); // URLのクエリパラメータ変更を検知して実行
 
@@ -458,9 +460,15 @@ export default function ProductSearch({
     if (isHighPriceFilterEnabled) {
       queryParams.append("isHighPrice", "true");
     }
+    if (isLiked) {
+      queryParams.append("liked", "true");
+    }
+    if (isOwned) {
+      queryParams.append("owned", "true");
+    }
 
     router.replace(`/search?${queryParams.toString()}`);
-  }, [selectedTags, selectedNegativeTags, selectedAgeRatingTags, detailedFilters, priceRange, isHighPriceFilterEnabled, router]); // 依存配列にisHighPriceFilterEnabledとselectedAgeRatingTagsを追加
+  }, [selectedTags, selectedNegativeTags, selectedAgeRatingTags, detailedFilters, priceRange, isHighPriceFilterEnabled, router, isLiked, isOwned]); // 依存配列にisHighPriceFilterEnabledとselectedAgeRatingTagsを追加
 
   const handleDetailedFilterChange = (filterType: keyof typeof detailedFilters, value: string | null) => {
     setDetailedFilters(prev => ({ ...prev, [filterType]: value }));
@@ -471,6 +479,10 @@ export default function ProductSearch({
     setSelectedNegativeTags([]); // マイナス検索タグもクリア
     setSelectedAgeRatingTags([]); // 年齢制限タグもクリア
     setDetailedFilters({ category: null });
+    setIsLiked(false);
+    setIsOwned(false);
+    setPriceRange([0, 10000]);
+    setIsHighPriceFilterEnabled(false);
   };
 
 
@@ -769,6 +781,36 @@ export default function ProductSearch({
                           : priceRange[1] + '円'}
                       </span>
                     </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium mb-2 text-sm">マイフィルター</h4>
+                  <div className="flex items-center space-x-2 px-2 mb-2">
+                    <Checkbox
+                      id="liked-filter"
+                      checked={isLiked}
+                      onCheckedChange={(checked) => setIsLiked(!!checked)}
+                    />
+                    <label
+                      htmlFor="liked-filter"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      いいね済み
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2 px-2">
+                    <Checkbox
+                      id="owned-filter"
+                      checked={isOwned}
+                      onCheckedChange={(checked) => setIsOwned(!!checked)}
+                    />
+                    <label
+                      htmlFor="owned-filter"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      所有済み
+                    </label>
                   </div>
                 </div>
 
