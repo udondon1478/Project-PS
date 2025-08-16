@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 
 // いいねを追加するAPI
 export async function POST(
   req: NextRequest,
-  { params }: { params: { productId: string } }
+  context: { params: Promise<{ productId: string }> }
 ) {
+  const { productId } = await context.params;
   const session = await auth();
   if (!session || !session.user || !session.user.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { productId } = params;
   const userId = session.user.id;
 
   if (!productId) {
@@ -52,14 +52,13 @@ export async function POST(
 // いいねを削除するAPI
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { productId: string } }
+  context: { params: Promise<{ productId: string }> }
 ) {
+  const { productId } = await context.params;
   const session = await auth();
   if (!session || !session.user || !session.user.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { productId } = params;
   const userId = session.user.id;
 
   if (!productId) {
@@ -80,7 +79,7 @@ export async function DELETE(
     return NextResponse.json({ message: 'Product unliked successfully' }, { status: 200 });
   } catch (error) {
     // 削除対象が見つからない場合もエラーになるので、考慮が必要
-    if (error instanceof prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
       return NextResponse.json({ error: 'Like entry not found' }, { status: 404 });
     }
     console.error('Error unliking product:', error);

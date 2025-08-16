@@ -204,8 +204,8 @@ const ProductDetailPage = () => {
         // TODO: Show error toast
       }
     } catch (error) {
-      setIsLiked(originalIsLiked);
-      // TODO: Show error toast
+    console.error("Failed to toggle like status:", error); // エラーをログに出力
+  setIsLiked(originalIsLiked);
     } finally {
       setIsProcessingLike(false);
     }
@@ -226,8 +226,8 @@ const ProductDetailPage = () => {
         // TODO: Show error toast
       }
     } catch (error) {
-      setIsOwned(originalIsOwned);
-      // TODO: Show error toast
+    console.error("Failed to toggle owned status:", error); // エラーをログに出力
+    setIsOwned(originalIsOwned);
     } finally {
       setIsProcessingOwn(false);
     }
