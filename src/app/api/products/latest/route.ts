@@ -79,6 +79,7 @@ export async function GET() {
             order: 'asc',
           },
         },
+        seller: true,
       },
     });
 
@@ -96,6 +97,13 @@ export async function GET() {
       })),
       isLiked: userId ? userLikedProducts.includes(product.id) : false,
       isOwned: userId ? userOwnedProducts.includes(product.id) : false,
+      seller: product.seller
+        ? {
+            name: product.seller.name,
+            iconUrl: product.seller.iconUrl,
+            sellerUrl: product.seller.sellerUrl,
+          }
+        : null,
     }));
 
     return NextResponse.json(formattedProducts);
