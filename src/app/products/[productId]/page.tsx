@@ -31,6 +31,11 @@ interface ProductDetail {
   boothEnUrl: string;
   title: string;
   description: string | null;
+  seller: {
+    name: string;
+    iconUrl: string | null;
+    sellerUrl: string;
+  } | null;
   isLiked?: boolean;
   isOwned?: boolean;
   images: {
@@ -251,6 +256,23 @@ const ProductDetailPage = () => {
         {/* === メインコンテンツエリア === */}
         <main className="lg:col-span-9">
           <h1 className="text-3xl font-extrabold mb-4 tracking-tight">{product.title}</h1>
+
+          {/* 販売者情報の表示 */}
+          {product.seller && (
+            <div className="flex items-center mb-4">
+              <a href={product.seller.sellerUrl} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300 hover:underline">
+                <Image
+                  src={product.seller.iconUrl || '/pslogo.svg'} // デフォルトアイコンのパスは要確認
+                  alt={product.seller.name}
+                  width={28}
+                  height={28}
+                  className="rounded-full"
+                />
+                <span className="font-semibold">{product.seller.name}</span>
+              </a>
+            </div>
+          )}
+
           <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">商品ID: {product.id}</p>
 
           <section className="mb-8">

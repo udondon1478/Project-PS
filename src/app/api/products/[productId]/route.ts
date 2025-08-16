@@ -13,6 +13,7 @@ export async function GET(request: Request, context: { params: Promise<{ product
         id: productId,
       },
       include: {
+        seller: true, // 販売者情報を追加
         images: { // 画像情報も取得
           orderBy: {
             order: 'asc', // 表示順でソート
