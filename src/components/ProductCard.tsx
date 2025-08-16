@@ -122,6 +122,27 @@ const ProductCard = ({ product, showLikeButton = false, showOwnButton = false }:
             )}
           </div>
         </div>
+        {product.seller && (
+          <a
+            href={product.seller.sellerUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center mt-1 mb-2 text-sm text-gray-600 hover:underline"
+          >
+            {product.seller.iconUrl ? (
+              <Image
+                src={product.seller.iconUrl}
+                alt={product.seller.name}
+                width={20}
+                height={20}
+                className="rounded-full mr-2"
+              />
+            ) : (
+              <div className="w-5 h-5 rounded-full bg-gray-200 mr-2" />
+            )}
+            <span className="truncate">{product.seller.name}</span>
+          </a>
+        )}
         <div className="flex flex-wrap gap-1 mb-2">
           {product.tags.map((tag, index) => (
             <span key={index} className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">

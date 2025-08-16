@@ -14,6 +14,11 @@ export interface Product {
     name: string;
     price: number;
   }[];
+  seller?: {
+    name: string;
+    iconUrl: string | null;
+    sellerUrl: string;
+  } | null;
 }
 export interface SchemaOrgOffer {
   "@type": "Offer";
