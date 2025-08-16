@@ -1,7 +1,7 @@
 // src/lib/auth.ts
 import { auth } from "@/auth"; // @/authからインポート
 import { type DefaultSession } from "next-auth"; // next-authからDefaultSessionをインポート
-import { prisma } from "@/lib_prisma/prisma"; // パスを修正
+import { prisma } from "@/lib/prisma"; // パスを修正
 import { Role } from "@prisma/client"; // Role Enumを直接インポート
 
 // Auth.jsのSession型を拡張してroleプロパティを追加

@@ -21,7 +21,6 @@
     "paths": {
       "@/*": ["./src/*"],
       "@/lib_shadcn/*": ["./src/lib/*"],
-      "@/lib_prisma/*": ["./lib/*"],
       "@/components/*": ["./src/components/*"]
     }
   },
