@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from "@/auth";
-import { prisma } from '@/lib_prisma/prisma'; // lib/prismaからシングルトンインスタンスをインポート
-
+import { prisma } from '@/lib/prisma'; // lib/prismaからシングルトンインスタンスをインポート
 
 export const runtime = 'nodejs';
 
