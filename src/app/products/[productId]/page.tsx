@@ -26,6 +26,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { PlusCircle, MinusCircle, Info, Heart, Check } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { TagDetailModal } from '@/components/TagDetailModal';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faLink } from '@fortawesome/free-solid-svg-icons';
 
 interface ProductDetail {
   id: string;
@@ -313,7 +315,7 @@ const ProductDetailPage = () => {
                   </Button>
                   <a href={product.boothJpUrl} target="_blank" rel="noopener noreferrer">
                     <Button variant="outline" className="w-full justify-start">
-                      <Image src="/booth-icon.png" width={16} height={16} alt="Booth" className="mr-2" />
+                      <FontAwesomeIcon icon={faLink} className="mr-2" />
                       Boothで見る (JP)
                     </Button>
                   </a>
