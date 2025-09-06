@@ -186,12 +186,12 @@ const ProductDetailPage = () => {
     }
   };
 
-  const handleTagsUpdate = async (newTags: { id: string; name: string; }[]) => {
+  const handleTagsUpdate = async (data: { tags: { id: string; name: string; }[], comment: string }) => {
     try {
       const response = await fetch(`/api/products/${productId}/tags`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tags: newTags }),
+        body: JSON.stringify({ tags: data.tags, comment: data.comment }),
       });
       if (!response.ok) throw new Error(`Error: ${response.status}`);
       await fetchProduct();
