@@ -96,6 +96,8 @@ const ProductDetailPage = () => {
   const [isProcessingOwn, setIsProcessingOwn] = useState(false);
   const [searchTags, setSearchTags] = useState<string[]>([]);
   const [searchNegativeTags, setSearchNegativeTags] = useState<string[]>([]);
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const currentTags = searchParams.get('tags')?.split(',').filter(tag => tag.length > 0) || [];
@@ -153,9 +155,6 @@ const ProductDetailPage = () => {
     api.on("select", onSelect);
     api.on("reInit", onSelect);
   }, [api, onSelect]);
-
-  const router = useRouter();
-  const searchParams = useSearchParams();
 
   const handleViewTagDetails = (tagId: string) => {
     setSelectedTagId(tagId);
