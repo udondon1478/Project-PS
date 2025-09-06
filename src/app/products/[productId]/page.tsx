@@ -94,6 +94,15 @@ const ProductDetailPage = () => {
   const [isOwned, setIsOwned] = useState(false);
   const [isProcessingLike, setIsProcessingLike] = useState(false);
   const [isProcessingOwn, setIsProcessingOwn] = useState(false);
+  const [searchTags, setSearchTags] = useState<string[]>([]);
+  const [searchNegativeTags, setSearchNegativeTags] = useState<string[]>([]);
+
+  useEffect(() => {
+    const currentTags = searchParams.get('tags')?.split(',').filter(tag => tag.length > 0) || [];
+    const currentNegativeTags = searchParams.get('negativeTags')?.split(',').filter(tag => tag.length > 0) || [];
+    setSearchTags(currentTags);
+    setSearchNegativeTags(currentNegativeTags);
+  }, [searchParams]);
 
   const fetchProduct = useCallback(async () => {
     setLoading(true);
@@ -153,37 +162,35 @@ const ProductDetailPage = () => {
     setIsDetailModalOpen(true);
   };
 
-  const updateQueryParams = useCallback((newTags: string[], newNegativeTags: string[]) => {
-    const currentParams = new URLSearchParams(searchParams.toString());
-    if (newTags.length > 0) {
-      currentParams.set('tags', newTags.join(','));
-    } else {
-      currentParams.delete('tags');
-    }
-    if (newNegativeTags.length > 0) {
-      currentParams.set('negativeTags', newNegativeTags.join(','));
-    } else {
-      currentParams.delete('negativeTags');
-    }
-    router.push(`/search?${currentParams.toString()}`, { scroll: false });
-  }, [router, searchParams]);
-
   const addTagToSearch = (tagName: string) => {
-    const currentTags = searchParams.get('tags')?.split(',').filter(tag => tag.length > 0) || [];
-    const currentNegativeTags = searchParams.get('negativeTags')?.split(',').filter(tag => tag.length > 0) || [];
-    if (!currentTags.includes(tagName)) {
-      const newTags = [...currentTags, tagName];
-      updateQueryParams(newTags, currentNegativeTags);
+    if (!searchTags.includes(tagName)) {
+      setSearchTags([...searchTags, tagName]);
     }
   };
 
   const addNegativeTagToSearch = (tagName: string) => {
-    const currentTags = searchParams.get('tags')?.split(',').filter(tag => tag.length > 0) || [];
-    const currentNegativeTags = searchParams.get('negativeTags')?.split(',').filter(tag => tag.length > 0) || [];
-    if (!currentNegativeTags.includes(tagName) && !currentTags.includes(tagName)) {
-      const newNegativeTags = [...currentNegativeTags, tagName];
-      updateQueryParams(currentTags, newNegativeTags);
+    if (!searchNegativeTags.includes(tagName) && !searchTags.includes(tagName)) {
+      setSearchNegativeTags([...searchNegativeTags, tagName]);
     }
+  };
+
+  const removeTagFromSearch = (tagName: string, isNegative: boolean) => {
+    if (isNegative) {
+      setSearchNegativeTags(searchNegativeTags.filter(t => t !== tagName));
+    } else {
+      setSearchTags(searchTags.filter(t => t !== tagName));
+    }
+  };
+
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+    if (searchTags.length > 0) {
+      params.set('tags', searchTags.join(','));
+    }
+    if (searchNegativeTags.length > 0) {
+      params.set('negativeTags', searchNegativeTags.join(','));
+    }
+    router.push(`/search?${params.toString()}`);
   };
 
   const handleTagsUpdate = async (newTags: { id: string; name: string; }[]) => {
@@ -323,6 +330,30 @@ const ProductDetailPage = () => {
               </div>
 
               <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-lg border dark:border-slate-700">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">タグ検索</h2>
+                </div>
+                <div className="flex flex-wrap gap-2 items-center p-2 rounded-md border bg-background min-h-[40px] mb-4">
+                  {searchTags.map(tag => (
+                    <span key={tag} className="flex items-center bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-1 rounded-full">
+                      {tag}
+                      <button onClick={() => removeTagFromSearch(tag, false)} className="ml-1.5 text-blue-600 hover:text-blue-800">
+                        <PlusCircle size={12} className="transform rotate-45" />
+                      </button>
+                    </span>
+                  ))}
+                  {searchNegativeTags.map(tag => (
+                    <span key={`neg-${tag}`} className="flex items-center bg-red-100 text-red-800 text-xs font-medium px-2.5 py-1 rounded-full">
+                      -{tag}
+                      <button onClick={() => removeTagFromSearch(tag, true)} className="ml-1.5 text-red-600 hover:text-red-800">
+                        <PlusCircle size={12} className="transform rotate-45" />
+                      </button>
+                    </span>
+                  ))}
+                   <Button onClick={handleSearch} size="sm" className="ml-auto">
+                    検索
+                  </Button>
+                </div>
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold">タグ</h2>
                   <Dialog open={isTagEditorOpen} onOpenChange={setIsTagEditorOpen}>
