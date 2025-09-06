@@ -14,7 +14,7 @@ export async function PUT(
   }
 
   const { productId } = await context.params;
-  const { tags } = await req.json(); // { tags: [{ id: string; name: string; }] } を期待
+  const { tags, comment } = await req.json();
 
   if (!productId || !tags || !Array.isArray(tags)) {
     return NextResponse.json({ error: 'Invalid request data' }, { status: 400 });
@@ -113,7 +113,7 @@ export async function PUT(
           addedTags: addedTags,
           removedTags: removedTags,
           keptTags: keptTags,
-          comment: 'ユーザーによるタグ編集', // 仮のコメント
+          comment: comment && comment.trim() !== '' ? comment.trim() : null,
         },
       });
     });

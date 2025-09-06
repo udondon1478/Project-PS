@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 interface Tag {
   id: string;
@@ -15,12 +17,13 @@ interface TagWithState extends Tag {
 
 interface TagEditorProps {
   initialTags: Tag[];
-  onTagsChange: (newTags: Tag[]) => void;
+  onTagsChange: (data: { tags: Tag[], comment: string }) => void;
 }
 
 const TagEditor: React.FC<TagEditorProps> = ({ initialTags, onTagsChange }) => {
   const [tags, setTags] = useState<TagWithState[]>([]);
   const [newTagName, setNewTagName] = useState('');
+  const [comment, setComment] = useState('');
 
   useEffect(() => {
     setTags(initialTags.map(tag => ({ ...tag, state: 'kept' })));
@@ -51,7 +54,6 @@ const TagEditor: React.FC<TagEditorProps> = ({ initialTags, onTagsChange }) => {
   const handleUndoRemove = (tagId: string) => {
     setTags(tags.map(tag => {
       if (tag.id === tagId) {
-        // initialTagsになかったタグは'added'に戻す
         const wasOriginallyKept = initialTags.some(initialTag => initialTag.id === tagId);
         return { ...tag, state: wasOriginallyKept ? 'kept' : 'added' };
       }
@@ -59,10 +61,9 @@ const TagEditor: React.FC<TagEditorProps> = ({ initialTags, onTagsChange }) => {
     }));
   };
 
-
   const handleConfirm = () => {
     const finalTags = tags.filter(tag => tag.state !== 'removed').map(({ id, name }) => ({ id, name }));
-    onTagsChange(finalTags);
+    onTagsChange({ tags: finalTags, comment });
   };
 
   return (
@@ -108,6 +109,15 @@ const TagEditor: React.FC<TagEditorProps> = ({ initialTags, onTagsChange }) => {
           }}
         />
         <Button onClick={handleAddTag}>追加</Button>
+      </div>
+      <div className="grid w-full gap-1.5">
+        <Label htmlFor="comment">編集コメント (任意)</Label>
+        <Textarea
+          id="comment"
+          placeholder="この編集についてのコメントを残せます。"
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+        />
       </div>
       <div className="flex justify-end">
         <Button onClick={handleConfirm}>確定</Button>
