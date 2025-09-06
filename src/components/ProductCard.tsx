@@ -127,18 +127,18 @@ const ProductCard = ({ product, showLikeButton = false, showOwnButton = false }:
             href={product.seller.sellerUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center mt-1 mb-2 text-sm text-gray-600 hover:underline"
+            className="flex items-center mt-1 mb-2 text-base text-gray-600 hover:underline"
           >
             {product.seller.iconUrl ? (
               <Image
                 src={product.seller.iconUrl}
                 alt={product.seller.name}
-                width={20}
-                height={20}
+                width={28}
+                height={28}
                 className="rounded-full mr-2"
               />
             ) : (
-              <div className="w-5 h-5 rounded-full bg-gray-200 mr-2" />
+              <div className="w-7 h-7 rounded-full bg-gray-200 mr-2" />
             )}
             <span className="truncate">{product.seller.name}</span>
           </a>
