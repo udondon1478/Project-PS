@@ -142,6 +142,20 @@ export default function ProductSearch({
     fetchTagsByType();
   }, []); // コンポーネントマウント時に一度だけ実行
 
+  // sessionStorageの変更をリッスンしてタグを更新する
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedTags = JSON.parse(sessionStorage.getItem('polyseek-search-tags') || '[]');
+      const savedNegativeTags = JSON.parse(sessionStorage.getItem('polyseek-search-negative-tags') || '[]');
+      setSelectedTags(savedTags);
+      setSelectedNegativeTags(savedNegativeTags);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   // セッションストレージからタグを読み込む (コンポーネントマウント時)
   // セッションストレージからタグを読み込む (コンポーネントマウント時)
   // URLのクエリパラメータまたはセッションストレージからタグを読み込む (コンポーネントマウント時)

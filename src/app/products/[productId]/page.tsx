@@ -145,45 +145,42 @@ const ProductDetailPage = () => {
     api.on("reInit", onSelect);
   }, [api, onSelect]);
 
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
   const handleViewTagDetails = (tagId: string) => {
     setSelectedTagId(tagId);
     setIsDetailModalOpen(true);
   };
 
-  const updateQueryParams = useCallback((newTags: string[], newNegativeTags: string[]) => {
-    const currentParams = new URLSearchParams(searchParams.toString());
-    if (newTags.length > 0) {
-      currentParams.set('tags', newTags.join(','));
-    } else {
-      currentParams.delete('tags');
-    }
-    if (newNegativeTags.length > 0) {
-      currentParams.set('negativeTags', newNegativeTags.join(','));
-    } else {
-      currentParams.delete('negativeTags');
-    }
-    router.push(`/search?${currentParams.toString()}`, { scroll: false });
-  }, [router, searchParams]);
+  const updateSearchTagsInSessionStorage = (tags: string[], negativeTags: string[]) => {
+    sessionStorage.setItem('polyseek-search-tags', JSON.stringify(tags));
+    sessionStorage.setItem('polyseek-search-negative-tags', JSON.stringify(negativeTags));
+    // Optionally, you can dispatch a custom event to notify the header to update its state
+    window.dispatchEvent(new Event('storage'));
+  };
 
   const addTagToSearch = (tagName: string) => {
-    const currentTags = searchParams.get('tags')?.split(',').filter(tag => tag.length > 0) || [];
-    const currentNegativeTags = searchParams.get('negativeTags')?.split(',').filter(tag => tag.length > 0) || [];
-    if (!currentTags.includes(tagName)) {
-      const newTags = [...currentTags, tagName];
-      updateQueryParams(newTags, currentNegativeTags);
-    }
+    const currentTags = JSON.parse(sessionStorage.getItem('polyseek-search-tags') || '[]');
+    const currentNegativeTags = JSON.parse(sessionStorage.getItem('polyseek-search-negative-tags') || '[]');
+
+    // もしネガティブタグに存在すれば、そこから削除する
+    const newNegativeTags = currentNegativeTags.filter((t: string) => t !== tagName);
+
+    // ポジティブタグに追加（重複は避ける）
+    const newTags = currentTags.includes(tagName) ? currentTags : [...currentTags, tagName];
+
+    updateSearchTagsInSessionStorage(newTags, newNegativeTags);
   };
 
   const addNegativeTagToSearch = (tagName: string) => {
-    const currentTags = searchParams.get('tags')?.split(',').filter(tag => tag.length > 0) || [];
-    const currentNegativeTags = searchParams.get('negativeTags')?.split(',').filter(tag => tag.length > 0) || [];
-    if (!currentNegativeTags.includes(tagName) && !currentTags.includes(tagName)) {
-      const newNegativeTags = [...currentNegativeTags, tagName];
-      updateQueryParams(currentTags, newNegativeTags);
-    }
+    const currentTags = JSON.parse(sessionStorage.getItem('polyseek-search-tags') || '[]');
+    const currentNegativeTags = JSON.parse(sessionStorage.getItem('polyseek-search-negative-tags') || '[]');
+
+    // もしポジティブタグに存在すれば、そこから削除する
+    const newTags = currentTags.filter((t: string) => t !== tagName);
+
+    // ネガティブタグに追加（重複は避ける）
+    const newNegativeTags = currentNegativeTags.includes(tagName) ? currentNegativeTags : [...currentNegativeTags, tagName];
+
+    updateSearchTagsInSessionStorage(newTags, newNegativeTags);
   };
 
   const handleTagsUpdate = async (data: { tags: { id: string; name: string; }[], comment: string }) => {
