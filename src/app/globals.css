@@ -138,8 +138,8 @@
   width: 0.75rem;
   height: 0.75rem;
   transform: rotate(45deg);
-  background-color: hsl(var(--popover));
-  border: 1px solid hsl(var(--border));
+  background-color: var(--popover);
+  border: 1px solid var(--border);
 }
 
 .onboarding-popover-content[data-side="top"]::before {
