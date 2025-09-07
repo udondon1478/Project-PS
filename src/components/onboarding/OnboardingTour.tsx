@@ -37,6 +37,7 @@ export function OnboardingTour({ steps, isOpen, onComplete, onSkip, showSkip }: 
     let element: HTMLElement | null = null;
     let originalStyles: { position: string; zIndex: string; boxShadow: string; } | null = null;
 
+    // Cleanup function to restore the element's original styles
     const cleanup = () => {
       if (element && originalStyles) {
         element.style.position = originalStyles.position;
@@ -45,6 +46,7 @@ export function OnboardingTour({ steps, isOpen, onComplete, onSkip, showSkip }: 
       }
     };
 
+    // Sets up the element for highlighting
     const setupElement = (el: HTMLElement) => {
       element = el;
       originalStyles = {
