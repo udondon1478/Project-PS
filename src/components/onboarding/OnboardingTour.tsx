@@ -24,6 +24,7 @@ interface OnboardingTourProps {
 export function OnboardingTour({ steps, isOpen, onComplete, onSkip, showSkip }: OnboardingTourProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+  const [isWaiting, setIsWaiting] = useState(false);
 
   const step = useMemo(() => steps[currentStep], [steps, currentStep]);
 
@@ -35,13 +36,36 @@ export function OnboardingTour({ steps, isOpen, onComplete, onSkip, showSkip }: 
 
     const element = document.querySelector(step.selector);
     if (element) {
+      setIsWaiting(false);
       setTargetRect(element.getBoundingClientRect());
       element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-    } else {
-      // If element is not found, maybe skip this step or end tour
-      console.warn(`Onboarding element not found: ${step.selector}`);
-      handleNext();
+      return;
     }
+
+    // Element not found, start polling
+    setIsWaiting(true);
+    const intervalId = setInterval(() => {
+      const el = document.querySelector(step.selector);
+      if (el) {
+        clearInterval(intervalId);
+        setIsWaiting(false);
+        setTargetRect(el.getBoundingClientRect());
+        el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+      }
+    }, 250); // Poll every 250ms
+
+    const timeoutId = setTimeout(() => {
+        clearInterval(intervalId);
+        if (!document.querySelector(step.selector)) {
+            console.warn(`Onboarding element not found after 5 seconds: ${step.selector}. Skipping step.`);
+            handleNext();
+        }
+    }, 5000); // Give up after 5 seconds
+
+    return () => {
+      clearInterval(intervalId);
+      clearTimeout(timeoutId);
+    };
   }, [currentStep, isOpen, step]);
 
   const handleNext = () => {
@@ -58,7 +82,8 @@ export function OnboardingTour({ steps, isOpen, onComplete, onSkip, showSkip }: 
     }
   };
 
-  if (!isOpen || !targetRect || !step) {
+  if (!isOpen || !targetRect || !step || isWaiting) {
+    // Also hide the tour while waiting for the element to appear
     return null;
   }
 
@@ -92,7 +117,7 @@ export function OnboardingTour({ steps, isOpen, onComplete, onSkip, showSkip }: 
         <PopoverContent
           side={step.side || 'bottom'}
           align="center"
-          className="z-50 w-80"
+          className="z-50 w-80 onboarding-popover-content"
           onInteractOutside={(e) => e.preventDefault()} // Prevents closing on outside click
         >
           <div className="space-y-4">
