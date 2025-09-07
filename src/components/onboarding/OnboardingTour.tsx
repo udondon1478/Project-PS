@@ -34,31 +34,62 @@ export function OnboardingTour({ steps, isOpen, onComplete, onSkip, showSkip }: 
       return;
     }
 
-    const element = document.querySelector(step.selector);
-    if (element) {
-      const rect = element.getBoundingClientRect();
+    let element: HTMLElement | null = null;
+    let originalStyles: { position: string; zIndex: string; boxShadow: string; } | null = null;
+
+    const cleanup = () => {
+      if (element && originalStyles) {
+        element.style.position = originalStyles.position;
+        element.style.zIndex = originalStyles.zIndex;
+        element.style.boxShadow = originalStyles.boxShadow;
+      }
+    };
+
+    const setupElement = (el: HTMLElement) => {
+      element = el;
+      originalStyles = {
+        position: el.style.position,
+        zIndex: el.style.zIndex,
+        boxShadow: el.style.boxShadow,
+      };
+
+      const rect = el.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) {
         setIsWaiting(false);
         setTargetRect(rect);
-        element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-        return;
+        el.style.position = 'relative';
+        el.style.zIndex = '50';
+        el.style.boxShadow = '0 0 0 4px hsl(var(--primary))';
+        el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+      }
+    };
+
+    const initialElement = document.querySelector<HTMLElement>(step.selector);
+    if (initialElement) {
+      const rect = initialElement.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setupElement(initialElement);
+        return cleanup;
       }
     }
 
-    // Element not found, start polling
+    // Element not found or not visible, start polling
     setIsWaiting(true);
     const intervalId = setInterval(() => {
-      const el = document.querySelector(step.selector);
+      const el = document.querySelector<HTMLElement>(step.selector);
       if (el) {
-        clearInterval(intervalId);
-        setIsWaiting(false);
-        setTargetRect(el.getBoundingClientRect());
-        el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        const rect = el.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          clearInterval(intervalId);
+          setIsWaiting(false);
+          setupElement(el);
+        }
       }
     }, 250); // Poll every 250ms
 
     return () => {
       clearInterval(intervalId);
+      cleanup();
     };
   }, [currentStep, isOpen, step]);
 
@@ -89,17 +120,6 @@ export function OnboardingTour({ steps, isOpen, onComplete, onSkip, showSkip }: 
       {/* Overlay */}
       <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" />
 
-      {/* Highlight Box */}
-      <div
-        className="fixed z-50 pointer-events-none border-2 border-primary ring-4 ring-primary/20 rounded-md transition-all duration-300"
-        style={{
-          top: targetRect.top - 8,
-          left: targetRect.left - 8,
-          width: targetRect.width + 16,
-          height: targetRect.height + 16,
-        }}
-      />
-
       <Popover open={isOpen}>
         <PopoverAnchor
           style={{
@@ -111,6 +131,7 @@ export function OnboardingTour({ steps, isOpen, onComplete, onSkip, showSkip }: 
         <PopoverContent
           side={step.side || 'bottom'}
           align="center"
+          sideOffset={16}
           className="z-50 w-80 onboarding-popover-content"
           onInteractOutside={(e) => e.preventDefault()} // Prevents closing on outside click
         >
