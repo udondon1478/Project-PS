@@ -36,10 +36,13 @@ export function OnboardingTour({ steps, isOpen, onComplete, onSkip, showSkip }: 
 
     const element = document.querySelector(step.selector);
     if (element) {
-      setIsWaiting(false);
-      setTargetRect(element.getBoundingClientRect());
-      element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-      return;
+      const rect = element.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setIsWaiting(false);
+        setTargetRect(rect);
+        element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        return;
+      }
     }
 
     // Element not found, start polling
