@@ -54,17 +54,8 @@ export function OnboardingTour({ steps, isOpen, onComplete, onSkip, showSkip }: 
       }
     }, 250); // Poll every 250ms
 
-    const timeoutId = setTimeout(() => {
-        clearInterval(intervalId);
-        if (!document.querySelector(step.selector)) {
-            console.warn(`Onboarding element not found after 5 seconds: ${step.selector}. Skipping step.`);
-            handleNext();
-        }
-    }, 5000); // Give up after 5 seconds
-
     return () => {
       clearInterval(intervalId);
-      clearTimeout(timeoutId);
     };
   }, [currentStep, isOpen, step]);
 

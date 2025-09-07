@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 
 export type Tour = 'search' | 'productDetail' | 'boothRegistration';
@@ -15,13 +15,13 @@ export function useOnboarding() {
 
   const isAuthenticated = status === 'authenticated';
 
-  const isTourCompleted = (tour: Tour): boolean => {
-    if (typeof window === 'undefined') return true; // Don't run on server
+  const isTourCompleted = useCallback((tour: Tour): boolean => {
+    if (status === 'loading') return true; // Don't start tours while session is loading
+    if (typeof window === 'undefined') return true;
 
     if (isAuthenticated) {
-      // Assuming the session user object gets updated with our new fields
-      const user = session?.user as any; // Cast to access our custom fields
-      if (!user) return true; // Should not happen if authenticated
+      const user = session?.user as any;
+      if (!user) return true;
 
       switch (tour) {
         case 'search':
@@ -34,18 +34,17 @@ export function useOnboarding() {
           return true;
       }
     } else {
-      // Anonymous user
       return localStorage.getItem(getLocalStorageKey(tour)) === 'true';
     }
-  };
+  }, [status, session, isAuthenticated]);
 
-  const startTour = (tour: Tour) => {
+  const startTour = useCallback((tour: Tour) => {
     if (!isTourCompleted(tour)) {
       setActiveTour(tour);
     }
-  };
+  }, [isTourCompleted]);
 
-  const completeTour = async () => {
+  const completeTour = useCallback(async () => {
     if (!activeTour) return;
     if (typeof window === 'undefined') return;
 
@@ -59,32 +58,27 @@ export function useOnboarding() {
         if (!response.ok) {
           throw new Error('Failed to update onboarding status');
         }
-        // Manually trigger a session update to get the latest user data
         await updateSession();
       } catch (error) {
         console.error('Onboarding completion error:', error);
       }
     } else {
-      // Anonymous user
       localStorage.setItem(getLocalStorageKey(activeTour), 'true');
     }
-    setActiveTour(null); // Close the tour UI
-  };
-
-  const closeTour = () => {
     setActiveTour(null);
-  }
+  }, [activeTour, isAuthenticated, updateSession]);
 
-  // If user is authenticated, skip is just completing the tour
-  const skipTour = () => {
+  const closeTour = useCallback(() => {
+    setActiveTour(null);
+  }, []);
+
+  const skipTour = useCallback(() => {
     if (isAuthenticated) {
       completeTour();
     } else {
-      // For anonymous users, skip is not allowed, but we can just close the UI
-      // The tour will reappear on next visit. This matches the "not skippable" requirement.
       closeTour();
     }
-  };
+  }, [isAuthenticated, completeTour, closeTour]);
 
   return {
     activeTour,
@@ -92,7 +86,6 @@ export function useOnboarding() {
     completeTour,
     skipTour,
     isTourCompleted,
-    // showSkip is true only for authenticated users as per requirements
     showSkip: isAuthenticated,
   };
 }
