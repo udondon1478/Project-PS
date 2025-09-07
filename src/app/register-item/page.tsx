@@ -231,7 +231,7 @@ export default function RegisterItemPage() {
               disabled={status === 'loading'}
             />
           </div>
-          <button type="submit" style={{ padding: '10px 15px' }} disabled={status === 'loading'}>
+          <button id="fetch-product-info-button" type="submit" style={{ padding: '10px 15px' }} disabled={status === 'loading'}>
             情報を取得
           </button>
         </form>

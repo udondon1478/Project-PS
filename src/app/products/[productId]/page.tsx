@@ -319,12 +319,12 @@ const ProductDetailPage = () => {
                 </div>
               </div>
 
-              <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-lg border dark:border-slate-700">
+              <div id="product-tags-container" className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-lg border dark:border-slate-700">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold">タグ</h2>
                   <Dialog open={isTagEditorOpen} onOpenChange={setIsTagEditorOpen}>
                     <DialogTrigger asChild>
-                      <Button variant="outline" size="sm">編集</Button>
+                      <Button id="edit-tags-button" variant="outline" size="sm">編集</Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-[425px]">
                       <DialogHeader><DialogTitle>タグを編集</DialogTitle></DialogHeader>
@@ -341,7 +341,7 @@ const ProductDetailPage = () => {
                             <div key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-accent dark:hover:bg-gray-700/50 transition-colors">
                               <span className="text-sm font-medium pr-2">{tag.name}</span>
                               <div className="flex items-center gap-1 flex-shrink-0">
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/50" onClick={() => addNegativeTagToSearch(tag.name)}><MinusCircle size={16} /></Button>
+                                <Button data-testid="tag-negative-search-button" variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/50" onClick={() => addNegativeTagToSearch(tag.name)}><MinusCircle size={16} /></Button>
                                 <Button variant="ghost" size="icon" className="h-7 w-7 text-green-500 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/50" onClick={() => addTagToSearch(tag.name)}><PlusCircle size={16} /></Button>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -357,7 +357,7 @@ const ProductDetailPage = () => {
                       <div className="mt-4 flex-shrink-0">
                         <Dialog>
                           <DialogTrigger asChild>
-                            <Button variant="outline" className="w-full" disabled={!product.tagEditHistory || product.tagEditHistory.length === 0}>
+                            <Button id="view-tag-history-button" variant="outline" className="w-full" disabled={!product.tagEditHistory || product.tagEditHistory.length === 0}>
                               タグ編集履歴を閲覧
                             </Button>
                           </DialogTrigger>

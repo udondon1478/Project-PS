@@ -642,7 +642,7 @@ export default function ProductSearch({
         {/* Filter Trigger (Sheet) - Common for Mobile and Desktop */}
         <Sheet open={isFilterSidebarOpen} onOpenChange={setIsFilterSidebarOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="h-9 w-9 flex-shrink-0">
+            <Button id="filter-menu-trigger" variant="outline" size="icon" className="h-9 w-9 flex-shrink-0">
               <Filter className="h-4 w-4" />
             </Button>
           </SheetTrigger>
