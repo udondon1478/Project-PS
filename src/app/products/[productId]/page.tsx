@@ -27,6 +27,8 @@ import { PlusCircle, MinusCircle, Info, Heart, Check } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { TagDetailModal } from '@/components/TagDetailModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { OnboardingTour } from '@/components/OnboardingTour';
+import { productPageSteps } from '@/lib/onboarding/productPageSteps';
 import { faLink } from '@fortawesome/free-solid-svg-icons';
 
 interface ProductDetail {
@@ -241,6 +243,7 @@ const ProductDetailPage = () => {
 
   return (
     <>
+      <OnboardingTour tourKey="product-page" steps={productPageSteps} />
       <div className="container mx-auto px-4 py-8 pt-40">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
           <main className="lg:col-span-8">
@@ -302,11 +305,11 @@ const ProductDetailPage = () => {
               <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-lg border dark:border-slate-700">
                 <h2 className="text-xl font-semibold mb-4">アクション</h2>
                 <div className="space-y-3">
-                  <Button onClick={handleLikeToggle} disabled={isProcessingLike} variant={isLiked ? "default" : "outline"} className="w-full justify-start">
+                  <Button data-tour="like-button" onClick={handleLikeToggle} disabled={isProcessingLike} variant={isLiked ? "default" : "outline"} className="w-full justify-start">
                     <Heart className="mr-2 h-4 w-4" fill={isLiked ? "currentColor" : "none"} />
                     {isLiked ? '欲しいものから外す' : '欲しいものに追加'}
                   </Button>
-                  <Button onClick={handleOwnToggle} disabled={isProcessingOwn} variant={isOwned ? "default" : "outline"} className="w-full justify-start">
+                  <Button data-tour="own-button" onClick={handleOwnToggle} disabled={isProcessingOwn} variant={isOwned ? "default" : "outline"} className="w-full justify-start">
                     <Check className="mr-2 h-4 w-4" />
                     {isOwned ? '所有済みから外す' : '所有済みにする'}
                   </Button>
@@ -319,12 +322,12 @@ const ProductDetailPage = () => {
                 </div>
               </div>
 
-              <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-lg border dark:border-slate-700">
+              <div data-tour="tags-list" className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-lg border dark:border-slate-700">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold">タグ</h2>
                   <Dialog open={isTagEditorOpen} onOpenChange={setIsTagEditorOpen}>
                     <DialogTrigger asChild>
-                      <Button variant="outline" size="sm">編集</Button>
+                      <Button data-tour="edit-tags-button" variant="outline" size="sm">編集</Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-[425px]">
                       <DialogHeader><DialogTitle>タグを編集</DialogTitle></DialogHeader>
@@ -357,7 +360,7 @@ const ProductDetailPage = () => {
                       <div className="mt-4 flex-shrink-0">
                         <Dialog>
                           <DialogTrigger asChild>
-                            <Button variant="outline" className="w-full" disabled={!product.tagEditHistory || product.tagEditHistory.length === 0}>
+                            <Button data-tour="tag-history-button" variant="outline" className="w-full" disabled={!product.tagEditHistory || product.tagEditHistory.length === 0}>
                               タグ編集履歴を閲覧
                             </Button>
                           </DialogTrigger>

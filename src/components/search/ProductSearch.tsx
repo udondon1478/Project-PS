@@ -544,6 +544,7 @@ export default function ProductSearch({
               onCompositionEnd={() => setIsComposing(false)}   // IME変換終了
               onFocus={() => searchQuery.length > 0 && setIsSuggestionsVisible(true)}
               className="flex-grow border-none focus:ring-0 focus:outline-none p-1 h-auto text-sm min-w-[100px]"
+              data-tour="search-input"
             />
           </div>
           {isSuggestionsVisible && tagSuggestions.length > 0 && (
@@ -642,7 +643,7 @@ export default function ProductSearch({
         {/* Filter Trigger (Sheet) - Common for Mobile and Desktop */}
         <Sheet open={isFilterSidebarOpen} onOpenChange={setIsFilterSidebarOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="h-9 w-9 flex-shrink-0">
+            <Button variant="outline" size="icon" className="h-9 w-9 flex-shrink-0" data-tour="filter-button">
               <Filter className="h-4 w-4" />
             </Button>
           </SheetTrigger>
