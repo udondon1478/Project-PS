@@ -2,7 +2,8 @@ import React from 'react';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { notFound } from 'next/navigation';
-import ProductDetailClientPage from '@/components/products/ProductDetailClientPage';
+// The import path is now relative
+import ProductDetailClientPage from '../../../components/products/ProductDetailClientPage';
 
 interface ProductPageProps {
   params: {

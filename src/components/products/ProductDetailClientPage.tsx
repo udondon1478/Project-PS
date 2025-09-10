@@ -27,7 +27,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { TagDetailModal } from '@/components/TagDetailModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLink } from '@fortawesome/free-solid-svg-icons';
-import ProductDetailPageOnboarding from '@/components/onboarding/ProductDetailPageOnboarding';
+import ProductDetailPageOnboarding from '../onboarding/ProductDetailPageOnboarding';
 
 // Interface definitions should match the props passed from the server component
 interface ProductDetail {
