@@ -1,10 +1,10 @@
 import React from "react";
-import ProductGrid from "@/components/ProductGrid";
 import { Product } from "@/types/product";
 import { Metadata } from 'next';
-import { prisma } from '@/lib/prisma'; // Prismaクライアントをインポート
-import { auth } from '@/auth'; // authヘルパーをインポート
-import { Prisma } from '@prisma/client'; // Prismaの型をインポート
+import { prisma } from '@/lib/prisma';
+import { auth } from '@/auth';
+import { Prisma } from '@prisma/client';
+import SearchPageClient from "@/components/search/SearchPageClient";
 
 interface SearchPageProps {
   searchParams?: Promise<{
@@ -16,7 +16,7 @@ interface SearchPageProps {
     minPrice?: string;
     maxPrice?: string;
     liked?: string;
-    owned?: string;
+    owned?:string;
     isHighPrice?: string;
   }>;
 }
@@ -47,7 +47,6 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
   let error: string | null = null;
 
   try {
-    // --- START: APIロジックをここに移動 ---
     const session = await auth();
     const userId = session?.user?.id;
 
@@ -60,7 +59,7 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
         select: { productId: true },
       });
       userLikedProducts = liked.map((p) => p.productId);
-
+      
       const owned = await prisma.productOwner.findMany({
         where: { userId },
         select: { productId: true },
@@ -88,33 +87,33 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
     const tagNames = tagsParam ? tagsParam.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : [];
     const negativeTagNames = negativeTagsParam ? negativeTagsParam.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : [];
     const featureTagIds = featureTagIdsParam ? featureTagIdsParam.split(',').map(id => id.trim()).filter(id => id.length > 0) : [];
-
+    
     const whereConditions: Prisma.ProductWhereInput[] = [];
-
+    
     let ageRatingTagIds: string[] = [];
     if (ageRatingTagsParam) {
-      const ageRatingTags = ageRatingTagsParam.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
-      const tags = await prisma.tag.findMany({
-        where: {
-          name: {
-            in: ageRatingTags,
-          },
-          tagCategory: {
-            name: "age_rating",
-          },
-        },
-        select: {
-          id: true,
-        },
-      });
-      ageRatingTagIds = tags.map(tag => tag.id);
+        const ageRatingTags = ageRatingTagsParam.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+        const tags = await prisma.tag.findMany({
+            where: {
+                name: {
+                    in: ageRatingTags,
+                },
+                tagCategory: {
+                    name: "age_rating",
+                },
+            },
+            select: {
+                id: true,
+            },
+        });
+        ageRatingTagIds = tags.map(tag => tag.id);
     }
 
     const tagIdsToFilter = [...featureTagIds];
     if (categoryTagId) {
       tagIdsToFilter.push(categoryTagId);
     }
-
+    
     if (ageRatingTagIds.length > 0) {
       whereConditions.push({
         productTags: {
@@ -130,14 +129,13 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
         where: {
           name: "全年齢",
           tagCategory: {
-            name: "age_rating",
-          },
+            name: "age_rating"
+          }
         },
         select: {
-          id: true,
-        },
+          id: true
+        }
       });
-
       if (allAgeTag) {
         whereConditions.push({
           productTags: {
@@ -196,33 +194,33 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
       }
       if (maxPrice !== undefined) {
         if (maxPrice !== 100000) {
-          priceCondition.lowPrice = { lte: maxPrice };
+            priceCondition.lowPrice = { lte: maxPrice };
         }
       }
       whereConditions.push(priceCondition);
     }
-
+    
     const likedParam = resolvedSearchParams?.liked;
     const ownedParam = resolvedSearchParams?.owned;
 
     if (userId && likedParam === 'true') {
-      whereConditions.push({
-        likes: {
-          some: {
-            userId: userId,
-          },
-        },
-      });
+        whereConditions.push({
+            likes: {
+                some: {
+                    userId: userId,
+                },
+            },
+        });
     }
-
+    
     if (userId && ownedParam === 'true') {
-      whereConditions.push({
-        productOwners: {
-          some: {
-            userId: userId,
-          },
-        },
-      });
+        whereConditions.push({
+            productOwners: {
+                some: {
+                    userId: userId,
+                },
+            },
+        });
     }
 
     const dbProducts = await prisma.product.findMany({
@@ -231,6 +229,7 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
         createdAt: 'desc',
       },
       include: {
+        seller: true,
         productTags: {
           include: {
             tag: true,
@@ -244,9 +243,9 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
         },
         variations: {
           orderBy: {
-            order: 'asc',
-          },
-        },
+            order: 'asc'
+          }
+        }
       },
     });
 
@@ -260,12 +259,22 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
       variations: product.variations.map(v => ({
         id: v.id,
         name: v.name,
-        price: v.price,
+        price: v.price
       })),
       isLiked: userId ? userLikedProducts.includes(product.id) : false,
       isOwned: userId ? userOwnedProducts.includes(product.id) : false,
+      seller: product.seller ? {
+        name: product.seller.name,
+        sellerUrl: product.seller.sellerUrl,
+        iconUrl: product.seller.iconUrl
+      } : null,
+      boothJpUrl: product.boothJpUrl,
+      boothEnUrl: product.boothEnUrl,
+      description: product.description,
+      images: product.images,
+      productTags: product.productTags,
+      tagEditHistory: []
     }));
-    // --- END: APIロジック ---
 
   } catch (err: unknown) {
     if (err instanceof Error) {
@@ -277,34 +286,21 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
 
   const searchTerm = resolvedSearchParams?.tags || "";
   const ageRatingTags = resolvedSearchParams?.ageRatingTags?.split(',') || [];
-  const categoryTagId = resolvedSearchParams?.categoryTagId || "";
-  const featureTagIds = resolvedSearchParams?.featureTagIds?.split(',') || [];
+  const categoryTagIdProp = resolvedSearchParams?.categoryTagId || "";
+  const featureTagIdsProp = resolvedSearchParams?.featureTagIds?.split(',') || [];
 
   if (error) {
     return <div>Error: {error}</div>;
   }
 
-  if (products.length === 0) {
-    return (
-      <div className="container mx-auto px-4 py-8 pt-40">
-        <p>検索キーワード: {searchTerm}</p>
-        {ageRatingTags.length > 0 && <p>対象年齢タグ: {ageRatingTags.join(',')}</p>}
-        {categoryTagId && <p>カテゴリータグID: {categoryTagId}</p>}
-        {featureTagIds.length > 0 && <p>主要機能タグID: {featureTagIds.join(',')}</p>}
-        <div>指定された条件に一致する商品は見つかりませんでした。</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="container mx-auto px-4 py-8 pt-40">
-      <p>検索キーワード: {searchTerm}</p>
-      {ageRatingTags.length > 0 && <p>対象年齢タグ: {ageRatingTags.join(',')}</p>}
-      {categoryTagId && <p>カテゴリータグID: {categoryTagId}</p>}
-      {featureTagIds.length > 0 && <p>主要機能タグID: {featureTagIds.join(',')}</p>}
-
-      <ProductGrid products={products} showLikeButton={true} showOwnButton={true} />
-    </div>
+    <SearchPageClient
+      products={products}
+      searchTerm={searchTerm}
+      ageRatingTags={ageRatingTags}
+      categoryTagId={categoryTagIdProp}
+      featureTagIds={featureTagIdsProp}
+    />
   );
 };
 
