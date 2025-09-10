@@ -22,6 +22,7 @@ model User {
   image             String? // この行を追加します
   preferredLanguage String          @default("ja") // 'ja' or 'en'
   showImpliedTags   Boolean         @default(true)
+  onboardingCompleted Boolean       @default(false) // Onboarding tour completion status
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   role              Role            @default(USER) // ユーザーの役割を追加

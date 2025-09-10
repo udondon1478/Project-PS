@@ -7,6 +7,7 @@ config.autoAddCss = false
 import { SessionProvider } from "next-auth/react"; // SessionProviderをインポート
 import Header from "@/components/Header";
 import { ThemeProvider } from "@/components/theme-provider"; // ThemeProviderをインポート
+import { OnboardingProvider } from "@/context/OnboardingContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,15 +35,17 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SessionProvider> {/* SessionProviderでラップ */}
-           <ThemeProvider // ThemeProviderでラップ
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <Header />
-            {children}
-          </ThemeProvider>
+          <OnboardingProvider>
+            <ThemeProvider // ThemeProviderでラップ
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <Header />
+              {children}
+            </ThemeProvider>
+          </OnboardingProvider>
         </SessionProvider>
       </body>
     </html>
