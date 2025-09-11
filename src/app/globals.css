@@ -125,3 +125,47 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Onboarding Tour Arrow */
+.onboarding-popover-content {
+  position: relative;
+}
+
+/* Arrow for the popover */
+.onboarding-popover-content::before {
+  content: "";
+  position: absolute;
+  width: 0.75rem;
+  height: 0.75rem;
+  transform: rotate(45deg);
+  background-color: var(--popover);
+  border: 1px solid var(--border);
+}
+
+.onboarding-popover-content[data-side="top"]::before {
+  bottom: -0.4rem;
+  left: calc(50% - 0.4rem);
+  border-top: none;
+  border-left: none;
+}
+
+.onboarding-popover-content[data-side="bottom"]::before {
+  top: -0.4rem;
+  left: calc(50% - 0.4rem);
+  border-bottom: none;
+  border-right: none;
+}
+
+.onboarding-popover-content[data-side="left"]::before {
+  right: -0.4rem;
+  top: calc(50% - 0.4rem);
+  border-top: none;
+  border-right: none;
+}
+
+.onboarding-popover-content[data-side="right"]::before {
+  left: -0.4rem;
+  top: calc(50% - 0.4rem);
+  border-bottom: none;
+  border-left: none;
+}

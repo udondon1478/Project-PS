@@ -6,6 +6,7 @@ import '@fortawesome/fontawesome-svg-core/styles.css'
 config.autoAddCss = false
 import { SessionProvider } from "next-auth/react"; // SessionProviderをインポート
 import Header from "@/components/Header";
+import { OnboardingManager } from "@/components/onboarding/OnboardingManager";
 import { ThemeProvider } from "@/components/theme-provider"; // ThemeProviderをインポート
 
 const geistSans = Geist({
@@ -40,6 +41,7 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
+            <OnboardingManager />
             <Header />
             {children}
           </ThemeProvider>

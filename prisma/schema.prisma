@@ -35,6 +35,11 @@ model User {
   sessions      Session[]
   productOwners ProductOwner[]
   tagMetadataEdits TagMetadataHistory[] // ユーザーが行ったタグメタデータ編集
+
+  // Onboarding
+  onboarding_search_completed               Boolean         @default(false)
+  onboarding_product_detail_completed       Boolean         @default(false)
+  onboarding_booth_registration_completed   Boolean         @default(false)
 }
 
 model Account {

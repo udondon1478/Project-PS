@@ -97,6 +97,7 @@ const ProductCard = ({ product, showLikeButton = false, showOwnButton = false }:
           <div className="flex items-center space-x-1 flex-shrink-0">
             {showOwnButton && (
               <button
+                data-testid="product-card-own-button"
                 onClick={handleOwnClick}
                 disabled={isProcessingOwn}
                 className="bg-white rounded-full p-1 shadow disabled:opacity-50"
@@ -109,6 +110,7 @@ const ProductCard = ({ product, showLikeButton = false, showOwnButton = false }:
             )}
             {showLikeButton && (
               <button
+                data-testid="product-card-like-button"
                 onClick={handleLikeClick}
                 disabled={isProcessingLike}
                 className="bg-white rounded-full p-1 shadow disabled:opacity-50"
