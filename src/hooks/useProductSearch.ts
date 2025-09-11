@@ -121,24 +121,36 @@ export const useProductSearch = ({
       if (savedNegativeTags) try { setSelectedNegativeTags(JSON.parse(savedNegativeTags)); } catch (e) { console.error(e); }
       if (savedAgeRatingTags) try { setSelectedAgeRatingTags(JSON.parse(savedAgeRatingTags)); } catch (e) { console.error(e); }
     }
-    const urlMinPrice = urlSearchParams.get("minPrice");
-    const urlMaxPrice = urlSearchParams.get("maxPrice");
-    const urlIsHighPrice = urlSearchParams.get("isHighPrice");
+    const urlMinPriceStr = urlSearchParams.get("minPrice");
+    const urlMaxPriceStr = urlSearchParams.get("maxPrice");
+    const urlIsHighPrice = urlSearchParams.get("isHighPrice") === 'true';
     const urlIsLiked = urlSearchParams.get("liked") === 'true';
     const urlIsOwned = urlSearchParams.get("owned") === 'true';
+
     setIsLiked(urlIsLiked);
     setIsOwned(urlIsOwned);
 
-    if (urlMinPrice !== null || urlMaxPrice !== null || urlIsHighPrice === 'true') {
-      const min = urlMinPrice !== null ? parseInt(urlMinPrice, 10) : 0;
-      let max = urlMaxPrice !== null ? parseInt(urlMaxPrice, 10) : 10000;
-      if (urlIsHighPrice === 'true') {
-        max = 100000;
-        setIsHighPriceFilterEnabled(true);
-      } else {
-        setIsHighPriceFilterEnabled(false);
-      }
-      setPriceRange([min, max]);
+    if (urlMinPriceStr !== null || urlMaxPriceStr !== null || urlIsHighPrice) {
+        const DEFAULT_MIN = 0;
+        const DEFAULT_MAX = 10000;
+        const HIGH_PRICE_CAP = 100000;
+        const upperCap = urlIsHighPrice ? HIGH_PRICE_CAP : DEFAULT_MAX;
+
+        let parsedMin = Number(urlMinPriceStr);
+        let parsedMax = Number(urlMaxPriceStr);
+
+        let min = (Number.isNaN(parsedMin) || urlMinPriceStr === null) ? DEFAULT_MIN : Math.max(DEFAULT_MIN, parsedMin);
+        let max = (Number.isNaN(parsedMax) || urlMaxPriceStr === null) ? upperCap : Math.max(DEFAULT_MIN, parsedMax);
+
+        min = Math.min(min, upperCap);
+        max = Math.min(max, upperCap);
+
+        if (min > max) {
+            [min, max] = [max, min]; // Swap them
+        }
+
+        setIsHighPriceFilterEnabled(urlIsHighPrice);
+        setPriceRange([min, max]);
     }
   }, [searchParams]);
 
