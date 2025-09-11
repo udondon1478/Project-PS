@@ -175,11 +175,6 @@ export const useProductSearch = ({
   }, [searchQuery, selectedTags, selectedNegativeTags]);
 
   useEffect(() => {
-      /**
-     * Hide the tag suggestions when a mouse event occurs outside the search input and suggestions list.
-     *
-     * @param event - The mouse event to check; if its target is not contained within either the search input or the suggestions container, suggestions will be hidden.
-     */
     function handleClickOutside(event: MouseEvent) {
       if (
         searchInputRef.current && !searchInputRef.current.contains(event.target as Node) &&
