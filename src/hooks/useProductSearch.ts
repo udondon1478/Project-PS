@@ -37,7 +37,7 @@ export const useProductSearch = ({
   const [isLiked, setIsLiked] = useState(false);
   const [isOwned, setIsOwned] = useState(false);
 
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchInputRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const suggestionsRef = useRef<HTMLUListElement>(null);
 
@@ -218,7 +218,6 @@ export const useProductSearch = ({
       setSearchQuery('');
       setTagSuggestions([]);
       setIsSuggestionsVisible(false);
-      searchInputRef.current?.focus();
       return;
     }
 
@@ -246,7 +245,6 @@ export const useProductSearch = ({
     setSearchQuery('');
     setTagSuggestions([]);
     setIsSuggestionsVisible(false);
-    searchInputRef.current?.focus();
 
     setSelectedTags(newSelectedTags);
     setSelectedNegativeTags(newSelectedNegativeTags);
