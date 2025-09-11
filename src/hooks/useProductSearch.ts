@@ -188,10 +188,9 @@ export const useProductSearch = ({
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        searchInputRef.current && !searchInputRef.current.contains(event.target as Node) &&
-        suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)
-      ) {
+      const isInsideInput = searchInputRef.current && searchInputRef.current.contains(event.target as Node);
+      const isInsideSuggestions = suggestionsRef.current && suggestionsRef.current.contains(event.target as Node);
+      if (!isInsideInput && !isInsideSuggestions) {
         setIsSuggestionsVisible(false);
       }
     }
