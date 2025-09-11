@@ -7,6 +7,22 @@ import { TagSearchBar } from './TagSearchBar';
 import { QuickFilters } from './QuickFilters';
 import { FilterSidebar } from './FilterSidebar';
 
+/**
+ * Product search UI that wires tag-based input, quick filters, and an advanced filter sidebar.
+ *
+ * Renders a search bar with tag suggestions, quick filter buttons, and a collapsible filter sidebar.
+ * The component delegates state and behavior to the `useProductSearch` hook and passes handlers
+ * into presentational subcomponents (TagSearchBar, QuickFilters, FilterSidebar). Clicking the
+ * search button triggers the composed search handler from the hook.
+ *
+ * @param initialSearchQuery - Optional initial text for the search input (default: '').
+ * @param initialSelectedTags - Optional initial list of positive tags (default: []).
+ * @param initialSelectedNegativeTags - Optional initial list of negative tags (default: []).
+ * @param onSearchQueryChange - Optional callback invoked when the search query changes.
+ * @param onSelectedTagsChange - Optional callback invoked when the positive selected tags change.
+ * @param onSelectedNegativeTagsChange - Optional callback invoked when the negative selected tags change.
+ * @returns A React element containing the product search UI.
+ */
 export default function ProductSearch({
   initialSearchQuery = '',
   initialSelectedTags = [],
