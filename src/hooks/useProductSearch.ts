@@ -175,11 +175,6 @@ export const useProductSearch = ({
   }, [searchQuery, selectedTags, selectedNegativeTags]);
 
   useEffect(() => {
-    /**
-     * Hide the tag suggestions when a mouse event occurs outside the search input and suggestions list.
-     *
-     * @param event - The mouse event to check; if its target is not contained within either the search input or the suggestions container, suggestions will be hidden.
-     */
     function handleClickOutside(event: MouseEvent) {
       if (
         searchInputRef.current && !searchInputRef.current.contains(event.target as Node) &&
@@ -280,9 +275,9 @@ export const useProductSearch = ({
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     const trimmedQuery = searchQuery.trim();
-    if ((event.key === ' ' || event.key === 'Enter') && isComposing) return;
+    if ((event.key === ' ' || event.key === 'Enter' || event.key === 'Tab') && isComposing) return;
 
-    if ((event.key === ' ' || event.key === 'Enter' || event.key === 'Tab') && trimmedQuery !== '') {
+    if ((event.key === ' ' || (event.key === 'Enter' && !isComposing) || (event.key === 'Tab' && !isComposing)) && trimmedQuery !== '') {
       event.preventDefault();
       const isNegative = trimmedQuery.startsWith('-');
       const tagName = isNegative ? trimmedQuery.substring(1) : trimmedQuery;
