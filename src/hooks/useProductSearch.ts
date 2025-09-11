@@ -37,7 +37,8 @@ export const useProductSearch = ({
   const [isLiked, setIsLiked] = useState(false);
   const [isOwned, setIsOwned] = useState(false);
 
-  const searchInputRef = useRef<HTMLDivElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const suggestionsRef = useRef<HTMLUListElement>(null);
 
@@ -188,7 +189,7 @@ export const useProductSearch = ({
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      const isInsideInput = searchInputRef.current && searchInputRef.current.contains(event.target as Node);
+      const isInsideInput = searchContainerRef.current && searchContainerRef.current.contains(event.target as Node);
       const isInsideSuggestions = suggestionsRef.current && suggestionsRef.current.contains(event.target as Node);
       if (!isInsideInput && !isInsideSuggestions) {
         setIsSuggestionsVisible(false);
@@ -229,6 +230,7 @@ export const useProductSearch = ({
       setSearchQuery('');
       setTagSuggestions([]);
       setIsSuggestionsVisible(false);
+      searchInputRef.current?.focus();
       return;
     }
 
@@ -256,6 +258,7 @@ export const useProductSearch = ({
     setSearchQuery('');
     setTagSuggestions([]);
     setIsSuggestionsVisible(false);
+    searchInputRef.current?.focus();
 
     setSelectedTags(newSelectedTags);
     setSelectedNegativeTags(newSelectedNegativeTags);
@@ -371,6 +374,7 @@ export const useProductSearch = ({
     setIsLiked,
     isOwned,
     setIsOwned,
+    searchContainerRef,
     searchInputRef,
     suggestionsRef,
     ageRatingTags,

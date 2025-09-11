@@ -40,6 +40,7 @@ export default function ProductSearch({
     setIsLiked,
     isOwned,
     setIsOwned,
+    searchContainerRef,
     searchInputRef,
     suggestionsRef,
     ageRatingTags,
@@ -76,6 +77,7 @@ export default function ProductSearch({
           selectedNegativeTags={selectedNegativeTags}
           tagSuggestions={tagSuggestions}
           isSuggestionsVisible={isSuggestionsVisible}
+          searchContainerRef={searchContainerRef}
           searchInputRef={searchInputRef}
           suggestionsRef={suggestionsRef}
           handleInputChange={handleInputChange}
