@@ -206,11 +206,18 @@ export const useProductSearch = ({
   }, [selectedTags, selectedNegativeTags, selectedAgeRatingTags]);
 
   useEffect(() => {
-    if (isHighPriceFilterEnabled) {
-      setPriceRange([10000, 100000]);
-    } else {
-      setPriceRange([0, 10000]);
-    }
+    setPriceRange(currentPriceRange => {
+      const newBounds = isHighPriceFilterEnabled ? [10000, 100000] : [0, 10000];
+
+      let clampedMin = Math.max(newBounds[0], Math.min(currentPriceRange[0], newBounds[1]));
+      let clampedMax = Math.max(newBounds[0], Math.min(currentPriceRange[1], newBounds[1]));
+
+      if (clampedMin > clampedMax) {
+        [clampedMin, clampedMax] = [clampedMax, clampedMin];
+      }
+
+      return [clampedMin, clampedMax];
+    });
   }, [isHighPriceFilterEnabled]);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
