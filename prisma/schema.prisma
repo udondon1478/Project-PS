@@ -35,6 +35,7 @@ model User {
   sessions      Session[]
   productOwners ProductOwner[]
   tagMetadataEdits TagMetadataHistory[] // ユーザーが行ったタグメタデータ編集
+  onboardingStates OnboardingState[]
 }
 
 model Account {
@@ -361,4 +362,18 @@ model Seller {
   products  Product[] // この販売者が販売する商品リスト
  
   @@map("sellers") // MongoDBの場合のコレクション名
+}
+
+// オンボーディングの状態を追跡するテーブル
+model OnboardingState {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tourKey   String   // e.g., "homePageTour", "productPageTour"
+  status    String   // e.g., "completed", "skipped"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, tourKey])
+  @@index([userId])
 }
