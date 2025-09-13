@@ -10,7 +10,6 @@ function isSchemaOrgAggregateOffer(offers: unknown): offers is SchemaOrgAggregat
   return typeof offers === 'object' && offers !== null && '@type' in offers && offers['@type'] === 'AggregateOffer';
 }
 import { auth } from "@/auth";
-import fetch from 'node-fetch';
 import * as cheerio from 'cheerio';
 
 export const runtime = 'nodejs';

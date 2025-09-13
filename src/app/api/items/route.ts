@@ -10,7 +10,6 @@ function isSchemaOrgAggregateOffer(offers: unknown): offers is SchemaOrgAggregat
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { auth } from "@/auth";
-import fetch from 'node-fetch';
 import * as cheerio from 'cheerio';
 
 export const runtime = 'nodejs';
