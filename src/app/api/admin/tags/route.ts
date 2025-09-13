@@ -1,9 +1,8 @@
 // src/app/api/admin/tags/route.ts
 import { NextResponse } from 'next/server';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { isAdmin } from '@/lib/auth'; // isAdminヘルパー関数をインポート
-
-const prisma = new PrismaClient();
 
 export async function GET(request: Request) {
   // 管理者判定
@@ -60,8 +59,6 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('Error fetching tags:', error);
     return NextResponse.json({ message: 'タグの取得に失敗しました。' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -117,8 +114,6 @@ export async function POST(request: Request) {
          return NextResponse.json({ message: '指定されたタグ名は既に存在します。', field: 'name' }, { status: 409 });
     }
     return NextResponse.json({ message: 'タグの作成に失敗しました。', error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -179,8 +174,6 @@ export async function PUT(request: Request) {
          return NextResponse.json({ message: '指定されたタグIDが見つかりません。', field: 'id' }, { status: 404 });
     }
     return NextResponse.json({ message: 'タグの更新に失敗しました。', error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -212,8 +205,6 @@ export async function DELETE(request: Request) {
          return NextResponse.json({ message: '指定されたタグIDが見つかりません。', field: 'id' }, { status: 404 });
     }
     return NextResponse.json({ message: 'タグの削除に失敗しました。', error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 

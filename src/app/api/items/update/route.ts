@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { SchemaOrgProduct, SchemaOrgOffer, SchemaOrgAggregateOffer } from '@/types/product';
 import { NextResponse } from 'next/server';
 
@@ -14,8 +14,6 @@ import fetch from 'node-fetch';
 import * as cheerio from 'cheerio';
 
 export const runtime = 'nodejs';
-
-const prisma = new PrismaClient();
 
 export async function POST(request: Request) {
   const session = await auth();

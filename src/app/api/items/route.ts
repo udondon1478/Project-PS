@@ -7,15 +7,13 @@ function isSchemaOrgAggregateOffer(offers: unknown): offers is SchemaOrgAggregat
   return typeof offers === 'object' && offers !== null && '@type' in offers && offers['@type'] === 'AggregateOffer';
 }
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { auth } from "@/auth";
 import fetch from 'node-fetch';
 import * as cheerio from 'cheerio';
 
 export const runtime = 'nodejs';
-
-const prisma = new PrismaClient();
 
 export async function GET() {
   const items = await prisma.user.findMany();
