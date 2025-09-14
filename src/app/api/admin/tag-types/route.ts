@@ -1,9 +1,7 @@
 // src/app/api/admin/tag-types/route.ts
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { isAdmin } from '@/lib/auth'; // isAdminヘルパー関数をインポート
-
-const prisma = new PrismaClient();
 
 export async function GET() {
   // 管理者判定
@@ -29,7 +27,5 @@ export async function GET() {
   } catch (error) {
     console.error('Error fetching tag types:', error);
     return NextResponse.json({ message: 'タグタイプの取得に失敗しました。' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }

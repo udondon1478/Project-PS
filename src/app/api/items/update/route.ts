@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { SchemaOrgProduct, SchemaOrgOffer, SchemaOrgAggregateOffer } from '@/types/product';
 import { NextResponse } from 'next/server';
 
@@ -10,12 +10,9 @@ function isSchemaOrgAggregateOffer(offers: unknown): offers is SchemaOrgAggregat
   return typeof offers === 'object' && offers !== null && '@type' in offers && offers['@type'] === 'AggregateOffer';
 }
 import { auth } from "@/auth";
-import fetch from 'node-fetch';
 import * as cheerio from 'cheerio';
 
 export const runtime = 'nodejs';
-
-const prisma = new PrismaClient();
 
 export async function POST(request: Request) {
   const session = await auth();
