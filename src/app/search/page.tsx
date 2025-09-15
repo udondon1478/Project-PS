@@ -2,6 +2,7 @@ import React from "react";
 import ProductGrid from "@/components/ProductGrid";
 import { Product } from "@/types/product";
 import { Metadata } from 'next';
+import { headers } from 'next/headers';
 
 interface SearchPageProps {
   searchParams: {
@@ -41,7 +42,10 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
   let error: string | null = null;
 
   try {
-    const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+    const heads = headers();
+    const protocol = heads.get('x-forwarded-proto') || 'http';
+    const host = heads.get('host');
+    const baseUrl = `${protocol}://${host}`;
 
     // URLSearchParams needs an object of type Record<string, string>, but searchParams can have undefined values.
     // So we filter out the undefined values before creating the URLSearchParams object.
