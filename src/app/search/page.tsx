@@ -85,9 +85,9 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
   const categoryTagId = searchParams.categoryTagId || "";
 
   const normalizeQueryParam = (param: string | string[] | undefined): string[] => {
-      if (!param) return [];
-      if (Array.isArray(param)) return param;
-      return param.split(',').filter(Boolean);
+    if (!param) return [];
+    const arr = Array.isArray(param) ? param : param.split(',');
+    return arr.map(s => s.trim()).filter(Boolean);
   };
 
   const ageRatingTags = normalizeQueryParam(searchParams.ageRatingTags);
