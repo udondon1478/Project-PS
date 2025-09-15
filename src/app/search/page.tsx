@@ -6,11 +6,11 @@ import { headers } from 'next/headers';
 
 interface SearchPageProps {
   searchParams: {
-    tags?: string;
-    ageRatingTags?: string;
+    tags?: string | string[];
+    ageRatingTags?: string | string[];
     categoryTagId?: string;
-    featureTagIds?: string;
-    negativeTags?: string;
+    featureTagIds?: string | string[];
+    negativeTags?: string | string[];
     minPrice?: string;
     maxPrice?: string;
     liked?: string;
@@ -20,8 +20,8 @@ interface SearchPageProps {
 }
 
 export async function generateMetadata({ searchParams }: SearchPageProps): Promise<Metadata> {
-  const searchTerm = searchParams?.tags || "";
-  const negativeSearchTerm = searchParams?.negativeTags || "";
+  const searchTerm = Array.isArray(searchParams.tags) ? searchParams.tags.join(', ') : searchParams.tags || "";
+  const negativeSearchTerm = Array.isArray(searchParams.negativeTags) ? searchParams.negativeTags.join(', ') : searchParams.negativeTags || "";
   let title = "検索結果";
 
   if (searchTerm && negativeSearchTerm) {
@@ -47,15 +47,14 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
     const host = heads.get('host');
     const baseUrl = `${protocol}://${host}`;
 
-    // URLSearchParams needs an object of type Record<string, string>, but searchParams can have undefined values.
-    // So we filter out the undefined values before creating the URLSearchParams object.
-    const definedSearchParams: Record<string, string> = {};
+    const queryParams = new URLSearchParams();
     for (const [key, value] of Object.entries(searchParams)) {
-      if (typeof value === 'string') {
-        definedSearchParams[key] = value;
-      }
+        if (value) {
+            const paramValue = Array.isArray(value) ? value.join(',') : value;
+            queryParams.set(key, paramValue);
+        }
     }
-    const query = new URLSearchParams(definedSearchParams).toString();
+    const query = queryParams.toString();
 
     const response = await fetch(`${baseUrl}/api/products?${query}`, {
       cache: 'no-store',
@@ -80,15 +79,17 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
     }
   }
 
-  const {
-    tags: searchTerm = "",
-    ageRatingTags: ageRatingTagsParam,
-    categoryTagId = "",
-    featureTagIds: featureTagIdsParam,
-  } = searchParams;
+  const searchTerm = Array.isArray(searchParams.tags) ? searchParams.tags.join(', ') : searchParams.tags || "";
+  const categoryTagId = searchParams.categoryTagId || "";
 
-  const ageRatingTags = ageRatingTagsParam?.split(',') || [];
-  const featureTagIds = featureTagIdsParam?.split(',') || [];
+  const normalizeQueryParam = (param: string | string[] | undefined): string[] => {
+      if (!param) return [];
+      if (Array.isArray(param)) return param;
+      return param.split(',').filter(Boolean);
+  };
+
+  const ageRatingTags = normalizeQueryParam(searchParams.ageRatingTags);
+  const featureTagIds = normalizeQueryParam(searchParams.featureTagIds);
 
 
   if (error) {
