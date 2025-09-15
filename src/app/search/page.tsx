@@ -61,12 +61,15 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
     });
 
     if (!response.ok) {
+      let errorData = null;
       try {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to fetch products with status: ${response.status}`);
+        errorData = await response.json();
       } catch (e) {
-         throw new Error(`Failed to fetch products with status: ${response.status}`);
+        // Ignore JSON parsing errors if the response body is not valid JSON
       }
+      throw new Error(
+        errorData?.error || `Failed to fetch products with status: ${response.status}`
+      );
     }
 
     products = await response.json();
