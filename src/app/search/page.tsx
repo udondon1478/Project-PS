@@ -21,14 +21,14 @@ interface SearchPageProps {
 export async function generateMetadata({ searchParams }: SearchPageProps): Promise<Metadata> {
   const searchTerm = searchParams?.tags || "";
   const negativeSearchTerm = searchParams?.negativeTags || "";
-  let title = "Search Results";
+  let title = "検索結果";
 
   if (searchTerm && negativeSearchTerm) {
-    title = `Search: ${searchTerm} -${negativeSearchTerm}`;
+    title = `検索: ${searchTerm} -${negativeSearchTerm}`;
   } else if (searchTerm) {
-    title = `Search: ${searchTerm}`;
+    title = `検索: ${searchTerm}`;
   } else if (negativeSearchTerm) {
-    title = `Search: -${negativeSearchTerm}`;
+    title = `検索: -${negativeSearchTerm}`;
   }
 
   return {
@@ -94,21 +94,21 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
   if (products.length === 0) {
     return (
       <div className="container mx-auto px-4 py-8 pt-40">
-        <p>Search term: {searchTerm}</p>
-        {ageRatingTags.length > 0 && <p>Age rating tags: {ageRatingTags.join(',')}</p>}
-        {categoryTagId && <p>Category tag ID: {categoryTagId}</p>}
-        {featureTagIds.length > 0 && <p>Feature tag IDs: {featureTagIds.join(',')}</p>}
-        <div>No products found matching your criteria.</div>
+        <p>検索キーワード: {searchTerm}</p>
+        {ageRatingTags.length > 0 && <p>対象年齢タグ: {ageRatingTags.join(',')}</p>}
+        {categoryTagId && <p>カテゴリータグID: {categoryTagId}</p>}
+        {featureTagIds.length > 0 && <p>主要機能タグID: {featureTagIds.join(',')}</p>}
+        <div>指定された条件に一致する商品は見つかりませんでした。</div>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto px-4 py-8 pt-40">
-      <p>Search term: {searchTerm}</p>
-      {ageRatingTags.length > 0 && <p>Age rating tags: {ageRatingTags.join(',')}</p>}
-      {categoryTagId && <p>Category tag ID: {categoryTagId}</p>}
-      {featureTagIds.length > 0 && <p>Feature tag IDs: {featureTagIds.join(',')}</p>}
+      <p>検索キーワード: {searchTerm}</p>
+      {ageRatingTags.length > 0 && <p>対象年齢タグ: {ageRatingTags.join(',')}</p>}
+      {categoryTagId && <p>カテゴリータグID: {categoryTagId}</p>}
+      {featureTagIds.length > 0 && <p>主要機能タグID: {featureTagIds.join(',')}</p>}
 
       <ProductGrid products={products} showLikeButton={true} showOwnButton={true} />
     </div>
