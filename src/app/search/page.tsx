@@ -77,7 +77,7 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
     if (err instanceof Error) {
       error = err.message;
     } else {
-      error = 'An unknown error occurred';
+      error = '不明なエラーが発生しました';
     }
   }
 
