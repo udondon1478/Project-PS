@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { searchProducts, SearchParams } from '@/lib/searchProducts';
+import { searchProducts } from '@/lib/searchProducts';
+import type { SearchParams } from '@/lib/searchProducts';
 
 export async function GET(request: Request) {
   try {
