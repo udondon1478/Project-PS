@@ -1,7 +1,7 @@
 import ProductGrid from "@/components/ProductGrid";
 import { Product } from "@/types/product";
 import { Metadata } from 'next';
-import { headers } from 'next/headers';
+import { searchProducts } from '@/lib/searchProducts';
 
 interface SearchPageProps {
   searchParams: {
@@ -41,38 +41,7 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
   let error: string | null = null;
 
   try {
-    const heads = headers();
-    const protocol = heads.get('x-forwarded-proto') || 'http';
-    const host = heads.get('host');
-    const baseUrl = `${protocol}://${host}`;
-
-    const queryParams = new URLSearchParams();
-    for (const [key, value] of Object.entries(searchParams)) {
-        if (value) {
-            const paramValue = Array.isArray(value) ? value.join(',') : value;
-            queryParams.set(key, paramValue);
-        }
-    }
-    const query = queryParams.toString();
-
-    const response = await fetch(`${baseUrl}/api/products?${query}`, {
-      cache: 'no-store',
-    });
-
-    if (!response.ok) {
-      let errorData = null;
-      try {
-        errorData = await response.json();
-      } catch (e) {
-        // Ignore JSON parsing errors if the response body is not valid JSON
-      }
-      throw new Error(
-        errorData?.error || `Failed to fetch products with status: ${response.status}`
-      );
-    }
-
-    products = await response.json();
-
+    products = await searchProducts(searchParams);
   } catch (err: unknown) {
     if (err instanceof Error) {
       error = err.message;
