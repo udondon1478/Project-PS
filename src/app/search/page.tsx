@@ -3,19 +3,11 @@ import { Product } from "@/types/product";
 import { Metadata } from 'next';
 import { searchProducts } from '@/lib/searchProducts';
 
+import { Product } from "@/types/product";
+import type { SearchParams } from "@/lib/searchProducts";
+
 interface SearchPageProps {
-  searchParams: {
-    tags?: string | string[];
-    ageRatingTags?: string | string[];
-    categoryTagId?: string;
-    featureTagIds?: string | string[];
-    negativeTags?: string | string[];
-    minPrice?: string;
-    maxPrice?: string;
-    liked?: string;
-    owned?: string;
-    isHighPrice?: string;
-  };
+  searchParams: SearchParams;
 }
 
 export async function generateMetadata({ searchParams }: SearchPageProps): Promise<Metadata> {
