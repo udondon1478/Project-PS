@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { Product } from '@/types/product';
 import { auth } from '@/auth';
+import { normalizeQueryParam } from './utils';
 
 export interface SearchParams {
   tags?: string | string[];
@@ -59,16 +60,14 @@ export async function searchProducts(params: SearchParams): Promise<Product[]> {
       maxPrice = 100000;
     }
 
-    const normalize = (p: string | string[] | undefined) => p ? (Array.isArray(p) ? p : p.split(',').map(s => s.trim()).filter(Boolean)) : [];
-
-    const tagNames = normalize(tagsParam);
-    const negativeTagNames = normalize(negativeTagsParam);
-    const featureTagIds = normalize(featureTagIdsParam);
+    const tagNames = normalizeQueryParam(tagsParam);
+    const negativeTagNames = normalizeQueryParam(negativeTagsParam);
+    const featureTagIds = normalizeQueryParam(featureTagIdsParam);
 
     const whereConditions: Prisma.ProductWhereInput[] = [];
 
     let ageRatingTagIds: string[] = [];
-    const ageRatingTags = normalize(ageRatingTagsParam);
+    const ageRatingTags = normalizeQueryParam(ageRatingTagsParam);
     if (ageRatingTags.length > 0) {
       const tags = await prisma.tag.findMany({
         where: {

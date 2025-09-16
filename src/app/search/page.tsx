@@ -3,6 +3,7 @@ import { Product } from "@/types/product";
 import type { Metadata } from 'next';
 import { searchProducts } from '@/lib/searchProducts';
 import type { SearchParams } from '@/lib/searchProducts';
+import { normalizeQueryParam } from '@/lib/utils';
 
 interface SearchPageProps {
   searchParams: SearchParams;
@@ -42,12 +43,6 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
 
   const searchTerm = Array.isArray(searchParams.tags) ? searchParams.tags.join(', ') : searchParams.tags || "";
   const categoryTagId = searchParams.categoryTagId || "";
-
-  const normalizeQueryParam = (param: string | string[] | undefined): string[] => {
-    if (!param) return [];
-    const arr = Array.isArray(param) ? param : param.split(',');
-    return arr.map(s => s.trim()).filter(Boolean);
-  };
 
   const ageRatingTags = normalizeQueryParam(searchParams.ageRatingTags);
   const featureTagIds = normalizeQueryParam(searchParams.featureTagIds);
