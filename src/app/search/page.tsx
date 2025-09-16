@@ -3,14 +3,22 @@ import { Product } from "@/types/product";
 import { Metadata } from 'next';
 import { searchProducts } from '@/lib/searchProducts';
 
-import { Product } from "@/types/product";
-import type { SearchParams } from "@/lib/searchProducts";
-
 interface SearchPageProps {
-  searchParams: SearchParams;
+  searchParams: {
+    tags?: string | string[];
+    ageRatingTags?: string | string[];
+    categoryTagId?: string;
+    featureTagIds?: string | string[];
+    negativeTags?: string | string[];
+    minPrice?: string;
+    maxPrice?: string;
+    liked?: string;
+    owned?: string;
+    isHighPrice?: string;
+  };
 }
 
-export async function generateMetadata({ searchParams }: SearchPageProps): Promise<Metadata> {
+export function generateMetadata({ searchParams }: SearchPageProps): Metadata {
   const searchTerm = Array.isArray(searchParams.tags) ? searchParams.tags.join(', ') : searchParams.tags || "";
   const negativeSearchTerm = Array.isArray(searchParams.negativeTags) ? searchParams.negativeTags.join(', ') : searchParams.negativeTags || "";
   let title = "検索結果";
