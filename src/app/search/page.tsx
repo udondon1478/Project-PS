@@ -1,6 +1,6 @@
 import ProductGrid from "@/components/ProductGrid";
 import { Product } from "@/types/product";
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import { searchProducts } from '@/lib/searchProducts';
 import type { SearchParams } from '@/lib/searchProducts';
 
