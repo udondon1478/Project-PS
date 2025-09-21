@@ -5,10 +5,10 @@ import type { SearchParams } from '@/lib/searchProducts';
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const allowedKeys: (keyof SearchParams)[] = [
+    const allowedKeys = [
       'tags', 'ageRatingTags', 'categoryTagId', 'featureTagIds',
       'negativeTags', 'minPrice', 'maxPrice', 'liked', 'owned', 'isHighPrice'
-    ];
+    ] as const satisfies readonly (keyof SearchParams)[];
 
     const params: SearchParams = {};
 
