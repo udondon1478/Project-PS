@@ -213,20 +213,22 @@ export async function searchProducts(params: SearchParams): Promise<Product[]> {
       orderBy: {
         createdAt: 'desc',
       },
-      select: {
-        id: true,
-        title: true,
-        lowPrice: true,
-        highPrice: true,
-        productTags: { select: { tag: { select: { name: true } } } },
+      include: {
+        productTags: {
+          include: {
+            tag: true,
+          },
+        },
         images: {
-          where: { isMain: true },
+          where: {
+            isMain: true,
+          },
           take: 1,
-          select: { imageUrl: true },
         },
         variations: {
-          orderBy: { order: 'asc' },
-          select: { id: true, name: true, price: true },
+          orderBy: {
+            order: 'asc',
+          },
         },
       },
     });
