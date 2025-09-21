@@ -52,8 +52,19 @@ export async function searchProducts(params: SearchParams): Promise<Product[]> {
       owned: ownedParam,
     } = params;
 
-    let minPrice = minPriceParam ? parseInt(minPriceParam) : undefined;
-    let maxPrice = maxPriceParam ? parseInt(maxPriceParam) : undefined;
+    const parseAndValidatePrice = (priceStr: string | undefined): number | undefined => {
+      if (priceStr === undefined) {
+        return undefined;
+      }
+      const price = parseInt(priceStr, 10);
+      if (Number.isNaN(price)) {
+        return undefined;
+      }
+      return Math.max(0, price);
+    };
+
+    let minPrice = parseAndValidatePrice(minPriceParam);
+    let maxPrice = parseAndValidatePrice(maxPriceParam);
 
     if (isHighPriceParam === 'true') {
       minPrice = 10000;
