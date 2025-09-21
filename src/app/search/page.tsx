@@ -34,11 +34,8 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
   try {
     products = await searchProducts(searchParams);
   } catch (err: unknown) {
-    if (err instanceof Error) {
-      error = err.message;
-    } else {
-      error = '不明なエラーが発生しました';
-    }
+    console.error("Search page failed to fetch products:", err);
+    error = "エラーが発生しました。しばらくしてから再度お試しください。";
   }
 
   const searchTerm = Array.isArray(searchParams.tags) ? searchParams.tags.join(', ') : searchParams.tags || "";
