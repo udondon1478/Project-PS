@@ -52,7 +52,7 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
   if (products.length === 0) {
     return (
       <div className="container mx-auto px-4 py-8 pt-40">
-        <p>検索キーワード: {searchTerm}</p>
+        {searchTerm && <p>検索キーワード: {searchTerm}</p>}
         {ageRatingTags.length > 0 && <p>対象年齢タグ: {ageRatingTags.join(', ')}</p>}
         {categoryTagId && <p>カテゴリータグID: {categoryTagId}</p>}
         {featureTagIds.length > 0 && <p>主要機能タグID: {featureTagIds.join(', ')}</p>}
@@ -63,7 +63,7 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
 
   return (
     <div className="container mx-auto px-4 py-8 pt-40">
-      <p>検索キーワード: {searchTerm}</p>
+      {searchTerm && <p>検索キーワード: {searchTerm}</p>}
       {ageRatingTags.length > 0 && <p>対象年齢タグ: {ageRatingTags.join(', ')}</p>}
       {categoryTagId && <p>カテゴリータグID: {categoryTagId}</p>}
       {featureTagIds.length > 0 && <p>主要機能タグID: {featureTagIds.join(', ')}</p>}
