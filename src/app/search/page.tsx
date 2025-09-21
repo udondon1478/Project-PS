@@ -56,9 +56,9 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
     return (
       <div className="container mx-auto px-4 py-8 pt-40">
         <p>検索キーワード: {searchTerm}</p>
-        {ageRatingTags.length > 0 && <p>対象年齢タグ: {ageRatingTags.join(',')}</p>}
+        {ageRatingTags.length > 0 && <p>対象年齢タグ: {ageRatingTags.join(', ')}</p>}
         {categoryTagId && <p>カテゴリータグID: {categoryTagId}</p>}
-        {featureTagIds.length > 0 && <p>主要機能タグID: {featureTagIds.join(',')}</p>}
+        {featureTagIds.length > 0 && <p>主要機能タグID: {featureTagIds.join(', ')}</p>}
         <div>指定された条件に一致する商品は見つかりませんでした。</div>
       </div>
     );
@@ -67,9 +67,9 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
   return (
     <div className="container mx-auto px-4 py-8 pt-40">
       <p>検索キーワード: {searchTerm}</p>
-      {ageRatingTags.length > 0 && <p>対象年齢タグ: {ageRatingTags.join(',')}</p>}
+      {ageRatingTags.length > 0 && <p>対象年齢タグ: {ageRatingTags.join(', ')}</p>}
       {categoryTagId && <p>カテゴリータグID: {categoryTagId}</p>}
-      {featureTagIds.length > 0 && <p>主要機能タグID: {featureTagIds.join(',')}</p>}
+      {featureTagIds.length > 0 && <p>主要機能タグID: {featureTagIds.join(', ')}</p>}
 
       <ProductGrid products={products} showLikeButton={true} showOwnButton={true} />
     </div>
