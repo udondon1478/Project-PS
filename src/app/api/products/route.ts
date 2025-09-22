@@ -11,6 +11,9 @@ export async function GET(request: Request) {
     ] as const satisfies readonly (keyof SearchParams)[];
 
     const params: SearchParams = {};
+    const singleValueKeys = new Set<keyof SearchParams>([
+      "minPrice", "maxPrice", "liked", "owned", "isHighPrice", "categoryTagId"
+    ]);
 
     for (const key of allowedKeys) {
       const values = searchParams.getAll(key)
@@ -23,10 +26,14 @@ export async function GET(request: Request) {
         continue;
       }
 
-      if (uniqueValues.length === 1) {
+      if (singleValueKeys.has(key)) {
         params[key] = uniqueValues[0];
       } else {
-        params[key] = uniqueValues;
+        if (uniqueValues.length === 1) {
+          params[key] = uniqueValues[0];
+        } else {
+          params[key] = uniqueValues;
+        }
       }
     }
 
