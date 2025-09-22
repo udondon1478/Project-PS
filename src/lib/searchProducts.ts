@@ -96,10 +96,11 @@ export async function searchProducts(params: SearchParams): Promise<Product[]> {
       ageRatingTagIds = tags.map(tag => tag.id);
     }
 
-    const tagIdsToFilter = [...featureTagIds];
+    const tagIdSet = new Set(featureTagIds);
     if (categoryTagId) {
-      tagIdsToFilter.push(categoryTagId);
+      tagIdSet.add(categoryTagId);
     }
+    const tagIdsToFilter = [...tagIdSet];
 
     if (ageRatingTagIds.length > 0) {
       whereConditions.push({
