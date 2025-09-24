@@ -9,6 +9,20 @@ interface SearchPageProps {
   searchParams: SearchParams;
 }
 
+/**
+ * Build page metadata for search results, primarily setting the page title.
+ *
+ * The title is derived from `searchParams.tags` and `searchParams.negativeTags`.
+ * - If both positive and negative terms exist: "検索: {tags} -{negativeTags}"
+ * - If only positive terms exist: "検索: {tags}"
+ * - If only negative terms exist: "検索: -{negativeTags}"
+ * - Otherwise: "検索結果"
+ *
+ * `searchParams.tags` and `searchParams.negativeTags` may be a string or string[]; arrays are joined with ", ".
+ *
+ * @param searchParams - Search query parameters used to compose the title (supports `tags` and `negativeTags` as string | string[]).
+ * @returns Metadata object with a `title` field.
+ */
 export function generateMetadata({ searchParams }: SearchPageProps): Metadata {
   const searchTerm = Array.isArray(searchParams.tags) ? searchParams.tags.join(', ') : searchParams.tags || "";
   const negativeSearchTerm = Array.isArray(searchParams.negativeTags) ? searchParams.negativeTags.join(', ') : searchParams.negativeTags || "";
