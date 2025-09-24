@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { searchProducts } from '@/lib/searchProducts';
 import type { SearchParams } from '@/lib/searchProducts';
+import { normalizeQueryParam } from '@/lib/utils';
 
 export async function GET(request: Request) {
   try {
@@ -16,23 +17,20 @@ export async function GET(request: Request) {
     ]);
 
     for (const key of allowedKeys) {
-      const values = searchParams.getAll(key)
-        .map(v => v.trim())
-        .filter(v => v !== '');
+      const values = searchParams.getAll(key);
+      const normalizedValues = normalizeQueryParam(values);
 
-      const uniqueValues = [...new Set(values)];
-
-      if (uniqueValues.length === 0) {
+      if (normalizedValues.length === 0) {
         continue;
       }
 
       if (singleValueKeys.has(key)) {
-        params[key] = uniqueValues[0];
+        params[key] = normalizedValues[0];
       } else {
-        if (uniqueValues.length === 1) {
-          params[key] = uniqueValues[0];
+        if (normalizedValues.length === 1) {
+          params[key] = normalizedValues[0];
         } else {
-          params[key] = uniqueValues;
+          params[key] = normalizedValues;
         }
       }
     }

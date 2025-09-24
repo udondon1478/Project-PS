@@ -8,5 +8,6 @@ export function cn(...inputs: ClassValue[]) {
 export const normalizeQueryParam = (param: string | string[] | undefined): string[] => {
   if (!param) return [];
   const arr = Array.isArray(param) ? param : param.split(',');
-  return arr.map(s => s.trim()).filter(Boolean);
+  const trimmedAndFiltered = arr.map(s => s.trim()).filter(Boolean);
+  return [...new Set(trimmedAndFiltered)];
 };
