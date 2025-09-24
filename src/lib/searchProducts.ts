@@ -17,6 +17,23 @@ export interface SearchParams {
   isHighPrice?: string;
 }
 
+/**
+ * Searches products using multiple optional filters and returns formatted Product objects.
+ *
+ * Performs user-aware filtering (likes/ownership) when a session exists, resolves age-rating tags
+ * (falling back to the "全年齢" tag when none specified), normalizes query parameters, applies
+ * tag inclusion/exclusion, feature/category tag ID filtering, optional price range (supports a
+ * special `isHighPrice` mode that forces minPrice=10000 and maxPrice=100000), and returns results
+ * ordered by newest first with main image, tags, and variations included.
+ *
+ * @param params - Search parameters (see SearchParams). Notable behaviors:
+ *   - `isHighPrice='true'` overrides parsed min/max prices to the high-price range.
+ *   - `liked='true'` / `owned='true'` filter by the current user's likes/ownership when authenticated.
+ *   - `ageRatingTags` are resolved to tag IDs under the `age_rating` category; if none provided or
+ *     none match, the function requires the "全年齢" age-rating tag when present.
+ * @returns An array of Product objects matching the filters.
+ * @throws Error with message '商品の取得に失敗しました' if the search fails.
+ */
 export async function searchProducts(params: SearchParams): Promise<Product[]> {
   try {
     const session = await auth();
