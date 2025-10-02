@@ -5,12 +5,13 @@ import { searchProducts } from '@/lib/searchProducts';
 import { normalizeQueryParam } from '@/lib/utils';
 
 interface SearchPageProps {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export function generateMetadata({ searchParams }: SearchPageProps): Metadata {
-  const searchTerm = Array.isArray(searchParams.tags) ? searchParams.tags.join(', ') : searchParams.tags || "";
-  const negativeSearchTerm = Array.isArray(searchParams.negativeTags) ? searchParams.negativeTags.join(', ') : searchParams.negativeTags || "";
+export async function generateMetadata({ searchParams }: SearchPageProps): Promise<Metadata> {
+  const resolvedSearchParams = await searchParams;
+  const searchTerm = Array.isArray(resolvedSearchParams.tags) ? resolvedSearchParams.tags.join(', ') : resolvedSearchParams.tags || "";
+  const negativeSearchTerm = Array.isArray(resolvedSearchParams.negativeTags) ? resolvedSearchParams.negativeTags.join(', ') : resolvedSearchParams.negativeTags || "";
   let title = "検索結果";
 
   if (searchTerm && negativeSearchTerm) {
@@ -30,18 +31,20 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
   let products: Product[] = [];
   let error: string | null = null;
 
+  const resolvedSearchParams = await searchParams;
+
   try {
-    products = await searchProducts(searchParams);
+    products = await searchProducts(resolvedSearchParams);
   } catch (err: unknown) {
     console.error("Search page failed to fetch products:", err);
     error = "エラーが発生しました。しばらくしてから再度お試しください。";
   }
 
-  const searchTerm = Array.isArray(searchParams.tags) ? searchParams.tags.join(', ') : searchParams.tags || "";
-  const categoryTagId = searchParams.categoryTagId || "";
+  const searchTerm = Array.isArray(resolvedSearchParams.tags) ? resolvedSearchParams.tags.join(', ') : resolvedSearchParams.tags || "";
+  const categoryTagId = resolvedSearchParams.categoryTagId || "";
 
-  const ageRatingTags = normalizeQueryParam(searchParams.ageRatingTags);
-  const featureTagIds = normalizeQueryParam(searchParams.featureTagIds);
+  const ageRatingTags = normalizeQueryParam(resolvedSearchParams.ageRatingTags);
+  const featureTagIds = normalizeQueryParam(resolvedSearchParams.featureTagIds);
 
 
   if (error) {
