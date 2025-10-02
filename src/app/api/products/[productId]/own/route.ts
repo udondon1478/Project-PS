@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
-import { Prisma } from '@prisma/client';
+import { Prisma, PrismaClientKnownRequestError } from '@prisma/client';
 
 // 所有済みを追加するAPI
 export async function POST(
@@ -79,9 +79,9 @@ export async function DELETE(
     });
 
     return NextResponse.json({ message: 'Removed from owned list' }, { status: 200 });
-  } catch (error) {
+  } catch (error: unknown) {
     // 削除対象が見つからない場合もエラーになるので、考慮が必要
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+    if (error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
       return NextResponse.json({ error: 'Owned entry not found' }, { status: 404 });
     }
     console.error('Error removing from owned list:', error);
