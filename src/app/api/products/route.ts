@@ -43,7 +43,8 @@ export async function GET(request: Request) {
         if (normalizedValues.length === 1) {
           params[key] = normalizedValues[0];
         } else {
-          params[key] = normalizedValues;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (params as any)[key] = normalizedValues;
         }
       }
     }

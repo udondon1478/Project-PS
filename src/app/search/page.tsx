@@ -5,9 +5,10 @@ import { searchProducts } from '@/lib/searchProducts';
 import type { SearchParams } from '@/lib/searchProducts';
 import { normalizeQueryParam } from '@/lib/utils';
 
-interface SearchPageProps {
-  searchParams: SearchParams;
-}
+type SearchPageProps = {
+  params: Promise<Record<string, string>>;
+  searchParams: Promise<SearchParams>;
+};
 
 /**
  * Build page metadata for search results, primarily setting the page title.
@@ -23,9 +24,10 @@ interface SearchPageProps {
  * @param searchParams - Search query parameters used to compose the title (supports `tags` and `negativeTags` as string | string[]).
  * @returns Metadata object with a `title` field.
  */
-export function generateMetadata({ searchParams }: SearchPageProps): Metadata {
-  const searchTerm = Array.isArray(searchParams.tags) ? searchParams.tags.join(', ') : searchParams.tags || "";
-  const negativeSearchTerm = Array.isArray(searchParams.negativeTags) ? searchParams.negativeTags.join(', ') : searchParams.negativeTags || "";
+export async function generateMetadata({ searchParams }: SearchPageProps): Promise<Metadata> {
+  const resolvedSearchParams = await searchParams;
+  const searchTerm = Array.isArray(resolvedSearchParams.tags) ? resolvedSearchParams.tags.join(', ') : resolvedSearchParams.tags || "";
+  const negativeSearchTerm = Array.isArray(resolvedSearchParams.negativeTags) ? resolvedSearchParams.negativeTags.join(', ') : resolvedSearchParams.negativeTags || "";
   let title = "検索結果";
 
   if (searchTerm && negativeSearchTerm) {
@@ -42,21 +44,22 @@ export function generateMetadata({ searchParams }: SearchPageProps): Metadata {
 }
 
 const SearchPage = async ({ searchParams }: SearchPageProps) => {
+  const resolvedSearchParams = await searchParams;
   let products: Product[] = [];
   let error: string | null = null;
 
   try {
-    products = await searchProducts(searchParams);
+    products = await searchProducts(resolvedSearchParams);
   } catch (err: unknown) {
     console.error("Search page failed to fetch products:", err);
     error = "エラーが発生しました。しばらくしてから再度お試しください。";
   }
 
-  const searchTerm = Array.isArray(searchParams.tags) ? searchParams.tags.join(', ') : searchParams.tags || "";
-  const categoryTagId = searchParams.categoryTagId || "";
+  const searchTerm = Array.isArray(resolvedSearchParams.tags) ? resolvedSearchParams.tags.join(', ') : resolvedSearchParams.tags || "";
+  const categoryTagId = resolvedSearchParams.categoryTagId || "";
 
-  const ageRatingTags = normalizeQueryParam(searchParams.ageRatingTags);
-  const featureTagIds = normalizeQueryParam(searchParams.featureTagIds);
+  const ageRatingTags = normalizeQueryParam(resolvedSearchParams.ageRatingTags);
+  const featureTagIds = normalizeQueryParam(resolvedSearchParams.featureTagIds);
 
 
   if (error) {
