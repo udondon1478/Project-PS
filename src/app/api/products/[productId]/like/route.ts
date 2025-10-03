@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Prisma, PrismaClientKnownRequestError } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 
@@ -77,9 +77,9 @@ export async function DELETE(
     });
 
     return NextResponse.json({ message: 'Product unliked successfully' }, { status: 200 });
-  } catch (error: unknown) {
+  } catch (error) {
     // 削除対象が見つからない場合もエラーになるので、考慮が必要
-    if (error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
       return NextResponse.json({ error: 'Like entry not found' }, { status: 404 });
     }
     console.error('Error unliking product:', error);
