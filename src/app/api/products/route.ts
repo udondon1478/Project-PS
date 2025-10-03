@@ -3,32 +3,48 @@ import { searchProducts } from '@/lib/searchProducts';
 import type { SearchParams } from '@/lib/searchProducts';
 import { normalizeQueryParam } from '@/lib/utils';
 
+/**
+ * Handles GET requests for product search.
+ *
+ * Parses the request URL's query parameters into a SearchParams object (accepting the keys:
+ * `tags`, `ageRatingTags`, `categoryTagId`, `featureTagIds`, `negativeTags`, `minPrice`, `maxPrice`,
+ * `liked`, `owned`, `isHighPrice`). Single-value keys (`minPrice`, `maxPrice`, `liked`, `owned`,
+ * `isHighPrice`, `categoryTagId`) are collapsed to a scalar; other keys become a single string or an
+ * array depending on how many values are provided. Delegates the search to `searchProducts`
+ * and returns the result as a JSON response.
+ *
+ * @returns A JSON NextResponse containing the found products on success, or a 500 JSON response
+ *          with an error message on failure.
+ */
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const singleValueKeys = [
-      "minPrice", "maxPrice", "liked", "owned", "isHighPrice", "categoryTagId"
-    ] as const satisfies readonly (Extract<keyof SearchParams, string>)[];
-
-    const multiValueKeys = [
-      "tags", "ageRatingTags", "featureTagIds", "negativeTags"
-    ] as const satisfies readonly (Extract<keyof SearchParams, string>)[];
+    const allowedKeys = [
+      'tags', 'ageRatingTags', 'categoryTagId', 'featureTagIds',
+      'negativeTags', 'minPrice', 'maxPrice', 'liked', 'owned', 'isHighPrice'
+    ] as const satisfies readonly (keyof SearchParams)[];
 
     const params: SearchParams = {};
+    const singleValueKeys = new Set<keyof SearchParams>([
+      "minPrice", "maxPrice", "liked", "owned", "isHighPrice", "categoryTagId"
+    ]);
 
-    for (const key of singleValueKeys) {
-      const values = normalizeQueryParam(searchParams.get(key) ?? undefined);
-      if (values.length > 0) {
-        params[key] = values[0];
+    for (const key of allowedKeys) {
+      const values = searchParams.getAll(key);
+      const normalizedValues = normalizeQueryParam(values);
+
+      if (normalizedValues.length === 0) {
+        continue;
       }
-    }
 
-    for (const key of multiValueKeys) {
-      const values = normalizeQueryParam(searchParams.getAll(key));
-      if (values.length > 1) {
-        params[key] = values;
-      } else if (values.length === 1) {
-        params[key] = values[0];
+      if (singleValueKeys.has(key)) {
+        params[key] = normalizedValues[0];
+      } else {
+        if (normalizedValues.length === 1) {
+          params[key] = normalizedValues[0];
+        } else {
+          params[key] = normalizedValues;
+        }
       }
     }
 

@@ -10,9 +10,9 @@ interface TagSearchBarProps {
   selectedNegativeTags: string[];
   tagSuggestions: string[];
   isSuggestionsVisible: boolean;
-  searchContainerRef: React.Ref<HTMLDivElement>;
-  searchInputRef: React.Ref<HTMLInputElement>;
-  suggestionsRef: React.Ref<HTMLUListElement>;
+  searchContainerRef: React.RefObject<HTMLDivElement>;
+  searchInputRef: React.RefObject<HTMLInputElement>;
+  suggestionsRef: React.RefObject<HTMLUListElement>;
   handleInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
   handleCompositionStart: () => void;
