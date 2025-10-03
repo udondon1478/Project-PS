@@ -137,8 +137,8 @@ export const useProductSearch = ({
         const HIGH_PRICE_CAP = 100000;
         const upperCap = urlIsHighPrice ? HIGH_PRICE_CAP : DEFAULT_MAX;
 
-        const parsedMin = Number(urlMinPriceStr);
-        const parsedMax = Number(urlMaxPriceStr);
+        let parsedMin = Number(urlMinPriceStr);
+        let parsedMax = Number(urlMaxPriceStr);
 
         let min = (Number.isNaN(parsedMin) || urlMinPriceStr === null) ? DEFAULT_MIN : Math.max(DEFAULT_MIN, parsedMin);
         let max = (Number.isNaN(parsedMax) || urlMaxPriceStr === null) ? upperCap : Math.max(DEFAULT_MIN, parsedMax);
