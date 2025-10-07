@@ -5,7 +5,6 @@ import { searchProducts } from '@/lib/searchProducts';
 import type { SearchParams } from '@/lib/searchProducts';
 
 type SearchPageProps = {
-  params: Promise<Record<string, string>>;
   searchParams: Promise<SearchParams>;
 };
 
