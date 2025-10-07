@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { searchProducts } from '@/lib/searchProducts';
 import type { SearchParams } from '@/lib/searchProducts';
-import { normalizeQueryParam } from '@/lib/utils';
 
 /**
  * Handles GET requests for product search.
@@ -19,33 +18,26 @@ import { normalizeQueryParam } from '@/lib/utils';
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const allowedKeys = [
-      'tags', 'ageRatingTags', 'categoryTagId', 'featureTagIds',
-      'negativeTags', 'minPrice', 'maxPrice', 'liked', 'owned', 'isHighPrice'
-    ] as const satisfies readonly (keyof SearchParams)[];
-
-    const params: SearchParams = {};
-    const singleValueKeys = new Set<keyof SearchParams>([
+    const singleValueKeys = [
       "minPrice", "maxPrice", "liked", "owned", "isHighPrice", "categoryTagId"
-    ]);
+    ] as const;
+    const multiValueKeys = ['tags', 'ageRatingTags', 'featureTagIds', 'negativeTags'] as const;
 
-    for (const key of allowedKeys) {
-      const values = searchParams.getAll(key);
-      const normalizedValues = normalizeQueryParam(values);
+    const params: Partial<SearchParams> = {};
 
-      if (normalizedValues.length === 0) {
-        continue;
+    for (const key of singleValueKeys) {
+      const value = searchParams.get(key);
+      if (value) {
+        params[key] = value;
       }
+    }
 
-      if (singleValueKeys.has(key)) {
-        params[key] = normalizedValues[0];
-      } else {
-        if (normalizedValues.length === 1) {
-          params[key] = normalizedValues[0];
-        } else {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (params as any)[key] = normalizedValues;
-        }
+    for (const key of multiValueKeys) {
+      const values = searchParams.getAll(key);
+      if (values.length === 1) {
+        params[key] = values[0];
+      } else if (values.length > 1) {
+        params[key] = values;
       }
     }
 
