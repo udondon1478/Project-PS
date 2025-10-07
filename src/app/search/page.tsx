@@ -40,9 +40,7 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
 
   const q = resolvedSearchParams.q || "";
   const category = resolvedSearchParams.category || "";
-  const tags = Array.isArray(resolvedSearchParams.tags) 
-    ? resolvedSearchParams.tags.join(', ') 
-    : resolvedSearchParams.tags || '';
+  const tags = Array.isArray(resolvedSearchParams.tags) ? resolvedSearchParams.tags.join(', ') : resolvedSearchParams.tags || "";
 
   if (error) {
     return <div className="container mx-auto px-4 py-8 pt-40">Error: {error}</div>;

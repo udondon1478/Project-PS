@@ -5,22 +5,22 @@ import { normalizeQueryParam } from '@/lib/utils';
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
+    const params: Partial<SearchParams> = {};
 
-    const params: SearchParams = {
-      q: searchParams.get('q') ?? undefined,
-      category: searchParams.get('category') ?? undefined,
-      tags: normalizeQueryParam(searchParams.getAll('tags')),
-      sort: searchParams.get('sort') ?? undefined,
-      order: searchParams.get('order') ?? undefined,
-    };
+    const q = searchParams.get('q');
+    if (q) params.q = q;
 
-    // Remove undefined properties
-    Object.keys(params).forEach(key => {
-      const typedKey = key as keyof SearchParams;
-      if (params[typedKey] === undefined) {
-        delete params[typedKey];
-      }
-    });
+    const category = searchParams.get('category');
+    if (category) params.category = category;
+
+    const tags = normalizeQueryParam(searchParams.getAll('tags'));
+    if (tags) params.tags = tags;
+
+    const sort = searchParams.get('sort');
+    if (sort) params.sort = sort;
+
+    const order = searchParams.get('order');
+    if (order) params.order = order;
 
     const products = await searchProducts(params);
     return NextResponse.json(products);
