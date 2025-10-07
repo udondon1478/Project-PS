@@ -24,9 +24,6 @@ export function normalizeQueryParam(param: string | string[] | null | undefined)
 }
 
 export function normalizeTagsToString(tags: string | string[] | undefined): string {
-  if (!tags) return "";
-  if (Array.isArray(tags)) {
-    return tags.join(', ');
-  }
-  return tags;
+  const normalized = normalizeQueryParam(tags);
+  return normalized ? normalized.join(', ') : "";
 }
