@@ -7,8 +7,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
 
     const params: SearchParams = {
-      q: searchParams.get('q') || undefined,
-      category: searchParams.get('category') || undefined,
+      q: searchParams.get('q') ?? undefined,
+      category: searchParams.get('category') ?? undefined,
       tags: normalizeQueryParam(searchParams.getAll('tags')),
       sort: searchParams.get('sort') || undefined,
       order: searchParams.get('order') || undefined,
