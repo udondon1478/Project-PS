@@ -15,9 +15,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export const normalizeQueryParam = (param: string | string[] | undefined): string[] => {
-  if (!param) return [];
+export function normalizeQueryParam(param: string | string[] | null | undefined): string[] | undefined {
+  if (!param) return undefined;
   const arr = Array.isArray(param) ? param : param.split(',');
   const trimmedAndFiltered = arr.map(s => s.trim()).filter(Boolean);
-  return [...new Set(trimmedAndFiltered)];
-};
+  const unique = [...new Set(trimmedAndFiltered)];
+  return unique.length > 0 ? unique : undefined;
+}
