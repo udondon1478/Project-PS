@@ -8,6 +8,7 @@ export interface SearchParams {
   q?: string;
   category?: string;
   tags?: string | string[];
+  negativeTags?: string | string[];
   sort?: string;
   order?: string;
 }
@@ -53,6 +54,23 @@ export async function searchProducts(params: SearchParams): Promise<Product[]> {
             },
           },
         })),
+      });
+    }
+
+    const negativeTagNames = normalizeQueryParam(params.negativeTags);
+    if (negativeTagNames && negativeTagNames.length > 0) {
+      whereConditions.push({
+        NOT: {
+          productTags: {
+            some: {
+              tag: {
+                name: {
+                  in: negativeTagNames,
+                },
+              },
+            },
+          },
+        },
       });
     }
 
