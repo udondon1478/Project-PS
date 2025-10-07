@@ -3,15 +3,17 @@ import { Product } from "@/types/product";
 import type { Metadata } from 'next';
 import { searchProducts } from '@/lib/searchProducts';
 import type { SearchParams } from '@/lib/searchProducts';
+import { normalizeTagsToString } from '@/lib/utils';
 
 type SearchPageProps = {
+  params: Promise<Record<string, string>>;
   searchParams: Promise<SearchParams>;
 };
 
 export async function generateMetadata({ searchParams }: SearchPageProps): Promise<Metadata> {
   const resolvedSearchParams = await searchParams;
   const q = resolvedSearchParams.q;
-  const tags = Array.isArray(resolvedSearchParams.tags) ? resolvedSearchParams.tags.join(', ') : resolvedSearchParams.tags;
+  const tags = normalizeTagsToString(resolvedSearchParams.tags);
 
   let title = "Search Results";
   if (q) {
@@ -39,7 +41,7 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
 
   const q = resolvedSearchParams.q || "";
   const category = resolvedSearchParams.category || "";
-  const tags = Array.isArray(resolvedSearchParams.tags) ? resolvedSearchParams.tags.join(', ') : resolvedSearchParams.tags || "";
+  const tags = normalizeTagsToString(resolvedSearchParams.tags);
 
   if (error) {
     return <div className="container mx-auto px-4 py-8 pt-40">Error: {error}</div>;

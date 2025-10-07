@@ -22,3 +22,11 @@ export function normalizeQueryParam(param: string | string[] | null | undefined)
   const unique = [...new Set(trimmedAndFiltered)];
   return unique.length > 0 ? unique : undefined;
 }
+
+export function normalizeTagsToString(tags: string | string[] | undefined): string {
+  if (!tags) return "";
+  if (Array.isArray(tags)) {
+    return tags.join(', ');
+  }
+  return tags;
+}
