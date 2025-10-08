@@ -14,12 +14,13 @@ export async function generateMetadata({ searchParams }: SearchPageProps): Promi
   const resolvedSearchParams = await searchParams;
   const q = resolvedSearchParams.q;
   const tags = normalizeTagsToString(resolvedSearchParams.tags);
+  const negativeTags = normalizeTagsToString(resolvedSearchParams.negativeTags);
 
-  let title = "Search Results";
+  let title = "検索結果";
   if (q) {
-    title = `Search for: ${q}`;
+    title = `検索キーワード: ${q}`;
   } else if (tags) {
-    title = `Tagged with: ${tags}`;
+    title = `タグ: ${tags} -${negativeTags}`;
   }
 
   return {
@@ -52,8 +53,8 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
       <div className="container mx-auto px-4 py-8 pt-40">
         {q && <p>Search query: {q}</p>}
         {category && <p>Category: {category}</p>}
-        {tags && <p>Tags: {tags}</p>}
-        <div>No products found matching your criteria.</div>
+        {/*{tags && <p>Tags: {tags}</p>}*/}
+        <div>条件に一致する商品は見つかりませんでした。</div>
       </div>
     );
   }
@@ -62,7 +63,7 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
     <div className="container mx-auto px-4 py-8 pt-40">
       {q && <p>Search query: {q}</p>}
       {category && <p>Category: {category}</p>}
-      {tags && <p>Tags: {tags}</p>}
+      {/*tags && <p>Tags: {tags}</p>*/}
 
       <ProductGrid products={products} showLikeButton={true} showOwnButton={true} />
     </div>
