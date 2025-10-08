@@ -32,7 +32,8 @@ export async function searchProducts(params: SearchParams): Promise<Product[]> {
 
     // タグの衝突を検証
     if (tagNames && negativeTagNames) {
-      const intersection = tagNames.filter(tag => negativeTagNames.includes(tag));
+      const negativeSet = new Set(negativeTagNames);
+      const intersection = tagNames.filter(tag => negativeSet.has(tag));
       if (intersection.length > 0) {
         throw new Error(`検索条件エラー: タグ '${intersection.join(', ')}' は検索条件と除外条件の両方に含まれています。`);
       }
