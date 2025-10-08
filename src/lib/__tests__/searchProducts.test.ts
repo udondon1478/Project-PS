@@ -21,7 +21,7 @@ jest.mock('@/auth', () => ({
 
 // モックされた関数に型アサーションを適用
 const mockedPrismaFindMany = prisma.product.findMany as jest.Mock;
-const mockedAuth = auth as jest.Mock<() => Promise<Session | null>>;
+ const mockedAuth = auth as jest.MockedFunction<typeof auth>;
 
 describe('searchProducts', () => {
   beforeEach(() => {
