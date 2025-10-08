@@ -4,11 +4,21 @@ import { Product } from '@/types/product';
 import { auth } from '@/auth';
 import { normalizeQueryParam } from './utils';
 
+/**
+ * 商品検索のパラメータを定義します。
+ */
 export interface SearchParams {
+  /** 検索キーワード。商品のタイトルや説明に含まれる文字列。 */
   q?: string;
+  /** 検索対象のカテゴリ名。 */
   category?: string;
+  /** 検索に含めるタグの配列。指定されたタグをすべて持つ商品が対象。 */
   tags?: string | string[];
+  /** 検索から除外するタグの配列。指定されたタグを持つ商品は除外される。 */
+  negativeTags?: string | string[];
+  /** 並び替えの基準となるキー。 */
   sort?: string;
+  /** 並び替えの順序 ('asc' または 'desc')。 */
   order?: string;
 }
 
@@ -16,6 +26,18 @@ export async function searchProducts(params: SearchParams): Promise<Product[]> {
   try {
     const session = await auth();
     const userId = session?.user?.id;
+
+    const tagNames = normalizeQueryParam(params.tags);
+    const negativeTagNames = normalizeQueryParam(params.negativeTags);
+
+    // タグの衝突を検証
+    if (tagNames && negativeTagNames) {
+      const negativeSet = new Set(negativeTagNames);
+      const intersection = tagNames.filter(tag => negativeSet.has(tag));
+      if (intersection.length > 0) {
+        throw new Error(`検索条件エラー: タグ '${intersection.join(', ')}' は検索条件と除外条件の両方に含まれています。`);
+      }
+    }
 
     const whereConditions: Prisma.ProductWhereInput[] = [];
 
@@ -41,7 +63,6 @@ export async function searchProducts(params: SearchParams): Promise<Product[]> {
       });
     }
 
-    const tagNames = normalizeQueryParam(params.tags);
     if (tagNames && tagNames.length > 0) {
       whereConditions.push({
         AND: tagNames.map(tagName => ({
@@ -53,6 +74,22 @@ export async function searchProducts(params: SearchParams): Promise<Product[]> {
             },
           },
         })),
+      });
+    }
+
+    if (negativeTagNames && negativeTagNames.length > 0) {
+      whereConditions.push({
+        NOT: {
+          productTags: {
+            some: {
+              tag: {
+                name: {
+                  in: negativeTagNames,
+                },
+              },
+            },
+          },
+        },
       });
     }
 
@@ -114,6 +151,10 @@ export async function searchProducts(params: SearchParams): Promise<Product[]> {
     }));
 
   } catch (error) {
+    // カスタムバリデーションエラーはそのままスローする
+    if (error instanceof Error && error.message.startsWith('検索条件エラー:')) {
+      throw error;
+    }
     console.error('商品検索エラー:', error);
     throw new Error('商品の取得に失敗しました');
   }
