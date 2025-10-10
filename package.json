@@ -2,6 +2,9 @@
   "name": "polyseek",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "type": "module",
   "scripts": {
     "dev": "next dev --turbopack",
@@ -30,7 +33,9 @@
     "cheerio": "^1.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dompurify": "^3.2.7",
     "embla-carousel-react": "^8.6.0",
+    "jsdom": "^27.0.0",
     "lucide-react": "^0.510.0",
     "next": "15.3.1",
     "next-auth": "^5.0.0-beta.27",
@@ -46,6 +51,8 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/dompurify": "^3.2.0",
+    "@types/jsdom": "^27.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.3.1",
     "tailwindcss": "^4",
