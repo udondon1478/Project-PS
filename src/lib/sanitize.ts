@@ -43,5 +43,12 @@ export function sanitizeAndValidate(text: string): string {
     throw new Error('Input is empty after sanitization.');
   }
 
+  if (urlPattern.test(trimmed)) {
+    throw new Error('URL-like strings are not allowed.');
+  }
+  if (dangerousPatterns.test(trimmed)) {
+    throw new Error('Potentially dangerous content is not allowed.');
+  }
+
   return trimmed;
 }
