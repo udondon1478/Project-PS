@@ -31,6 +31,7 @@ export function sanitizeAndValidate(text: string): string {
     throw new Error('Potentially dangerous content is not allowed.');
   }
 
+
   // XSS対策: HTMLタグを無害化
   const sanitizedText = purify.sanitize(text, {
     ALLOWED_TAGS: [], // すべてのHTMLタグを許可しない
