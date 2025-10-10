@@ -2,6 +2,9 @@
   "name": "polyseek",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "type": "module",
   "scripts": {
     "dev": "next dev --turbopack",
@@ -26,7 +29,7 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@tailwindcss/typography": "^0.5.16",
-    "@types/dompurify": "^3.2.0",
+    "@types/dompurify": "^3.0.5",
     "autoprefixer": "^10.4.21",
     "cheerio": "^1.0.0",
     "class-variance-authority": "^0.7.1",
@@ -46,7 +49,6 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
-    "@types/jsdom": "^27.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

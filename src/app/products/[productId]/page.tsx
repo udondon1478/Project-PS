@@ -190,12 +190,25 @@ const ProductDetailPage = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tags: data.tags, comment: data.comment }),
       });
-      if (!response.ok) throw new Error(`Error: ${response.status}`);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        const errorMessage = errorData.error || `HTTP error! status: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      // 成功した場合のみダイアログを閉じ、データを再取得
       await fetchProduct();
       setIsTagEditorOpen(false);
       console.log("Tags updated successfully!");
+
     } catch (err) {
       console.error("Failed to update tags:", err);
+      if (err instanceof Error) {
+        alert(`タグの更新に失敗しました: ${err.message}`);
+      } else {
+        alert('タグの更新に失敗しました: 不明なエラーが発生しました。');
+      }
     }
   };
 
