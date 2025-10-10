@@ -20,9 +20,16 @@ export function sanitizeAndValidate(text: string): string {
   }
 
   // URLのような文字列を拒否
-  const urlPattern = /^(https?:\/\/|www\.)/i;
+  // URLのような文字列を拒否（より包括的なパターン）
+  const urlPattern = /^([a-z][a-z0-9+.-]*:|\/\/|www\.)/i;
   if (urlPattern.test(text)) {
     throw new Error('URL-like strings are not allowed.');
+  }
+
+  // プロトコルハンドラーやdata URIなどの危険なパターンをチェック
+  const dangerousPatterns = /(javascript|data|vbscript):/i;
+  if (dangerousPatterns.test(text)) {
+    throw new Error('Potentially dangerous content is not allowed.');
   }
 
   // XSS対策: HTMLタグを無害化
