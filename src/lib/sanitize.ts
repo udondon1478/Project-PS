@@ -39,9 +39,13 @@ export function sanitizeAndValidate(text: string): string {
   });
 
   // サニタイズ後に文字列が空、またはスペースのみになった場合はエラー
-  if (!sanitizedText || sanitizedText.trim() === '') {
+  // サニタイズ後に文字列が空、またはスペースのみになった場合はエラー
+  const trimmed = sanitizedText.trim();
+  if (!trimmed) {
     throw new Error('Input is empty after sanitization.');
   }
+
+  return trimmed;
 
   return sanitizedText.trim();
 }
