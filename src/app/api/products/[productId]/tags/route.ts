@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth'; // authをインポート
+import { sanitizeAndValidate } from '@/lib/sanitize';
 
 export async function PUT(
   req: NextRequest,
@@ -21,15 +22,29 @@ export async function PUT(
   }
 
   try {
+    const sanitizedTags = tags.map((tag: { name: string }) => {
+      try {
+        const sanitizedName = sanitizeAndValidate(tag.name);
+        return { ...tag, name: sanitizedName };
+      } catch (error) {
+        if (error instanceof Error) {
+          throw new Error(`Invalid tag "${tag.name}": ${error.message}`);
+        }
+        throw new Error(`Invalid tag "${tag.name}"`);
+      }
+    });
+
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // 現在の商品のタグを取得
       const currentProductTags = await tx.productTag.findMany({
         where: { productId: productId },
         include: { tag: true },
       });
-      const currentTagNames = new Set(currentProductTags.map((pt: { tag: { name: string } }) => pt.tag.name));
+      const currentTagNames = new Set(
+        currentProductTags.map((pt: { tag: { name: string } }) => pt.tag.name)
+      );
 
-      const newTagNames = new Set(tags.map((t: { name: string }) => t.name));
+      const newTagNames = new Set(sanitizedTags.map((t: { name: string }) => t.name));
 
       const addedTags: string[] = [];
       const removedTags: string[] = [];
@@ -45,7 +60,7 @@ export async function PUT(
       }
 
       // 追加されたタグを特定
-      for (const newTagData of tags) {
+      for (const newTagData of sanitizedTags) {
         if (!currentTagNames.has(newTagData.name)) {
           // 新規タグの場合は、まずTagモデルに存在するか確認し、なければ作成
           let tag = await tx.tag.findUnique({
@@ -72,7 +87,7 @@ export async function PUT(
       });
 
       // 新しいタグを作成または既存のタグと関連付け
-      for (const tagData of tags) {
+      for (const tagData of sanitizedTags) {
         let tag = await tx.tag.findUnique({
           where: { name: tagData.name },
         });
@@ -120,6 +135,11 @@ export async function PUT(
 
     return NextResponse.json({ message: 'Tags updated successfully' }, { status: 200 });
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.startsWith('Invalid tag')) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+    }
     console.error('Error updating tags:', error);
     return NextResponse.json({ error: 'Failed to update tags' }, { status: 500 });
   }
