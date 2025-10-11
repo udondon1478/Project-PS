@@ -1,494 +1,259 @@
 'use client';
 
-import { useState, useEffect } from 'react'; // useEffectを追加
-import Image from 'next/image';
+import { useState, useEffect } from 'react';
+import { URLInputForm } from './components/URLInputForm';
+import { ProductDetailsForm } from './components/ProductDetailsForm';
+import { CompletionScreen } from './components/CompletionScreen';
 
-// 商品情報の型定義 (必要に応じて詳細化)
+// 商品情報の型定義 (変更なし)
 interface ProductInfo {
-  id?: string; // 既存商品の場合はIDがある
+  id?: string;
   boothJpUrl: string;
   boothEnUrl: string;
   title: string;
   description: string;
   lowPrice: number;
   highPrice: number;
-  publishedAt: string; // Dateオブジェクトとして扱う場合は変更
+  publishedAt: string;
   sellerName: string;
   sellerUrl: string;
   sellerIconUrl: string;
   images: { imageUrl: string; isMain: boolean; order: number }[];
-  ageRatingId?: string; // 対象年齢IDを追加
-  categoryId?: string; // カテゴリーIDを追加
-  productTags?: { tag: { id: string; name: string } }[]; // 既存商品のタグ情報
+  ageRatingId?: string;
+  categoryId?: string;
+  productTags?: { tag: { id: string; name: string } }[];
 }
 
+// 画面の状態を示す型
+type RegisterStep = 'url_input' | 'details_confirmation' | 'existing_product' | 'complete';
+
 export default function RegisterItemPage() {
-  const [url, setUrl] = useState('');
+  const [step, setStep] = useState<RegisterStep>('url_input');
+  const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [productData, setProductData] = useState<ProductInfo | null>(null);
-  const [status, setStatus] = useState<'initial' | 'loading' | 'existing' | 'new' | 'error'>('initial');
-  const [manualTags, setManualTags] = useState<string[]>([]); // 新規登録時の手動タグ
-  const [tagInput, setTagInput] = useState(''); // タグ入力フィールド
-  const [tagSuggestions, setTagSuggestions] = useState<string[]>([]); // タグ候補
-  const [isComposing, setIsComposing] = useState(false); // IME変換中かどうかを管理するstateを追加
-  const [ageRatingTags, setAgeRatingTags] = useState<{ id: string; name: string }[]>([]); // 対象年齢タグの選択肢
-  const [categoryTags, setCategoryTags] = useState<{ id: string; name: string }[]>([]); // カテゴリータグの選択肢
-  const [featureTags, setFeatureTags] = useState<{ id: string; name: string }[]>([]); // 主要機能タグの選択肢
-  const [selectedAgeRatingTagId, setSelectedAgeRatingTagId] = useState<string>(''); // 選択された対象年齢タグID
-  const [selectedCategoryTagId, setSelectedCategoryTagId] = useState<string>(''); // 選択されたカテゴリータグID
-  const isLoading = status === 'loading'; // ローディング状態を変数で管理
- 
-  const handleFetchProduct = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setStatus('loading');
+  const [manualTags, setManualTags] = useState<string[]>([]);
+  const [selectedAgeRatingTagId, setSelectedAgeRatingTagId] = useState<string>('');
+  const [selectedCategoryTagId, setSelectedCategoryTagId] = useState<string>('');
+  const [ageRatingTags, setAgeRatingTags] = useState<{ id: string; name: string }[]>([]);
+  const [categoryTags, setCategoryTags] = useState<{ id: string; name: string }[]>([]);
+  const [featureTags, setFeatureTags] = useState<{ id: string; name: string }[]>([]);
+
+  // URLから商品情報を取得するハンドラ
+  const handleFetchProduct = async (url: string) => {
+    setIsLoading(true);
     setMessage('商品情報を取得中...');
-    setProductData(null); // 以前の商品情報をクリア
+    setProductData(null);
 
     try {
       const response = await fetch('/api/items', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url }),
       });
-
       const data = await response.json();
 
       if (response.ok) {
         if (data.status === 'existing') {
           setProductData(data.product);
-          setStatus('existing');
+          setStep('existing_product');
           setMessage(data.message);
         } else if (data.status === 'new') {
           setProductData(data.productInfo);
-          setStatus('new');
-          setMessage(data.message);
-          setManualTags([]); // 新規登録時はタグをクリア
+          setStep('details_confirmation');
+          setMessage(''); // 成功時はメッセージをクリア
+          setManualTags([]);
         } else {
-          setStatus('error');
+          setStep('url_input');
           setMessage('未知のレスポンスステータスです。');
         }
       } else {
-        setStatus('error');
+        setStep('url_input');
         setMessage(`情報の取得に失敗しました: ${data.message || response.statusText}`);
       }
     } catch (error: unknown) {
-      setStatus('error');
+      setStep('url_input');
       const errorMessage = error instanceof Error ? error.message : "不明なエラー";
       setMessage(`情報の取得中にエラーが発生しました: ${errorMessage}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  // 既存商品を更新するハンドラ
   const handleUpdateProduct = async () => {
-    setStatus('loading');
+    setIsLoading(true);
     setMessage('商品情報を更新中...');
 
     try {
       const response = await fetch('/api/items/update', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ productId: productData?.id }), // 既存商品のIDを送信
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: productData?.id }),
       });
-
       const data = await response.json();
 
       if (response.ok) {
-        setStatus('initial'); // 完了したら初期状態に戻す
+        setStep('complete');
         setMessage('商品情報が正常に更新されました。');
-        setUrl(''); // フォームをクリア
         setProductData(null);
       } else {
-        setStatus('existing'); // 更新失敗時は既存表示に戻す
+        setStep('existing_product');
         setMessage(`更新に失敗しました: ${data.message || response.statusText}`);
       }
     } catch (error: unknown) {
-      setStatus('existing'); // 更新失敗時は既存表示に戻す
+      setStep('existing_product');
       const errorMessage = error instanceof Error ? error.message : "不明なエラー";
       setMessage(`更新中にエラーが発生しました: ${errorMessage}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleCreateProduct = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setStatus('loading');
-    setMessage('商品を登録中...');
-
+  // 新規商品を作成するハンドラ
+  const handleCreateProduct = async () => {
     if (!productData) {
       setMessage('商品情報がありません。');
-      setStatus('error');
       return;
     }
+    setIsLoading(true);
+    setMessage('商品を登録中...');
 
     try {
       const response = await fetch('/api/items/create', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          productInfo: productData, // Booth.pmから取得した情報
-          tags: manualTags, // ユーザーが手動入力したタグ
-          ageRatingTagId: selectedAgeRatingTagId, // 対象年齢タグIDを追加
-          categoryTagId: selectedCategoryTagId, // カテゴリータグIDを追加
+          productInfo: productData,
+          tags: manualTags,
+          ageRatingTagId: selectedAgeRatingTagId,
+          categoryTagId: selectedCategoryTagId,
         }),
       });
-
       const data = await response.json();
 
       if (response.ok) {
-        setStatus('initial'); // 完了したら初期状態に戻す
+        setStep('complete');
         setMessage('商品が正常に登録されました。');
-        setUrl(''); // フォームをクリア
         setProductData(null);
         setManualTags([]);
       } else {
-        setStatus('new'); // 登録失敗時は新規登録表示に戻す
+        setStep('details_confirmation');
         setMessage(`登録に失敗しました: ${data.message || response.statusText}`);
       }
     } catch (error: unknown) {
-      setStatus('new'); // 登録失敗時は新規登録表示に戻す
+      setStep('details_confirmation');
       const errorMessage = error instanceof Error ? error.message : "不明なエラー";
       setMessage(`登録中にエラーが発生しました: ${errorMessage}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // 対象年齢、カテゴリー、主要機能タグの選択肢をフェッチ
+  // タグ選択肢をフェッチ
   useEffect(() => {
     const fetchTagsByType = async () => {
       try {
-        // 対象年齢タグを取得
-        const ageRatingsResponse = await fetch('/api/tags/by-type?categoryNames=age_rating');
-        const ageRatingData = await ageRatingsResponse.json();
-        if (ageRatingsResponse.ok) {
-          console.log('Fetched age rating tags:', ageRatingData);
-          setAgeRatingTags(ageRatingData);
-        } else {
-          console.error('Failed to fetch age rating tags:', ageRatingData.message);
-        }
- 
-        // カテゴリータグを取得
-        const categoriesResponse = await fetch('/api/tags/by-type?categoryNames=product_category');
-        const categoryData = await categoriesResponse.json();
-        if (categoriesResponse.ok) {
-          console.log('Fetched category tags:', categoryData);
-          setCategoryTags(categoryData);
-        } else {
-          console.error('Failed to fetch category tags:', categoryData.message);
-        }
- 
-        // 主要機能タグを取得
-        const featuresResponse = await fetch('/api/tags/by-type?categoryNames=feature');
-        const featureData = await featuresResponse.json();
-        if (featuresResponse.ok) {
-          console.log('Fetched feature tags:', featureData);
-          setFeatureTags(featureData);
-        } else {
-          console.error('Failed to fetch feature tags:', featureData.message);
-        }
- 
+        const [ageRatingsResponse, categoriesResponse, featuresResponse] = await Promise.all([
+          fetch('/api/tags/by-type?categoryNames=age_rating'),
+          fetch('/api/tags/by-type?categoryNames=product_category'),
+          fetch('/api/tags/by-type?categoryNames=feature'),
+        ]);
+        if (ageRatingsResponse.ok) setAgeRatingTags(await ageRatingsResponse.json());
+        if (categoriesResponse.ok) setCategoryTags(await categoriesResponse.json());
+        if (featuresResponse.ok) setFeatureTags(await featuresResponse.json());
       } catch (error) {
         console.error('Error fetching tags by type:', error);
+        setMessage('タグ情報の取得に失敗しました。');
       }
     };
- 
     fetchTagsByType();
-  }, []); // コンポーネントマウント時に一度だけ実行
- 
-  // 状態を確認するログ (必要に応じて残す)
-  useEffect(() => {
-    console.log('Current ageRatingTags state:', ageRatingTags);
-  }, [ageRatingTags]);
- 
-  useEffect(() => {
-    console.log('Current categoryTags state:', categoryTags);
-  }, [categoryTags]);
- 
-  useEffect(() => {
-    console.log('Current featureTags state:', featureTags);
-  }, [featureTags]);
+  }, []);
+
+  const resetFlow = () => {
+    setStep('url_input');
+    setProductData(null);
+    setMessage('');
+    setManualTags([]);
+  };
+
+  const renderStep = () => {
+    switch (step) {
+      case 'url_input':
+        return (
+          <URLInputForm
+            onSubmit={handleFetchProduct}
+            isLoading={isLoading}
+            message={message}
+          />
+        );
+      case 'details_confirmation':
+        if (!productData) return null; // or a loading/error state
+        return (
+          <ProductDetailsForm
+            productData={productData}
+            ageRatingTags={ageRatingTags}
+            categoryTags={categoryTags}
+            featureTags={featureTags}
+            manualTags={manualTags}
+            setManualTags={setManualTags}
+            selectedAgeRatingTagId={selectedAgeRatingTagId}
+            setSelectedAgeRatingTagId={setSelectedAgeRatingTagId}
+            selectedCategoryTagId={selectedCategoryTagId}
+            setSelectedCategoryTagId={setSelectedCategoryTagId}
+            onSubmit={handleCreateProduct}
+            isLoading={isLoading}
+            message={message}
+          />
+        );
+      case 'existing_product':
+        return (
+          <Card className="w-full max-w-lg mx-auto">
+            <CardHeader>
+              <CardTitle>既存の商品</CardTitle>
+              <CardDescription>この商品はすでにデータベースに登録されています。</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Alert>
+                <AlertDescription>{message}</AlertDescription>
+              </Alert>
+              {productData && (
+                <div className="mt-4 p-4 border rounded-md">
+                  <h4 className="font-semibold">{productData.title}</h4>
+                  <p className="text-sm text-muted-foreground">
+                    by {productData.sellerName}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button variant="outline" onClick={resetFlow} disabled={isLoading}>
+                キャンセル
+              </Button>
+              <Button onClick={handleUpdateProduct} disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    更新中...
+                  </>
+                ) : (
+                  '最新情報に更新'
+                )}
+              </Button>
+            </CardFooter>
+          </Card>
+        );
+      case 'complete':
+        return <CompletionScreen message={message} onReset={resetFlow} />;
+      default:
+        return <div>不明なステップです。</div>;
+    }
+  };
 
   return (
-    <div className="container mx-auto px-4 py-8 pt-40">
-      <h1>商品登録</h1>
-
-      {/* URL入力フォーム */}
-      {status === 'initial' || status === 'loading' || status === 'error' ? (
-        <form onSubmit={handleFetchProduct}>
-          <div style={{ marginBottom: '10px' }}>
-            <label htmlFor="boothUrl" style={{ display: 'block', marginBottom: '5px' }}>
-              Booth.pm 商品URL:
-            </label>
-            <input
-              type="text"
-              id="boothUrl"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              style={{ width: '300px', padding: '8px' }}
-              required
-              disabled={status === 'loading'}
-            />
-          </div>
-          <button type="submit" style={{ padding: '10px 15px' }} disabled={status === 'loading'}>
-            情報を取得
-          </button>
-        </form>
-      ) : null}
-
-      {/* メッセージ表示 */}
-      {message && <p style={{ marginTop: '10px', color: status === 'error' ? 'red' : 'black' }}>{message}</p>}
-
-      {/* 既存商品情報の表示と更新確認 */}
-      {status === 'existing' && productData ? (
-        <div className="mt-4 p-4 border rounded-md">
-          <h2 className="text-xl font-bold mb-2">既存の商品情報</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <h3 className="text-lg font-semibold">タイトル</h3>
-              <p>{productData.title}</p>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold">価格</h3>
-              <p>¥{productData.lowPrice} ~ ¥{productData.highPrice}</p>
-            </div>
-            <div className="md:col-span-2">
-              <h3 className="text-lg font-semibold">説明文</h3>
-              <p className="whitespace-pre-wrap">{productData.description}</p> {/* 説明文は改行を保持 */}
-            </div>
-            <div className="md:col-span-2">
-              <h3 className="text-lg font-semibold">画像</h3>
-              <div className="flex flex-wrap gap-2">
-                {productData.images.map((image, index) => (
-                  <Image key={index} src={image.imageUrl} alt={`商品画像 ${index + 1}`} width={96} height={96} className="w-24 h-24 object-cover rounded-md" />
-                ))}
-              </div>
-            </div>
-            {/* 販売者情報などもここに追加可能 */}
-          </div>
-          <button onClick={handleUpdateProduct} disabled={isLoading} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50">
-            最新情報に更新
-          </button>
-        </div>
-      ) : null}
-
-      {/* 新規登録フォーム */}
-      {status === 'new' && productData ? (
-        <div className="mt-4 p-4 border rounded-md">
-          <h2 className="text-xl font-bold mb-2">新規商品登録</h2>
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <h3 className="text-lg font-semibold">タイトル</h3>
-              <p>{productData.title}</p>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold">価格</h3>
-              <p>¥{productData.lowPrice} ~ ¥{productData.highPrice}</p>
-            </div>
-             <div className="md:col-span-2">
-              <h3 className="text-lg font-semibold">説明文</h3>
-              <p className="whitespace-pre-wrap">{productData.description}</p> {/* 説明文は改行を保持 */}
-            </div>
-             <div className="md:col-span-2">
-              <h3 className="text-lg font-semibold">画像</h3>
-              <div className="flex flex-wrap gap-2">
-                {productData.images.map((image, index) => (
-                  <Image key={index} src={image.imageUrl} alt={`商品画像 ${index + 1}`} width={96} height={96} className="w-24 h-24 object-cover rounded-md" />
-                ))}
-              </div>
-            </div>
-            {/* 販売者情報などもここに追加可能 */}
-          </div>
-
-          {/* 対象年齢選択 */}
-          <div className="mt-4">
-            <label htmlFor="ageRating" className="block text-lg font-semibold mb-1">
-              対象年齢:
-            </label>
-            <select
-              id="ageRating"
-              className="w-full px-3 py-2 border rounded-md"
-              value={selectedAgeRatingTagId}
-              onChange={(e) => setSelectedAgeRatingTagId(e.target.value)}
-            >
-              <option value="">選択してください</option>
-              {ageRatingTags.map((tag: { id: string; name: string }) => ( // 型アノテーションを追加
-                <option key={tag.id} value={tag.id}>
-                  {tag.name}
-                </option>
-              ))}
-            </select>
-          </div>
- 
-          {/* カテゴリー選択 */}
-          <div className="mt-4">
-            <label htmlFor="category" className="block text-lg font-semibold mb-1">
-              カテゴリー:
-            </label>
-            <select
-              id="category"
-              className="w-full px-3 py-2 border rounded-md"
-              value={selectedCategoryTagId}
-              onChange={(e) => setSelectedCategoryTagId(e.target.value)}
-            >
-              <option value="">選択してください</option>
-              {categoryTags.map((tag: { id: string; name: string }) => ( // 型アノテーションを追加
-                <option key={tag.id} value={tag.id}>
-                  {tag.name}
-                </option>
-              ))}
-            </select>
-          </div>
- 
-          {/* 主要機能タグ選択 */}
-          <div className="mt-4">
-            <label className="block text-lg font-semibold mb-1">
-              主要機能:
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {featureTags.map((tag) => (
-                <button
-                  key={tag.id}
-                  type="button" // ボタンのデフォルトのsubmitを防ぐ
-                  onClick={() => {
-                    if (!manualTags.includes(tag.name)) {
-                      setManualTags([...manualTags, tag.name]); // タグをリストに追加
-                    }
-                  }}
-                  className="px-3 py-1 border rounded-md text-sm hover:bg-gray-100"
-                >
-                  {tag.name}
-                </button>
-              ))}
-            </div>
-          </div>
- 
-          {/* タグ入力フォーム */}
-          <div className="mt-4">
-            <label htmlFor="manualTags" className="block text-lg font-semibold mb-1">
-              その他のタグ:
-            </label>
-            <input
-              type="text"
-              id="manualTags"
-              value={tagInput}
-              onCompositionStart={() => setIsComposing(true)} // IME変換開始
-              onCompositionEnd={() => setIsComposing(false)}   // IME変換終了
-              onKeyDown={(e) => {
-                // IME変換中はスペース、Enter、Tabキーでのタグ確定を抑制
-                if ((e.key === ' ' || e.key === 'Enter' || e.key === 'Tab') && isComposing) {
-                  return;
-                }
-
-                if ((e.key === ' ' || e.key === 'Tab' || e.key === 'Enter') && tagInput.trim() !== '') { // 半角スペース、Tabキー、またはEnterキーが入力された場合
-                  e.preventDefault(); // デフォルトのスペース/Tab/Enter入力を防ぐ
-                  const tag = tagInput.trim();
-                  if (tag.length > 0 && !manualTags.includes(tag)) {
-                    setManualTags([...manualTags, tag]); // タグをリストに追加
-                    setTagInput(''); // 入力フィールドをクリア
-                    setTagSuggestions([]); // 候補リストをクリア
-                  }
-                } else if (e.key === 'Backspace' && tagInput === '' && manualTags.length > 0) {
-                  // バックスペースでタグを削除
-                  e.preventDefault();
-                  setManualTags(manualTags.slice(0, -1)); // 最後のタグを削除
-                }
-              }}
-              onChange={async (e) => {
-                const input = e.target.value;
-                setTagInput(input);
-
-                // APIを呼び出してタグの候補を取得
-                if (input.length > 0) {
-                  try {
-                    const response = await fetch(`/api/tags/search?query=${input}`);
-                    const data = await response.json();
-                    if (response.ok) {
-                      interface TagType {
-                        id: string;
-                        canonicalId: string | null;
-                        canonicalTag: Record<string, unknown> | null;
-                        aliases: Record<string, unknown>[];
-                        language: string;
-                        name: string;
-                        description: string | null;
-                        isAlias: boolean;
-                        createdAt: string;
-                        updatedAt: string;
-                        productTags: Record<string, unknown>[];
-                        category: string;
-                        color: string;
-                        count: number;
-                        sourceTranslations: Record<string, unknown>[];
-                        translatedTranslations: Record<string, unknown>[];
-                        implyingRelations: Record<string, unknown>[];
-                        impliedRelations: Record<string, unknown>[];
-                        parentRelations: Record<string, unknown>[];
-                        childRelations: Record<string, unknown>[];
-                        metadataHistory: Record<string, unknown>[];
-                      }
-                      setTagSuggestions(data.map((tag: TagType) => tag.name)); // タグ候補をセット
-                    } else {
-                      console.error("タグ候補の取得に失敗:", data.message);
-                      setTagSuggestions([]); // エラー時は候補をクリア
-                    }
-                  } catch (error) {
-                    console.error("タグ候補の取得中にエラーが発生:", error);
-                    setTagSuggestions([]); // エラー時は候補をクリア
-                  }
-                } else {
-                  setTagSuggestions([]); // 入力がない場合は候補をクリア
-                }
-              }}
-              className="w-full px-3 py-2 border rounded-md"
-            />
-            {/* タグ候補のリスト */}
-            {tagSuggestions.length > 0 && (
-              <ul className="mt-2">
-                {tagSuggestions.map((suggestion) => (
-                  <li
-                    key={suggestion}
-                    onClick={() => {
-                      if (suggestion.length > 0 && !manualTags.includes(suggestion)) {
-                        setManualTags([...manualTags, suggestion]); // 候補をタグとしてリストに追加
-                        setTagInput(''); // 入力フィールドをクリア
-                        setTagSuggestions([]); // 候補リストをクリア
-                      }
-                    }}
-                    className="px-3 py-1 rounded-md bg-gray-100 hover:bg-gray-200 cursor-pointer"
-                  >
-                    {suggestion}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {/* 入力済みのタグ (錠剤状表示) */}
-            <div className="flex flex-wrap gap-2 mt-2">
-              {manualTags.map((tag, index) => (
-                <span
-                  key={index}
-                  className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full flex items-center"
-                >
-                  {tag}
-                  <button
-                    onClick={() => {
-                      setManualTags(manualTags.filter((_, i) => i !== index));
-                    }}
-                    className="ml-2 text-blue-600 hover:text-blue-800"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <button onClick={handleCreateProduct} disabled={isLoading} className="mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50">
-            商品を登録
-          </button>
-        </div>
-      ) : null}
+    <div className="container mx-auto px-4 py-8 pt-20 md:pt-40">
+      <h1 className="text-3xl font-bold mb-8 text-center">商品登録</h1>
+      {renderStep()}
     </div>
   );
 }
