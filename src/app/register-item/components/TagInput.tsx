@@ -22,7 +22,9 @@ export const TagInput = ({ value: tags, onChange: setTags, disabled }: TagInputP
     const fetchSuggestions = async () => {
       if (inputValue.length > 0 && !isComposing) {
         try {
-          const response = await fetch(`/api/tags/search?query=${inputValue}`);
+          const response = await fetch(
+            `/api/tags/search?query=${encodeURIComponent(inputValue)}`
+          );
           if (response.ok) {
             const data = await response.json();
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
