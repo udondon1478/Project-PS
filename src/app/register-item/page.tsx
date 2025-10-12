@@ -63,8 +63,6 @@ export default function RegisterItemPage() {
           setStep('details_confirmation');
           setMessage(''); // 成功時はメッセージをクリア
           setManualTags([]);
-          setSelectedAgeRatingTagId(data.productInfo.ageRatingId ?? '');
-          setSelectedCategoryTagId(data.productInfo.categoryId ?? '');
         } else {
           setStep('url_input');
           setMessage('未知のレスポンスステータスです。');
@@ -99,9 +97,6 @@ export default function RegisterItemPage() {
         setStep('complete');
         setMessage('商品情報が正常に更新されました。');
         setProductData(null);
-        setManualTags([]);
-        setSelectedAgeRatingTagId('');
-        setSelectedCategoryTagId('');
       } else {
         setStep('existing_product');
         setMessage(`更新に失敗しました: ${data.message || response.statusText}`);
@@ -180,8 +175,6 @@ export default function RegisterItemPage() {
     setProductData(null);
     setMessage('');
     setManualTags([]);
-    setSelectedAgeRatingTagId('');
-    setSelectedCategoryTagId('');
   };
 
   const renderStep = () => {

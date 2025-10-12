@@ -22,9 +22,7 @@ export const TagInput = ({ value: tags, onChange: setTags, disabled }: TagInputP
     const fetchSuggestions = async () => {
       if (inputValue.length > 0 && !isComposing) {
         try {
-          const response = await fetch(
-            `/api/tags/search?query=${encodeURIComponent(inputValue)}`
-          );
+          const response = await fetch(`/api/tags/search?query=${inputValue}`);
           if (response.ok) {
             const data = await response.json();
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -72,23 +70,7 @@ export const TagInput = ({ value: tags, onChange: setTags, disabled }: TagInputP
 
   return (
     <div>
-      <div
-        className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[40px]"
-        role="button"
-        tabIndex={disabled ? -1 : 0}
-        aria-disabled={disabled}
-        onClick={() => {
-          if (!disabled) {
-            inputRef.current?.focus();
-          }
-        }}
-        onKeyDown={(event) => {
-          if (!disabled && (event.key === 'Enter' || event.key === ' ')) {
-            event.preventDefault();
-            inputRef.current?.focus();
-          }
-        }}
-      >
+      <div className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[40px]" onClick={() => inputRef.current?.focus()}>
         {tags.map((tag) => (
           <Badge key={tag} variant="secondary" className="flex items-center gap-1">
             {tag}
@@ -116,20 +98,16 @@ export const TagInput = ({ value: tags, onChange: setTags, disabled }: TagInputP
         />
       </div>
       {suggestions.length > 0 && (
-        <div className="mt-2 border rounded-md bg-background" role="listbox">
+        <div className="mt-2 border rounded-md bg-background">
           {suggestions.map((suggestion) => (
-            <button
-              type="button"
+            <div
               key={suggestion}
-              className="w-full text-left p-2 hover:bg-muted text-sm"
               onClick={() => addTag(suggestion)}
-              disabled={disabled}
+              className="p-2 hover:bg-muted cursor-pointer text-sm"
             >
               {suggestion}
-            </button>
+            </div>
           ))}
-        </div>
-      )}
         </div>
       )}
     </div>
