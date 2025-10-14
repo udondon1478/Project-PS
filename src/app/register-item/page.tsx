@@ -200,7 +200,15 @@ export default function RegisterItemPage() {
           />
         );
       case 'details_confirmation':
-        if (!productData) return null; // or a loading/error state
+        if (!productData) {
+          return (
+            <Card className="w-full max-w-lg mx-auto">
+              <CardContent className="py-8 text-center">
+                <p className="text-muted-foreground">商品情報を読み込んでいます...</p>
+              </CardContent>
+            </Card>
+          );
+        }
         return (
           <ProductDetailsForm
             productData={productData}
