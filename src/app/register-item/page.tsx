@@ -173,7 +173,8 @@ export default function RegisterItemPage() {
         if (featuresResponse.ok) setFeatureTags(await featuresResponse.json());
       } catch (error) {
         console.error('Error fetching tags by type:', error);
-        setMessage('タグ情報の取得に失敗しました。');
+        // タグ取得失敗時は空配列で継続（ユーザーは手動タグのみ使用可能）
+        console.warn('タグ情報の取得に失敗しました。手動入力のみ利用可能です。');
       }
     };
     fetchTagsByType();
