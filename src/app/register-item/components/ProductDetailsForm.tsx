@@ -45,7 +45,7 @@ interface ProductDetailsFormProps {
   setSelectedCategoryTagId: (id: string) => void;
   onSubmit: () => void;
   isLoading: boolean;
-  message: string;
+  message: { text: string; variant?: 'default' | 'destructive' };
 }
 
 export const ProductDetailsForm = ({
@@ -187,8 +187,8 @@ export const ProductDetailsForm = ({
       </CardContent>
       <CardFooter className="flex flex-col items-stretch">
         {message && (
-            <Alert variant={message.includes('失敗') || message.includes('エラー') ? 'destructive' : 'default'} className="mb-4">
-              <AlertDescription>{message}</AlertDescription>
+          <Alert variant={message.variant || 'default'} className="mb-4">
+            <AlertDescription>{message.text}</AlertDescription>
             </Alert>
           )}
         <Button onClick={onSubmit} disabled={isLoading || !selectedAgeRatingTagId || !selectedCategoryTagId} className="w-full">
