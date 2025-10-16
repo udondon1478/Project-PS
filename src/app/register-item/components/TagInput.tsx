@@ -130,8 +130,6 @@ export const TagInput = ({ value: tags, onChange: setTags, disabled }: TagInputP
           ))}
         </div>
       )}
-        </div>
-      )}
     </div>
   );
 };
