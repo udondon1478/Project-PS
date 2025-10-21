@@ -180,6 +180,7 @@ export const ProductDetailsForm = ({
           <div>
             <Label htmlFor="otherTags">その他のタグ</Label>
             <TagInput
+              id="otherTags"
               value={manualTags}
               onChange={setManualTags}
               disabled={isLoading}

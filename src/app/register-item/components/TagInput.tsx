@@ -10,9 +10,10 @@ interface TagInputProps {
   value: string[];
   onChange: React.Dispatch<React.SetStateAction<string[]>>;
   disabled?: boolean;
+  id?: string;
 }
 
-export const TagInput = ({ value: tags, onChange: setTags, disabled }: TagInputProps) => {
+export const TagInput = ({ value: tags, onChange: setTags, disabled, id }: TagInputProps) => {
   const [inputValue, setInputValue] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isComposing, setIsComposing] = useState(false);
@@ -85,6 +86,7 @@ export const TagInput = ({ value: tags, onChange: setTags, disabled }: TagInputP
           </Badge>
         ))}
         <Input
+          id={id}
           ref={inputRef}
           type="text"
           value={inputValue}
