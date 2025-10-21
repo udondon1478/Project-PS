@@ -31,6 +31,7 @@ export default function RegisterItemPage() {
   const [step, setStep] = useState<RegisterStep>('url_input');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [isUrlInputError, setIsUrlInputError] = useState(false);
   const [productData, setProductData] = useState<ProductInfo | null>(null);
   const [manualTags, setManualTags] = useState<string[]>([]);
   const [selectedAgeRatingTagId, setSelectedAgeRatingTagId] = useState<string>('');
@@ -43,6 +44,7 @@ export default function RegisterItemPage() {
   const handleFetchProduct = async (url: string) => {
     setIsLoading(true);
     setMessage('商品情報を取得中...');
+    setIsUrlInputError(false);
     setProductData(null);
 
     try {
@@ -66,15 +68,18 @@ export default function RegisterItemPage() {
         } else {
           setStep('url_input');
           setMessage('未知のレスポンスステータスです。');
+          setIsUrlInputError(true);
         }
       } else {
         setStep('url_input');
         setMessage(`情報の取得に失敗しました: ${data.message || response.statusText}`);
+        setIsUrlInputError(true);
       }
     } catch (error: unknown) {
       setStep('url_input');
       const errorMessage = error instanceof Error ? error.message : "不明なエラー";
       setMessage(`情報の取得中にエラーが発生しました: ${errorMessage}`);
+      setIsUrlInputError(true);
     } finally {
       setIsLoading(false);
     }
@@ -176,6 +181,7 @@ export default function RegisterItemPage() {
     setProductData(null);
     setMessage('');
     setManualTags([]);
+    setIsUrlInputError(false);
   };
 
   const renderStep = () => {
@@ -186,6 +192,7 @@ export default function RegisterItemPage() {
             onSubmit={handleFetchProduct}
             isLoading={isLoading}
             message={message}
+            isError={isUrlInputError}
           />
         );
       case 'details_confirmation':

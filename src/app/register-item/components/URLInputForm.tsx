@@ -12,9 +12,10 @@ interface URLInputFormProps {
   onSubmit: (url: string) => void;
   isLoading: boolean;
   message: string;
+  isError?: boolean;
 }
 
-export const URLInputForm = ({ onSubmit, isLoading, message }: URLInputFormProps) => {
+export const URLInputForm = ({ onSubmit, isLoading, message, isError = false }: URLInputFormProps) => {
   const [url, setUrl] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -34,7 +35,7 @@ export const URLInputForm = ({ onSubmit, isLoading, message }: URLInputFormProps
       <form onSubmit={handleSubmit}>
         <CardContent>
           {message && (
-            <Alert variant={message.includes('失敗') || message.includes('エラー') ? 'destructive' : 'default'} className="mb-4">
+            <Alert variant={isError ? 'destructive' : 'default'} className="mb-4">
               <AlertDescription>{message}</AlertDescription>
             </Alert>
           )}
