@@ -82,9 +82,24 @@ export const TagInput = ({ value: tags, onChange: setTags, disabled, id }: TagIn
     }
   };
 
+  const handleContainerKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (disabled) return;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      inputRef.current?.focus();
+    }
+  };
+
   return (
     <div>
-      <div className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[40px]" onClick={() => inputRef.current?.focus()}>
+      <div
+        className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[40px]"
+        onClick={() => !disabled && inputRef.current?.focus()}
+        onKeyDown={handleContainerKeyDown}
+        role="button"
+        tabIndex={disabled ? -1 : 0}
+        aria-disabled={disabled}
+      >
         {tags.map((tag) => (
           <Badge key={tag} variant="secondary" className="flex items-center gap-1">
             {tag}
