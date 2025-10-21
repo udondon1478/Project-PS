@@ -8,11 +8,10 @@ import { CheckCircle2, XCircle } from 'lucide-react';
 interface CompletionScreenProps {
   message: string;
   onReset: () => void;
+  isError?: boolean;
 }
 
-export const CompletionScreen = ({ message, onReset }: CompletionScreenProps) => {
-  const isError = message.includes('失敗') || message.includes('エラー');
-
+export const CompletionScreen = ({ message, onReset, isError = false }: CompletionScreenProps) => {
   return (
     <Card className="w-full max-w-lg mx-auto">
       <CardHeader>

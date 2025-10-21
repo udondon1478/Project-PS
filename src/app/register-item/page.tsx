@@ -25,7 +25,7 @@ interface ProductInfo {
 }
 
 // 画面の状態を示す型
-type RegisterStep = 'url_input' | 'details_confirmation' | 'existing_product' | 'complete';
+type RegisterStep = 'url_input' | 'details_confirmation' | 'existing_product' | 'complete' | 'error';
 
 export default function RegisterItemPage() {
   const [step, setStep] = useState<RegisterStep>('url_input');
@@ -98,11 +98,11 @@ export default function RegisterItemPage() {
         setMessage('商品情報が正常に更新されました。');
         setProductData(null);
       } else {
-        setStep('existing_product');
+        setStep('error');
         setMessage(`更新に失敗しました: ${data.message || response.statusText}`);
       }
     } catch (error: unknown) {
-      setStep('existing_product');
+      setStep('error');
       const errorMessage = error instanceof Error ? error.message : "不明なエラー";
       setMessage(`更新中にエラーが発生しました: ${errorMessage}`);
     } finally {
@@ -114,6 +114,7 @@ export default function RegisterItemPage() {
   const handleCreateProduct = async () => {
     if (!productData) {
       setMessage('商品情報がありません。');
+      setStep('error');
       return;
     }
     setIsLoading(true);
@@ -138,11 +139,11 @@ export default function RegisterItemPage() {
         setProductData(null);
         setManualTags([]);
       } else {
-        setStep('details_confirmation');
+        setStep('error');
         setMessage(`登録に失敗しました: ${data.message || response.statusText}`);
       }
     } catch (error: unknown) {
-      setStep('details_confirmation');
+      setStep('error');
       const errorMessage = error instanceof Error ? error.message : "不明なエラー";
       setMessage(`登録中にエラーが発生しました: ${errorMessage}`);
     } finally {
@@ -244,8 +245,12 @@ export default function RegisterItemPage() {
           </Card>
         );
       case 'complete':
-        return <CompletionScreen message={message} onReset={resetFlow} />;
+        return <CompletionScreen message={message} onReset={resetFlow} isError={false} />;
+      case 'error':
+        return <CompletionScreen message={message} onReset={resetFlow} isError={true} />;
       default:
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const _: never = step;
         return <div>不明なステップです。</div>;
     }
   };
