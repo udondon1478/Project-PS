@@ -215,6 +215,8 @@ export default function RegisterItemPage() {
     setMessage('');
     setManualTags([]);
     setIsUrlInputError(false);
+    setSelectedAgeRatingTagId('');
+    setSelectedCategoryTagId('');
   };
 
   const renderStep = () => {
