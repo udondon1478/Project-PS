@@ -4,6 +4,10 @@ import { useState, useEffect } from 'react';
 import { URLInputForm } from './components/URLInputForm';
 import { ProductDetailsForm } from './components/ProductDetailsForm';
 import { CompletionScreen } from './components/CompletionScreen';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2 } from 'lucide-react';
 
 // 商品情報の型定義 (変更なし)
 interface ProductInfo {
