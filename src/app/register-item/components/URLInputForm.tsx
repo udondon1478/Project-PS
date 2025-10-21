@@ -19,9 +19,10 @@ export const URLInputForm = ({ onSubmit, isLoading, message }: URLInputFormProps
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (url.trim()) {
-      onSubmit(url.trim());
+    if (isLoading || !url.trim()) {
+      return;
     }
+    onSubmit(url.trim());
   };
 
   return (
