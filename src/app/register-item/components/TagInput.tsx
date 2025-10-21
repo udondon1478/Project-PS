@@ -20,10 +20,14 @@ export const TagInput = ({ value: tags, onChange: setTags, disabled, id }: TagIn
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
+    const signal = controller.signal;
+
     const fetchSuggestions = async () => {
       if (inputValue.length > 0 && !isComposing) {
         try {
-          const response = await fetch(`/api/tags/search?query=${inputValue}`);
+          const encodedQuery = encodeURIComponent(inputValue);
+          const response = await fetch(`/api/tags/search?query=${encodedQuery}`, { signal });
           if (response.ok) {
             const data = await response.json();
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,15 +37,24 @@ export const TagInput = ({ value: tags, onChange: setTags, disabled, id }: TagIn
             setSuggestions([]);
           }
         } catch (error) {
-          console.error('Failed to fetch tag suggestions:', error);
-          setSuggestions([]);
+          if (error instanceof Error && error.name === 'AbortError') {
+            // Fetch was aborted, which is expected. Do nothing.
+          } else {
+            console.error('Failed to fetch tag suggestions:', error);
+            setSuggestions([]);
+          }
         }
       } else {
         setSuggestions([]);
       }
     };
-    const timer = setTimeout(fetchSuggestions, 300); // Debounce API calls
-    return () => clearTimeout(timer);
+
+    const timer = setTimeout(fetchSuggestions, 300);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [inputValue, isComposing]);
 
   const addTag = (tagToAdd: string) => {
