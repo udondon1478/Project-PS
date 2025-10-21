@@ -59,15 +59,15 @@ export const TagInput = ({ value: tags, onChange: setTags, disabled, id }: TagIn
 
   const addTag = (tagToAdd: string) => {
     const trimmedTag = tagToAdd.trim();
-    if (trimmedTag && !tags.includes(trimmedTag)) {
-      setTags([...tags, trimmedTag]);
+    if (trimmedTag) {
+      setTags((prev) => (prev.includes(trimmedTag) ? prev : [...prev, trimmedTag]));
     }
-    setInputValue('');
-    setSuggestions([]);
+    setInputValue(() => '');
+    setSuggestions(() => []);
   };
 
   const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter((tag) => tag !== tagToRemove));
+    setTags((prev) => prev.filter((tag) => tag !== tagToRemove));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -93,6 +93,7 @@ export const TagInput = ({ value: tags, onChange: setTags, disabled, id }: TagIn
               onClick={() => removeTag(tag)}
               className="rounded-full hover:bg-muted-foreground/20 p-0.5"
               disabled={disabled}
+              aria-label={`Remove tag ${tag}`}
             >
               <X size={12} />
             </button>
