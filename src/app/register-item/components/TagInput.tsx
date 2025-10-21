@@ -129,17 +129,19 @@ export const TagInput = ({ value: tags, onChange: setTags, disabled, id }: TagIn
         />
       </div>
       {suggestions.length > 0 && (
-        <div className="mt-2 border rounded-md bg-background">
+        <ul className="mt-2 border rounded-md bg-background list-none p-0">
           {suggestions.map((suggestion) => (
-            <div
-              key={suggestion}
-              onClick={() => addTag(suggestion)}
-              className="p-2 hover:bg-muted cursor-pointer text-sm"
-            >
-              {suggestion}
-            </div>
+            <li key={suggestion}>
+              <button
+                type="button"
+                onClick={() => addTag(suggestion)}
+                className="w-full text-left p-2 hover:bg-muted text-sm rounded-md"
+              >
+                {suggestion}
+              </button>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );
