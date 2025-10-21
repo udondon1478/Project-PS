@@ -164,10 +164,12 @@ export const ProductDetailsForm = ({
               {featureTags.map((tag) => (
                 <Button
                   key={tag.id}
+                  type="button"
                   variant={manualTags.includes(tag.name) ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => handleFeatureTagToggle(tag.name)}
                   disabled={isLoading}
+                  aria-pressed={manualTags.includes(tag.name)}
                 >
                   {tag.name}
                 </Button>
