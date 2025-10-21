@@ -171,17 +171,39 @@ export default function RegisterItemPage() {
   useEffect(() => {
     const fetchTagsByType = async () => {
       try {
-        const [ageRatingsResponse, categoriesResponse, featuresResponse] = await Promise.all([
+        const responses = await Promise.all([
           fetch('/api/tags/by-type?categoryNames=age_rating'),
           fetch('/api/tags/by-type?categoryNames=product_category'),
           fetch('/api/tags/by-type?categoryNames=feature'),
         ]);
-        if (ageRatingsResponse.ok) setAgeRatingTags(await ageRatingsResponse.json());
-        if (categoriesResponse.ok) setCategoryTags(await categoriesResponse.json());
-        if (featuresResponse.ok) setFeatureTags(await featuresResponse.json());
+
+        const [ageRatingsResponse, categoriesResponse, featuresResponse] = responses;
+        const errorMessages: string[] = [];
+
+        if (ageRatingsResponse.ok) {
+          setAgeRatingTags(await ageRatingsResponse.json());
+        } else {
+          errorMessages.push(`年齢レーティングの取得に失敗しました: ${ageRatingsResponse.statusText}`);
+        }
+
+        if (categoriesResponse.ok) {
+          setCategoryTags(await categoriesResponse.json());
+        } else {
+          errorMessages.push(`カテゴリーの取得に失敗しました: ${categoriesResponse.statusText}`);
+        }
+
+        if (featuresResponse.ok) {
+          setFeatureTags(await featuresResponse.json());
+        } else {
+          errorMessages.push(`主要機能の取得に失敗しました: ${featuresResponse.statusText}`);
+        }
+
+        if (errorMessages.length > 0) {
+          setMessage(errorMessages.join('\n'));
+        }
       } catch (error) {
         console.error('Error fetching tags by type:', error);
-        setMessage('タグ情報の取得に失敗しました。');
+        setMessage('タグ情報の取得中にネットワークエラーが発生しました。');
       }
     };
     fetchTagsByType();
