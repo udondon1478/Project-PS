@@ -91,6 +91,13 @@ export default function RegisterItemPage() {
 
   // 既存商品を更新するハンドラ
   const handleUpdateProduct = async () => {
+    if (!productData?.id) {
+      setMessage('商品IDが見つかりません。');
+      setStep('error');
+      return;
+    }
+    const productId = productData.id;
+
     setIsLoading(true);
     setMessage('商品情報を更新中...');
 
@@ -98,7 +105,7 @@ export default function RegisterItemPage() {
       const response = await fetch('/api/items/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: productData?.id }),
+        body: JSON.stringify({ productId }),
       });
       const data = await response.json();
 
