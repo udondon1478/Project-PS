@@ -82,8 +82,8 @@ export const ProductDetailsForm = ({
         <div className="space-y-6">
           <Carousel className="w-full max-w-sm mx-auto">
             <CarouselContent>
-              {productData.images.map((image) => (
-                <CarouselItem key={image.order ?? image.imageUrl}>
+              {productData.images.map((image, index) => (
+                <CarouselItem key={`${image.order ?? 'no-order'}-${image.imageUrl}`}>
                   <div className="p-1">
                     <Card>
                       <CardContent className="flex aspect-square items-center justify-center p-0">
