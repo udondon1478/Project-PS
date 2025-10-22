@@ -1,5 +1,6 @@
 'use client';
 
+import type { Dispatch, SetStateAction } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,7 +39,7 @@ interface ProductDetailsFormProps {
   categoryTags: Tag[];
   featureTags: Tag[];
   manualTags: string[];
-  setManualTags: React.Dispatch<React.SetStateAction<string[]>>;
+  setManualTags: Dispatch<SetStateAction<string[]>>;
   selectedAgeRatingTagId: string;
   setSelectedAgeRatingTagId: (id: string) => void;
   selectedCategoryTagId: string;
