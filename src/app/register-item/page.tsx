@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { URLInputForm } from './components/URLInputForm';
 import { ProductDetailsForm } from './components/ProductDetailsForm';
 import { CompletionScreen } from './components/CompletionScreen';
@@ -44,9 +44,16 @@ export default function RegisterItemPage() {
   const [ageRatingTags, setAgeRatingTags] = useState<{ id: string; name: string }[]>([]);
   const [categoryTags, setCategoryTags] = useState<{ id: string; name: string }[]>([]);
   const [featureTags, setFeatureTags] = useState<{ id: string; name: string }[]>([]);
+  const fetchControllerRef = useRef<AbortController | null>(null);
 
   // URLから商品情報を取得するハンドラ
   const handleFetchProduct = async (url: string) => {
+    if (fetchControllerRef.current) {
+      fetchControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    fetchControllerRef.current = controller;
+
     setIsLoading(true);
     setMessage('商品情報を取得中...');
     setIsUrlInputError(false);
@@ -57,6 +64,7 @@ export default function RegisterItemPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url }),
+        signal: controller.signal,
       });
       const data = await response.json();
 
@@ -81,11 +89,18 @@ export default function RegisterItemPage() {
         setIsUrlInputError(true);
       }
     } catch (error: unknown) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        // ユーザーによるキャンセルのため、エラーメッセージは表示しない
+        return;
+      }
       setStep('url_input');
       const errorMessage = error instanceof Error ? error.message : "不明なエラー";
       setMessage(`情報の取得中にエラーが発生しました: ${errorMessage}`);
       setIsUrlInputError(true);
     } finally {
+      if (fetchControllerRef.current === controller) {
+        fetchControllerRef.current = null;
+      }
       setIsLoading(false);
     }
   };
@@ -171,7 +186,7 @@ export default function RegisterItemPage() {
     }
   };
 
-  // タグ選択肢をフェッチ
+  // タグ選択肢をフェッチ & unmount時のクリーンアップ
   useEffect(() => {
     const fetchTagsByType = async () => {
       setIsDetailsError(false);
@@ -214,6 +229,12 @@ export default function RegisterItemPage() {
       }
     };
     fetchTagsByType();
+
+    return () => {
+      if (fetchControllerRef.current) {
+        fetchControllerRef.current.abort();
+      }
+    };
   }, []);
 
   const resetFlow = () => {
