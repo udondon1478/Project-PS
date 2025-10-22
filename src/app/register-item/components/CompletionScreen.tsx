@@ -15,8 +15,12 @@ export const CompletionScreen = ({ message, onReset, isError = false }: Completi
   return (
     <Card className="w-full max-w-lg mx-auto">
       <CardHeader>
-        <CardTitle>処理完了</CardTitle>
-        <CardDescription>商品登録フローが完了しました。</CardDescription>
+        <CardTitle>{isError ? 'エラーが発生しました' : '処理完了'}</CardTitle>
+        <CardDescription>
+          {isError
+            ? '処理を完了できませんでした。内容を確認して、もう一度お試しください。'
+            : '商品登録フローが完了しました。'}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Alert variant={isError ? 'destructive' : 'default'}>
