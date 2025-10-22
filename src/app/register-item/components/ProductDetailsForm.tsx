@@ -193,7 +193,7 @@ export const ProductDetailsForm = ({
       </CardContent>
       <CardFooter className="flex flex-col items-stretch">
         {message && (
-            <Alert variant={isError ? 'destructive' : 'default'} className="mb-4">
+            <Alert variant={isError ? 'destructive' : 'default'} className="mb-4" role={isError ? 'alert' : 'status'}>
               <AlertDescription className="whitespace-pre-wrap">{message}</AlertDescription>
             </Alert>
           )}
