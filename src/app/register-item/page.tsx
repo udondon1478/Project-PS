@@ -174,6 +174,7 @@ export default function RegisterItemPage() {
   // タグ選択肢をフェッチ
   useEffect(() => {
     const fetchTagsByType = async () => {
+      setIsDetailsError(false);
       try {
         const responses = await Promise.all([
           fetch('/api/tags/by-type?categoryNames=age_rating'),
@@ -204,10 +205,12 @@ export default function RegisterItemPage() {
 
         if (errorMessages.length > 0) {
           setMessage(errorMessages.join('\n'));
+          setIsDetailsError(true);
         }
       } catch (error) {
         console.error('Error fetching tags by type:', error);
         setMessage('タグ情報の取得中にネットワークエラーが発生しました。');
+        setIsDetailsError(true);
       }
     };
     fetchTagsByType();
