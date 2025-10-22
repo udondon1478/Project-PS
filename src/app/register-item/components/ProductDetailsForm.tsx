@@ -194,7 +194,7 @@ export const ProductDetailsForm = ({
       <CardFooter className="flex flex-col items-stretch">
         {message && (
             <Alert variant={isError ? 'destructive' : 'default'} className="mb-4">
-              <AlertDescription>{message}</AlertDescription>
+              <AlertDescription className="whitespace-pre-wrap">{message}</AlertDescription>
             </Alert>
           )}
         <Button onClick={onSubmit} disabled={isLoading || !selectedAgeRatingTagId || !selectedCategoryTagId} className="w-full">

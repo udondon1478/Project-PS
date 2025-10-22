@@ -26,7 +26,7 @@ export const CompletionScreen = ({ message, onReset, isError = false }: Completi
         <Alert variant={isError ? 'destructive' : 'default'} role={isError ? 'alert' : 'status'}>
           {isError ? <XCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
           <AlertTitle>{isError ? 'エラー' : '成功'}</AlertTitle>
-          <AlertDescription>{message}</AlertDescription>
+          <AlertDescription className="whitespace-pre-wrap">{message}</AlertDescription>
         </Alert>
       </CardContent>
       <CardFooter>

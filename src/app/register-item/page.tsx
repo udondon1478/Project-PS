@@ -288,7 +288,7 @@ export default function RegisterItemPage() {
             </CardHeader>
             <CardContent>
               <Alert>
-                <AlertDescription>{message}</AlertDescription>
+                <AlertDescription className="whitespace-pre-wrap">{message}</AlertDescription>
               </Alert>
               {productData && (
                 <div className="mt-4 p-4 border rounded-md">
