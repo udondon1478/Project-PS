@@ -89,7 +89,7 @@ export const ProductDetailsForm = ({
                       <CardContent className="flex aspect-square items-center justify-center p-0">
                         <Image
                           src={image.imageUrl}
-                          alt={`商品画像 ${index + 1}`}
+                          alt={`${productData.title} の画像 ${index + 1}`}
                           width={400}
                           height={400}
                           className="rounded-lg object-cover w-full h-full"
