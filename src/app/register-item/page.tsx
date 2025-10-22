@@ -36,6 +36,7 @@ export default function RegisterItemPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [isUrlInputError, setIsUrlInputError] = useState(false);
+  const [isDetailsError, setIsDetailsError] = useState(false);
   const [productData, setProductData] = useState<ProductInfo | null>(null);
   const [manualTags, setManualTags] = useState<string[]>([]);
   const [selectedAgeRatingTagId, setSelectedAgeRatingTagId] = useState<string>('');
@@ -135,6 +136,7 @@ export default function RegisterItemPage() {
     }
     setIsLoading(true);
     setMessage('商品を登録中...');
+    setIsDetailsError(false);
 
     try {
       const response = await fetch('/api/items/create', {
@@ -155,13 +157,15 @@ export default function RegisterItemPage() {
         setProductData(null);
         setManualTags([]);
       } else {
-        setStep('error');
+        setStep('details_confirmation');
         setMessage(`登録に失敗しました: ${data.message || response.statusText}`);
+        setIsDetailsError(true);
       }
     } catch (error: unknown) {
-      setStep('error');
+      setStep('details_confirmation');
       const errorMessage = error instanceof Error ? error.message : "不明なエラー";
       setMessage(`登録中にエラーが発生しました: ${errorMessage}`);
+      setIsDetailsError(true);
     } finally {
       setIsLoading(false);
     }
@@ -215,6 +219,7 @@ export default function RegisterItemPage() {
     setMessage('');
     setManualTags([]);
     setIsUrlInputError(false);
+    setIsDetailsError(false);
     setSelectedAgeRatingTagId('');
     setSelectedCategoryTagId('');
   };
@@ -247,6 +252,7 @@ export default function RegisterItemPage() {
             onSubmit={handleCreateProduct}
             isLoading={isLoading}
             message={message}
+            isError={isDetailsError}
           />
         );
       case 'existing_product':

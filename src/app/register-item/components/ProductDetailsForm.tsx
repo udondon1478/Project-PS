@@ -46,6 +46,7 @@ interface ProductDetailsFormProps {
   onSubmit: () => void;
   isLoading: boolean;
   message: string;
+  isError?: boolean;
 }
 
 export const ProductDetailsForm = ({
@@ -62,6 +63,7 @@ export const ProductDetailsForm = ({
   onSubmit,
   isLoading,
   message,
+  isError = false,
 }: ProductDetailsFormProps) => {
   const handleFeatureTagToggle = (tagName: string) => {
     setManualTags((prevTags) =>
@@ -190,7 +192,7 @@ export const ProductDetailsForm = ({
       </CardContent>
       <CardFooter className="flex flex-col items-stretch">
         {message && (
-            <Alert variant={message.includes('失敗') || message.includes('エラー') ? 'destructive' : 'default'} className="mb-4">
+            <Alert variant={isError ? 'destructive' : 'default'} className="mb-4">
               <AlertDescription>{message}</AlertDescription>
             </Alert>
           )}
