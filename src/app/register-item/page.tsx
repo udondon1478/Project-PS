@@ -309,8 +309,10 @@ export default function RegisterItemPage() {
               <CardDescription>この商品はすでにデータベースに登録されています。</CardDescription>
             </CardHeader>
             <CardContent>
-              <Alert role="status">
-                <AlertDescription className="whitespace-pre-wrap">{message}</AlertDescription>
+              <Alert>
+                <AlertDescription asChild>
+                  <output className="block whitespace-pre-wrap">{message}</output>
+                </AlertDescription>
               </Alert>
               {productData && (
                 <div className="mt-4 p-4 border rounded-md">
