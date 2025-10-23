@@ -325,7 +325,7 @@ export default function RegisterItemPage() {
             <CardContent>
               <Alert>
                 <AlertDescription asChild>
-                  <output className="block whitespace-pre-wrap">{message}</output>
+                  <output className="block whitespace-pre-wrap" role="status">{message}</output>
                 </AlertDescription>
               </Alert>
               {productData && (
