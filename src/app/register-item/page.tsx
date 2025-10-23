@@ -263,7 +263,7 @@ export default function RegisterItemPage() {
           <URLInputForm
             onSubmit={handleFetchProduct}
             isLoading={isLoading}
-            message={message}
+            message={isUrlInputError ? message : ''}
             isError={isUrlInputError}
           />
         );
