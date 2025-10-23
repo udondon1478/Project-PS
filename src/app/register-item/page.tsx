@@ -281,7 +281,21 @@ export default function RegisterItemPage() {
           />
         );
       case 'details_confirmation':
-        if (!productData) return null; // or a loading/error state
+        if (!productData) {
+          return (
+            <Card className="w-full max-w-lg mx-auto">
+              <CardHeader>
+                <CardTitle>エラー</CardTitle>
+                <CardDescription>商品データを表示できませんでした。</CardDescription>
+              </CardHeader>
+              <CardFooter>
+                <Button onClick={resetFlow} className="w-full">
+                  最初からやり直す
+                </Button>
+              </CardFooter>
+            </Card>
+          );
+        }
         return (
           <ProductDetailsForm
             productData={productData}
