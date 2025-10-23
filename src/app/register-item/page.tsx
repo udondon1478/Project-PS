@@ -188,13 +188,16 @@ export default function RegisterItemPage() {
 
   // タグ選択肢をフェッチ & unmount時のクリーンアップ
   useEffect(() => {
+    const controller = new AbortController();
+    const signal = controller.signal;
+
     const fetchTagsByType = async () => {
       setIsDetailsError(false);
       try {
         const responses = await Promise.all([
-          fetch('/api/tags/by-type?categoryNames=age_rating'),
-          fetch('/api/tags/by-type?categoryNames=product_category'),
-          fetch('/api/tags/by-type?categoryNames=feature'),
+          fetch('/api/tags/by-type?categoryNames=age_rating', { signal }),
+          fetch('/api/tags/by-type?categoryNames=product_category', { signal }),
+          fetch('/api/tags/by-type?categoryNames=feature', { signal }),
         ]);
 
         const [ageRatingsResponse, categoriesResponse, featuresResponse] = responses;
@@ -223,6 +226,10 @@ export default function RegisterItemPage() {
           setIsDetailsError(true);
         }
       } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          // Component unmounted, fetch aborted.
+          return;
+        }
         console.error('Error fetching tags by type:', error);
         setMessage('タグ情報の取得中にネットワークエラーが発生しました。');
         setIsDetailsError(true);
@@ -231,6 +238,7 @@ export default function RegisterItemPage() {
     fetchTagsByType();
 
     return () => {
+      controller.abort();
       if (fetchControllerRef.current) {
         fetchControllerRef.current.abort();
       }
