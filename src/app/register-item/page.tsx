@@ -295,7 +295,7 @@ export default function RegisterItemPage() {
               <CardDescription>この商品はすでにデータベースに登録されています。</CardDescription>
             </CardHeader>
             <CardContent>
-              <Alert>
+              <Alert role="status">
                 <AlertDescription className="whitespace-pre-wrap">{message}</AlertDescription>
               </Alert>
               {productData && (
