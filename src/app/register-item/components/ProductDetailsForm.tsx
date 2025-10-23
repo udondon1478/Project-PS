@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
-import { TagInput } from './TagInput'; // 後で実装
+import { TagInput } from './TagInput';
 
 // 商品情報の型定義 (page.tsxから移動・再利用)
 interface ProductInfo {
