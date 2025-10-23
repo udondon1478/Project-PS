@@ -259,6 +259,7 @@ export default function RegisterItemPage() {
   }, []);
 
   const resetFlow = () => {
+    fetchControllerRef.current?.abort();
     setStep('url_input');
     setProductData(null);
     setMessage('');
