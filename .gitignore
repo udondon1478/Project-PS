@@ -42,3 +42,6 @@ next-env.d.ts
 
 # personal files
 repomix-*.xml
+
+# 研究室用
+/.local/
