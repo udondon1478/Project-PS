@@ -251,11 +251,10 @@ export default function RegisterItemPage() {
     };
     fetchTagsByType();
 
+    // アンマウント時に保留中のリクエストをすべてキャンセルする
     return () => {
-      controller.abort();
-      if (fetchControllerRef.current) {
-        fetchControllerRef.current.abort();
-      }
+      controller.abort(); // タグ取得リクエストをキャンセル
+      fetchControllerRef.current?.abort(); // 商品情報取得リクエストをキャンセル
     };
   }, []);
 
