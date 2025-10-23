@@ -149,6 +149,13 @@ export default function RegisterItemPage() {
       setStep('error');
       return;
     }
+
+    if (fetchControllerRef.current) {
+      fetchControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    fetchControllerRef.current = controller;
+
     setIsLoading(true);
     setMessage('商品を登録中...');
     setIsDetailsError(false);
@@ -163,6 +170,7 @@ export default function RegisterItemPage() {
           ageRatingTagId: selectedAgeRatingTagId,
           categoryTagId: selectedCategoryTagId,
         }),
+        signal: controller.signal,
       });
       const data = await response.json();
 
@@ -177,11 +185,17 @@ export default function RegisterItemPage() {
         setIsDetailsError(true);
       }
     } catch (error: unknown) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return;
+      }
       setStep('details_confirmation');
       const errorMessage = error instanceof Error ? error.message : "不明なエラー";
       setMessage(`登録中にエラーが発生しました: ${errorMessage}`);
       setIsDetailsError(true);
     } finally {
+      if (fetchControllerRef.current === controller) {
+        fetchControllerRef.current = null;
+      }
       setIsLoading(false);
     }
   };
