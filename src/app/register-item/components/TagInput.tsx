@@ -90,6 +90,14 @@ export const TagInput = ({ value: tags, onChange: setTags, disabled, id }: TagIn
         role="group"
         aria-label="tags input"
         aria-disabled={disabled}
+        tabIndex={disabled ? -1 : 0}
+        onKeyDown={(e) => {
+          if (disabled) return;
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            inputRef.current?.focus();
+          }
+        }}
       >
         {tags.map((tag) => (
           <Badge key={tag} variant="secondary" className="flex items-center gap-1">
