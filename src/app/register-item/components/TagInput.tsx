@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import type { Dispatch, SetStateAction, KeyboardEvent } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +8,7 @@ import { X } from 'lucide-react';
 
 interface TagInputProps {
   value: string[];
-  onChange: Dispatch<SetStateAction<string[]>>;
+  onChange: React.Dispatch<React.SetStateAction<string[]>>;
   disabled?: boolean;
   id?: string;
 }
@@ -71,7 +70,7 @@ export const TagInput = ({ value: tags, onChange: setTags, disabled, id }: TagIn
     setTags((prev) => prev.filter((tag) => tag !== tagToRemove));
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (isComposing) return;
 
     if ((e.key === 'Enter' || e.key === 'Tab') && inputValue) {
@@ -91,14 +90,6 @@ export const TagInput = ({ value: tags, onChange: setTags, disabled, id }: TagIn
         role="group"
         aria-label="tags input"
         aria-disabled={disabled}
-        tabIndex={disabled ? -1 : 0}
-        onKeyDown={(e) => {
-          if (disabled) return;
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            inputRef.current?.focus();
-          }
-        }}
       >
         {tags.map((tag) => (
           <Badge key={tag} variant="secondary" className="flex items-center gap-1">

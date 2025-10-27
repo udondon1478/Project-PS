@@ -86,7 +86,7 @@ export const ProductDetailsForm = ({
           <Carousel className="w-full max-w-sm mx-auto">
             <CarouselContent>
               {productData.images.map((image, index) => (
-                <CarouselItem key={`${image.order}-${image.imageUrl}`}>
+                <CarouselItem key={`${image.order ?? 'no-order'}-${image.imageUrl}`}>
                   <div className="p-1">
                     <Card>
                       <CardContent className="flex aspect-square items-center justify-center p-0">
@@ -115,12 +115,12 @@ export const ProductDetailsForm = ({
           </div>
 
           <div>
-            <h4 className="text-sm font-medium">価格</h4>
+            <Label>価格</Label>
             <p>¥{productData.lowPrice.toLocaleString()} ~ ¥{productData.highPrice.toLocaleString()}</p>
           </div>
 
           <div>
-            <h4 className="text-sm font-medium">説明</h4>
+            <Label>説明</Label>
             <ScrollArea className="h-40 w-full rounded-md border p-4">
               <p className="whitespace-pre-wrap text-sm">{productData.description}</p>
             </ScrollArea>

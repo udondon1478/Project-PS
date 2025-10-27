@@ -35,7 +35,7 @@ export const URLInputForm = ({ onSubmit, isLoading, message, isError = false }: 
       <form onSubmit={handleSubmit}>
         <CardContent>
           {message && (
-            <Alert variant={isError ? 'destructive' : 'default'} className="mb-4" role={isError ? 'alert' : 'status'}>
+            <Alert variant={isError ? 'destructive' : 'default'} className="mb-4">
               <AlertDescription>{message}</AlertDescription>
             </Alert>
           )}

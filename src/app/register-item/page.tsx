@@ -31,6 +31,19 @@ interface ProductInfo {
 // 画面の状態を示す型
 type RegisterStep = 'url_input' | 'details_confirmation' | 'existing_product' | 'complete' | 'error';
 
+async function getErrorMessage(response: Response): Promise<string> {
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    try {
+      const data = await response.json();
+      return data.message || response.statusText;
+    } catch (e) {
+      return response.statusText;
+    }
+  }
+  return response.text();
+}
+
 export default function RegisterItemPage() {
   const [step, setStep] = useState<RegisterStep>('url_input');
   const [isLoading, setIsLoading] = useState(false);
@@ -84,8 +97,9 @@ export default function RegisterItemPage() {
           setIsUrlInputError(true);
         }
       } else {
+        const errorMsg = await getErrorMessage(response);
         setStep('url_input');
-        setMessage(`情報の取得に失敗しました: ${data.message || response.statusText}`);
+        setMessage(`情報の取得に失敗しました: ${errorMsg}`);
         setIsUrlInputError(true);
       }
     } catch (error: unknown) {
@@ -114,6 +128,12 @@ export default function RegisterItemPage() {
     }
     const productId = productData.id;
 
+    if (fetchControllerRef.current) {
+      fetchControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    fetchControllerRef.current = controller;
+
     setIsLoading(true);
     setMessage('商品情報を更新中...');
 
@@ -122,22 +142,29 @@ export default function RegisterItemPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ productId }),
+        signal: controller.signal,
       });
-      const data = await response.json();
 
       if (response.ok) {
         setStep('complete');
         setMessage('商品情報が正常に更新されました。');
         setProductData(null);
       } else {
+        const errorMsg = await getErrorMessage(response);
         setStep('error');
-        setMessage(`更新に失敗しました: ${data.message || response.statusText}`);
+        setMessage(`更新に失敗しました: ${errorMsg}`);
       }
     } catch (error: unknown) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return;
+      }
       setStep('error');
       const errorMessage = error instanceof Error ? error.message : "不明なエラー";
       setMessage(`更新中にエラーが発生しました: ${errorMessage}`);
     } finally {
+      if (fetchControllerRef.current === controller) {
+        fetchControllerRef.current = null;
+      }
       setIsLoading(false);
     }
   };
@@ -180,8 +207,9 @@ export default function RegisterItemPage() {
         setProductData(null);
         setManualTags([]);
       } else {
+        const errorMsg = await getErrorMessage(response);
         setStep('details_confirmation');
-        setMessage(`登録に失敗しました: ${data.message || response.statusText}`);
+        setMessage(`登録に失敗しました: ${errorMsg}`);
         setIsDetailsError(true);
       }
     } catch (error: unknown) {
@@ -325,7 +353,7 @@ export default function RegisterItemPage() {
             <CardContent>
               <Alert>
                 <AlertDescription asChild>
-                  <output className="block whitespace-pre-wrap" aria-live="polite" aria-atomic="true">{message}</output>
+                  <output className="block whitespace-pre-wrap" role="status">{message}</output>
                 </AlertDescription>
               </Alert>
               {productData && (
