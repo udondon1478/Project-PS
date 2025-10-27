@@ -31,18 +31,7 @@ interface ProductInfo {
 // 画面の状態を示す型
 type RegisterStep = 'url_input' | 'details_confirmation' | 'existing_product' | 'complete' | 'error';
 
-async function getErrorMessage(response: Response): Promise<string> {
-  const contentType = response.headers.get('content-type');
-  if (contentType && contentType.includes('application/json')) {
-    try {
-      const data = await response.json();
-      return data.message || response.statusText;
-    } catch (e) {
-      return response.statusText;
-    }
-  }
-  return response.text();
-}
+import { getErrorMessage } from './utils/errorHandling';
 
 export default function RegisterItemPage() {
   const [step, setStep] = useState<RegisterStep>('url_input');
@@ -79,9 +68,9 @@ export default function RegisterItemPage() {
         body: JSON.stringify({ url }),
         signal: controller.signal,
       });
-      const data = await response.json();
 
       if (response.ok) {
+        const data = await response.json();
         if (data.status === 'existing') {
           setProductData(data.product);
           setStep('existing_product');
@@ -199,9 +188,10 @@ export default function RegisterItemPage() {
         }),
         signal: controller.signal,
       });
-      const data = await response.json();
+      
 
       if (response.ok) {
+        const data = await response.json();
         setStep('complete');
         setMessage('商品が正常に登録されました。');
         setProductData(null);
