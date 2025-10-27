@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
+import { getErrorMessage } from './utils/errorHandling';
 
 // 商品情報の型定義 (変更なし)
 interface ProductInfo {
@@ -31,7 +32,7 @@ interface ProductInfo {
 // 画面の状態を示す型
 type RegisterStep = 'url_input' | 'details_confirmation' | 'existing_product' | 'complete' | 'error';
 
-import { getErrorMessage } from './utils/errorHandling';
+
 
 export default function RegisterItemPage() {
   const [step, setStep] = useState<RegisterStep>('url_input');
