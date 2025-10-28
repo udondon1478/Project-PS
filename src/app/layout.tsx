@@ -7,6 +7,7 @@ config.autoAddCss = false
 import { SessionProvider } from "next-auth/react"; // SessionProviderをインポート
 import Header from "@/components/Header";
 import { ThemeProvider } from "@/components/theme-provider"; // ThemeProviderをインポート
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,6 +43,7 @@ export default function RootLayout({
           >
             <Header />
             {children}
+            <Toaster />
           </ThemeProvider>
         </SessionProvider>
       </body>
