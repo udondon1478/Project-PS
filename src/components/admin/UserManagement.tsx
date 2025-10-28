@@ -29,6 +29,8 @@ export default function UserManagement() {
   });
   const [isDetecting, setIsDetecting] = useState(false);
 
+  const [isLoading, setIsLoading] = useState(false);
+
   const fetchUsers = async () => {
     const params = new URLSearchParams();
     params.set('page', currentPage.toString());
@@ -54,6 +56,8 @@ export default function UserManagement() {
     } catch (error) {
     console.error('Error fetching users:', error);
     toast.error('Network error while fetching users.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -67,6 +71,7 @@ export default function UserManagement() {
   };
 
   const handleUpdateUser = async (userId: string, data: { role?: Role; status?: UserStatus }) => {
+    try {
     const res = await fetch(`/api/admin/users/${userId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -81,6 +86,12 @@ export default function UserManagement() {
         description: error,
       });
     }
+  } catch (error) {
+    console.error('Network error updating user:', error);
+    toast.error('Network error', {
+      description: 'Failed to update user due to network error.',
+    });
+  }
   };
 
   const handleDetectSuspiciousUsers = async () => {
@@ -141,6 +152,9 @@ export default function UserManagement() {
           </SelectContent>
         </Select>
       </div>
+      { isLoading ? (
+        <div className="text-center py-8">読み込み中...</div>
+      ) : (
       <Table>
         <TableHeader>
           <TableRow>
@@ -184,6 +198,7 @@ export default function UserManagement() {
           ))}
         </TableBody>
       </Table>
+      ) }
        {/* Pagination Controls */}
        <div className="flex justify-between mt-4">
          <Button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Previous</Button>
