@@ -38,12 +38,22 @@ export default function UserManagement() {
     if (filters.status) params.set('status', filters.status);
     if (filters.isSuspicious) params.set('isSuspicious', filters.isSuspicious);
 
+    try {
     const res = await fetch(`/api/admin/users?${params.toString()}`);
     if (res.ok) {
       const data = await res.json();
       setUsers(data.users);
       setTotalPages(data.totalPages);
       setCurrentPage(data.currentPage);
+      } else {
+        const error = await res.text();
+        toast.error('Failed to fetch users', {
+          description: error,
+        });
+    }
+    } catch (error) {
+    console.error('Error fetching users:', error);
+    toast.error('Network error while fetching users.');
     }
   };
 
