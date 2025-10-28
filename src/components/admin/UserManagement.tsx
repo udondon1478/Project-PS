@@ -187,7 +187,12 @@ export default function UserManagement() {
             <TableRow key={user.id} className={user.isSuspicious ? 'bg-red-100' : ''}>
               <TableCell>
                 {user.isSuspicious && (
-                  <span className="text-red-600 font-bold mr-2" title="Suspicious user" role="img" aria-label="Warning">
+  <span 
+    className="text-red-600 font-bold mr-2" 
+    title={user.suspicionReason || "Suspicious user"} 
+    role="img" 
+    aria-label="Warning"
+  >
                     ⚠️
                   </span>
                 )}
