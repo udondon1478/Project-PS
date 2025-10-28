@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/session';
-import { Role } from '@prisma/client';
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/session";
+import { Role } from "@prisma/client";
 
 export async function GET(req: Request) {
   try {
@@ -11,20 +11,20 @@ export async function GET(req: Request) {
     }
 
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '20', 10);
-    const name = searchParams.get('name');
-    const email = searchParams.get('email');
-    const role = searchParams.get('role');
-    const status = searchParams.get('status');
-    const isSuspicious = searchParams.get('isSuspicious');
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "20", 10);
+    const name = searchParams.get("name");
+    const email = searchParams.get("email");
+    const role = searchParams.get("role");
+    const status = searchParams.get("status");
+    const isSuspicious = searchParams.get("isSuspicious");
 
     const where: any = {};
     if (name) {
-      where.name = { contains: name, mode: 'insensitive' };
+      where.name = { contains: name, mode: "insensitive" };
     }
     if (email) {
-      where.email = { contains: email, mode: 'insensitive' };
+      where.email = { contains: email, mode: "insensitive" };
     }
     if (role) {
       where.role = { equals: role };
@@ -33,7 +33,7 @@ export async function GET(req: Request) {
       where.status = { equals: status };
     }
     if (isSuspicious) {
-      where.isSuspicious = { equals: isSuspicious === 'true' };
+      where.isSuspicious = { equals: isSuspicious === "true" };
     }
 
     const users = await prisma.user.findMany({
@@ -41,7 +41,7 @@ export async function GET(req: Request) {
       skip: (page - 1) * limit,
       take: limit,
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
       select: {
         id: true,
@@ -56,7 +56,7 @@ export async function GET(req: Request) {
             createdAt: true,
           },
           orderBy: {
-            createdAt: 'desc',
+            createdAt: "desc",
           },
           take: 1,
         },
@@ -71,7 +71,15 @@ export async function GET(req: Request) {
       currentPage: page,
     });
   } catch (error) {
-    console.error('Failed to fetch users:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    console.error("Failed to fetch users:", error);
+    return NextResponse.json(
+      {
+        error: "Internal Server Error",
+        ...(process.env.NODE_ENV === "development" && {
+          details: String(error),
+        }),
+      },
+      { status: 500 }
+    );
   }
 }
