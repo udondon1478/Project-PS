@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -8,12 +9,15 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { User, Role, UserStatus } from '@prisma/client';
 import { toast } from 'sonner';
+import { useDebounce } from '@/hooks/useDebounce';
 
 type UserWithLastLogin = User & {
   sessions: { createdAt: Date }[];
 };
 
 export default function UserManagement() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [users, setUsers] = useState<UserWithLastLogin[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
@@ -24,43 +28,37 @@ export default function UserManagement() {
     status: '',
     isSuspicious: '',
   });
+  const [nameFilter, setNameFilter] = useState('');
+  const [emailFilter, setEmailFilter] = useState('');
+  const debouncedNameFilter = useDebounce(nameFilter, 500);
+  const debouncedEmailFilter = useDebounce(emailFilter, 500);
+
   const [isDetecting, setIsDetecting] = useState(false);
 
-  const [isLoading, setIsLoading] = useState(false);
-
-  const fetchUsers = async () => {
-    setIsLoading(true);
-    const params = new URLSearchParams();
-    params.set('page', currentPage.toString());
-    if (filters.name) params.set('name', filters.name);
-    if (filters.email) params.set('email', filters.email);
-    if (filters.role) params.set('role', filters.role);
-    if (filters.status) params.set('status', filters.status);
-    if (filters.isSuspicious) params.set('isSuspicious', filters.isSuspicious);
-    try {
-    const res = await fetch(`/api/admin/users?${params.toString()}`);
-    if (res.ok) {
-      const data = await res.json();
-      setUsers(data.users);
-      setTotalPages(data.totalPages);
-      setCurrentPage(data.currentPage);
-      } else {
-        const error = await res.text();
-        toast.error('Failed to fetch users', {
-          description: error,
-        });
-    }
-    } catch (error) {
-    console.error('Error fetching users:', error);
-    toast.error('Network error while fetching users.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedNameFilter, debouncedEmailFilter]);
 
   useEffect(() => {
+    const fetchUsers = async () => {
+      const params = new URLSearchParams();
+      params.set('page', currentPage.toString());
+      if (debouncedNameFilter) params.set('name', debouncedNameFilter);
+      if (debouncedEmailFilter) params.set('email', debouncedEmailFilter);
+      if (filters.role) params.set('role', filters.role);
+      if (filters.status) params.set('status', filters.status);
+      if (filters.isSuspicious) params.set('isSuspicious', filters.isSuspicious);
+
+      const res = await fetch(`/api/admin/users?${params.toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(data.users);
+        setTotalPages(data.totalPages);
+        setCurrentPage(data.currentPage);
+      }
+    };
     fetchUsers();
-  }, [currentPage, filters.name, filters.email, filters.role, filters.status, filters.isSuspicious]);
+  }, [currentPage, debouncedNameFilter, debouncedEmailFilter, filters.role, filters.status, filters.isSuspicious]);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -68,7 +66,6 @@ export default function UserManagement() {
   };
 
   const handleUpdateUser = async (userId: string, data: { role?: Role; status?: UserStatus }) => {
-    try {
     const res = await fetch(`/api/admin/users/${userId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -83,36 +80,18 @@ export default function UserManagement() {
         description: error,
       });
     }
-  } catch (error) {
-    console.error('Network error updating user:', error);
-    toast.error('Network error', {
-      description: 'Failed to update user due to network error.',
-    });
-  }
   };
 
   const handleDetectSuspiciousUsers = async () => {
     setIsDetecting(true);
-    try {
     const res = await fetch('/api/admin/users/detect-suspicious', { method: 'POST' });
-
+    setIsDetecting(false);
     if (res.ok) {
       const data = await res.json();
       toast.success(data.message);
       fetchUsers(); // Refresh the user list
     } else {
-      const error = await res.text();
-      toast.error('Failed to run detection', {
-        description: error,
-      });
-    }
-  } catch (error) {
-    console.error('Network error during detection:', error);
-    toast.error('Network error', {
-      description: 'Failed to connect to the server.',
-    });
-  } finally {
-    setIsDetecting(false);
+      toast.error('Failed to run detection.');
     }
   };
 
@@ -127,13 +106,13 @@ export default function UserManagement() {
       <div className="flex space-x-2 mb-4">
         <Input
           placeholder="Filter by name..."
-          value={filters.name}
-          onChange={(e) => handleFilterChange('name', e.target.value)}
+          value={nameFilter}
+          onChange={(e) => setNameFilter(e.target.value)}
         />
         <Input
           placeholder="Filter by email..."
-          value={filters.email}
-          onChange={(e) => handleFilterChange('email', e.target.value)}
+          value={emailFilter}
+          onChange={(e) => setEmailFilter(e.target.value)}
         />
         <Select onValueChange={(value) => handleFilterChange('role', value)} defaultValue="">
           <SelectTrigger><SelectValue placeholder="Filter by role..." /></SelectTrigger>
@@ -161,9 +140,6 @@ export default function UserManagement() {
           </SelectContent>
         </Select>
       </div>
-      { isLoading ? (
-        <div className="text-center py-8">読み込み中...</div>
-      ) : (
       <Table>
         <TableHeader>
           <TableRow>
@@ -176,28 +152,9 @@ export default function UserManagement() {
           </TableRow>
         </TableHeader>
         <TableBody>
-  {users.length === 0 && (
-    <TableRow>
-      <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-        該当するユーザーが見つかりませんでした
-      </TableCell>
-    </TableRow>
-  )}
           {users.map((user) => (
             <TableRow key={user.id} className={user.isSuspicious ? 'bg-red-100' : ''}>
-              <TableCell>
-                {user.isSuspicious && (
-  <span 
-    className="text-red-600 font-bold mr-2" 
-    title={user.suspicionReason || "Suspicious user"} 
-    role="img" 
-    aria-label="Warning"
-  >
-                    ⚠️
-                  </span>
-                )}
-                {user.name}
-              </TableCell>
+              <TableCell>{user.name}</TableCell>
               <TableCell>{user.email}</TableCell>
               <TableCell>{user.role}</TableCell>
               <TableCell>{user.status}</TableCell>
@@ -226,7 +183,6 @@ export default function UserManagement() {
           ))}
         </TableBody>
       </Table>
-      ) }
        {/* Pagination Controls */}
        <div className="flex justify-between mt-4">
          <Button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Previous</Button>
