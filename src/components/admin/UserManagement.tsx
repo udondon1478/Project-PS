@@ -96,14 +96,26 @@ export default function UserManagement() {
 
   const handleDetectSuspiciousUsers = async () => {
     setIsDetecting(true);
+    try {
     const res = await fetch('/api/admin/users/detect-suspicious', { method: 'POST' });
-    setIsDetecting(false);
+
     if (res.ok) {
       const data = await res.json();
       toast.success(data.message);
       fetchUsers(); // Refresh the user list
     } else {
-      toast.error('Failed to run detection.');
+      const error = await res.text();
+      toast.error('Failed to run detection', {
+        description: error,
+      });
+    }
+  } catch (error) {
+    console.error('Network error during detection:', error);
+    toast.error('Network error', {
+      description: 'Failed to connect to the server.',
+    });
+  } finally {
+    setIsDetecting(false);
     }
   };
 
