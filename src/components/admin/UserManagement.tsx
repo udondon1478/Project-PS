@@ -16,7 +16,6 @@ type UserWithLastLogin = User & {
 
 export default function UserManagement() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [users, setUsers] = useState<UserWithLastLogin[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
@@ -32,6 +31,7 @@ export default function UserManagement() {
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchUsers = async () => {
+    setIsLoading(true);
     const params = new URLSearchParams();
     params.set('page', currentPage.toString());
     if (filters.name) params.set('name', filters.name);
@@ -39,7 +39,6 @@ export default function UserManagement() {
     if (filters.role) params.set('role', filters.role);
     if (filters.status) params.set('status', filters.status);
     if (filters.isSuspicious) params.set('isSuspicious', filters.isSuspicious);
-
     try {
     const res = await fetch(`/api/admin/users?${params.toString()}`);
     if (res.ok) {
