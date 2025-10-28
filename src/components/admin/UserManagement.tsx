@@ -176,6 +176,13 @@ export default function UserManagement() {
           </TableRow>
         </TableHeader>
         <TableBody>
+  {users.length === 0 && (
+    <TableRow>
+      <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+        該当するユーザーが見つかりませんでした
+      </TableCell>
+    </TableRow>
+  )}
           {users.map((user) => (
             <TableRow key={user.id} className={user.isSuspicious ? 'bg-red-100' : ''}>
               <TableCell>
