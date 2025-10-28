@@ -26,7 +26,10 @@ export default function UserManagement() {
   });
   const [isDetecting, setIsDetecting] = useState(false);
 
+  const [isLoading, setIsLoading] = useState(false);
+
   const fetchUsers = async () => {
+    setIsLoading(true);
     const params = new URLSearchParams();
     params.set('page', currentPage.toString());
     if (filters.name) params.set('name', filters.name);
@@ -41,7 +44,10 @@ export default function UserManagement() {
       setUsers(data.users);
       setTotalPages(data.totalPages);
       setCurrentPage(data.currentPage);
+    } else {
+      console.error('Failed to fetch users');
     }
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -128,6 +134,9 @@ export default function UserManagement() {
           </SelectContent>
         </Select>
       </div>
+      {isLoading ? (
+        <div className="text-center py-8">Loading users...</div>
+      ) : (
       <Table>
         <TableHeader>
           <TableRow>
@@ -171,6 +180,7 @@ export default function UserManagement() {
           ))}
         </TableBody>
       </Table>
+      )}
        {/* Pagination Controls */}
        <div className="flex justify-between mt-4">
          <Button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Previous</Button>
