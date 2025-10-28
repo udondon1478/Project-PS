@@ -62,7 +62,7 @@ export default function UserManagement() {
 
   useEffect(() => {
     fetchUsers();
-  }, [currentPage, filters]);
+  }, [currentPage, filters.name, filters.email, filters.role, filters.status, filters.isSuspicious]);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
