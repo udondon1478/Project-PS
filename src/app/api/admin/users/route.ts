@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/session';
-import { Role, UserStatus } from '@prisma/client';
-import { z } from 'zod';
+import { Role } from '@prisma/client';
 
 export async function GET(req: Request) {
   try {
@@ -12,36 +11,15 @@ export async function GET(req: Request) {
     }
 
     const { searchParams } = new URL(req.url);
-    const querySchema = z.object({
-      page: z.coerce.number().int().min(1).default(1),
-      limit: z.coerce.number().int().min(1).max(100).default(20),
-      name: z.string().optional(),
-      email: z.string().optional(),
-      role: z.nativeEnum(Role).optional(),
-      status: z.nativeEnum(UserStatus).optional(),
-      isSuspicious: z.enum(['true', 'false']).optional(),
-    }).strict();
-    const parsed = querySchema.safeParse({
-      page: searchParams.get('page'),
-      limit: searchParams.get('limit'),
-      name: searchParams.get('name'),
-      email: searchParams.get('email'),
-      role: searchParams.get('role'),
-      status: searchParams.get('status'),
-      isSuspicious: searchParams.get('isSuspicious'),
-    });
-    if (!parsed.success) {
-      return new NextResponse('Invalid query', { status: 400 });
-    }
-    const { page, limit, name, email, role, status, isSuspicious } = parsed.data;
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const name = searchParams.get('name');
+    const email = searchParams.get('email');
+    const role = searchParams.get('role');
+    const status = searchParams.get('status');
+    const isSuspicious = searchParams.get('isSuspicious');
 
-    const where: {
-      name?: { contains: string; mode: 'insensitive' };
-      email?: { contains: string; mode: 'insensitive' };
-      role?: { equals: Role };
-      status?: { equals: UserStatus };
-      isSuspicious?: { equals: boolean };
-    } = {};
+    const where: any = {};
     if (name) {
       where.name = { contains: name, mode: 'insensitive' };
     }
@@ -75,10 +53,10 @@ export async function GET(req: Request) {
         createdAt: true,
         sessions: {
           select: {
-            expires: true,
+            createdAt: true,
           },
           orderBy: {
-            expires: 'desc',
+            createdAt: 'desc',
           },
           take: 1,
         },

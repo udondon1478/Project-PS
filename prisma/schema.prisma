@@ -45,13 +45,6 @@ model User {
   sessions      Session[]
   productOwners ProductOwner[]
   tagMetadataEdits TagMetadataHistory[] // ユーザーが行ったタグメタデータ編集
-
-  @@index([createdAt])
-  @@index([status])
-  @@index([isSuspicious])
-  @@index([role])
-  // もしフィルタ + 並び替えが多い場合は複合も検討:
-  // @@index([status, isSuspicious, createdAt])
 }
 
 model Account {
@@ -79,6 +72,7 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
+  createdAt    DateTime @default(now())
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 

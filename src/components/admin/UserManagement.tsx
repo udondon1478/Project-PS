@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,10 +11,12 @@ import { User, Role, UserStatus } from '@prisma/client';
 import { toast } from 'sonner';
 
 type UserWithLastLogin = User & {
-  sessions: { expires: Date }[];
+  sessions: { createdAt: Date }[];
 };
 
 export default function UserManagement() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [users, setUsers] = useState<UserWithLastLogin[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
@@ -26,10 +29,7 @@ export default function UserManagement() {
   });
   const [isDetecting, setIsDetecting] = useState(false);
 
-  const [isLoading, setIsLoading] = useState(false);
-
   const fetchUsers = async () => {
-    setIsLoading(true);
     const params = new URLSearchParams();
     params.set('page', currentPage.toString());
     if (filters.name) params.set('name', filters.name);
@@ -44,15 +44,12 @@ export default function UserManagement() {
       setUsers(data.users);
       setTotalPages(data.totalPages);
       setCurrentPage(data.currentPage);
-    } else {
-      console.error('Failed to fetch users');
     }
-    setIsLoading(false);
   };
 
   useEffect(() => {
     fetchUsers();
-  }, [currentPage, filters.name, filters.email, filters.role, filters.status, filters.isSuspicious]);
+  }, [currentPage, filters]);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -134,9 +131,6 @@ export default function UserManagement() {
           </SelectContent>
         </Select>
       </div>
-      {isLoading ? (
-        <div className="text-center py-8">Loading users...</div>
-      ) : (
       <Table>
         <TableHeader>
           <TableRow>
@@ -156,7 +150,7 @@ export default function UserManagement() {
               <TableCell>{user.role}</TableCell>
               <TableCell>{user.status}</TableCell>
               <TableCell>
-                {user.sessions?.[0] ? new Date(user.sessions[0].expires).toLocaleString() : 'Never'}
+                {user.sessions?.[0] ? new Date(user.sessions[0].createdAt).toLocaleString() : 'Never'}
               </TableCell>
               <TableCell>
                 <DropdownMenu>
@@ -180,7 +174,6 @@ export default function UserManagement() {
           ))}
         </TableBody>
       </Table>
-      )}
        {/* Pagination Controls */}
        <div className="flex justify-between mt-4">
          <Button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Previous</Button>
