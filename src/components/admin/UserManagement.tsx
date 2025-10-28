@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { User, Role, UserStatus } from '@prisma/client';
+import { toast } from 'sonner';
 
 type UserWithLastLogin = User & {
   sessions: { expires: Date }[];
@@ -63,9 +64,12 @@ export default function UserManagement() {
     });
     if (res.ok) {
       setUsers(users.map(u => u.id === userId ? { ...u, ...data } : u));
+      toast.success('User updated successfully.');
     } else {
       const error = await res.text();
-      alert(`Failed to update user: ${error}`);
+      toast.error('Failed to update user', {
+        description: error,
+      });
     }
   };
 
@@ -75,10 +79,10 @@ export default function UserManagement() {
     setIsDetecting(false);
     if (res.ok) {
       const data = await res.json();
-      alert(data.message);
+      toast.success(data.message);
       fetchUsers(); // Refresh the user list
     } else {
-      alert('Failed to run detection.');
+      toast.error('Failed to run detection.');
     }
   };
 
