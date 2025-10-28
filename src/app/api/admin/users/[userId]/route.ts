@@ -36,8 +36,15 @@ export async function PUT(req: Request, { params }: { params: { userId: string }
       return new NextResponse('User not found', { status: 404 });
     }
 
+    
     // Prevent admin from accidentally locking themselves out
-    if (userToUpdate.id === session.id && (data.role !== Role.ADMIN || data.status !== 'ACTIVE')) {
+    if (
+      userToUpdate.id === session.id &&
+      (
+        (data.role !== undefined && data.role !== Role.ADMIN) ||
+        (data.status !== undefined && data.status !== UserStatus.ACTIVE)
+      )
+    ) {
       return new NextResponse('Admins cannot change their own role or status.', { status: 400 });
     }
 
