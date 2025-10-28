@@ -7,12 +7,10 @@ const LOW_RATING_PERCENTAGE_THRESHOLD = 0.5; // 50%
 
 export async function detectSuspiciousUsers() {
   const users = await prisma.user.findMany({
-    where: {
-      tagEdits: {
-        some: {}, // Ensure user has at least one edit
-      },
-    },
     include: {
+      _count: {
+        select: { tagEdits: true },
+      },
       tagEdits: {
         select: {
           score: true,
@@ -28,7 +26,7 @@ export async function detectSuspiciousUsers() {
   const suspiciousUsers = [];
 
   for (const user of users) {
-    if (user.tagEdits.length < MIN_EDIT_COUNT) {
+    if (user._count.tagEdits < MIN_EDIT_COUNT) {
       continue;
     }
 
