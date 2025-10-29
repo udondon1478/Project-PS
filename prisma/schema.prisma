@@ -46,9 +46,12 @@ model User {
   productOwners ProductOwner[]
   tagMetadataEdits TagMetadataHistory[] // ユーザーが行ったタグメタデータ編集
 
+  @@index([name])
+  @@index([email])
+  @@index([role])
   @@index([status])
   @@index([isSuspicious])
-  @@index([status, isSuspicious])
+  @@index([createdAt])
 }
 
 model Account {
@@ -78,6 +81,8 @@ model Session {
   expires      DateTime
   createdAt    DateTime @default(now())
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 model VerificationToken {
