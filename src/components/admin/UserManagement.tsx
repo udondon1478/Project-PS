@@ -7,6 +7,17 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { User, Role, UserStatus } from '@prisma/client';
 import { toast } from 'sonner';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -173,9 +184,27 @@ export default function UserManagement() {
                     {/* Status Change */}
                     {user.status === UserStatus.ACTIVE && <DropdownMenuItem onClick={() => handleUpdateUser(user.id, { status: UserStatus.SUSPENDED })}>Suspend</DropdownMenuItem>}
                     {user.status === UserStatus.SUSPENDED && <DropdownMenuItem onClick={() => handleUpdateUser(user.id, { status: UserStatus.ACTIVE })}>Unsuspend</DropdownMenuItem>}
-                    <DropdownMenuItem className="text-red-600" onClick={() => handleUpdateUser(user.id, { status: UserStatus.DELETED })}>
-                      Delete
-                    </DropdownMenuItem>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <DropdownMenuItem className="text-red-600" onSelect={(e) => e.preventDefault()}>
+                          Delete
+                        </DropdownMenuItem>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will logically delete the user account and prevent them from logging in.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleUpdateUser(user.id, { status: UserStatus.DELETED })}>
+                            Continue
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>
