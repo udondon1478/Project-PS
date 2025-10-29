@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -55,12 +55,21 @@ export default function UserManagement() {
     if (filters.status) params.set('status', filters.status);
     if (filters.isSuspicious) params.set('isSuspicious', filters.isSuspicious);
 
-    const res = await fetch(`/api/admin/users?${params.toString()}`);
-    if (res.ok) {
-      const data = await res.json();
-      setUsers(data.users);
-      setTotalPages(data.totalPages);
-      setCurrentPage(data.currentPage);
+    try {
+      const res = await fetch(`/api/admin/users?${params.toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(data.users);
+        setTotalPages(data.totalPages);
+        setCurrentPage(data.currentPage);
+      } else {
+        const errorText = await res.text();
+        toast.error('Failed to fetch users.', { description: errorText });
+      }
+    } catch (error) {
+      toast.error('An unexpected error occurred while fetching users.', {
+        description: error instanceof Error ? error.message : String(error),
+      });
     }
   }, [currentPage, debouncedNameFilter, debouncedEmailFilter, filters.role, filters.status, filters.isSuspicious]);
 
@@ -78,18 +87,24 @@ export default function UserManagement() {
   };
 
   const handleUpdateUser = async (userId: string, data: { role?: Role; status?: UserStatus }) => {
-    const res = await fetch(`/api/admin/users/${userId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (res.ok) {
-      setUsers(users.map(u => u.id === userId ? { ...u, ...data } : u));
-      toast.success('User updated successfully.');
-    } else {
-      const error = await res.text();
-      toast.error('Failed to update user', {
-        description: error,
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        setUsers(users.map(u => u.id === userId ? { ...u, ...data } : u));
+        toast.success('User updated successfully.');
+      } else {
+        const error = await res.text();
+        toast.error('Failed to update user', {
+          description: error,
+        });
+      }
+    } catch (error) {
+      toast.error('An unexpected error occurred while updating the user.', {
+        description: error instanceof Error ? error.message : String(error),
       });
     }
   };
