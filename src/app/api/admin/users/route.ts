@@ -8,7 +8,7 @@ export async function GET(req: Request) {
   try {
     const session = await getCurrentUser();
     if (session?.role !== Role.ADMIN) {
-      return new NextResponse(null, { status: 403 });
+      return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
     const { searchParams } = new URL(req.url);

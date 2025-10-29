@@ -193,7 +193,19 @@ export default function UserManagement() {
   )}
           {users.map((user) => (
             <TableRow key={user.id} className={user.isSuspicious ? 'bg-red-100' : ''}>
-              <TableCell>{user.name}</TableCell>
+              <TableCell>
+                {user.isSuspicious && (
+                  <span 
+                    className="text-red-600 font-bold mr-2" 
+                    title={user.suspicionReason || "Suspicious user"} 
+                    role="img" 
+                    aria-label="Warning"
+                  >
+                    ⚠️
+                  </span>
+                )}
+                {user.name}
+              </TableCell>
               <TableCell>{user.email}</TableCell>
               <TableCell>{user.role}</TableCell>
               <TableCell>{user.status}</TableCell>
