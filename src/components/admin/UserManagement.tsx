@@ -198,7 +198,7 @@ export default function UserManagement() {
                   <span 
                     className="text-red-600 font-bold mr-2" 
                     title={user.suspicionReason || "Suspicious user"} 
-                    role="img" 
+                    role="status" 
                     aria-label="Warning"
                   >
                     ⚠️

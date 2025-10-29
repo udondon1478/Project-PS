@@ -33,7 +33,7 @@ export async function GET(req: Request) {
     });
     
     if (!parsed.success) {
-      return new NextResponse('Invalid query parameters', { status: 400 });
+      return NextResponse.json({ error: 'Invalid query parameters' }, { status: 400 });
     }
     
     const { page, limit, name, email, role, status, isSuspicious } = parsed.data;
