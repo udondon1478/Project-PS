@@ -46,30 +46,31 @@ export default function UserManagement() {
 
   const [isDetecting, setIsDetecting] = useState(false);
 
+  const fetchUsers = useCallback(async () => {
+    const params = new URLSearchParams();
+    params.set('page', currentPage.toString());
+    if (debouncedNameFilter) params.set('name', debouncedNameFilter);
+    if (debouncedEmailFilter) params.set('email', debouncedEmailFilter);
+    if (filters.role) params.set('role', filters.role);
+    if (filters.status) params.set('status', filters.status);
+    if (filters.isSuspicious) params.set('isSuspicious', filters.isSuspicious);
+
+    const res = await fetch(`/api/admin/users?${params.toString()}`);
+    if (res.ok) {
+      const data = await res.json();
+      setUsers(data.users);
+      setTotalPages(data.totalPages);
+      setCurrentPage(data.currentPage);
+    }
+  }, [currentPage, debouncedNameFilter, debouncedEmailFilter, filters.role, filters.status, filters.isSuspicious]);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [debouncedNameFilter, debouncedEmailFilter]);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      const params = new URLSearchParams();
-      params.set('page', currentPage.toString());
-      if (debouncedNameFilter) params.set('name', debouncedNameFilter);
-      if (debouncedEmailFilter) params.set('email', debouncedEmailFilter);
-      if (filters.role) params.set('role', filters.role);
-      if (filters.status) params.set('status', filters.status);
-      if (filters.isSuspicious) params.set('isSuspicious', filters.isSuspicious);
-
-      const res = await fetch(`/api/admin/users?${params.toString()}`);
-      if (res.ok) {
-        const data = await res.json();
-        setUsers(data.users);
-        setTotalPages(data.totalPages);
-        setCurrentPage(data.currentPage);
-      }
-    };
     fetchUsers();
-  }, [currentPage, debouncedNameFilter, debouncedEmailFilter, filters.role, filters.status, filters.isSuspicious]);
+  }, [fetchUsers]);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -95,14 +96,22 @@ export default function UserManagement() {
 
   const handleDetectSuspiciousUsers = async () => {
     setIsDetecting(true);
-    const res = await fetch('/api/admin/users/detect-suspicious', { method: 'POST' });
-    setIsDetecting(false);
-    if (res.ok) {
-      const data = await res.json();
-      toast.success(data.message);
-      fetchUsers(); // Refresh the user list
-    } else {
-      toast.error('Failed to run detection.');
+    try {
+      const res = await fetch('/api/admin/users/detect-suspicious', { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        toast.success(data.message);
+        fetchUsers(); // Refresh the user list
+      } else {
+        const errorText = await res.text();
+        toast.error('Failed to run detection.', { description: errorText });
+      }
+    } catch (error) {
+      toast.error('An unexpected error occurred.', {
+        description: error instanceof Error ? error.message : String(error),
+      });
+    } finally {
+      setIsDetecting(false);
     }
   };
 
