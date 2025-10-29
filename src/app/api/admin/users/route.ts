@@ -59,7 +59,7 @@ export async function GET(req: Request) {
       where.status = status;
     }
     if (isSuspicious) {
-      where.isSuspicious = { equals: isSuspicious === 'true' };
+      where.isSuspicious = isSuspicious === 'true';
     }
 
     const users = await prisma.user.findMany({
