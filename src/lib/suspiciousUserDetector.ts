@@ -1,11 +1,12 @@
 import { prisma } from './prisma';
 import { subHours } from 'date-fns';
 
-const MIN_EDIT_COUNT = 10;
-const HIGH_EDIT_FREQUENCY_THRESHOLD = 30; // Edits per hour
-const LOW_RATING_PERCENTAGE_THRESHOLD = 0.5; // 50%
+const MIN_EDIT_COUNT = parseInt(process.env.MIN_EDIT_COUNT || '10', 10);
+const HIGH_EDIT_FREQUENCY_THRESHOLD = parseInt(process.env.HIGH_EDIT_FREQUENCY_THRESHOLD || '30', 10); // edits per hour
+const LOW_RATING_PERCENTAGE_THRESHOLD = parseFloat(process.env.LOW_RATING_PERCENTAGE_THRESHOLD || '0.5'); // 50%
 
 export async function detectSuspiciousUsers() {
+  try{
   const users = await prisma.user.findMany({
     include: {
       _count: {
@@ -79,4 +80,8 @@ export async function detectSuspiciousUsers() {
   }
 
   return suspiciousUsers;
+} catch (error) {
+  console.error('Error detecting suspicious users:', error);
+  throw error;
+}
 }

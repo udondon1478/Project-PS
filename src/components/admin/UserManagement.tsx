@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useEffect, useState, useCallback } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -27,8 +26,6 @@ type UserWithLastLogin = User & {
 };
 
 export default function UserManagement() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const [users, setUsers] = useState<UserWithLastLogin[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
@@ -187,6 +184,13 @@ export default function UserManagement() {
           </TableRow>
         </TableHeader>
         <TableBody>
+  {users.length === 0 && (
+    <TableRow>
+      <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+        該当するユーザーが見つかりませんでした
+      </TableCell>
+    </TableRow>
+  )}
           {users.map((user) => (
             <TableRow key={user.id} className={user.isSuspicious ? 'bg-red-100' : ''}>
               <TableCell>{user.name}</TableCell>

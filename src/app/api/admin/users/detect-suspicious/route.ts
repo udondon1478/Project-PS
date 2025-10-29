@@ -12,9 +12,21 @@ export async function POST() {
 
     const suspiciousUsers = await detectSuspiciousUsers();
 
-    return NextResponse.json({
-      message: `Detection complete. Found ${suspiciousUsers.filter(u => u.isSuspicious).length} suspicious users.`,
-      suspiciousUsers,
+    const users = suspiciousUsers
+      .filter(u => u.isSuspicious)
+      .map(u => ({
+        id: u.id,
+        name: u.name ?? null,
+        role: u.role,
+        status: u.status,
+        isSuspicious: u.isSuspicious,
+        suspicionReason: u.suspicionReason ?? null,
+      }));
+
+     return NextResponse.json({
+      message: `Detection complete. Found ${users.length} suspicious users.`,
+      users,
+      count: users.length,
     });
   } catch (error) {
     console.error('Failed to run suspicious user detection:', error);
