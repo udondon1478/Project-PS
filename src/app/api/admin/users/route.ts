@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
 import { getCurrentUser } from '@/lib/session';
 import { Role, UserStatus } from '@prisma/client';
 import { z } from 'zod';
@@ -38,19 +39,12 @@ export async function GET(req: Request) {
     
     const { page, limit, name, email, role, status, isSuspicious } = parsed.data;
 
-    type WhereClause = {
-      name?: { contains: string; mode: 'insensitive' };
-      email?: { contains: string; mode: 'insensitive' };
-      role?: Role;
-      status?: UserStatus;
-      isSuspicious?: boolean;
-    };
-    const where: WhereClause = {};
+    const where: Prisma.UserWhereInput = {};
     if (name) {
-      where.name = { contains: name, mode: 'insensitive' };
+      where.name = { contains: name, mode: Prisma.QueryMode.insensitive };
     }
     if (email) {
-      where.email = { contains: email, mode: 'insensitive' };
+      where.email = { contains: email, mode: Prisma.QueryMode.insensitive };
     }
     if (role) {
       where.role = role;
