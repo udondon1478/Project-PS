@@ -45,6 +45,10 @@ model User {
   sessions      Session[]
   productOwners ProductOwner[]
   tagMetadataEdits TagMetadataHistory[] // ユーザーが行ったタグメタデータ編集
+
+  @@index([status])
+  @@index([isSuspicious])
+  @@index([status, isSuspicious])
 }
 
 model Account {
