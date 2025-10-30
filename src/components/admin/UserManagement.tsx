@@ -78,10 +78,16 @@ export default function UserManagement() {
     fetchUsers();
   }, [fetchUsers]);
 
-  const handleFilterChange = (key: string, value: string) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
-    setCurrentPage(1);
-  };
+const handleFilterChange = (filterType: string, value: string) => {
+  // "all"を空文字列に変換してフィルターをクリア
+  const filterValue = value === 'all' ? '' : value;
+  
+  setFilters((prev) => ({
+    ...prev,
+    [filterType]: filterValue,
+  }));
+  setCurrentPage(1);
+};
 
   const handleUpdateUser = async (userId: string, data: { role?: Role; status?: UserStatus }) => {
     try {
@@ -146,27 +152,27 @@ export default function UserManagement() {
           value={emailFilter}
           onChange={(e) => setEmailFilter(e.target.value)}
         />
-        <Select onValueChange={(value) => handleFilterChange('role', value)} defaultValue="">
+        <Select onValueChange={(value) => handleFilterChange('role', value)} defaultValue="all">
           <SelectTrigger><SelectValue placeholder="Filter by role..." /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Roles</SelectItem>
+            <SelectItem value="all">All Roles</SelectItem>
             <SelectItem value={Role.ADMIN}>Admin</SelectItem>
             <SelectItem value={Role.USER}>User</SelectItem>
           </SelectContent>
         </Select>
-        <Select onValueChange={(value) => handleFilterChange('status', value)} defaultValue="">
+        <Select onValueChange={(value) => handleFilterChange('status', value)} defaultValue="all">
           <SelectTrigger><SelectValue placeholder="Filter by status..." /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Statuses</SelectItem>
+            <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value={UserStatus.ACTIVE}>Active</SelectItem>
             <SelectItem value={UserStatus.SUSPENDED}>Suspended</SelectItem>
             <SelectItem value={UserStatus.DELETED}>Deleted</SelectItem>
           </SelectContent>
         </Select>
-        <Select onValueChange={(value) => handleFilterChange('isSuspicious', value)} defaultValue="">
+        <Select onValueChange={(value) => handleFilterChange('isSuspicious', value)} defaultValue="all">
           <SelectTrigger><SelectValue placeholder="Filter by suspicion..." /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Users</SelectItem>
+            <SelectItem value="all">All Users</SelectItem>
             <SelectItem value="true">Suspicious</SelectItem>
             <SelectItem value="false">Not Suspicious</SelectItem>
           </SelectContent>
