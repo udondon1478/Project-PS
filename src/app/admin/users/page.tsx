@@ -13,7 +13,11 @@ const AdminUsersPage = async () => {
     redirect("/");
   }
 
-  return <UserManagement />;
+  return (
+    <div className="container mx-auto px-4 py-8 pt-20 md:pt-40">
+      <UserManagement />
+    </div>
+  );
 };
 
 export default AdminUsersPage;
