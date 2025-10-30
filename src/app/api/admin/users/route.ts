@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { getCurrentUser } from '@/lib/session';
 import { Role, UserStatus } from '@prisma/client';
 import { z } from 'zod';
@@ -13,25 +13,25 @@ export async function GET(req: Request) {
     }
 
     const { searchParams } = new URL(req.url);
-    const querySchema = z.object({
-      page: z.coerce.number().int().min(1).default(1),
-      limit: z.coerce.number().int().min(1).max(100).default(20),
-      name: z.string().optional(),
-      email: z.string().optional(),
-      role: z.nativeEnum(Role).optional(),
-      status: z.nativeEnum(UserStatus).optional(),
-      isSuspicious: z.enum(['true', 'false']).optional(),
-    }).strict();
-    
-    const parsed = querySchema.safeParse({
-      page: searchParams.get('page'),
-      limit: searchParams.get('limit'),
-      name: searchParams.get('name'),
-      email: searchParams.get('email'),
-      role: searchParams.get('role'),
-      status: searchParams.get('status'),
-      isSuspicious: searchParams.get('isSuspicious'),
-    });
+const querySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  name: z.string().optional(),
+  email: z.string().optional(),
+  role: z.nativeEnum(Role).optional(),
+  status: z.nativeEnum(UserStatus).optional(),
+  isSuspicious: z.enum(['true', 'false']).optional(),
+}).strict();
+
+const parsed = querySchema.safeParse({
+  page: searchParams.get('page') ?? undefined,
+  limit: searchParams.get('limit') ?? undefined,
+  name: searchParams.get('name') ?? undefined,
+  email: searchParams.get('email') ?? undefined,
+  role: searchParams.get('role') ?? undefined,
+  status: searchParams.get('status') ?? undefined,
+  isSuspicious: searchParams.get('isSuspicious') ?? undefined,
+});
     
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid query parameters' }, { status: 400 });
