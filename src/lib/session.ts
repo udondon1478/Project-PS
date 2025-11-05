@@ -14,16 +14,21 @@ export const getCurrentUser = async () => {
     return null;
   }
 
-  // データベースからユーザー情報を取得（roleを含む）
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-    },
-  });
+  try {
+    // データベースからユーザー情報を取得（roleを含む）
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+      },
+    });
 
-  return user;
+    return user;
+  } catch (error) {
+    console.error('Failed to fetch user from database:', error);
+    return null;
+  }
 };
