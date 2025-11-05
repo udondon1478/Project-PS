@@ -13,6 +13,13 @@ enum Role {
   ADMIN
 }
 
+// ユーザーの状態を定義するEnum
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
 // ユーザーテーブル
 model User {
   id                String          @id @default(cuid())
@@ -25,6 +32,9 @@ model User {
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   role              Role            @default(USER) // ユーザーの役割を追加
+  status            UserStatus      @default(ACTIVE) // ユーザーの状態を追加
+  isSuspicious      Boolean         @default(false)
+  suspicionReason   String?
   products          Product[]       // ユーザーが登録した商品
   productTags       ProductTag[]    // ユーザーが付けたタグ
   likes             ProductLike[]   // ユーザーがいいねした商品
@@ -35,6 +45,13 @@ model User {
   sessions      Session[]
   productOwners ProductOwner[]
   tagMetadataEdits TagMetadataHistory[] // ユーザーが行ったタグメタデータ編集
+
+  @@index([name])
+  @@index([email])
+  @@index([role])
+  @@index([status])
+  @@index([isSuspicious])
+  @@index([createdAt])
 }
 
 model Account {
@@ -62,7 +79,10 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
+  createdAt    DateTime @default(now())
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 model VerificationToken {
