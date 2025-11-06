@@ -5,20 +5,20 @@ test.describe('Product Search', () => {
     // 1. トップページにアクセス
     await page.goto('/');
 
-    // 2. 検索ボックスを探して "3D" と入力し、Enterキーを押す
+    // 2. 検索ボックスを探して "test" と入力し、Enterキーを押す
     const searchInput = page.getByPlaceholder('タグで検索...');
-    await searchInput.fill('3D');
+    await searchInput.fill('test');
     await searchInput.press('Enter');
 
-    // 3. 検索結果ページに遷移し、URLに "tags=3D" が含まれることを確認
-    await page.waitForURL('**/search?tags=3D');
+    // 3. 検索結果ページに遷移し、URLに "tags=test" が含まれることを確認
+    await page.waitForURL('**/search?tags=test');
 
     // 4. ページタイトルに "検索結果" が含まれることを確認
     await expect(page).toHaveTitle(/検索結果/);
 
-    // 5. "3D" というタグが検索条件として表示されていることを確認
+    // 5. "test" というタグが検索条件として表示されていることを確認
     // (実際のUI要素に応じてセレクタを調整する必要があります)
-    await expect(page.locator('body')).toContainText('タグ: 3D');
+    await expect(page.locator('body')).toContainText('タグ: test');
 
     // 6. 除外タグの入力欄を探して "イラスト" と入力し、Enterキーを押す
     const negativeSearchInput = page.getByPlaceholder('除外するタグ...');
