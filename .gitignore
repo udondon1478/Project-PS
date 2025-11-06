@@ -42,3 +42,10 @@ next-env.d.ts
 
 # personal files
 repomix-*.xml
+
+# Log files
+*.log
+
+# Playwright reports
+/playwright-report/
+/test-results/

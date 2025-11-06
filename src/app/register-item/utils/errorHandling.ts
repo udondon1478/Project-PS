@@ -1,5 +1,4 @@
 export async function getErrorMessage(response: Response): Promise<string> {
-  const statusCode = response.status;
   const statusText = response.statusText;
   
   try {

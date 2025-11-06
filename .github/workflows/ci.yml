@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Build Next.js app
+        run: npm run build
+        env:
+          # ビルド時に必要な環境変数をダミーで設定
+          AUTH_SECRET: 'dummy_secret_for_build'
+          GOOGLE_CLIENT_ID: 'dummy'
+          GOOGLE_CLIENT_SECRET: 'dummy'
+          DISCORD_CLIENT_ID: 'dummy'
+          DISCORD_CLIENT_SECRET: 'dummy'
+
+      - name: Run E2E tests
+        run: npx playwright test
+        env:
+          # E2Eテスト実行時に必要な環境変数
+          # これらはGitHubのSecretsに設定することを想定
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          # OAuthプロバイダーの変数は、NextAuthがエラーを起こさないようにダミー値を設定
+          GOOGLE_CLIENT_ID: 'dummy'
+          GOOGLE_CLIENT_SECRET: 'dummy'
+          DISCORD_CLIENT_ID: 'dummy'
+          DISCORD_CLIENT_SECRET: 'dummy'
+          # Playwrightが使用するベースURL
+          NEXT_PUBLIC_BASE_URL: http://localhost:3000
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30

@@ -1,22 +1,20 @@
-/**
- * @jest-environment node
- */
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { searchProducts, SearchParams } from '../searchProducts';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { Session } from 'next-auth';
 
 // 依存関係をモック化
-jest.mock('@/lib/prisma', () => ({
+vi.mock('@/lib/prisma', () => ({
   prisma: {
     product: {
-      findMany: jest.fn(),
+      findMany: vi.fn(),
     },
   },
 }));
 
-jest.mock('@/auth', () => ({
-  auth: jest.fn(),
+vi.mock('@/auth', () => ({
+  auth: vi.fn(),
 }));
 
 // Prismaのwhere条件の型定義
@@ -28,13 +26,13 @@ type WhereCondition = {
 };
 
 // モックされた関数に型アサーションを適用
-const mockedPrismaFindMany = prisma.product.findMany as jest.Mock;
-const mockedAuth = auth as jest.MockedFunction<typeof auth>;
+const mockedPrismaFindMany = prisma.product.findMany as vi.Mock;
+const mockedAuth = auth as vi.MockedFunction<typeof auth>;
 
 describe('searchProducts', () => {
   beforeEach(() => {
     // 各テストの前にモックをリセット
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // デフォルトの認証セッションをモック
     mockedAuth.mockResolvedValue({ user: { id: 'test-user' } } as Session);
   });

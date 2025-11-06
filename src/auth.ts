@@ -24,7 +24,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     // 必要に応じて、追加の検証や処理を記述することは可能
     async session({ session, user }) { // token 引数を削除
       if (session?.user) {
-        // アダプター使用時は user オブジェクトに id が含まれる
+        // アダプター使用時は user オjéジェクトに id が含まれる
         session.user.id = user.id;
       }
       return session;
