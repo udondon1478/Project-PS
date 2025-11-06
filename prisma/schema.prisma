@@ -35,6 +35,8 @@ model User {
   sessions      Session[]
   productOwners ProductOwner[]
   tagMetadataEdits TagMetadataHistory[] // ユーザーが行ったタグメタデータ編集
+  proposalsMade      TagRelationProposal[] @relation("ProposalsMade")
+  proposalsModerated TagRelationProposal[] @relation("ProposalsModerated")
 }
 
 model Account {
@@ -217,6 +219,8 @@ model Tag {
 
   // タグメタデータ編集履歴
   metadataHistory TagMetadataHistory[]
+  sourceProposals TagRelationProposal[] @relation("SourceProposals")
+  targetProposals TagRelationProposal[] @relation("TargetProposals")
 }
 
 // タグの親子関係テーブル
@@ -361,4 +365,40 @@ model Seller {
   products  Product[] // この販売者が販売する商品リスト
  
   @@map("sellers") // MongoDBの場合のコレクション名
+}
+
+enum ProposalType {
+  ALIAS
+  IMPLICATION
+  HIERARCHY_PARENT // sourceTag が targetTag の親であると提案
+  HIERARCHY_CHILD  // sourceTag が targetTag の子であると提案
+}
+
+enum ProposalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model TagRelationProposal {
+  id           String         @id @default(cuid())
+  type         ProposalType   // 提案の種類
+  sourceTagId  String         // 提案の基になるタグID (例: エイリアス元のタグ)
+  targetTagId  String         // 提案の対象となるタグID (例: 正規タグ)
+  proposerId   String         // 提案したユーザーID
+  comment      String?        @db.Text // 提案理由
+  status       ProposalStatus @default(PENDING) // 提案ステータス
+  moderatorId  String?        // 処理したモデレーターのID
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  sourceTag    Tag            @relation("SourceProposals", fields: [sourceTagId], references: [id], onDelete: Cascade)
+  targetTag    Tag            @relation("TargetProposals", fields: [targetTagId], references: [id], onDelete: Cascade)
+  proposer     User           @relation("ProposalsMade", fields: [proposerId], references: [id], onDelete: Cascade)
+  moderator    User?          @relation("ProposalsModerated", fields: [moderatorId], references: [id], onDelete: SetNull)
+
+  @@index([sourceTagId])
+  @@index([targetTagId])
+  @@index([proposerId])
+  @@index([status])
 }

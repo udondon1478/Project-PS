@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { TagDescriptionEditor } from './TagDescriptionEditor';
+import { TagProposalModal } from './TagProposalModal';
 import { TagDescriptionHistory } from './TagDescriptionHistory';
 import { Tag, TagMetadataHistory } from '@prisma/client';
 import Link from 'next/link';
@@ -39,6 +40,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
   const fetchDetails = async (id: string) => {
@@ -94,6 +96,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
                 <p className="text-base whitespace-pre-wrap">{details.description || 'No description available.'}</p>
                 <div className="flex gap-2 mt-2">
                   <Button size="sm" onClick={() => setIsEditorOpen(true)}>Edit Description</Button>
+                  <Button size="sm" onClick={() => setIsProposalModalOpen(true)}>Propose Relationship</Button>
                   <Button size="sm" variant="outline" onClick={() => setShowHistory(!showHistory)}>
                     {showHistory ? 'Hide' : 'View'} History
                   </Button>
@@ -156,6 +159,16 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
                 onOpenChange={setIsEditorOpen}
                 onSuccess={handleEditorSuccess}
             />
+        )}
+        {details && (
+          <TagProposalModal
+            sourceTag={details}
+            open={isProposalModalOpen}
+            onOpenChange={setIsProposalModalOpen}
+            onSuccess={() => {
+              // Optionally, you can add a toast notification here
+            }}
+          />
         )}
       </DialogContent>
     </Dialog>
