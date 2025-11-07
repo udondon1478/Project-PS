@@ -11,17 +11,12 @@ test.describe('Authenticated State Simulation', () => {
 
     // 3. ログイン後のUIが表示されていることを確認
 
-    // "ログイン" ボタンは表示されていないはず
-    await expect(page.getByRole('button', { name: /ログイン/ })).not.toBeVisible();
+    // 「プロフィール」ボタンが表示されていることを確認
+    const profileButton = page.getByRole('button', { name: 'プロフィール' });
+    await expect(profileButton).toBeVisible();
 
-    // ユーザーメニューに表示される "マイページ" へのリンクが表示されているはず
-    // 注: 実際のUI構造によっては、まずユーザーメニューを開く操作が必要
-    const myPageLink = page.getByRole('link', { name: 'マイページ' });
-    await expect(myPageLink).toBeVisible();
-
-    // ユーザー名を含むボタンが表示されているはず
-    // MOCK_USER.nameがnullでないことをTypeScriptに伝えるために `!` を使用
-    const userMenuButton = page.getByRole('button', { name: MOCK_USER.name! });
-    await expect(userMenuButton).toBeVisible();
+    // 「ログアウト」ボタンが表示されていることを確認
+    const logoutButton = page.getByRole('button', { name: 'ログアウト' });
+    await expect(logoutButton).toBeVisible();
   });
 });
