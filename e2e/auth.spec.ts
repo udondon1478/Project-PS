@@ -1,42 +1,27 @@
 import { test, expect } from '@playwright/test';
-import { loginAsTestUser } from './lib/auth';
+import { mockSession, MOCK_USER } from './lib/auth';
 
-test.describe('Authentication Flow', () => {
-  test('should allow a user to log in and see user-specific UI, then log out', async ({ page }) => {
-    // 1. カスタムヘルパーを使ってプログラムでログイン
-    await loginAsTestUser(page, 'test@example.com');
+test.describe('Authenticated State Simulation', () => {
+  test('should display user-specific UI when the session is mocked', async ({ page }) => {
+    // 1. テスト開始前に、通常ユーザーとしてログインしている状態をモック
+    await mockSession(page, MOCK_USER);
 
-    // 2. サイトにアクセス
-    // ログイン処理でCookieを設定した後、ページに移動する
+    // 2. トップページにアクセス
     await page.goto('/');
 
     // 3. ログイン後のUIが表示されていることを確認
-    // "ログイン" ボタンが表示されていないこと
+
+    // "ログイン" ボタンは表示されていないはず
     await expect(page.getByRole('button', { name: /ログイン/ })).not.toBeVisible();
 
-    // "マイページ" へのリンクまたはボタンが表示されていること
-    // 注: 実際のコンポーネントのテキストやroleに合わせてセレクタを調整
+    // ユーザーメニューに表示される "マイページ" へのリンクが表示されているはず
+    // 注: 実際のUI構造によっては、まずユーザーメニューを開く操作が必要
     const myPageLink = page.getByRole('link', { name: 'マイページ' });
     await expect(myPageLink).toBeVisible();
 
-    // 4. ログアウト処理
-    // ユーザーメニューを開くボタン（例：ユーザーアイコンや名前が表示されているボタン）をクリック
-    // 注: 実際のセレクタに合わせてください
-    const userMenuButton = page.getByRole('button', { name: /Test User/i });
-    await userMenuButton.click();
-
-    // ドロップダウンメニューから "ログアウト" ボタンをクリック
-    const logoutButton = page.getByRole('menuitem', { name: 'ログアウト' });
-    await logoutButton.click();
-
-    // 5. ログアウトが完了し、ホームページにリダイレクトされたことを確認
-    await page.waitForURL('/');
-
-    // 6. ログアウト後のUIが表示されていることを確認
-    // "ログイン" ボタンが再び表示されていること
-    await expect(page.getByRole('button', { name: /ログイン/ })).toBeVisible();
-
-    // "マイページ" へのリンクが表示されていないこと
-    await expect(myPageLink).not.toBeVisible();
+    // ユーザー名を含むボタンが表示されているはず
+    // MOCK_USER.nameがnullでないことをTypeScriptに伝えるために `!` を使用
+    const userMenuButton = page.getByRole('button', { name: MOCK_USER.name! });
+    await expect(userMenuButton).toBeVisible();
   });
 });

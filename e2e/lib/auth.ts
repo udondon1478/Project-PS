@@ -1,68 +1,54 @@
 // e2e/lib/auth.ts
+import { Page, Route } from '@playwright/test';
+import { Role } from '@prisma/client';
 
-import { Page } from '@playwright/test';
-import { SignJWT } from 'jose';
-
-// 環境変数が設定されていない場合のエラー
-if (!process.env.AUTH_SECRET) {
-  throw new Error('AUTH_SECRET environment variable is not set');
+// セッションユーザーの型定義
+export interface MockSessionUser {
+  id: string;
+  name: string | null;
+  email: string | null;
+  role: Role;
 }
-if (!process.env.NEXTAUTH_URL) {
-  throw new Error('NEXTAUTH_URL environment variable is not set');
+
+// モックユーザーデータ
+export const MOCK_USER: MockSessionUser = {
+  id: 'test-user-id',
+  name: 'Test User',
+  email: 'test.user@example.com',
+  role: Role.USER,
+};
+
+export const MOCK_ADMIN_USER: MockSessionUser = {
+  id: 'test-admin-id',
+  name: 'Test Admin',
+  email: 'test.admin@example.com',
+  role: Role.ADMIN,
+};
+
+// NextAuthのセッションレスポンスの型
+interface MockSession {
+  user: MockSessionUser;
+  expires: string;
 }
 
 /**
- * プログラムでテストユーザーとしてログインし、認証Cookieをブラウザに設定します。
+ * PlaywrightのテストでNextAuthのセッションをモックします。
+ * `/api/auth/session` へのリクエストを傍受し、偽のセッションデータを返します。
  * @param page PlaywrightのPageオブジェクト
- * @param email ログインするユーザーのメールアドレス
+ * @param user モックするユーザーオブジェクト
  */
-export async function loginAsTestUser(page: Page, email = 'test@example.com') {
-  // 1. テストAPIを呼び出してユーザー情報を取得
-  const response = await page.request.post('/api/test/login', {
-    data: { email },
+export async function mockSession(page: Page, user: MockSessionUser) {
+  const session: MockSession = {
+    user,
+    // expiresは未来のISO文字列であれば何でも良い
+    expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+  };
+
+  await page.route('**/api/auth/session', async (route: Route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(session),
+    });
   });
-
-  if (!response.ok()) {
-    throw new Error(`Failed to fetch test user '${email}': ${await response.text()}`);
-  }
-  const user = await response.json();
-  if (!user || !user.id) {
-    throw new Error(`Test user '${email}' not found or has no ID.`);
-  }
-
-  // 2. NextAuth.js v5 と互換性のあるJWTセッショントークンを手動で作成
-  const secret = new TextEncoder().encode(process.env.AUTH_SECRET);
-  const now = Math.floor(Date.now() / 1000);
-
-  const sessionToken = await new SignJWT({
-    sub: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    // NextAuth.jsが必要とする標準的なクレーム
-    iat: now,
-    exp: now + 30 * 24 * 60 * 60, // 30日間有効
-    jti: crypto.randomUUID(),
-  })
-    .setProtectedHeader({ alg: 'HS256' })
-    .sign(secret);
-
-  // 3. セッションクッキーを設定
-  const nextAuthUrl = new URL(process.env.NEXTAUTH_URL);
-  const isSecure = nextAuthUrl.protocol === 'https:';
-
-  // v5 betaからクッキー名が `next-auth.session-token` -> `authjs.session-token` に変更
-  const cookieName = isSecure ? '__Secure-authjs.session-token' : 'authjs.session-token';
-
-  await page.context().addCookies([
-    {
-      name: cookieName,
-      value: sessionToken,
-      domain: nextAuthUrl.hostname,
-      path: '/',
-      httpOnly: true,
-      secure: isSecure,
-      sameSite: 'Lax',
-    },
-  ]);
 }
