@@ -22,6 +22,18 @@ async function main() {
   });
   console.log(`Created/Updated admin user with id: ${adminUser.id}`);
 
+  // テスト用の一般ユーザーを追加
+  const testUser = await prisma.user.upsert({
+    where: { email: 'test@example.com' },
+    update: {},
+    create: {
+      email: 'test@example.com',
+      name: 'Test User',
+      role: Role.USER,
+    },
+  });
+  console.log(`Created/Updated test user with id: ${testUser.id}`);
+
   // タグカテゴリの初期データを作成
   const ageRatingCategory = await prisma.tagCategory.upsert({
     where: { name: 'age_rating' },

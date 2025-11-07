@@ -1,34 +1,42 @@
 import { test, expect } from '@playwright/test';
+import { loginAsTestUser } from './lib/auth';
 
-test.describe('Authentication', () => {
-  test('should show login button and simulate logout flow', async ({ page }) => {
-    // 1. トップページにアクセス
+test.describe('Authentication Flow', () => {
+  test('should allow a user to log in and see user-specific UI, then log out', async ({ page }) => {
+    // 1. カスタムヘルパーを使ってプログラムでログイン
+    await loginAsTestUser(page, 'test@example.com');
+
+    // 2. サイトにアクセス
+    // ログイン処理でCookieを設定した後、ページに移動する
     await page.goto('/');
 
-    // 2. ログインボタンが存在することを確認
-    const loginButton = page.getByRole('button', { name: /ログイン/ });
-    await expect(loginButton).toBeVisible();
+    // 3. ログイン後のUIが表示されていることを確認
+    // "ログイン" ボタンが表示されていないこと
+    await expect(page.getByRole('button', { name: /ログイン/ })).not.toBeVisible();
 
-    // --- 以下は実際のテスト実行環境で実装することを想定したコードの骨子 ---
+    // "マイページ" へのリンクまたはボタンが表示されていること
+    // 注: 実際のコンポーネントのテキストやroleに合わせてセレクタを調整
+    const myPageLink = page.getByRole('link', { name: 'マイページ' });
+    await expect(myPageLink).toBeVisible();
 
-    // [前提]
-    // 実際のテストでは、ここでAPIを叩いてテストユーザーとしてログインし、
-    // セッションCookieをブラウザに設定するなどの前処理が必要です。
-    // 例: await loginAsTestUser(page);
+    // 4. ログアウト処理
+    // ユーザーメニューを開くボタン（例：ユーザーアイコンや名前が表示されているボタン）をクリック
+    // 注: 実際のセレクタに合わせてください
+    const userMenuButton = page.getByRole('button', { name: /Test User/i });
+    await userMenuButton.click();
 
-    // [テストシナリオ]
-    // 1. ログイン後、ユーザーメニュー（例: "マイページ"ボタン）が表示されることを確認します。
-    // const userMenu = page.getByRole('button', { name: /マイページ/ });
-    // await expect(userMenu).toBeVisible();
+    // ドロップダウンメニューから "ログアウト" ボタンをクリック
+    const logoutButton = page.getByRole('menuitem', { name: 'ログアウト' });
+    await logoutButton.click();
 
-    // 2. ユーザーメニューをクリックしてドロップダウンを開きます。
-    // await userMenu.click();
+    // 5. ログアウトが完了し、ホームページにリダイレクトされたことを確認
+    await page.waitForURL('/');
 
-    // 3. 表示されたメニューから「ログアウト」ボタンをクリックします。
-    // const logoutButton = page.getByRole('menuitem', { name: /ログアウト/ });
-    // await logoutButton.click();
+    // 6. ログアウト後のUIが表示されていることを確認
+    // "ログイン" ボタンが再び表示されていること
+    await expect(page.getByRole('button', { name: /ログイン/ })).toBeVisible();
 
-    // 4. ログアウトが完了し、再度「ログイン」ボタンが表示されることを確認します。
-    // await expect(loginButton).toBeVisible();
+    // "マイページ" へのリンクが表示されていないこと
+    await expect(myPageLink).not.toBeVisible();
   });
 });

@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { defineConfig, devices } from '@playwright/test';
 
 // 環境変数からベースURLを読み込む。未定義の場合はローカルホストをフォールバックとして使用
