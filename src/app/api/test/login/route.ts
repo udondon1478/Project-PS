@@ -6,14 +6,8 @@ import { prisma } from '@/lib/prisma';
 /**
  * テスト専用のAPIエンドポイント。
  * 指定されたメールアドレスのユーザー情報を取得します。
- * 本番環境では利用できません。
  */
 export async function POST(req: Request) {
-  // 本番環境ではこのAPIを無効化
-  if (process.env.NODE_ENV === 'production') {
-    return NextResponse.json({ message: 'Not Found' }, { status: 404 });
-  }
-
   try {
     const { email } = await req.json();
     if (typeof email !== 'string') {
