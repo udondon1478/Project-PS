@@ -30,7 +30,7 @@ test.describe('Authenticated User Features', () => {
     await logoutButton.click();
 
     // UIが匿名状態に戻ることを確認
-    await expect(page.getByRole('button', { name: 'ログイン' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Googleログイン' })).toBeVisible();
     await expect(profileButton).not.toBeVisible();
     await expect(logoutButton).not.toBeVisible();
   });
