@@ -39,9 +39,10 @@ test.describe('Authenticated User Features', () => {
   // テストケース 2.1: ログイン・ログアウト
   test('2.1: should show authenticated header and allow logout', async ({ page }) => { // context を追加
     
-    await page.goto('/');
-
-    await page.waitForResponse(SESSION_API_URL);
+    await Promise.all([
+      page.waitForResponse(SESSION_API_URL),
+      page.goto('/'),
+    ])
     // ログイン済みヘッダーの確認
     await expect(page.getByRole('button', { name: 'プロフィール' })).toBeVisible();
 
