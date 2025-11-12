@@ -25,7 +25,9 @@ async function main() {
   // テスト用の一般ユーザーを追加
   const testUser = await prisma.user.upsert({
     where: { email: 'test@example.com' },
-    update: {},
+    update: {
+      role: Role.USER,
+    },
     create: {
       email: 'test@example.com',
       name: 'Test User',
