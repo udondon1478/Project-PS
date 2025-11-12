@@ -5,9 +5,12 @@ import { Role } from '@prisma/client';
 // (テストがテスト用DBを指すように DATABASE_URL 環境変数を設定してください)
 import { prisma } from '../../src/lib/prisma'; 
 import { randomUUID } from 'crypto';
+import { Mock } from 'vitest';
 const expires = new Date(Date.now() + 60 * 60 * 1000);
 
-export async function mockSession(context, user) {
+export async function mockSession(
+  context: BrowserContext,
+  user: MockSessionUser): Promise<void> {
   const token = randomUUID();
 
   await prisma?.user.upsert({
