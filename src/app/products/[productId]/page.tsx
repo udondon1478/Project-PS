@@ -272,7 +272,7 @@ const ProductDetailPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
           <main className="lg:col-span-8">
             <div className="mb-6">
-              <h1 className="text-3xl lg:text-4xl font-extrabold mb-3 tracking-tight text-gray-900 dark:text-gray-50">{product.title}</h1>
+              <h1 className="text-3xl lg:text-4xl font-extrabold mb-3 tracking-tight text-gray-900 dark:text-gray-50" aria-label={product.title}>{product.title}</h1>
               {product.seller && (
                 <a href={product.seller.sellerUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300 hover:underline">
                   <Image

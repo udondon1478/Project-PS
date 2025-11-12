@@ -77,6 +77,9 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
           {tagSuggestions.map(tag => (
             <li
               key={tag}
+              role="listitem"
+              aria-label={tag}
+              data-testid={`tag-suggestion-${tag}`}
               onClick={() => handleAddTag(searchQuery.startsWith('-') ? `-${tag}` : tag)}
               className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100"
             >
