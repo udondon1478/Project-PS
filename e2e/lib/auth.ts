@@ -1,8 +1,41 @@
 // e2e/lib/auth.ts
-import { Page, Route } from '@playwright/test';
+import { BrowserContext } from '@playwright/test';
 import { Role } from '@prisma/client';
+// E2Eテストから本番のPrisma Clientをインポートします
+// (テストがテスト用DBを指すように DATABASE_URL 環境変数を設定してください)
+import { prisma } from '../../src/lib/prisma'; 
+import { randomUUID } from 'crypto';
+const expires = new Date(Date.now() + 60 * 60 * 1000);
 
-// セッションユーザーの型定義
+export async function mockSession(context, user) {
+  const token = randomUUID();
+
+  await prisma?.user.upsert({
+    where: { id: user.id },
+    update: {},
+    create: user,
+  });
+
+  await prisma?.session.create({
+    data: {
+      sessionToken: token,
+      userId: user.id,
+      expires,
+    },
+  });
+
+  await context.addCookies([
+    {
+      name: 'authjs.session-token',
+      value: token,
+      domain: 'localhost',
+      path: '/',
+      httpOnly: true,
+      sameSite: 'Lax',
+    }
+  ]);
+}
+
 export interface MockSessionUser {
   id: string;
   name: string | null;
@@ -10,7 +43,6 @@ export interface MockSessionUser {
   role: Role;
 }
 
-// モックユーザーデータ
 export const MOCK_USER: MockSessionUser = {
   id: 'test-user-id',
   name: 'Test User',
@@ -24,31 +56,3 @@ export const MOCK_ADMIN_USER: MockSessionUser = {
   email: 'test.admin@example.com',
   role: Role.ADMIN,
 };
-
-// NextAuthのセッションレスポンスの型
-interface MockSession {
-  user: MockSessionUser;
-  expires: string;
-}
-
-/**
- * PlaywrightのテストでNextAuthのセッションをモックします。
- * `/api/auth/session` へのリクエストを傍受し、偽のセッションデータを返します。
- * @param page PlaywrightのPageオブジェクト
- * @param user モックするユーザーオブジェクト
- */
-export async function mockSession(page: Page, user: MockSessionUser) {
-  const session: MockSession = {
-    user,
-    // expiresは未来のISO文字列であれば何でも良い
-    expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-  };
-
-  await page.route('**/api/auth/session', async (route: Route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(session),
-    });
-  });
-}
