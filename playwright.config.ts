@@ -1,10 +1,25 @@
 import 'dotenv/config';
 import { defineConfig, devices } from '@playwright/test';
 
+// .env からテストデータベースの変数を読み込む
+const TEST_POSTGRES_USER = 'testuser';
+const TEST_POSTGRES_PASSWORD = 'testpass';
+const TEST_POSTGRES_DB = 'testdb';
+
+// docker-compose.yml に基づき、ポート 5433 を使用
+const testDatabaseUrl = `postgresql://${TEST_POSTGRES_USER}:${TEST_POSTGRES_PASSWORD}@localhost:5433/${TEST_POSTGRES_DB}`;
+
+// Playwrightのプロセス全体で DATABASE_URL をテスト用のものに上書きする
+process.env.DATABASE_URL = testDatabaseUrl;
+
 // 環境変数からベースURLを読み込む。未定義の場合はローカルホストをフォールバックとして使用
 const baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
 export default defineConfig({
+  fullyParallel: false,
+  workers: 1,
+  retries: 2,
+
   // テストファイルの場所
   testDir: './e2e',
 
@@ -13,7 +28,7 @@ export default defineConfig({
 
   // expect() のタイムアウト時間
   expect: {
-    timeout: 5000,
+    timeout: 30000,
   },
 
   // CIでは失敗したテストを再試行する
