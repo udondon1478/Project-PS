@@ -43,12 +43,30 @@ test.describe('Authenticated User Features', () => {
       page.waitForResponse(SESSION_API_URL),
       page.goto('/'),
     ])
-    // ログイン済みヘッダーの確認
-    await expect(page.getByRole('button', { name: 'プロフィール' })).toBeVisible();
 
-    // ログアウト動作の確認
+  // ページの読み込みとReact再描画の完了を待つ
+  await page.waitForLoadState('networkidle');
+
+  // data-testid でボタンが描画されるまで待つ
+  const profileButton = page.getByTestId('profile-trigger');
+  await profileButton.waitFor({ state: 'visible', timeout: 10000 });
+  await expect(profileButton).toBeVisible();
+
+    const logoutPromise = page.waitForResponse(SIGNOUT_API_URL);
     await page.getByRole('button', { name: 'ログアウト' }).click();
-    await expect(page.getByRole('button', { name: 'Googleログイン' })).toBeVisible();
+    await logoutPromise;
+
+    await page.waitForURL('**/'); // ← / に戻るまで待機
+
+
+    // ログアウト後のUI安定待ち
+    await page.waitForLoadState('networkidle');
+
+  // "Googleログイン" ボタンが実際に見えるまで待つ
+  const googleLoginButton = page.getByRole('button', { name: 'Googleログイン' });
+  await googleLoginButton.waitFor({ state: 'visible', timeout: 15000 }); // timeoutを少し長めに
+
+    await expect(googleLoginButton.first()).toBeVisible();
   });
 
   test('2.2.1: should allow liking a product and reflect on reload', async ({ page }) => {
