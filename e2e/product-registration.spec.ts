@@ -80,6 +80,9 @@ test.describe('Product Registration Flow', () => {
       await page.getByPlaceholder('https://example.booth.pm/items/123456').fill(BOOTH_URL);
       await page.getByRole('button', { name: '商品情報を取得' }).click();
 
+    // ✅ 商品情報ロード完了を待つ
+    await page.waitForSelector('text=商品情報の確認と登録', { timeout: 10000 });
+
       // ステップ2 (詳細入力) (app/register-item/components/ProductDetailsForm.tsx)
       // ProductDetailsFormが表示され、自動入力されていることを確認
       await expect(page.getByText('商品情報の確認と登録')).toBeVisible();
@@ -91,11 +94,14 @@ test.describe('Product Registration Flow', () => {
       await page.locator('button[role="combobox"][id="ageRating"]').click();
       // '全年齢' の SelectItem をクリック
       await page.getByRole('option', { name: '全年齢' }).click();
+      await page.waitForTimeout(200); // 👈 コンボボックス閉じアニメーション待ち
+
 
       // 'カテゴリー' の SelectTrigger をクリック
       await page.locator('button[role="combobox"][id="category"]').click();
       // 'アバター' の SelectItem をクリック
       await page.getByRole('option', { name: 'アバター' }).click();
+      await page.waitForTimeout(200); // 👈 コンボボックス閉じアニメーション待ち
 
       // 手動タグを追加（TagInputコンポーネントの操作）(app/register-item/components/TagInput.tsx)
       const tagInput = page.locator('input[type="text"][id="otherTags"]');
@@ -108,11 +114,13 @@ test.describe('Product Registration Flow', () => {
       await page.getByRole('button', { name: '商品を登録' }).click();
 
       // ステップ3 (完了) (app/register-item/components/CompletionScreen.tsx)
-      await expect(page.getByText('処理完了')).toBeVisible();
+      await page.waitForSelector('text=処理完了', { timeout: 10000 });
       await expect(page.getByText('商品が正常に登録されました。')).toBeVisible();
 
       // "別の商品を登録する" ボタンでフローをリセット
       await page.getByRole('button', { name: '別の商品を登録する' }).click();
+      await page.waitForSelector('input[placeholder="https://example.booth.pm/items/123456"]', { timeout: 5000 });
+
       
       // ★ 2. 削除: 検索APIのモックを削除
       // await page.route(API_PRODUCTS_SEARCH_URL, ...);
