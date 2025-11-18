@@ -19,18 +19,6 @@ const PRODUCT_DETAIL_API_URL = (id: string) => `**/api/products/${id}`;
 
 
 test.describe('Authenticated User Features', () => {
-  //const STORAGE_PATH = 'storage/authenticated.json';
-
-  /*
-  test.beforeAll(async ({ browser }) => {
-    const context = await browser.newContext();
-    await mockSession(context, MOCK_USER);
-    await context.storageState({ path: STORAGE_PATH });
-    await context.close();
-  });
-  */
-
-  //test.use({ storageState: STORAGE_PATH });
 
   test.beforeEach(async ({ context }) => {
     await mockSession(context, MOCK_USER);
