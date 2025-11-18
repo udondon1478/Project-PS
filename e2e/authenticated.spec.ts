@@ -54,7 +54,7 @@ test.describe('Authenticated User Features', () => {
   const googleLoginButton = page.getByRole('button', { name: 'Googleログイン' });
   await googleLoginButton.waitFor({ state: 'visible', timeout: 15000 }); // timeoutを少し長めに
 
-    await expect(googleLoginButton.first()).toBeVisible();
+    await expect(googleLoginButton).toBeVisible();
   });
 
   test('2.2.1: should allow liking a product and reflect on reload', async ({ page }) => {
