@@ -66,8 +66,11 @@ export default defineConfig({
 
   // テスト実行前に開発サーバーを起動
   webServer: {
-    command: 'npm run start',
+    command: 'npm run dev',
     url: baseURL,
     reuseExistingServer: !process.env.CI,
+    env: {
+      DATABASE_URL: testDatabaseUrl,
+    },
   },
 });
