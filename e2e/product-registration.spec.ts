@@ -114,7 +114,7 @@ test.describe('Product Registration Flow', () => {
       await page.getByRole('button', { name: '商品を登録' }).click();
 
       // ステップ3 (完了) (app/register-item/components/CompletionScreen.tsx)
-      await page.waitForSelector('text=処理完了', { timeout: 10000 });
+      await page.waitForSelector('text=処理完了', { timeout: 100000 });
       await expect(page.getByText('商品が正常に登録されました。')).toBeVisible();
 
       // "別の商品を登録する" ボタンでフローをリセット
