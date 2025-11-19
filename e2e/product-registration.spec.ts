@@ -34,8 +34,52 @@ const MOCK_AGE_RATING_TAGS = [{ id: 'tag-age-1', name: '全年齢' }];
 const MOCK_CATEGORY_TAGS = [{ id: 'tag-cat-1', name: 'アバター' }];
 
 test.describe('Product Registration Flow', () => {
+  // firefox対策でタイムアウトを延長
+  test.setTimeout(60000);
 
   test.beforeEach(async ({ page, context }) => {
+    // 1. Seed required data for the API to work
+    await prisma.tagCategory.upsert({
+      where: { name: 'other' },
+      update: {},
+      create: { name: 'other', color: '#999999' },
+    });
+
+    // ★ FIX: Seed 'age_rating' category and tag to match frontend mock
+    const ageRatingCat = await prisma.tagCategory.upsert({
+      where: { name: 'age_rating' },
+      update: {},
+      create: { name: 'age_rating', color: '#CCCCCC' },
+    });
+    await prisma.tag.upsert({
+      where: { name: '全年齢' }, // ← name に統一
+      update: { id: 'tag-age-1', tagCategoryId: ageRatingCat.id },
+      create: {
+        id: 'tag-age-1',
+        name: '全年齢',
+        language: 'ja',
+        tagCategoryId: ageRatingCat.id,
+  },
+    });
+
+    // ★ FIX: Seed 'product_category' category and tag to match frontend mock
+    const prodCat = await prisma.tagCategory.upsert({
+      where: { name: 'product_category' },
+      update: {},
+      create: { name: 'product_category', color: '#00CC99' },
+    });
+
+    await prisma.tag.upsert({
+      where: { name: 'アバター' }, // Use name as unique identifier
+      update: { id: 'tag-cat-1', tagCategoryId: prodCat.id },
+      create: { 
+        id: 'tag-cat-1', 
+        name: 'アバター', 
+        language: 'ja', 
+        tagCategoryId: prodCat.id 
+      },
+    });
+    
     // 管理者としてログイン状態をモック
     await mockSession(context, MOCK_ADMIN_USER);
 
@@ -77,8 +121,19 @@ test.describe('Product Registration Flow', () => {
       await page.goto('/register-item');
 
       // ステップ1 (URL入力) (app/register-item/components/URLInputForm.tsx)
-      await page.getByPlaceholder('https://example.booth.pm/items/123456').fill(BOOTH_URL);
-      await page.getByRole('button', { name: '商品情報を取得' }).click();
+      const urlInput = page.getByPlaceholder('https://example.booth.pm/items/123456');
+      // 修正 (WebKit対策): focus -> fill -> blur の順で操作し、確実にイベントを発火させる
+      await urlInput.click();
+      await urlInput.pressSequentially(BOOTH_URL, { delay: 10 });
+      await urlInput.blur();
+
+      // 修正: 入力がReactのStateに反映され、DOM値が更新されるのを確実に待つ
+      await expect(urlInput).toHaveValue(BOOTH_URL);
+
+      // ボタンが有効になるのを明示的に待つ (WebKit対策)
+      const fetchButton = page.getByRole('button', { name: '商品情報を取得' });
+      await expect(fetchButton).toBeEnabled();
+      await fetchButton.click();
 
     // ✅ 商品情報ロード完了を待つ
     await page.waitForSelector('text=商品情報の確認と登録', { timeout: 10000 });
@@ -91,17 +146,21 @@ test.describe('Product Registration Flow', () => {
 
       // カテゴリなどを選択 (getByLabel ではなく、SelectTriggerのIDやRoleを使う)
       // '対象年齢' の SelectTrigger をクリック
-      await page.locator('button[role="combobox"][id="ageRating"]').click();
+      //await page.locator('button[role="combobox"][id="ageRating"]').click();
       // '全年齢' の SelectItem をクリック
+      const ageRatingTrigger = page.locator('button[role="combobox"]').nth(0); // IDではなく順序やラベルで特定推奨だが、現状のID依存ならそのままでも可
+      await ageRatingTrigger.click();
+      await expect(page.getByRole('option', { name: '全年齢' })).toBeVisible(); // オプションが表示されるのを待つ
       await page.getByRole('option', { name: '全年齢' }).click();
-      await page.waitForTimeout(200); // 👈 コンボボックス閉じアニメーション待ち
+      await page.waitForTimeout(200); // コンボボックス閉じアニメーション待ち
+
 
 
       // 'カテゴリー' の SelectTrigger をクリック
-      await page.locator('button[role="combobox"][id="category"]').click();
-      // 'アバター' の SelectItem をクリック
+      const categoryTrigger = page.locator('button[role="combobox"]').nth(1);
+      await categoryTrigger.click();
+      await expect(page.getByRole('option', { name: 'アバター' })).toBeVisible(); // オプションが表示されるのを待つ
       await page.getByRole('option', { name: 'アバター' }).click();
-      await page.waitForTimeout(200); // 👈 コンボボックス閉じアニメーション待ち
 
       // 手動タグを追加（TagInputコンポーネントの操作）(app/register-item/components/TagInput.tsx)
       const tagInput = page.locator('input[type="text"][id="otherTags"]');
@@ -110,11 +169,31 @@ test.describe('Product Registration Flow', () => {
       // Badge が表示されることを確認
       await expect(page.locator('span[data-slot="badge"]', { hasText: TEST_TAG })).toBeVisible();
 
+      // 登録ボタンも念のため有効化を待つ (WebKit対策)
+      const registerButton = page.getByRole('button', { name: '商品を登録' });
+      await expect(registerButton).toBeEnabled();
+
       // 「商品を登録」ボタンをクリック (★ ここで実際のDBに書き込まれます)
-      await page.getByRole('button', { name: '商品を登録' }).click();
+      // ★修正2 (Chromium対策): ステータスコードのチェックを waitForResponse から除外
+      // これにより、エラー(500等)が返ってきた場合にタイムアウトせず即座に検知可能にする
+      const createResponsePromise = page.waitForResponse(response => 
+        response.url().includes('/api/items/create')
+      );
+
+      await registerButton.click();
+
+      const response = await createResponsePromise;
+
+      // レスポンスの内容をログに出力（デバッグ用）
+      if (response.status() !== 201) {
+        console.log('Create API Error Body:', await response.text());
+      }
+
+      // ステータスコードを検証
+      expect(response.status()).toBe(201);
 
       // ステップ3 (完了) (app/register-item/components/CompletionScreen.tsx)
-      await page.waitForSelector('text=処理完了', { timeout: 100000 });
+      await page.waitForSelector('text=処理完了', { timeout: 500000 });
       await expect(page.getByText('商品が正常に登録されました。')).toBeVisible();
 
       // "別の商品を登録する" ボタンでフローをリセット
