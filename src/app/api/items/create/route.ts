@@ -46,35 +46,19 @@ export async function POST(request: Request) {
         // 重複するタグ名を削除
         const uniqueTagNames = Array.from(new Set(allTagNames));
  
-        // 【修正1】 findUnique ではなく upsert を使用する
-        // これにより、'other' カテゴリが確実に存在することを保証します。
-        const otherTagCategory = await prisma.tagCategory.upsert({
+        // タグカテゴリ 'other' を検索
+        const otherTagCategory = await prisma.tagCategory.findUnique({
           where: { name: 'other' },
-          update: {},
-          create: {
-            name: 'other',
-            color: '#999999',
-          },
         });
 
-        // タグが存在するか確認し、存在しない場合は作成
-        const tagIds: string[] = [];
-        for (const tagName of uniqueTagNames) {
-          const tag = await prisma.tag.upsert({
-            where: { name: tagName },
-            update: {}, // 存在する場合は何もしない
-            create: {
-              name: tagName,
-              language: 'ja',
-          tagCategoryId: otherTagCategory.id, // 確実に存在するIDを使用
-            },
+        if (!otherTagCategory) {
+          console.error('TagCategory "other" not found');
+          return new Response(JSON.stringify({ error: 'TagCategory "other" not found' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
           });
-          tagIds.push(tag.id);
         }
 
-
-
-        
         // タグが存在するか確認し、存在しない場合は作成
         const tagIds: string[] = [];
         for (const tagName of uniqueTagNames) {
@@ -91,10 +75,6 @@ export async function POST(request: Request) {
           });
           tagIds.push(tag.id);
         }
-
-        // 【修正2】 tagIds の重複を確実に排除する
-        // 同じタグIDで複数のProductTagを作ろうとするとエラーになるのを防ぎます
-        const uniqueTagIds = Array.from(new Set(tagIds));
     
         // 販売者が存在するか確認し、存在しない場合は作成
         let seller = null; // seller変数をifブロックの外で宣言
@@ -146,7 +126,7 @@ export async function POST(request: Request) {
               })),
             },
             productTags: {
-              create: uniqueTagIds.map(tagId => ({
+              create: tagIds.map(tagId => ({
                 tagId: tagId,
                 userId: userId, // タグを付けたユーザーとして登録ユーザーIDを使用
               })),
