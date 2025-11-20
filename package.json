@@ -16,7 +16,7 @@
     "db:test:up": "docker compose --env-file .env.test up -d test-db",
     "db:test:migrate": "dotenv -e .env.test -- npx prisma migrate deploy",
     "test:e2e:run": "npx playwright test",
-    "test:e2e": "npm run db:test:up && npm run db:test:migrate && npm run test:e2e:run"
+    "test:e2e": "npm run db:test:up && npm run db:test:migrate && npx prisma db seed && npm run test:e2e:run"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.9.1",
