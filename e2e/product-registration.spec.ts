@@ -6,7 +6,7 @@ import { prisma } from '../src/lib/prisma';
 const BOOTH_URL = 'https://booth.pm/ja/items/7522386';
 const MOCK_PRODUCT_TITLE = 'Mocked Product Title';
 const MOCK_SELLER_NAME = 'Mock Seller';
-const TEST_TAG = 'テストタグ';
+const TEST_TAG = `テストタグ-${Date.now()}`;
 const ENCODED_TEST_TAG = encodeURIComponent(TEST_TAG);
 
 const API_ITEMS_URL = '**/api/items';
