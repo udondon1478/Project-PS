@@ -24,29 +24,6 @@ export async function POST(request: Request) {
     
         // 必須フィールドのバリデーション
         if (!productInfo || !boothJpUrl || !title || !sellerUrl || !tags || !variations) {
-
-export const runtime = 'nodejs';
-
-export async function POST(request: Request) {
-  const session = await auth();
-
-  if (!session || !session.user || !session.user.id) {
-    return NextResponse.json({ message: "認証が必要です。" }, { status: 401 });
-  }
-
-  const userId = session.user.id;
-
-  try {
-    const { productInfo, tags, ageRatingTagId, categoryTagId } = await request.json(); // 商品情報、タグ情報、対象年齢タグID、カテゴリータグIDを受け取る
-    //console.log('Received productInfo:', productInfo); // ここにログを追加
-    const { boothJpUrl, boothEnUrl, title, description, lowPrice, highPrice, publishedAt, sellerName, sellerUrl, sellerIconUrl, images, variations } = productInfo;
-    console.log('Received productInfo in create API:', productInfo); // 追加
-    console.log('Validation check values:', { boothJpUrl, title, sellerUrl, tags, variations }); // 追加
- 
-    console.log('Received publishedAt:', publishedAt); // publishedAtの形式を確認するためのログ
-    
-        // 必須フィールドのバリデーション
-        if (!productInfo || !boothJpUrl || !title || !sellerUrl || !tags || !variations) {
           console.error("必須情報が不足しています。", { productInfo, boothJpUrl, title, sellerUrl, tags, variations });
           return NextResponse.json({ message: "必須情報が不足しています。（販売者情報、バリエーション情報を含む）" }, { status: 400 });
         }
@@ -56,25 +33,18 @@ export async function POST(request: Request) {
         if (ageRatingTagId) {
           const ageRatingTag = await prisma.tag.findUnique({ where: { id: ageRatingTagId }, select: { name: true } });
           if (ageRatingTag) {
-            console.log(`Found age rating tag: ${ageRatingTag.name}`);
             allTagNames.push(ageRatingTag.name);
-          } else {
-            console.warn(`Age rating tag not found for ID: ${ageRatingTagId}`);
           }
         }
         if (categoryTagId) {
           const categoryTag = await prisma.tag.findUnique({ where: { id: categoryTagId }, select: { name: true } });
           if (categoryTag) {
-            console.log(`Found category tag: ${categoryTag.name}`);
             allTagNames.push(categoryTag.name);
-          } else {
-            console.warn(`Category tag not found for ID: ${categoryTagId}`);
           }
         }
  
         // 重複するタグ名を削除
         const uniqueTagNames = Array.from(new Set(allTagNames));
-        console.log('Processing tags:', uniqueTagNames);
  
         // タグカテゴリ 'other' を検索
         const otherTagCategory = await prisma.tagCategory.findUnique({
@@ -92,24 +62,18 @@ export async function POST(request: Request) {
         // タグが存在するか確認し、存在しない場合は作成
         const tagIds: string[] = [];
         for (const tagName of uniqueTagNames) {
-          try {
-            console.log(`Upserting tag: ${tagName}`);
-            const tag = await prisma.tag.upsert({
-              where: { name: tagName },
-              update: {}, // 存在する場合は何もしない
-              create: {
-                name: tagName,
-                language: 'ja', // 仮に日本語とする。必要に応じて言語情報を追加
-                tagCategory: { // リレーションを使用してカテゴリを接続
-                  connect: { id: otherTagCategory.id },
-                },
+          const tag = await prisma.tag.upsert({
+            where: { name: tagName },
+            update: {}, // 存在する場合は何もしない
+            create: {
+              name: tagName,
+              language: 'ja', // 仮に日本語とする。必要に応じて言語情報を追加
+              tagCategory: { // リレーションを使用してカテゴリを接続
+                connect: { id: otherTagCategory.id },
               },
-            });
-            tagIds.push(tag.id);
-          } catch (tagError) {
-            console.error(`Failed to upsert tag: ${tagName}`, tagError);
-            throw tagError;
-          }
+            },
+          });
+          tagIds.push(tag.id);
         }
     
         // 販売者が存在するか確認し、存在しない場合は作成
@@ -195,17 +159,7 @@ export async function POST(request: Request) {
       } catch (error) {
         console.error("新規商品登録エラー:", error);
         // エラーオブジェクト全体をログ出力
-        if (error instanceof Error) {
-            console.error("Error stack:", error.stack);
-            console.error("Error name:", error.name);
-            console.error("Error message:", error.message);
-             // @ts-ignore
-            if (error.code) console.error("Error code:", error.code);
-             // @ts-ignore
-            if (error.meta) console.error("Error meta:", error.meta);
-        } else {
-            console.error("Unknown error object:", error);
-        }
+        console.error(error);
         const errorMessage = error instanceof Error ? error.message : "不明なエラー";
         return NextResponse.json({ message: "新規商品登録に失敗しました。", error: errorMessage }, { status: 500 });
       }
