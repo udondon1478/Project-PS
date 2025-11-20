@@ -2,8 +2,10 @@ import { test, expect } from '@playwright/test';
 import { mockSession, MOCK_ADMIN_USER } from './lib/auth';
 import { prisma } from '../src/lib/prisma';
 
-// anonymous.spec.ts の形式に合わせて、テストで使用する定数を定義
-const BOOTH_URL = 'https://booth.pm/ja/items/7522386';
+// ランダムなIDを生成 (現在時刻 + ランダム数値)
+const RANDOM_ID = Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 10000);
+// テストごとにユニークなURLになる
+const BOOTH_URL = `https://booth.pm/ja/items/${RANDOM_ID}`;
 const MOCK_PRODUCT_TITLE = 'Mocked Product Title';
 const MOCK_SELLER_NAME = 'Mock Seller';
 const TEST_TAG = 'テストタグ';
@@ -108,10 +110,18 @@ test.describe('Product Registration Flow', () => {
       } else if (categoryNames === 'product_category') {
         data = MOCK_CATEGORY_TAGS;
       } else if (categoryNames === 'feature') {
-        data = []; // 'feature' タグは空でモック
+    // 修正：空配列ではなくカテゴリ情報を返す
+    data = [
+      {
+        id: 'feature-other',
+        name: 'その他',     // 実際の name に合わせて調整
+        color: '#ccc'
       }
-      await route.fulfill({ status: 200, json: data });
-    });
+    ];
+  }
+
+  await route.fulfill({ status: 200, json: data });
+});
   });
 
 // テストケース 2.3: 商品登録
