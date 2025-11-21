@@ -229,12 +229,20 @@ test.describe('Authenticated User Features', () => {
 
   // テストケース 2.4: プロフィール編集
   test('2.4: should allow profile editing', async ({ page }) => {
+    // Track PATCH requests
+    let patchCallCount = 0;
+    let lastRequestBody: any = null;
+
     // プロフィール更新APIをモック (app/api/profile/route.ts は PATCH を使用)
     await page.route(PROFILE_API_URL, async (route) => {
       const method = route.request().method();
       if (method === 'PATCH') {
-        // 更新されたユーザーデータを返す
-        await route.fulfill({ status: 200, json: { ...MOCK_USER, name: 'New Test User' } });
+        // Capture the request body and increment counter
+        patchCallCount++;
+        lastRequestBody = route.request().postDataJSON();
+
+        // Continue the request to the actual server so the DB gets updated
+        await route.continue();
       } else {
         await route.continue();
       }
@@ -244,13 +252,28 @@ test.describe('Authenticated User Features', () => {
 
     const nameInput = page.getByLabel('ユーザー名');
     await nameInput.fill('New Test User');
+
+    const patchPromise = page.waitForResponse(PROFILE_API_URL);
     await page.getByRole('button', { name: '変更を保存' }).click();
+    await patchPromise;
 
-    // 成功メッセージが表示されることを確認 (ProfileForm には明示的な成功メッセージはない)
-    // 代わりに、APIが呼ばれ、入力がdisabledでなくなることを確認
-    await expect(page.getByRole('button', { name: '変更を保存' })).toBeEnabled();
+    // Assert that PATCH was called exactly once
+    expect(patchCallCount).toBe(1);
 
-    // router.refresh() が呼ばれるため、再度モックされたセッションが読み込まれる
-    // ここでは、APIが呼ばれた後のUIの安定を確認する
+    // Assert that the request body contains the expected payload
+    expect(lastRequestBody).toEqual({ name: 'New Test User', gyazoUrl: '' });
+
+    // Assert that the UI reflects the updated name immediately after save
+    await expect(nameInput).toHaveValue('New Test User');
+
+    // 成功メッセージが表示されることを確認
+    await expect(page.getByText('Profile updated successfully!')).toBeVisible();
+
+    // ページをリロードして、APIレスポンスで返された新しい名前が実際に反映されているか確認
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    const reloadedNameInput = page.getByLabel('ユーザー名');
+    await expect(reloadedNameInput).toHaveValue('New Test User');
   });
 });
