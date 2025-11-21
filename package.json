@@ -15,7 +15,7 @@
     "test:ui": "vitest --ui",
     "db:test:up": "docker compose --env-file .env.test up -d test-db",
     "db:test:migrate": "dotenv -e .env.test -- npx prisma migrate deploy",
-    "test:e2e:run": "npx playwright test",
+    "test:e2e:run": "npx playwright test --trace on",
     "test:e2e": "npm run db:test:up && npm run db:test:migrate && npx prisma db seed && npm run test:e2e:run"
   },
   "dependencies": {
@@ -44,6 +44,7 @@
     "next": "15.3.1",
     "next-auth": "^5.0.0-beta.27",
     "next-themes": "^0.4.6",
+    "playwright": "^1.56.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",
