@@ -214,7 +214,7 @@ test.describe('Authenticated User Features', () => {
       await page.goto('/profile/owned');
 
       // 3. DBから取得したデータが表示されることを確認
-      await expect(page.getByText('所有済み商品')).toBeVisible();
+      await expect(page.getByText('Owned Product')).toBeVisible();
     } finally {
       // 4. クリーンアップ - Narrowed condition: 特定の productId + userId の組み合わせのみ削除
       await prisma.productOwner.deleteMany({
