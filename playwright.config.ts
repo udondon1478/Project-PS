@@ -16,7 +16,7 @@ process.env.DATABASE_URL = testDatabaseUrl;
 const baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
 export default defineConfig({
-  fullyParallel: false,
+  fullyParallel: true,
 
   // テストファイルの場所
   testDir: './e2e',
@@ -32,8 +32,8 @@ export default defineConfig({
   // CIでは失敗したテストを再試行する
   retries: process.env.CI ? 2 : 0,
 
-  // CIではワーカー数を制限する
-  workers: process.env.CI ? 1 : undefined,
+  // すべてのブラウザプロジェクトを順次実行してDB競合を防ぐ
+  workers: 1,
 
   // レポーターの設定
   reporter: 'html',
