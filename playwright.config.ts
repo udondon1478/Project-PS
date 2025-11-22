@@ -19,7 +19,7 @@ process.env.DATABASE_URL = testDatabaseUrl;
 const baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
 export default defineConfig({
-  fullyParallel: true,
+  fullyParallel: false,
 
   // テストファイルの場所
   testDir: './e2e',
