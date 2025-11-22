@@ -112,15 +112,25 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
           onCompositionEnd={handleCompositionEnd}
           onFocus={() => searchQuery.length > 0 && setIsSuggestionsVisible(true)}
           className="flex-grow border-none focus:ring-0 focus:outline-none p-1 h-auto text-sm min-w-[100px]"
+          role="combobox"
+          aria-controls="tag-suggestions-list"
+          aria-expanded={isSuggestionsVisible && tagSuggestions.length > 0}
+          aria-activedescendant={activeIndex >= 0 ? `tag-suggestion-${tagSuggestions[activeIndex]}` : undefined}
         />
       </div>
       {isSuggestionsVisible && tagSuggestions.length > 0 && (
-        <ul ref={suggestionsRef} className="absolute z-20 w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg">
+        <ul
+          ref={suggestionsRef}
+          id="tag-suggestions-list"
+          role="listbox"
+          className="absolute z-20 w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg"
+        >
           {tagSuggestions.map((tag, index) => (
             <li
               key={tag}
-              role="button"
-              tabIndex={0}
+              id={`tag-suggestion-${tag}`}
+              role="option"
+              aria-selected={index === activeIndex}
               data-testid={`tag-suggestion-${tag}`}
               onClick={() => handleAddTag(searchQuery.startsWith('-') ? `-${tag}` : tag)}
               onMouseEnter={() => setActiveIndex(index)}
