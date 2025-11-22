@@ -43,6 +43,18 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'asset.booth.pm',
+        port: '',
+        pathname: '**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.discordapp.com',
+        port: '',
+        pathname: '**',
+      },
+      {
+        protocol: 'https',
         hostname: 'i.gyazo.com',
         port: '',
         pathname: '**',
