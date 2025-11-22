@@ -56,7 +56,7 @@ test.describe('Anonymous User Core Features', () => {
         status: 200,
         contentType: 'application/json',
         // このテストでは検索結果の表示内容までは検証しないため、空配列でよい
-        body: JSON.stringify([]), 
+        body: JSON.stringify([]),
       });
     });
   });
@@ -89,7 +89,8 @@ test.describe('Anonymous User Core Features', () => {
 
     await page.waitForSelector('li:has-text("アバター")');
 
-    await expect(page.getByRole('listitem', { name: 'アバター', exact: true })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'アバター', exact: true })).toBeVisible();
+    await searchInput.press('ArrowDown');
     await searchInput.press('Enter');
     await expect(searchInput).toHaveValue('');
     await expect(page.locator('span', { hasText: 'アバター' }).filter({ has: page.locator('button') })).toBeVisible();
@@ -114,7 +115,8 @@ test.describe('Anonymous User Core Features', () => {
       searchInput.fill(query),
     ]);
     await page.waitForSelector('li:has-text("アバター")');
-    await expect(page.getByRole('listitem', { name: 'アバター', exact: true })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'アバター', exact: true })).toBeVisible();
+    await searchInput.press('ArrowDown');
     await searchInput.press('Enter');
     await expect(searchInput).toHaveValue('');
     await expect(page.locator('span', { hasText: 'アバター' }).filter({ has: page.locator('button') })).toBeVisible();
@@ -124,7 +126,8 @@ test.describe('Anonymous User Core Features', () => {
       searchInput.fill(negativeQuery),
     ]);
     await page.waitForSelector('li:has-text("衣装")');
-    await expect(page.getByRole('listitem', { name: '衣装', exact: true })).toBeVisible();
+    await expect(page.getByRole('option', { name: '衣装', exact: true })).toBeVisible();
+    await searchInput.press('ArrowDown');
     await searchInput.press('Enter');
     await expect(searchInput).toHaveValue('');
     await expect(page.locator('span', { hasText: '衣装' }).filter({ has: page.locator('button') })).toBeVisible();
@@ -171,7 +174,7 @@ test.describe('Anonymous User Core Features', () => {
 
   // テストケース 1.5: 商品詳細ページへの遷移
   test('1.5: should navigate to product details page on card click', async ({ page }) => {
-await page.route(productsApiUrl, async (route) => {
+    await page.route(productsApiUrl, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -198,13 +201,13 @@ await page.route(productsApiUrl, async (route) => {
         contentType: 'application/json',
         body: JSON.stringify({
           product: {
-          id: 'prod_1',
-          title: 'Test Product 1',
-          description: 'This is a test product description.',
-          images: [{ imageUrl: 'https://via.placeholder.com/150' }],
-          productTags: [{ tag: { name: 'アバター' } }],
-          isLiked: false,
-          isOwned: false,
+            id: 'prod_1',
+            title: 'Test Product 1',
+            description: 'This is a test product description.',
+            images: [{ imageUrl: 'https://via.placeholder.com/150' }],
+            productTags: [{ tag: { name: 'アバター' } }],
+            isLiked: false,
+            isOwned: false,
           }
         }),
       });
@@ -228,7 +231,7 @@ await page.route(productsApiUrl, async (route) => {
   test('1.6: should fail to like item and revert UI when logged out', async ({ page }) => {
     // 1. 商品詳細ページのGETリクエストをモック(1.5と同様)
     await page.route('**/api/products/prod_1', async (route) => {
-      await route. fulfill({
+      await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
@@ -248,7 +251,7 @@ await page.route(productsApiUrl, async (route) => {
     // 2. 商品のいいねAPIをモックして401エラーを返す
     const likeApiPromise = page.waitForRequest('**/api/products/prod_1/like');
     await page.route('**/api/products/prod_1/like', async (route) => {
-      if (route.request().method() === 'POST'){
+      if (route.request().method() === 'POST') {
         await route.fulfill({
           status: 401,
           contentType: 'application/json',
