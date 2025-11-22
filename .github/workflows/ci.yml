@@ -7,14 +7,32 @@ on:
 
 jobs:
   test:
-    name: Run Tests
+    name: Test & Build
+    timeout-minutes: 60
     runs-on: ubuntu-latest
+
+    # PostgreSQLをサービスコンテナとして起動 (Playwrightの設定に合わせる)
+    services:
+      postgres:
+        image: postgres:17.4
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: testdb
+        # ホストの5433をコンテナの5432に繋ぐ (playwright.config.tsの設定と一致させる)
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -23,36 +41,46 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run unit tests
+      # 1. 単体テストの実行 (Unit Tests)
+      - name: Run Unit Tests
         run: npm test
 
-      - name: Install Playwright browsers
+      - name: Install Playwright Browsers
         run: npx playwright install --with-deps
 
-      - name: Build Next.js app
-        run: npm run build
+      # 2. データベースのセットアップ (Migrate & Seed)
+      - name: Setup Database
         env:
-          # ビルド時に必要な環境変数をダミーで設定
-          AUTH_SECRET: 'dummy_secret_for_build'
-          GOOGLE_CLIENT_ID: 'dummy'
-          GOOGLE_CLIENT_SECRET: 'dummy'
-          DISCORD_CLIENT_ID: 'dummy'
-          DISCORD_CLIENT_SECRET: 'dummy'
+          # ポート5433を指定 (servicesでマッピングしたポート)
+          DATABASE_URL: "postgresql://testuser:testpass@localhost:5433/testdb"
+        run: |
+          npx prisma migrate deploy
+          npx prisma db seed
 
-      - name: Run E2E tests
-        run: npx playwright test
+      # 3. ビルド確認
+      - name: Build Next.js App
         env:
-          # E2Eテスト実行時に必要な環境変数
-          # これらはGitHubのSecretsに設定することを想定
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-          # OAuthプロバイダーの変数は、NextAuthがエラーを起こさないようにダミー値を設定
-          GOOGLE_CLIENT_ID: 'dummy'
-          GOOGLE_CLIENT_SECRET: 'dummy'
-          DISCORD_CLIENT_ID: 'dummy'
-          DISCORD_CLIENT_SECRET: 'dummy'
-          # Playwrightが使用するベースURL
-          NEXT_PUBLIC_BASE_URL: http://localhost:3000
+          DATABASE_URL: "postgresql://testuser:testpass@localhost:5433/testdb"
+          AUTH_SECRET: "dummy_secret_for_ci_build"
+          GOOGLE_CLIENT_ID: "dummy_client_id"
+          GOOGLE_CLIENT_SECRET: "dummy_client_secret"
+          DISCORD_CLIENT_ID: "dummy_discord_id"
+          DISCORD_CLIENT_SECRET: "dummy_discord_secret"
+        run: npm run build
+
+      # 4. E2Eテストの実行
+      - name: Run Playwright tests
+        env:
+          # テスト実行用環境変数
+          DATABASE_URL: "postgresql://testuser:testpass@localhost:5433/testdb"
+          AUTH_SECRET: "dummy_secret_for_ci_test"
+          GOOGLE_CLIENT_ID: "dummy_client_id"
+          GOOGLE_CLIENT_SECRET: "dummy_client_secret"
+          DISCORD_CLIENT_ID: "dummy_discord_id"
+          DISCORD_CLIENT_SECRET: "dummy_discord_secret"
+          NEXT_PUBLIC_BASE_URL: "http://localhost:3000"
+          CI: true
+        run: npx playwright test
 
       - name: Upload Playwright report
         if: always()
