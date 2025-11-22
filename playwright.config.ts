@@ -1,7 +1,10 @@
 import 'dotenv/config';
 import { defineConfig, devices } from '@playwright/test';
 
-// .env からテストデータベースの変数を読み込む
+// .env からテストデータベースの変数を読み込むようにもできるがここで宣言して問題なし
+// const TEST_POSTGRES_USER = process.env.TEST_POSTGRES_USER ?? 'testuser';
+// const TEST_POSTGRES_PASSWORD = process.env.TEST_POSTGRES_PASSWORD ?? 'testpass';
+// const TEST_POSTGRES_DB = process.env.TEST_POSTGRES_DB ?? 'testdb';
 const TEST_POSTGRES_USER = 'testuser';
 const TEST_POSTGRES_PASSWORD = 'testpass';
 const TEST_POSTGRES_DB = 'testdb';
