@@ -192,7 +192,7 @@ export default function RegisterItemPage() {
       
 
       if (response.ok) {
-        const data = await response.json();
+        await response.json();
         setStep('complete');
         setMessage('商品が正常に登録されました。');
         setProductData(null);
@@ -343,7 +343,7 @@ export default function RegisterItemPage() {
             </CardHeader>
             <CardContent>
               <Alert>
-                <AlertDescription asChild>
+                <AlertDescription>
                   <output className="block whitespace-pre-wrap" aria-live="polite" aria-atomic="true">{message}</output>
                 </AlertDescription>
               </Alert>

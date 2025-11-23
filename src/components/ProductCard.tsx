@@ -71,7 +71,7 @@ const ProductCard = ({ product, showLikeButton = false, showOwnButton = false }:
   };
 
   return (
-    <div className="border rounded-lg overflow-hidden shadow-lg">
+    <div className="border rounded-lg overflow-hidden shadow-lg" data-testid="product-card">
       <a href={`/products/${product.id}`} className="block relative w-full h-89">
         {product.mainImageUrl ? (
           <Image

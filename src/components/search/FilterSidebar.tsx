@@ -78,7 +78,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   return (
     <Sheet open={isFilterSidebarOpen} onOpenChange={setIsFilterSidebarOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="icon" className="h-9 w-9 flex-shrink-0">
+        <Button variant="outline" size="icon" className="h-9 w-9 flex-shrink-0" aria-label="フィルターを開く">
           <Filter className="h-4 w-4" />
         </Button>
       </SheetTrigger>
@@ -165,14 +165,14 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
               <h4 className="font-medium mb-2 text-sm">カテゴリ</h4>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-sm">
+                  <Button variant="outline" className="w-full justify-start text-sm" aria-label="カテゴリを選択">
                     {detailedFilters.category || "選択してください"}
                     {detailedFilters.category && <X size={14} className="ml-auto cursor-pointer" onClick={(e) => { e.stopPropagation(); handleDetailedFilterChange('category', null); }} />}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
                   {categoryTags.map(tag => (
-                    <DropdownMenuItem key={tag.id} onSelect={() => handleDetailedFilterChange('category', tag.name)} className="text-sm">
+                    <DropdownMenuItem key={tag.id} onSelect={() => handleDetailedFilterChange('category', tag.name)} className="text-sm" aria-label={tag.name}>
                       {tag.name}
                     </DropdownMenuItem>
                   ))}
@@ -206,6 +206,8 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                   value={priceRange}
                   onValueChange={setPriceRange}
                   className="w-full"
+
+                  thumbLabels={["最小額", "最大額"]}
                 />
                 <div className="flex justify-between text-xs mt-2">
                   <span>{priceRange[0]}円</span>

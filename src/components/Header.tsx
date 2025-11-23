@@ -151,7 +151,7 @@ export default function Header() {
                 <Button variant="ghost" size="sm">商品登録</Button>
               </Link>
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+                <DropdownMenuTrigger asChild data-testid="profile-trigger">
                   <Button variant="ghost" size="sm">プロフィール</Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>

@@ -1,7 +1,6 @@
 // src/lib/session.ts
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { Role } from "@prisma/client";
 
 /**
  * 現在ログイン中のユーザー情報を取得する

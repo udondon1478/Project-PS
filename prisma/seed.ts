@@ -8,19 +8,35 @@ async function main() {
 
   // 初期管理者ユーザーの追加 (テスト用)
   // TODO: 実際の運用では、安全な方法で管理者ユーザーを作成してください。
-  const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@example.com' }, // 管理者として設定したいメールアドレス
-    update: {
-      role: Role.ADMIN,
-    },
-    create: {
-      email: 'admin@example.com',
-      name: 'Admin User',
-      role: Role.ADMIN,
-      // 他の必須フィールドがあればここに追加
-    },
-  });
-  console.log(`Created/Updated admin user with id: ${adminUser.id}`);
+  if (process.env.SEED_ENV === 'test') {
+    const adminUser = await prisma.user.upsert({
+      where: { email: 'admin@example.com' }, // 管理者として設定したいメールアドレス
+      update: {
+        role: Role.ADMIN,
+      },
+      create: {
+        email: 'admin@example.com',
+        name: 'Admin User',
+        role: Role.ADMIN,
+        // 他の必須フィールドがあればここに追加
+      },
+    });
+    console.log(`Created/Updated admin user with id: ${adminUser.id}`);
+
+    // テスト用の一般ユーザーを追加
+    const testUser = await prisma.user.upsert({
+      where: { email: 'test@example.com' },
+      update: {
+        role: Role.USER,
+      },
+      create: {
+        email: 'test@example.com',
+        name: 'Test User',
+        role: Role.USER,
+      },
+    });
+    console.log(`Created/Updated test user with id: ${testUser.id}`);
+  }
 
   // タグカテゴリの初期データを作成
   const ageRatingCategory = await prisma.tagCategory.upsert({
@@ -98,6 +114,77 @@ async function main() {
       update: {},
       create: { ...tagData, language: 'ja' },
     });
+  }
+
+  if (process.env.SEED_ENV === 'test') {
+    // テスト用商品データの作成
+    const testUser = await prisma.user.findUnique({ where: { email: 'test@example.com' } });
+    if (!testUser) throw new Error('Test user not found');
+
+    // 販売者の作成
+    const seller = await prisma.seller.create({
+      data: {
+        name: 'Test Seller',
+        sellerUrl: 'https://test-seller.booth.pm',
+      }
+    });
+
+    // 商品1: アバター
+    const avatarTag = await prisma.tag.findUnique({ where: { name: 'アバター' } });
+    const product1 = await prisma.product.create({
+      data: {
+        title: 'Test Product 1',
+        boothJpUrl: 'https://booth.pm/ja/items/111111',
+        boothEnUrl: 'https://booth.pm/en/items/111111',
+        lowPrice: 1000,
+        highPrice: 1000,
+        publishedAt: new Date(),
+        userId: testUser.id,
+        sellerId: seller.id,
+        images: {
+          create: { imageUrl: 'https://via.placeholder.com/150', isMain: true }
+        }
+      }
+    });
+
+    if (avatarTag) {
+      await prisma.productTag.create({
+        data: {
+          productId: product1.id,
+          tagId: avatarTag.id,
+          userId: testUser.id,
+        }
+      });
+    }
+
+    // 商品2: 衣装
+    const costumeTag = await prisma.tag.findUnique({ where: { name: '衣装' } });
+    const product2 = await prisma.product.create({
+      data: {
+        title: 'Test Product 2',
+        boothJpUrl: 'https://booth.pm/ja/items/222222',
+        boothEnUrl: 'https://booth.pm/en/items/222222',
+        lowPrice: 2000,
+        highPrice: 2000,
+        publishedAt: new Date(),
+        userId: testUser.id,
+        sellerId: seller.id,
+        images: {
+          create: { imageUrl: 'https://via.placeholder.com/150', isMain: true }
+        }
+      }
+    });
+
+    if (costumeTag) {
+      await prisma.productTag.create({
+        data: {
+          productId: product2.id,
+          tagId: costumeTag.id,
+          userId: testUser.id,
+        }
+      });
+    }
+    console.log('Test products created');
   }
 
   console.log('Seed data inserted successfully');

@@ -39,6 +39,48 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
   handleRemoveTag,
   setIsSuggestionsVisible,
 }) => {
+  const [activeIndex, setActiveIndex] = React.useState<number>(-1);
+
+  // Reset active index when suggestions change or visibility changes
+  React.useEffect(() => {
+    setActiveIndex(-1);
+  }, [tagSuggestions, isSuggestionsVisible]);
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isSuggestionsVisible || tagSuggestions.length === 0) {
+      handleKeyDown(e);
+      return;
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex(prev => (prev + 1) % tagSuggestions.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex(prev => (prev - 1 + tagSuggestions.length) % tagSuggestions.length);
+    } else if (e.key === 'Enter') {
+      if (activeIndex >= 0 && activeIndex < tagSuggestions.length) {
+        e.preventDefault();
+        const tag = tagSuggestions[activeIndex];
+        handleAddTag(searchQuery.startsWith('-') ? `-${tag}` : tag);
+      } else {
+        handleKeyDown(e);
+      }
+    } else {
+      handleKeyDown(e);
+    }
+  };
+
+  // Scroll active item into view
+  React.useEffect(() => {
+    if (activeIndex >= 0 && suggestionsRef && 'current' in suggestionsRef && suggestionsRef.current) {
+      const activeItem = suggestionsRef.current.children[activeIndex] as HTMLElement;
+      if (activeItem) {
+        activeItem.scrollIntoView({ block: 'nearest' });
+      }
+    }
+  }, [activeIndex, suggestionsRef]);
+
   return (
     <div className="relative flex-grow" ref={searchContainerRef}>
       <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 p-1 flex-wrap gap-1 min-h-[40px]">
@@ -65,20 +107,35 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
           placeholder="タグで検索 (-でマイナス検索)"
           value={searchQuery}
           onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
+          onKeyDown={onKeyDown}
           onCompositionStart={handleCompositionStart}
           onCompositionEnd={handleCompositionEnd}
           onFocus={() => searchQuery.length > 0 && setIsSuggestionsVisible(true)}
           className="flex-grow border-none focus:ring-0 focus:outline-none p-1 h-auto text-sm min-w-[100px]"
+          role="combobox"
+          aria-controls="tag-suggestions-list"
+          aria-expanded={isSuggestionsVisible && tagSuggestions.length > 0}
+          aria-activedescendant={activeIndex >= 0 ? `tag-suggestion-${tagSuggestions[activeIndex]}` : undefined}
         />
       </div>
       {isSuggestionsVisible && tagSuggestions.length > 0 && (
-        <ul ref={suggestionsRef} className="absolute z-20 w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg">
-          {tagSuggestions.map(tag => (
+        <ul
+          ref={suggestionsRef}
+          id="tag-suggestions-list"
+          role="listbox"
+          className="absolute z-20 w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg"
+        >
+          {tagSuggestions.map((tag, index) => (
             <li
               key={tag}
+              id={`tag-suggestion-${tag}`}
+              role="option"
+              aria-selected={index === activeIndex}
+              data-testid={`tag-suggestion-${tag}`}
               onClick={() => handleAddTag(searchQuery.startsWith('-') ? `-${tag}` : tag)}
-              className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100"
+              onMouseEnter={() => setActiveIndex(index)}
+              className={`px-3 py-2 text-sm cursor-pointer ${index === activeIndex ? 'bg-gray-100 dark:bg-gray-800' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
             >
               {tag}
             </li>

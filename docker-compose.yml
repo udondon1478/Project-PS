@@ -11,5 +11,19 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+
+  test-db: # テスト用 (新規追加)
+    image: postgres:17.4
+    restart: always
+    environment: # playwright.config.tsで定義し、既存のものを上書き
+      POSTGRES_USER: ${TEST_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${TEST_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${TEST_POSTGRES_DB}
+    ports:
+      - "5433:5432" # テスト用ポート (ホスト側のポートを変更)
+    volumes:
+      - test_db_data:/var/lib/postgresql/data # テスト用ボリューム
+
 volumes:
   db_data:
+  test_db_data:
