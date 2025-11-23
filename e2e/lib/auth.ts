@@ -3,7 +3,7 @@ import { BrowserContext } from '@playwright/test';
 import { Role } from '@prisma/client';
 // E2Eテストから本番のPrisma Clientをインポートします
 // (テストがテスト用DBを指すように DATABASE_URL 環境変数を設定してください)
-import { prisma } from '../../src/lib/prisma'; 
+import { prisma } from '../../src/lib/prisma';
 import { randomUUID } from 'crypto';
 import { Mock } from 'vitest';
 const expires = new Date(Date.now() + 60 * 60 * 1000);
@@ -42,7 +42,7 @@ export async function mockSession(
 export interface MockSessionUser {
   id: string;
   name: string | null;
-  email: string | null;
+  email: string;
   role: Role;
 }
 

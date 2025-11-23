@@ -9,14 +9,14 @@ const updateUserSchema = z.object({
   status: z.nativeEnum(UserStatus).optional(),
 }).strict();
 
-export async function PUT(req: Request, { params }: { params: { userId: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ userId: string }> }) {
   try {
     const session = await getCurrentUser();
     if (session?.role !== Role.ADMIN) {
       return new NextResponse(null, { status: 403 });
     }
 
-    const { userId } = params;
+    const { userId } = await params;
     const body = await req.json();
 
     const parsed = updateUserSchema.safeParse(body);
