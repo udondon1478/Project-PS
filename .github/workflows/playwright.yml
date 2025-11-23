@@ -48,6 +48,7 @@ jobs:
       # 環境変数は playwright.config.ts や docker-compose.yml の設定に合わせる
       env:
         DATABASE_URL: "postgresql://testuser:testpass@localhost:5433/testdb"
+        SEED_ENV: "test"
       run: |
         npx prisma migrate deploy
         npx prisma db seed

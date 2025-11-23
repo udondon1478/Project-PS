@@ -53,6 +53,7 @@ jobs:
         env:
           # ポート5433を指定 (servicesでマッピングしたポート)
           DATABASE_URL: "postgresql://testuser:testpass@localhost:5433/testdb"
+          SEED_ENV: "test"
         run: |
           npx prisma migrate deploy
           npx prisma db seed
