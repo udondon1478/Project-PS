@@ -8,8 +8,15 @@ import { Role } from "@prisma/client"; // Role Enumを直接インポート
 declare module "next-auth" {
   interface Session {
     user: {
+      id: string;
       role?: Role; // Role型をインポートして使用
+      termsAgreedAt: Date | null;
     } & DefaultSession["user"];
+  }
+
+  interface User {
+    role?: Role;
+    termsAgreedAt: Date | null;
   }
 }
 

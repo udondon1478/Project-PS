@@ -14,7 +14,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         if (status === "loading") return;
 
-        // @ts-expect-error termsAgreedAt is not in the default type yet
         const hasAgreed = session?.user?.termsAgreedAt;
         const isAgreementPage = pathname === "/auth/agreement";
         const isPublicPage = ["/terms", "/privacy"].some(path => pathname.startsWith(path)) || pathname.startsWith("/api");
