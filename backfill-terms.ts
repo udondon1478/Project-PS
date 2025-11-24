@@ -1,7 +1,7 @@
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './src/lib/prisma';
 
-const prisma = new PrismaClient();
+
 
 async function main() {
     console.log('Backfilling termsAgreedAt for existing users...');
