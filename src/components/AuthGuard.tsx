@@ -3,13 +3,13 @@
 
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const { data: session, status } = useSession();
     const pathname = usePathname();
     const router = useRouter();
-    const [isChecking, setIsChecking] = useState(true);
+    // const [isChecking, setIsChecking] = useState(true);
 
     useEffect(() => {
         if (status === "loading") return;
@@ -29,7 +29,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
             }
         }
 
-        setIsChecking(false);
+        // setIsChecking(false);
     }, [session, status, pathname, router]);
 
     // Optional: Show loading state while checking to prevent flash

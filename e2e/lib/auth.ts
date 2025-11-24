@@ -44,6 +44,7 @@ export interface MockSessionUser {
   name: string | null;
   email: string;
   role: Role;
+  termsAgreedAt?: Date | null;
 }
 
 export const MOCK_USER: MockSessionUser = {
@@ -51,6 +52,7 @@ export const MOCK_USER: MockSessionUser = {
   name: 'Test User',
   email: 'test.user@example.com',
   role: Role.USER,
+  termsAgreedAt: new Date(),
 };
 
 export const MOCK_ADMIN_USER: MockSessionUser = {
@@ -58,4 +60,5 @@ export const MOCK_ADMIN_USER: MockSessionUser = {
   name: 'Test Admin',
   email: 'test.admin@example.com',
   role: Role.ADMIN,
+  termsAgreedAt: new Date(),
 };
