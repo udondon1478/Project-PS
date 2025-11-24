@@ -16,9 +16,15 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
         const hasAgreed = session?.user?.termsAgreedAt;
         const isAgreementPage = pathname === "/auth/agreement";
-        const isPublicPage = ["/terms", "/privacy"].some(path => pathname.startsWith(path)) || pathname.startsWith("/api");
+        const isLoginPage = pathname === "/auth/login";
+        const isPublicPage = ["/terms", "/privacy", "/"].some(path => pathname === path || pathname.startsWith(path + "/")) || pathname.startsWith("/api") || pathname.startsWith("/auth");
 
-        if (status === "authenticated" && !hasAgreed) {
+        // Handle unauthenticated users trying to access protected routes
+        if (status === "unauthenticated") {
+            if (!isPublicPage && !isLoginPage) {
+                router.push("/auth/login");
+            }
+        } else if (status === "authenticated" && !hasAgreed) {
             if (!isAgreementPage && !isPublicPage) {
                 router.push("/auth/agreement");
             }
