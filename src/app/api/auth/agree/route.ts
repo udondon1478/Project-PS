@@ -20,7 +20,7 @@ export async function POST() {
             },
         });
 
-        return new NextResponse("OK", { status: 200 });
+        return NextResponse.json({ success: true }, { status: 200 });
     } catch (error) {
         console.error("[AGREEMENT_POST]", error);
         return new NextResponse("Internal Error", { status: 500 });
