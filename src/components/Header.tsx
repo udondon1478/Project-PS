@@ -37,23 +37,23 @@ export default function Header() {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
 
-    const handleScroll = useCallback(() => {
-      const currentScrollPos = window.scrollY;
-      // Show header only when scrolling up significantly or near the top
-      const isScrollingUp = currentScrollPos < prevScrollPos; // Increase threshold to 20
-      const isNearTop = currentScrollPos < 50;
+  const handleScroll = useCallback(() => {
+    const currentScrollPos = window.scrollY;
+    // Show header only when scrolling up significantly or near the top
+    const isScrollingUp = currentScrollPos < prevScrollPos; // Increase threshold to 20
+    const isNearTop = currentScrollPos < 50;
 
-      setIsHeaderVisible(isScrollingUp || isNearTop);
-      // Update prevScrollPos based on scroll direction
-      if (currentScrollPos > prevScrollPos) {
-          // Scrolling down
-          setPrevScrollPos(currentScrollPos);
-      } else if (currentScrollPos < prevScrollPos) {
-          // Scrolling up - update regardless of threshold for visibility check
-           setPrevScrollPos(currentScrollPos);
-      }
-      // Note: The visibility check (isScrollingUp) still uses the threshold
-    }, [prevScrollPos]);
+    setIsHeaderVisible(isScrollingUp || isNearTop);
+    // Update prevScrollPos based on scroll direction
+    if (currentScrollPos > prevScrollPos) {
+      // Scrolling down
+      setPrevScrollPos(currentScrollPos);
+    } else if (currentScrollPos < prevScrollPos) {
+      // Scrolling up - update regardless of threshold for visibility check
+      setPrevScrollPos(currentScrollPos);
+    }
+    // Note: The visibility check (isScrollingUp) still uses the threshold
+  }, [prevScrollPos]);
 
   useEffect(() => {
     setMounted(true); // Set mounted to true after component mounts
@@ -74,7 +74,7 @@ export default function Header() {
       ref={headerRef}
       className={`fixed top-0 left-0 w-full bg-white dark:bg-gray-900 z-50 transition-transform duration-300 ease-in-out ${ // Added z-index and ease
         isHeaderVisible ? 'translate-y-0' : '-translate-y-full' // Use -translate-y-full for clarity
-      }`}
+        }`}
       style={{ boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }} // Apply shadow here if needed consistently
     >
       {/* Top Navigation Bar */}
@@ -130,8 +130,32 @@ export default function Header() {
               <Link href="/" className="flex items-center">
                 <Image src={(theme === 'dark' || (theme === 'system' && systemTheme === 'dark')) ? "/pslogo-white.svg" : "/pslogo.svg"} alt="PolySeek Logo" width={24} height={24} className="h-6 w-auto" />
               </Link>
-              <Button variant="ghost" size="sm" onClick={() => signIn('google')}>Googleログイン</Button>
-              <Button variant="ghost" size="sm" onClick={() => signIn('discord')}>Discordログイン</Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">新規登録</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => signIn('google')}>
+                    Googleで登録
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => signIn('discord')}>
+                    Discordで登録
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">ログイン</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => signIn('google')}>
+                    Googleでログイン
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => signIn('discord')}>
+                    Discordでログイン
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </>
           )}
         </div>
@@ -189,12 +213,32 @@ export default function Header() {
                   </div>
                 </DialogContent>
               </Dialog>
-              <Button variant="ghost" size="sm" onClick={() => signIn('google')}>
-                Googleログイン
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => signIn('discord')}>
-                Discordログイン
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">新規登録</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => signIn('google')}>
+                    Googleで登録
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => signIn('discord')}>
+                    Discordで登録
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">ログイン</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => signIn('google')}>
+                    Googleでログイン
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => signIn('discord')}>
+                    Discordでログイン
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </React.Fragment>
           )}
         </nav>
