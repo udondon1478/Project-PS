@@ -32,9 +32,9 @@ export default function AgreementPage() {
             }
 
             toast.success("利用規約に同意しました");
-            await update(); // Force session update to reflect new termsAgreedAt
-            router.refresh();
-            router.push("/"); // Redirect to home
+            // Force session update to reflect new termsAgreedAt before navigation
+            await update();
+            router.push("/"); // Redirect to home after session update
         } catch (error) {
             console.error(error);
             toast.error("エラーが発生しました。もう一度お試しください。");
