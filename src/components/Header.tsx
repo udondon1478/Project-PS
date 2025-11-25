@@ -24,6 +24,7 @@ import {
 import { Button } from '@/components/ui/button';
 import React from 'react';
 import ProductSearch from '@/components/search/ProductSearch'; // Import ProductSearch
+import AuthDropdown from '@/components/AuthDropdown';
 
 // 認証状態のプレースホルダーは削除
 
@@ -130,32 +131,8 @@ export default function Header() {
               <Link href="/" className="flex items-center">
                 <Image src={(theme === 'dark' || (theme === 'system' && systemTheme === 'dark')) ? "/pslogo-white.svg" : "/pslogo.svg"} alt="PolySeek Logo" width={24} height={24} className="h-6 w-auto" />
               </Link>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">新規登録</Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => signIn('google')}>
-                    Googleで登録
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => signIn('discord')}>
-                    Discordで登録
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">ログイン</Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => signIn('google')}>
-                    Googleでログイン
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => signIn('discord')}>
-                    Discordでログイン
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <AuthDropdown label="新規登録" />
+              <AuthDropdown label="ログイン" />
             </>
           )}
         </div>
@@ -213,32 +190,8 @@ export default function Header() {
                   </div>
                 </DialogContent>
               </Dialog>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">新規登録</Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => signIn('google')}>
-                    Googleで登録
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => signIn('discord')}>
-                    Discordで登録
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">ログイン</Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => signIn('google')}>
-                    Googleでログイン
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => signIn('discord')}>
-                    Discordでログイン
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <AuthDropdown label="新規登録" />
+              <AuthDropdown label="ログイン" />
             </React.Fragment>
           )}
         </nav>
