@@ -11,16 +11,22 @@ export async function POST() {
     }
 
     try {
-        await prisma.user.update({
+        const updatedUser = await prisma.user.update({
             where: {
                 id: session.user.id,
             },
             data: {
                 termsAgreedAt: new Date(),
             },
+            select: {
+                termsAgreedAt: true,
+            },
         });
 
-        return NextResponse.json({ success: true }, { status: 200 });
+        return NextResponse.json({
+            success: true,
+            termsAgreedAt: updatedUser.termsAgreedAt
+        }, { status: 200 });
     } catch (error) {
         console.error("[AGREEMENT_POST]", error);
         return new NextResponse("Internal Error", { status: 500 });
