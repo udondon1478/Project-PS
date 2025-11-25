@@ -31,9 +31,9 @@ export default function AgreementPage() {
                 throw new Error("Something went wrong");
             }
 
-            toast.success("利用規約に同意しました");
             // Force session update to reflect new termsAgreedAt before navigation
             await update();
+            toast.success("利用規約に同意しました");
             router.push("/"); // Redirect to home after session update
         } catch (error) {
             console.error(error);
