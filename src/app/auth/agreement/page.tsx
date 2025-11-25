@@ -55,11 +55,11 @@ export default function AgreementPage() {
                 <CardContent className="space-y-4">
                     <div className="text-sm text-gray-600 dark:text-gray-400">
                         <p>
-                            <Link href="/terms" className="text-blue-600 hover:underline" target="_blank">
+                            <Link href="/terms" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
                                 利用規約
                             </Link>
                             {' '}と{' '}
-                            <Link href="/privacy" className="text-blue-600 hover:underline" target="_blank">
+                            <Link href="/privacy" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
                                 プライバシーポリシー
                             </Link>
                             {' '}の内容を確認し、同意の上でチェックを入れてください。
