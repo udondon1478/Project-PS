@@ -16,7 +16,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         const hasAgreed = session?.user?.termsAgreedAt;
         const isAgreementPage = pathname === "/auth/agreement";
         const isLoginPage = pathname === "/auth/login";
-        const isPublicPage = ["/terms", "/privacy", "/"].some(path => pathname === path || pathname.startsWith(path + "/")) || pathname.startsWith("/api") || pathname.startsWith("/auth");
+        const isPublicPage = ["/terms", "/privacy", "/", "/search", "/products"].some(path => pathname === path || (path !== "/" && pathname.startsWith(path + "/"))) || pathname.startsWith("/api") || pathname.startsWith("/auth");
 
         // Handle unauthenticated users trying to access protected routes
         if (status === "unauthenticated") {
@@ -41,7 +41,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     // If unauthenticated and on a protected page, don't render children
     // This prevents the flash while the useEffect redirects
     const isLoginPage = pathname === "/auth/login";
-    const isPublicPage = ["/terms", "/privacy", "/"].some(path => pathname === path || pathname.startsWith(path + "/")) || pathname.startsWith("/api") || pathname.startsWith("/auth");
+    const isPublicPage = ["/terms", "/privacy", "/", "/search", "/products"].some(path => pathname === path || (path !== "/" && pathname.startsWith(path + "/"))) || pathname.startsWith("/api") || pathname.startsWith("/auth");
 
     if (status === "unauthenticated" && !isPublicPage && !isLoginPage) {
         return null;

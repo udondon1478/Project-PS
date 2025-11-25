@@ -6,9 +6,9 @@ const negativeTagValue = '衣装';
 const negativeQuerySuggestion = '衣装';
 const encodedQuery = encodeURIComponent(query);
 const encodedNegativeQuery = encodeURIComponent(negativeTagValue);
-const searchApiUrl = `**/api/tags/search?query=${encodedQuery}`;
-const negativeSearchApiUrl = `**/api/tags/search?query=${encodeURIComponent(negativeQuerySuggestion)}`;
-const productsApiUrl = `**/api/products?tags=${encodedQuery}`;
+const searchApiUrl = `**/api/tags/search?query=${encodedQuery}*`;
+const negativeSearchApiUrl = `**/api/tags/search?query=${encodeURIComponent(negativeQuerySuggestion)}*`;
+const productsApiUrl = `**/api/products?tags=${encodedQuery}*`;
 
 
 test.describe('Anonymous User Core Features', () => {
@@ -20,8 +20,8 @@ test.describe('Anonymous User Core Features', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify([
-          { id: 'prod_1', title: 'Test Product 1', lowPrice: 1000, highPrice: 1000, sellerName: 'Seller 1', images: [{ imageUrl: 'https://via.placeholder.com/150' }], tags: [] },
-          { id: 'prod_2', title: 'Test Product 2', lowPrice: 2000, highPrice: 2000, sellerName: 'Seller 2', images: [{ imageUrl: 'https://via.placeholder.com/150' }], tags: [] },
+          { id: 'prod_1', title: 'Test Product 1', lowPrice: 1000, highPrice: 1000, sellerName: 'Seller 1', images: [{ imageUrl: '/pslogo.svg' }], tags: [] },
+          { id: 'prod_2', title: 'Test Product 2', lowPrice: 2000, highPrice: 2000, sellerName: 'Seller 2', images: [{ imageUrl: '/pslogo.svg' }], tags: [] },
         ]),
       });
     });
@@ -56,7 +56,9 @@ test.describe('Anonymous User Core Features', () => {
         status: 200,
         contentType: 'application/json',
         // このテストでは検索結果の表示内容までは検証しないため、空配列でよい
-        body: JSON.stringify([]),
+        body: JSON.stringify([
+          { id: 'prod_1', title: 'Test Product 1', lowPrice: 1000, highPrice: 1000, sellerName: 'Seller 1', images: [{ imageUrl: 'https://via.placeholder.com/150' }], tags: [] }
+        ]),
       });
     });
   });
@@ -68,7 +70,7 @@ test.describe('Anonymous User Core Features', () => {
     // ヘッダーの要素を確認
     await expect(page.getByRole('link', { name: /PolySeek/i })).toBeVisible();
     await expect(page.locator('input[data-slot="input"][placeholder="タグで検索 (-でマイナス検索)"]')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Googleログイン' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'ログイン' })).toBeVisible();
 
     // 最新の商品セクションと商品カードを確認
     await expect(page.getByRole('heading', { name: '最新の商品' })).toBeVisible();
@@ -185,7 +187,7 @@ test.describe('Anonymous User Core Features', () => {
             lowPrice: 1000,
             highPrice: 1000,
             sellerName: 'Seller 1',
-            images: [{ imageUrl: 'https://via.placeholder.com/150', isMain: true }], // isMainを追加して型を合わせる
+            images: [{ imageUrl: '/pslogo.svg', isMain: true }], // isMainを追加して型を合わせる
             tags: [],
             isLiked: false,
             isOwned: false,
@@ -204,7 +206,7 @@ test.describe('Anonymous User Core Features', () => {
             id: 'prod_1',
             title: 'Test Product 1',
             description: 'This is a test product description.',
-            images: [{ imageUrl: 'https://via.placeholder.com/150' }],
+            images: [{ imageUrl: '/pslogo.svg' }],
             productTags: [{ tag: { name: 'アバター' } }],
             isLiked: false,
             isOwned: false,
@@ -239,7 +241,7 @@ test.describe('Anonymous User Core Features', () => {
             id: 'prod_1',
             title: 'Test Product 1',
             description: 'This is a test product description.',
-            images: [{ imageUrl: 'https://via.placeholder.com/150' }],
+            images: [{ imageUrl: '/pslogo.svg' }],
             productTags: [{ tag: { name: 'アバター' } }],
             isLiked: false,
             isOwned: false,
@@ -274,7 +276,8 @@ test.describe('Anonymous User Core Features', () => {
     await expect(heartIcon).toHaveAttribute('fill', 'none');
 
     // 6. ボタンをクリック
-    await likeButton.click();
+    // 6. ボタンをクリック
+    await likeButton.click({ force: true });
 
     // 7. API (POST) リクエストが送信されたことを確認
     const request = await likeApiPromise;

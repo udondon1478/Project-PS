@@ -12,7 +12,9 @@ export async function middleware(request: NextRequest) {
   if (isProtectedRoute) {
     // Check if user is authenticated by looking for the session token cookie
     // NextAuth uses different cookie names based on useSecureCookies
-    const sessionToken = request.cookies.get('next-auth.session-token') ||
+    const sessionToken = request.cookies.get('authjs.session-token') ||
+      request.cookies.get('__Secure-authjs.session-token') ||
+      request.cookies.get('next-auth.session-token') ||
       request.cookies.get('__Secure-next-auth.session-token');
 
     if (!sessionToken) {

@@ -13,10 +13,15 @@ export async function mockSession(
   user: MockSessionUser): Promise<void> {
   const token = randomUUID();
 
-  await prisma?.user.upsert({
-    where: { id: user.id },
-    update: {},
-    create: user,
+  // Ensure clean state
+  try {
+    await prisma?.user.delete({ where: { id: user.id } });
+  } catch (e) {
+    // Ignore if user doesn't exist
+  }
+
+  await prisma?.user.create({
+    data: user,
   });
 
   await prisma?.session.create({
