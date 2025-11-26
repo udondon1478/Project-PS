@@ -13,11 +13,10 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
     const isLoginPage = pathname === "/auth/login";
     const isAgreementPage = pathname === "/auth/agreement";
     const isPublicPage = ["/terms", "/privacy", "/", "/search", "/products"].some(path => pathname === path || (path !== "/" && pathname.startsWith(path + "/"))) || pathname.startsWith("/api") || pathname.startsWith("/auth");
+    const hasAgreed = session?.user?.termsAgreedAt;
 
     useEffect(() => {
         if (status === "loading") return;
-
-        const hasAgreed = session?.user?.termsAgreedAt;
 
         // Handle unauthenticated users trying to access protected routes
         if (status === "unauthenticated") {
@@ -46,7 +45,6 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
     }
 
     // 認証済みだが未同意の場合も、保護ページではコンテンツを表示しない
-    const hasAgreed = session?.user?.termsAgreedAt;
     if (status === "authenticated" && !hasAgreed && !isAgreementPage && !isPublicPage) {
         return null;
     }
