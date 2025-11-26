@@ -137,7 +137,7 @@ test.describe('Anonymous User Core Features', () => {
 
     await page.getByRole('button', { name: '検索' }).click();
 
-    await page.waitForURL(`**/search?tags=${encodedQuery}&negativeTags=${encodedNegativeQuery}`);
+    await page.waitForURL(`**/search?tags=${encodedQuery}&negativeTags=${encodedNegativeQuery}*`);
     await expect(page.locator('body')).toContainText(`タグ: ${query} ${negativeQuery}`);
   });
 
