@@ -14,7 +14,10 @@ export async function mockSession(
   try {
     await prisma?.user.delete({ where: { id: user.id } });
   } catch (e) {
-    // Ignore if user doesn't exist
+    // Ignore P2025: Record not found
+    if (!(e instanceof Error && 'code' in e && (e as any).code === 'P2025')) {
+      throw e;
+    }
   }
 
   await prisma?.user.create({
