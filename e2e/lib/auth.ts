@@ -32,7 +32,7 @@ export async function mockSession(
       picture: null,
       sub: user.id,
       id: user.id,
-      termsAgreedAt: user.termsAgreedAt,
+      termsAgreedAt: user.termsAgreedAt ?? null,
     },
     secret: process.env.AUTH_SECRET || 'secret',
     salt: 'authjs.session-token',

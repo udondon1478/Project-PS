@@ -18,3 +18,13 @@ declare module "next-auth" {
         termsAgreedAt: Date | null;
     }
 }
+
+declare module "next-auth/jwt" {
+    /**
+     * Extends the built-in JWT type to include custom fields
+     */
+    interface JWT {
+        id: string;
+        termsAgreedAt: Date | null;
+    }
+}

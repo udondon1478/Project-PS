@@ -18,17 +18,15 @@ export const authConfig = {
     callbacks: {
         async jwt({ token, user }) {
             if (user) {
-                token.id = user.id;
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                token.termsAgreedAt = (user as any).termsAgreedAt;
+                token.id = user.id!;
+                token.termsAgreedAt = user.termsAgreedAt;
             }
             return token;
         },
         async session({ session, token }) {
             if (token && session.user) {
                 session.user.id = token.id as string;
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                session.user.termsAgreedAt = (token as any).termsAgreedAt;
+                session.user.termsAgreedAt = token.termsAgreedAt;
             }
             return session;
         },
