@@ -21,8 +21,8 @@ test.describe('Anonymous User Core Features', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify([
-          { id: 'prod_1', title: 'Test Product 1', lowPrice: 1000, highPrice: 1000, sellerName: 'Seller 1', images: [{ imageUrl: '/pslogo.svg' }], tags: [] },
-          { id: 'prod_2', title: 'Test Product 2', lowPrice: 2000, highPrice: 2000, sellerName: 'Seller 2', images: [{ imageUrl: '/pslogo.svg' }], tags: [] },
+          { id: 'prod_1', title: 'Test Product 1', lowPrice: 1000, highPrice: 1000, sellerName: 'Seller 1', images: [{ imageUrl: '/pslogo.svg', isMain: true }], tags: [] },
+          { id: 'prod_2', title: 'Test Product 2', lowPrice: 2000, highPrice: 2000, sellerName: 'Seller 2', images: [{ imageUrl: '/pslogo.svg', isMain: true }], tags: [] },
         ]),
       });
     });
@@ -58,7 +58,7 @@ test.describe('Anonymous User Core Features', () => {
         contentType: 'application/json',
         // このテストでは検索結果の表示内容までは検証しないため、空配列でよい
         body: JSON.stringify([
-          { id: 'prod_1', title: 'Test Product 1', lowPrice: 1000, highPrice: 1000, sellerName: 'Seller 1', images: [{ imageUrl: '/pslogo.svg' }], tags: [] }
+          { id: 'prod_1', title: 'Test Product 1', lowPrice: 1000, highPrice: 1000, sellerName: 'Seller 1', images: [{ imageUrl: '/pslogo.svg', isMain: true }], tags: [] }
         ]),
       });
     });
@@ -207,7 +207,7 @@ test.describe('Anonymous User Core Features', () => {
             id: 'prod_1',
             title: 'Test Product 1',
             description: 'This is a test product description.',
-            images: [{ imageUrl: '/pslogo.svg' }],
+            images: [{ imageUrl: '/pslogo.svg', isMain: true }],
             productTags: [{ tag: { name: 'アバター' } }],
             isLiked: false,
             isOwned: false,
@@ -242,7 +242,7 @@ test.describe('Anonymous User Core Features', () => {
             id: 'prod_1',
             title: 'Test Product 1',
             description: 'This is a test product description.',
-            images: [{ imageUrl: '/pslogo.svg' }],
+            images: [{ imageUrl: '/pslogo.svg', isMain: true }],
             productTags: [{ tag: { name: 'アバター' } }],
             isLiked: false,
             isOwned: false,
