@@ -1,10 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { rateLimit } from './rate-limit';
 
 describe('rateLimit', () => {
     beforeEach(() => {
         // Clear cache implicitly by using new user IDs or mocking time
         vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
     it('should allow requests under the limit', async () => {
