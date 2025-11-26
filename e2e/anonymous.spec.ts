@@ -287,6 +287,7 @@ test.describe('Anonymous User Core Features', () => {
       const x = rect.left + rect.width / 2;
       const y = rect.top + rect.height / 2;
       const topElement = document.elementFromPoint(x, y);
+      if (!topElement) return false;
       return topElement !== el && !el.contains(topElement);
     });
     expect(isObscured).toBe(false);
@@ -302,4 +303,3 @@ test.describe('Anonymous User Core Features', () => {
     await expect(heartIcon).toHaveAttribute('fill', 'none');
   });
 });
-
