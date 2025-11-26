@@ -10,6 +10,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
 
+    const isLoginPage = pathname === "/auth/login";
     const isPublicPage = ["/terms", "/privacy", "/", "/search", "/products"].some(path => pathname === path || (path !== "/" && pathname.startsWith(path + "/"))) || pathname.startsWith("/api") || pathname.startsWith("/auth");
 
     useEffect(() => {
@@ -20,7 +21,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
         // Handle unauthenticated users trying to access protected routes
         if (status === "unauthenticated") {
-            if (!isPublicPage) {
+            if (!isPublicPage && !isLoginPage) {
                 router.replace("/auth/login");
             }
         } else if (status === "authenticated" && !hasAgreed) {
@@ -32,7 +33,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                 router.replace("/");
             }
         }
-    }, [session, status, pathname, router, isPublicPage]);
+    }, [session, status, pathname, router, isLoginPage, isPublicPage]);
 
     if (status === "loading") {
         return null; // Or a spinner
@@ -40,7 +41,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
     // If unauthenticated and on a protected page, don't render children
     // This prevents the flash while the useEffect redirects
-    if (status === "unauthenticated" && !isPublicPage) {
+    if (status === "unauthenticated" && !isPublicPage && !isLoginPage) {
         return null;
     }
 
