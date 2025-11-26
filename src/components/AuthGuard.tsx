@@ -33,7 +33,7 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
                 router.replace("/");
             }
         }
-    }, [session, status, pathname, router, isLoginPage, isPublicPage, isAgreementPage]);
+    }, [session, status, pathname, router]);
 
     if (status === "loading") {
         return null; // Or a spinner
