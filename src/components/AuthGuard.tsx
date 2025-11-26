@@ -10,17 +10,17 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
 
+    const isPublicPage = ["/terms", "/privacy", "/", "/search", "/products"].some(path => pathname === path || (path !== "/" && pathname.startsWith(path + "/"))) || pathname.startsWith("/api") || pathname.startsWith("/auth");
+
     useEffect(() => {
         if (status === "loading") return;
 
         const hasAgreed = session?.user?.termsAgreedAt;
         const isAgreementPage = pathname === "/auth/agreement";
-        const isLoginPage = pathname === "/auth/login";
-        const isPublicPage = ["/terms", "/privacy", "/", "/search", "/products"].some(path => pathname === path || (path !== "/" && pathname.startsWith(path + "/"))) || pathname.startsWith("/api") || pathname.startsWith("/auth");
 
         // Handle unauthenticated users trying to access protected routes
         if (status === "unauthenticated") {
-            if (!isPublicPage && !isLoginPage) {
+            if (!isPublicPage) {
                 router.replace("/auth/login");
             }
         } else if (status === "authenticated" && !hasAgreed) {
@@ -32,7 +32,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                 router.replace("/");
             }
         }
-    }, [session, status, pathname, router]);
+    }, [session, status, pathname, router, isPublicPage]);
 
     if (status === "loading") {
         return null; // Or a spinner
@@ -40,10 +40,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
     // If unauthenticated and on a protected page, don't render children
     // This prevents the flash while the useEffect redirects
-    const isLoginPage = pathname === "/auth/login";
-    const isPublicPage = ["/terms", "/privacy", "/", "/search", "/products"].some(path => pathname === path || (path !== "/" && pathname.startsWith(path + "/"))) || pathname.startsWith("/api") || pathname.startsWith("/auth");
-
-    if (status === "unauthenticated" && !isPublicPage && !isLoginPage) {
+    if (status === "unauthenticated" && !isPublicPage) {
         return null;
     }
 
