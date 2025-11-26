@@ -11,13 +11,13 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const router = useRouter();
 
     const isLoginPage = pathname === "/auth/login";
+    const isAgreementPage = pathname === "/auth/agreement";
     const isPublicPage = ["/terms", "/privacy", "/", "/search", "/products"].some(path => pathname === path || (path !== "/" && pathname.startsWith(path + "/"))) || pathname.startsWith("/api") || pathname.startsWith("/auth");
 
     useEffect(() => {
         if (status === "loading") return;
 
         const hasAgreed = session?.user?.termsAgreedAt;
-        const isAgreementPage = pathname === "/auth/agreement";
 
         // Handle unauthenticated users trying to access protected routes
         if (status === "unauthenticated") {
@@ -33,7 +33,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                 router.replace("/");
             }
         }
-    }, [session, status, pathname, router, isLoginPage, isPublicPage]);
+    }, [session, status, pathname, router, isLoginPage, isPublicPage, isAgreementPage]);
 
     if (status === "loading") {
         return null; // Or a spinner
