@@ -52,7 +52,7 @@ export default async function UserProfilePage({ params }: Props) {
   }));
 
   return (
-    <div className="container mx-auto px-4 py-8 pt-40">
+    <div className="container mx-auto px-4 py-8">
       <div className="flex items-center space-x-4 mb-8">
         {user.image ? (
           <Image

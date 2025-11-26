@@ -41,6 +41,8 @@ test.describe('Authenticated User Features', () => {
     await expect(profileButton).toBeVisible();
 
     const logoutPromise = page.waitForResponse(SIGNOUT_API_URL);
+    // プロフィールメニューを開いてからログアウトボタンをクリック
+    // await profileButton.click(); // ログアウトボタンはメニュー外にあるためクリック不要
     await page.getByRole('button', { name: 'ログアウト' }).click();
     await logoutPromise;
 
@@ -50,11 +52,11 @@ test.describe('Authenticated User Features', () => {
     // ログアウト後のUI安定待ち
     await page.waitForLoadState('networkidle');
 
-    // "Googleログイン" ボタンが実際に見えるまで待つ
-    const googleLoginButton = page.getByRole('button', { name: 'Googleログイン' });
-    await googleLoginButton.waitFor({ state: 'visible', timeout: 15000 }); // timeoutを少し長めに
+    // "ログイン" ボタンが実際に見えるまで待つ
+    const loginButton = page.getByRole('button', { name: 'ログイン' });
+    await loginButton.waitFor({ state: 'visible', timeout: 15000 }); // timeoutを少し長めに
 
-    await expect(googleLoginButton).toBeVisible();
+    await expect(loginButton).toBeVisible();
   });
 
   test('2.2.1: should allow liking a product and reflect on reload', async ({ page }) => {
@@ -128,6 +130,7 @@ test.describe('Authenticated User Features', () => {
       });
 
       await page.goto('/profile/likes');
+      await page.waitForURL('**/profile/likes');
       await expect(page.getByText('Liked Product')).toBeVisible();
     } finally {
       // Narrowed condition: 特定の productId + userId の組み合わせのみ削除
@@ -212,6 +215,7 @@ test.describe('Authenticated User Features', () => {
 
       // 2. ページに移動
       await page.goto('/profile/owned');
+      await page.waitForURL('**/profile/owned');
 
       // 3. DBから取得したデータが表示されることを確認
       await expect(page.getByText('Owned Product')).toBeVisible();
@@ -249,6 +253,7 @@ test.describe('Authenticated User Features', () => {
     });
 
     await page.goto('/profile');
+    await page.waitForURL('**/profile');
 
     const nameInput = page.getByLabel('ユーザー名');
     await nameInput.fill('New Test User');

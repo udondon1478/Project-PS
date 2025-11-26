@@ -1,14 +1,14 @@
 import { test, expect } from '@playwright/test';
+import { encodeQuery } from './helpers/url';
 
 const query = 'アバター';
-const negativeQuery = '-衣装';
-const negativeTagValue = '衣装';
-const negativeQuerySuggestion = '衣装';
-const encodedQuery = encodeURIComponent(query);
-const encodedNegativeQuery = encodeURIComponent(negativeTagValue);
-const searchApiUrl = `**/api/tags/search?query=${encodedQuery}`;
-const negativeSearchApiUrl = `**/api/tags/search?query=${encodeURIComponent(negativeQuerySuggestion)}`;
-const productsApiUrl = `**/api/products?tags=${encodedQuery}`;
+const negativeTag = '衣装';
+const negativeQuery = `-${negativeTag}`;
+const encodedQuery = encodeQuery(query);
+const encodedNegativeQuery = encodeQuery(negativeTag);
+const searchApiUrl = `**/api/tags/search?query=${encodedQuery}*`;
+const negativeSearchApiUrl = `**/api/tags/search?query=${encodeQuery(negativeTag)}*`;
+const productsApiUrl = `**/api/products?tags=${encodedQuery}*`;
 
 
 test.describe('Anonymous User Core Features', () => {
@@ -20,8 +20,8 @@ test.describe('Anonymous User Core Features', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify([
-          { id: 'prod_1', title: 'Test Product 1', lowPrice: 1000, highPrice: 1000, sellerName: 'Seller 1', images: [{ imageUrl: 'https://via.placeholder.com/150' }], tags: [] },
-          { id: 'prod_2', title: 'Test Product 2', lowPrice: 2000, highPrice: 2000, sellerName: 'Seller 2', images: [{ imageUrl: 'https://via.placeholder.com/150' }], tags: [] },
+          { id: 'prod_1', title: 'Test Product 1', lowPrice: 1000, highPrice: 1000, sellerName: 'Seller 1', images: [{ imageUrl: '/pslogo.svg', isMain: true }], tags: [] },
+          { id: 'prod_2', title: 'Test Product 2', lowPrice: 2000, highPrice: 2000, sellerName: 'Seller 2', images: [{ imageUrl: '/pslogo.svg', isMain: true }], tags: [] },
         ]),
       });
     });
@@ -37,9 +37,9 @@ test.describe('Anonymous User Core Features', () => {
           { id: 'tag_1', name: 'アバター' },
           { id: 'tag_2', name: '男性アバター' },
         ];
-      } else if (query === '衣装') {
+      } else if (query === negativeTag) {
         responseTags = [
-          { id: 'tag_3', name: '衣装' },
+          { id: 'tag_3', name: negativeTag },
         ];
       }
       await route.fulfill({
@@ -56,7 +56,9 @@ test.describe('Anonymous User Core Features', () => {
         status: 200,
         contentType: 'application/json',
         // このテストでは検索結果の表示内容までは検証しないため、空配列でよい
-        body: JSON.stringify([]),
+        body: JSON.stringify([
+          { id: 'prod_1', title: 'Test Product 1', lowPrice: 1000, highPrice: 1000, sellerName: 'Seller 1', images: [{ imageUrl: '/pslogo.svg', isMain: true }], tags: [] }
+        ]),
       });
     });
   });
@@ -68,7 +70,7 @@ test.describe('Anonymous User Core Features', () => {
     // ヘッダーの要素を確認
     await expect(page.getByRole('link', { name: /PolySeek/i })).toBeVisible();
     await expect(page.locator('input[data-slot="input"][placeholder="タグで検索 (-でマイナス検索)"]')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Googleログイン' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'ログイン' })).toBeVisible();
 
     // 最新の商品セクションと商品カードを確認
     await expect(page.getByRole('heading', { name: '最新の商品' })).toBeVisible();
@@ -125,16 +127,16 @@ test.describe('Anonymous User Core Features', () => {
       page.waitForResponse(negativeSearchApiUrl),
       searchInput.fill(negativeQuery),
     ]);
-    await page.waitForSelector('li:has-text("衣装")');
-    await expect(page.getByRole('option', { name: '衣装', exact: true })).toBeVisible();
+    await page.waitForSelector(`li:has-text("${negativeTag}")`);
+    await expect(page.getByRole('option', { name: negativeTag, exact: true })).toBeVisible();
     await searchInput.press('ArrowDown');
     await searchInput.press('Enter');
     await expect(searchInput).toHaveValue('');
-    await expect(page.locator('span', { hasText: '衣装' }).filter({ has: page.locator('button') })).toBeVisible();
+    await expect(page.locator('span', { hasText: negativeTag }).filter({ has: page.locator('button') })).toBeVisible();
 
     await page.getByRole('button', { name: '検索' }).click();
 
-    await page.waitForURL(`**/search?tags=${encodedQuery}&negativeTags=${encodedNegativeQuery}`);
+    await page.waitForURL(`**/search?tags=${encodedQuery}&negativeTags=${encodedNegativeQuery}*`);
     await expect(page.locator('body')).toContainText(`タグ: ${query} ${negativeQuery}`);
   });
 
@@ -148,7 +150,7 @@ test.describe('Anonymous User Core Features', () => {
 
     // カテゴリを選択
     await page.getByLabel('カテゴリを選択').click();
-    await page.getByLabel('衣装').click();
+    await page.getByLabel(negativeTag).click();
 
     // 価格帯スライダーを操作
     // 注: スライダーの操作はUIの実装に大きく依存するため、これは一例です
@@ -168,7 +170,7 @@ test.describe('Anonymous User Core Features', () => {
     await page.getByRole('button', { name: 'フィルターを適用' }).click();
 
     // WebKitでのスライダー操作の揺らぎ(200 vs 300)を許容するため、正規表現でパラメータの存在を確認する
-    const urlPattern = new RegExp(`search\\?.*categoryName=${encodeURIComponent(negativeTagValue)}.*&minPrice=[0-9]+&maxPrice=[0-9]+`);
+    const urlPattern = new RegExp(`search\\?.*categoryName=${encodeQuery(negativeTag)}.*&minPrice=[0-9]+&maxPrice=[0-9]+`);
     await page.waitForURL(urlPattern);
   });
 
@@ -185,7 +187,7 @@ test.describe('Anonymous User Core Features', () => {
             lowPrice: 1000,
             highPrice: 1000,
             sellerName: 'Seller 1',
-            images: [{ imageUrl: 'https://via.placeholder.com/150', isMain: true }], // isMainを追加して型を合わせる
+            images: [{ imageUrl: '/pslogo.svg', isMain: true }], // isMainを追加して型を合わせる
             tags: [],
             isLiked: false,
             isOwned: false,
@@ -204,7 +206,7 @@ test.describe('Anonymous User Core Features', () => {
             id: 'prod_1',
             title: 'Test Product 1',
             description: 'This is a test product description.',
-            images: [{ imageUrl: 'https://via.placeholder.com/150' }],
+            images: [{ imageUrl: '/pslogo.svg', isMain: true }],
             productTags: [{ tag: { name: 'アバター' } }],
             isLiked: false,
             isOwned: false,
@@ -239,7 +241,7 @@ test.describe('Anonymous User Core Features', () => {
             id: 'prod_1',
             title: 'Test Product 1',
             description: 'This is a test product description.',
-            images: [{ imageUrl: 'https://via.placeholder.com/150' }],
+            images: [{ imageUrl: '/pslogo.svg', isMain: true }],
             productTags: [{ tag: { name: 'アバター' } }],
             isLiked: false,
             isOwned: false,
@@ -274,6 +276,22 @@ test.describe('Anonymous User Core Features', () => {
     await expect(heartIcon).toHaveAttribute('fill', 'none');
 
     // 6. ボタンをクリック
+    // 6. ボタンをクリック
+    await likeButton.scrollIntoViewIfNeeded();
+    await expect(likeButton).toBeVisible();
+    await expect(likeButton).toBeEnabled();
+
+    // 視覚的な重なりがないか確認 (簡易的なチェック)
+    const isObscured = await likeButton.evaluate((el) => {
+      const rect = el.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      const topElement = document.elementFromPoint(x, y);
+      if (!topElement) return false;
+      return topElement !== el && !el.contains(topElement);
+    });
+    expect(isObscured).toBe(false);
+
     await likeButton.click();
 
     // 7. API (POST) リクエストが送信されたことを確認
@@ -285,4 +303,3 @@ test.describe('Anonymous User Core Features', () => {
     await expect(heartIcon).toHaveAttribute('fill', 'none');
   });
 });
-

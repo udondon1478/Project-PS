@@ -69,7 +69,7 @@ export default async function OwnedPage() {
   const products = await getOwnedProducts(session.user.id);
 
   return (
-    <div className="container mx-auto px-4 py-8 pt-40">
+    <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">所有済み商品</h1>
       {products.length > 0 ? (
         <ProductGrid products={products} showLikeButton={true} showOwnButton={true} />

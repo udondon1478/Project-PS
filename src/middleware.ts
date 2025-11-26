@@ -1,18 +1,23 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import NextAuth from 'next-auth';
+import { authConfig } from './auth.config';
+import { protectedRoutes } from './lib/routes';
 
-/* eslint-disable @typescript-eslint/no-unused-vars */ // 未使用変数のESLintルールを無効化
+const { auth } = NextAuth(authConfig);
 
-// Next.jsのミドルウェアとして機能させるための関数をエクスポート
-export function middleware(_request: NextRequest) {
-  // ここにPrismaClientに依存しないミドルウェア処理を記述できます
-  // 例: ヘッダーの追加、特定のパスへのリダイレクトなど
+export default auth((req) => {
+  const { nextUrl } = req;
+  const isLoggedIn = !!req.auth;
+  const isProtectedRoute = protectedRoutes.some(route =>
+    nextUrl.pathname === route || nextUrl.pathname.startsWith(`${route}/`)
+  );
 
-  // リクエストを次に渡す
-  return NextResponse.next();
-}
+  if (isProtectedRoute && !isLoggedIn) {
+    const callbackUrl = nextUrl.pathname + nextUrl.search;
+    const encodedCallbackUrl = encodeURIComponent(callbackUrl);
+    return Response.redirect(new URL(`/auth/login?callbackUrl=${encodedCallbackUrl}`, nextUrl));
+  }
+});
 
-// ミドルウェアを実行するパスを指定 (必要に応じて調整)
 export const config = {
   matcher: [
     /*

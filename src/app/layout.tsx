@@ -8,6 +8,8 @@ import { SessionProvider } from "next-auth/react"; // SessionProviderをイン�
 import Header from "@/components/Header";
 import { ThemeProvider } from "@/components/theme-provider"; // ThemeProviderをインポート
 import { Toaster } from "@/components/ui/sonner";
+import AuthGuard from "@/components/AuthGuard";
+import MainLayout from "@/components/MainLayout";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,14 +37,18 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SessionProvider> {/* SessionProviderでラップ */}
-           <ThemeProvider // ThemeProviderでラップ
+          <ThemeProvider // ThemeProviderでラップ
             attribute="class"
             defaultTheme="system"
             enableSystem
             disableTransitionOnChange
           >
             <Header />
-            {children}
+            <AuthGuard>
+              <MainLayout>
+                {children}
+              </MainLayout>
+            </AuthGuard>
             <Toaster />
           </ThemeProvider>
         </SessionProvider>

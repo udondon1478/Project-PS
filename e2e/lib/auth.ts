@@ -4,27 +4,38 @@ import { Role } from '@prisma/client';
 // E2Eテストから本番のPrisma Clientをインポートします
 // (テストがテスト用DBを指すように DATABASE_URL 環境変数を設定してください)
 import { prisma } from '../../src/lib/prisma';
-import { randomUUID } from 'crypto';
-import { Mock } from 'vitest';
-const expires = new Date(Date.now() + 60 * 60 * 1000);
+import { encode } from 'next-auth/jwt';
 
 export async function mockSession(
   context: BrowserContext,
   user: MockSessionUser): Promise<void> {
-  const token = randomUUID();
 
-  await prisma?.user.upsert({
-    where: { id: user.id },
-    update: {},
-    create: user,
+  // Ensure clean state
+  try {
+    await prisma?.user.delete({ where: { id: user.id } });
+  } catch (e) {
+    // Ignore P2025: Record not found
+    if (!(e instanceof Error && 'code' in e && (e as any).code === 'P2025')) {
+      throw e;
+    }
+  }
+
+  await prisma?.user.create({
+    data: user,
   });
 
-  await prisma?.session.create({
-    data: {
-      sessionToken: token,
-      userId: user.id,
-      expires,
+  // Generate JWT
+  const token = await encode({
+    token: {
+      name: user.name,
+      email: user.email,
+      picture: null,
+      sub: user.id,
+      id: user.id,
+      termsAgreedAt: user.termsAgreedAt ?? null,
     },
+    secret: process.env.AUTH_SECRET || 'secret',
+    salt: 'authjs.session-token',
   });
 
   await context.addCookies([
@@ -44,6 +55,7 @@ export interface MockSessionUser {
   name: string | null;
   email: string;
   role: Role;
+  termsAgreedAt?: Date | null;
 }
 
 export const MOCK_USER: MockSessionUser = {
@@ -51,6 +63,7 @@ export const MOCK_USER: MockSessionUser = {
   name: 'Test User',
   email: 'test.user@example.com',
   role: Role.USER,
+  termsAgreedAt: new Date(),
 };
 
 export const MOCK_ADMIN_USER: MockSessionUser = {
@@ -58,4 +71,5 @@ export const MOCK_ADMIN_USER: MockSessionUser = {
   name: 'Test Admin',
   email: 'test.admin@example.com',
   role: Role.ADMIN,
+  termsAgreedAt: new Date(),
 };

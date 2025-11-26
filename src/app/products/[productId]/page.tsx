@@ -262,13 +262,13 @@ const ProductDetailPage = () => {
     }
   };
 
-  if (loading) return <div className="container mx-auto px-4 py-8 pt-40 text-center">Loading...</div>;
-  if (error) return <div className="container mx-auto px-4 py-8 pt-40 text-center text-red-500">Error: {error}</div>;
-  if (!product) return <div className="container mx-auto px-4 py-8 pt-40 text-center">Product not found.</div>;
+  if (loading) return <div className="container mx-auto px-4 py-8 text-center">Loading...</div>;
+  if (error) return <div className="container mx-auto px-4 py-8 text-center text-red-500">Error: {error}</div>;
+  if (!product) return <div className="container mx-auto px-4 py-8 text-center">Product not found.</div>;
 
   return (
     <>
-      <div className="container mx-auto px-4 py-8 pt-40">
+      <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
           <main className="lg:col-span-8">
             <div className="mb-6">
