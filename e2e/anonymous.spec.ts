@@ -277,7 +277,21 @@ test.describe('Anonymous User Core Features', () => {
 
     // 6. ボタンをクリック
     // 6. ボタンをクリック
-    await likeButton.click({ force: true });
+    await likeButton.scrollIntoViewIfNeeded();
+    await expect(likeButton).toBeVisible();
+    await expect(likeButton).toBeEnabled();
+
+    // 視覚的な重なりがないか確認 (簡易的なチェック)
+    const isObscured = await likeButton.evaluate((el) => {
+      const rect = el.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      const topElement = document.elementFromPoint(x, y);
+      return topElement !== el && !el.contains(topElement);
+    });
+    expect(isObscured).toBe(false);
+
+    await likeButton.click();
 
     // 7. API (POST) リクエストが送信されたことを確認
     const request = await likeApiPromise;
