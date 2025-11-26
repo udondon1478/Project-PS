@@ -41,7 +41,7 @@ export default function Header() {
   const handleScroll = useCallback(() => {
     const currentScrollPos = window.scrollY;
     // Show header only when scrolling up significantly or near the top
-    const isScrollingUp = currentScrollPos < prevScrollPos; // Increase threshold to 20
+    const isScrollingUp = currentScrollPos < prevScrollPos;
     const isNearTop = currentScrollPos < 50;
 
     setIsHeaderVisible(isScrollingUp || isNearTop);
@@ -50,10 +50,9 @@ export default function Header() {
       // Scrolling down
       setPrevScrollPos(currentScrollPos);
     } else if (currentScrollPos < prevScrollPos) {
-      // Scrolling up - update regardless of threshold for visibility check
+      // Scrolling up
       setPrevScrollPos(currentScrollPos);
     }
-    // Note: The visibility check (isScrollingUp) still uses the threshold
   }, [prevScrollPos]);
 
   useEffect(() => {
