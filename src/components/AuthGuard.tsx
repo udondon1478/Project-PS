@@ -21,7 +21,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
         // Handle unauthenticated users trying to access protected routes
         if (status === "unauthenticated") {
-            if (!isPublicPage && !isLoginPage) {
+            if (!isPublicPage) {
                 router.replace("/auth/login");
             }
         } else if (status === "authenticated" && !hasAgreed) {
