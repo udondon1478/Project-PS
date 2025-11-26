@@ -1,13 +1,14 @@
 import { test, expect } from '@playwright/test';
+import { encodeQuery } from './helpers/url';
 
 const query = 'アバター';
 const negativeQuery = '-衣装';
 const negativeTagValue = '衣装';
 const negativeQuerySuggestion = '衣装';
-const encodedQuery = encodeURIComponent(query);
-const encodedNegativeQuery = encodeURIComponent(negativeTagValue);
+const encodedQuery = encodeQuery(query);
+const encodedNegativeQuery = encodeQuery(negativeTagValue);
 const searchApiUrl = `**/api/tags/search?query=${encodedQuery}*`;
-const negativeSearchApiUrl = `**/api/tags/search?query=${encodeURIComponent(negativeQuerySuggestion)}*`;
+const negativeSearchApiUrl = `**/api/tags/search?query=${encodeQuery(negativeQuerySuggestion)}*`;
 const productsApiUrl = `**/api/products?tags=${encodedQuery}*`;
 
 
@@ -170,7 +171,7 @@ test.describe('Anonymous User Core Features', () => {
     await page.getByRole('button', { name: 'フィルターを適用' }).click();
 
     // WebKitでのスライダー操作の揺らぎ(200 vs 300)を許容するため、正規表現でパラメータの存在を確認する
-    const urlPattern = new RegExp(`search\\?.*categoryName=${encodeURIComponent(negativeTagValue)}.*&minPrice=[0-9]+&maxPrice=[0-9]+`);
+    const urlPattern = new RegExp(`search\\?.*categoryName=${encodeQuery(negativeTagValue)}.*&minPrice=[0-9]+&maxPrice=[0-9]+`);
     await page.waitForURL(urlPattern);
   });
 
