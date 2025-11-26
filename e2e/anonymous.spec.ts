@@ -57,7 +57,7 @@ test.describe('Anonymous User Core Features', () => {
         contentType: 'application/json',
         // このテストでは検索結果の表示内容までは検証しないため、空配列でよい
         body: JSON.stringify([
-          { id: 'prod_1', title: 'Test Product 1', lowPrice: 1000, highPrice: 1000, sellerName: 'Seller 1', images: [{ imageUrl: 'https://via.placeholder.com/150' }], tags: [] }
+          { id: 'prod_1', title: 'Test Product 1', lowPrice: 1000, highPrice: 1000, sellerName: 'Seller 1', images: [{ imageUrl: '/pslogo.svg' }], tags: [] }
         ]),
       });
     });
