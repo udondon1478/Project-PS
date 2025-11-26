@@ -45,12 +45,12 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
   /*const tags = normalizeTagsToString(resolvedSearchParams.tags);*/
 
   if (error) {
-    return <div className="container mx-auto px-4 py-8 pt-40">Error: {error}</div>;
+    return <div className="container mx-auto px-4 py-8">Error: {error}</div>;
   }
 
   if (products.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-8 pt-40">
+      <div className="container mx-auto px-4 py-8">
         {q && <p>Search query: {q}</p>}
         {category && <p>Category: {category}</p>}
         {/*{tags && <p>Tags: {tags}</p>}*/}
@@ -60,7 +60,7 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 pt-40" data-testid="product-grid">
+    <div className="container mx-auto px-4 py-8" data-testid="product-grid">
       {q && <p>Search query: {q}</p>}
       {category && <p>Category: {category}</p>}
       {/*tags && <p>Tags: {tags}</p>*/}
