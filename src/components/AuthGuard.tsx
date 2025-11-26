@@ -45,5 +45,11 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
         return null;
     }
 
+    // 認証済みだが未同意の場合も、保護ページではコンテンツを表示しない
+    const hasAgreed = session?.user?.termsAgreedAt;
+    if (status === "authenticated" && !hasAgreed && !isAgreementPage && !isPublicPage) {
+        return null;
+    }
+
     return <>{children}</>;
 }
