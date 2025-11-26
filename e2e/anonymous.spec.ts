@@ -2,13 +2,12 @@ import { test, expect } from '@playwright/test';
 import { encodeQuery } from './helpers/url';
 
 const query = 'アバター';
-const negativeQuery = '-衣装';
-const negativeTagValue = '衣装';
-const negativeQuerySuggestion = '衣装';
+const negativeTag = '衣装';
+const negativeQuery = `-${negativeTag}`;
 const encodedQuery = encodeQuery(query);
-const encodedNegativeQuery = encodeQuery(negativeTagValue);
+const encodedNegativeQuery = encodeQuery(negativeTag);
 const searchApiUrl = `**/api/tags/search?query=${encodedQuery}*`;
-const negativeSearchApiUrl = `**/api/tags/search?query=${encodeQuery(negativeQuerySuggestion)}*`;
+const negativeSearchApiUrl = `**/api/tags/search?query=${encodeQuery(negativeTag)}*`;
 const productsApiUrl = `**/api/products?tags=${encodedQuery}*`;
 
 
@@ -38,9 +37,9 @@ test.describe('Anonymous User Core Features', () => {
           { id: 'tag_1', name: 'アバター' },
           { id: 'tag_2', name: '男性アバター' },
         ];
-      } else if (query === '衣装') {
+      } else if (query === negativeTag) {
         responseTags = [
-          { id: 'tag_3', name: '衣装' },
+          { id: 'tag_3', name: negativeTag },
         ];
       }
       await route.fulfill({
@@ -128,12 +127,12 @@ test.describe('Anonymous User Core Features', () => {
       page.waitForResponse(negativeSearchApiUrl),
       searchInput.fill(negativeQuery),
     ]);
-    await page.waitForSelector('li:has-text("衣装")');
-    await expect(page.getByRole('option', { name: '衣装', exact: true })).toBeVisible();
+    await page.waitForSelector(`li:has-text("${negativeTag}")`);
+    await expect(page.getByRole('option', { name: negativeTag, exact: true })).toBeVisible();
     await searchInput.press('ArrowDown');
     await searchInput.press('Enter');
     await expect(searchInput).toHaveValue('');
-    await expect(page.locator('span', { hasText: '衣装' }).filter({ has: page.locator('button') })).toBeVisible();
+    await expect(page.locator('span', { hasText: negativeTag }).filter({ has: page.locator('button') })).toBeVisible();
 
     await page.getByRole('button', { name: '検索' }).click();
 
@@ -151,7 +150,7 @@ test.describe('Anonymous User Core Features', () => {
 
     // カテゴリを選択
     await page.getByLabel('カテゴリを選択').click();
-    await page.getByLabel('衣装').click();
+    await page.getByLabel(negativeTag).click();
 
     // 価格帯スライダーを操作
     // 注: スライダーの操作はUIの実装に大きく依存するため、これは一例です
@@ -171,7 +170,7 @@ test.describe('Anonymous User Core Features', () => {
     await page.getByRole('button', { name: 'フィルターを適用' }).click();
 
     // WebKitでのスライダー操作の揺らぎ(200 vs 300)を許容するため、正規表現でパラメータの存在を確認する
-    const urlPattern = new RegExp(`search\\?.*categoryName=${encodeQuery(negativeTagValue)}.*&minPrice=[0-9]+&maxPrice=[0-9]+`);
+    const urlPattern = new RegExp(`search\\?.*categoryName=${encodeQuery(negativeTag)}.*&minPrice=[0-9]+&maxPrice=[0-9]+`);
     await page.waitForURL(urlPattern);
   });
 
