@@ -4,14 +4,11 @@ import { Role } from '@prisma/client';
 // E2Eテストから本番のPrisma Clientをインポートします
 // (テストがテスト用DBを指すように DATABASE_URL 環境変数を設定してください)
 import { prisma } from '../../src/lib/prisma';
-import { randomUUID } from 'crypto';
-
-const expires = new Date(Date.now() + 60 * 60 * 1000);
+import { encode } from 'next-auth/jwt';
 
 export async function mockSession(
   context: BrowserContext,
   user: MockSessionUser): Promise<void> {
-  const token = randomUUID();
 
   // Ensure clean state
   try {
@@ -24,12 +21,18 @@ export async function mockSession(
     data: user,
   });
 
-  await prisma?.session.create({
-    data: {
-      sessionToken: token,
-      userId: user.id,
-      expires,
+  // Generate JWT
+  const token = await encode({
+    token: {
+      name: user.name,
+      email: user.email,
+      picture: null,
+      sub: user.id,
+      id: user.id,
+      termsAgreedAt: user.termsAgreedAt,
     },
+    secret: process.env.AUTH_SECRET || 'secret',
+    salt: 'authjs.session-token',
   });
 
   await context.addCookies([

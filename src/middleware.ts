@@ -1,35 +1,23 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import NextAuth from 'next-auth';
+import { authConfig } from './auth.config';
+import { protectedRoutes } from './lib/routes';
 
-// Next.jsのミドルウェアとして機能させるための関数をエクスポート
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+const { auth } = NextAuth(authConfig);
 
-  // Define protected routes that require authentication
-  const protectedRoutes = ['/admin', '/profile', '/register-item'];
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
+export default auth((req) => {
+  const { nextUrl } = req;
+  const isLoggedIn = !!req.auth;
+  const isProtectedRoute = protectedRoutes.some(route =>
+    nextUrl.pathname === route || nextUrl.pathname.startsWith(`${route}/`)
+  );
 
-  if (isProtectedRoute) {
-    // Check if user is authenticated by looking for the session token cookie
-    // NextAuth uses different cookie names based on useSecureCookies
-    const sessionToken = request.cookies.get('authjs.session-token') ||
-      request.cookies.get('__Secure-authjs.session-token') ||
-      request.cookies.get('next-auth.session-token') ||
-      request.cookies.get('__Secure-next-auth.session-token');
-
-    if (!sessionToken) {
-      // Redirect unauthenticated users to login
-      const loginUrl = new URL('/auth/login', request.url);
-      loginUrl.searchParams.set('callbackUrl', pathname);
-      return NextResponse.redirect(loginUrl);
-    }
+  if (isProtectedRoute && !isLoggedIn) {
+    const callbackUrl = nextUrl.pathname + nextUrl.search;
+    const encodedCallbackUrl = encodeURIComponent(callbackUrl);
+    return Response.redirect(new URL(`/auth/login?callbackUrl=${encodedCallbackUrl}`, nextUrl));
   }
+});
 
-  // リクエストを次に渡す
-  return NextResponse.next();
-}
-
-// ミドルウェアを実行するパスを指定 (必要に応じて調整)
 export const config = {
   matcher: [
     /*
