@@ -32,7 +32,7 @@ export default function AgreementPage() {
             }
 
             // Force session update to reflect new termsAgreedAt before navigation
-            await update();
+            await update({ termsAgreedAt: new Date() });
             toast.success("利用規約に同意しました");
             router.push("/"); // Redirect to home after session update
         } catch (error) {

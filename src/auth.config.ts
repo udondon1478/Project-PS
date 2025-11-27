@@ -16,11 +16,14 @@ export const authConfig = {
     trustHost: true,
     session: { strategy: "jwt" },
     callbacks: {
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger, session }) {
             if (user) {
                 token.id = user.id!;
                 token.termsAgreedAt = user.termsAgreedAt;
                 token.isSafeSearchEnabled = user.isSafeSearchEnabled;
+            }
+            if (trigger === "update" && session?.termsAgreedAt) {
+                token.termsAgreedAt = session.termsAgreedAt;
             }
             return token;
         },
