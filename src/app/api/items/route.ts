@@ -1,4 +1,10 @@
 import { SchemaOrgProduct, SchemaOrgOffer, SchemaOrgAggregateOffer } from '@/types/product';
+import { prisma } from '@/lib/prisma';
+import { rateLimit } from '@/lib/rate-limit';
+import { NextResponse } from 'next/server';
+import { auth } from "@/auth";
+import * as cheerio from 'cheerio';
+
 function isSchemaOrgOffer(offers: unknown): offers is SchemaOrgOffer {
   return typeof offers === 'object' && offers !== null && '@type' in offers && offers['@type'] === 'Offer';
 }
@@ -6,11 +12,6 @@ function isSchemaOrgOffer(offers: unknown): offers is SchemaOrgOffer {
 function isSchemaOrgAggregateOffer(offers: unknown): offers is SchemaOrgAggregateOffer {
   return typeof offers === 'object' && offers !== null && '@type' in offers && offers['@type'] === 'AggregateOffer';
 }
-
-import { prisma } from '@/lib/prisma';
-import { NextResponse } from 'next/server';
-import { auth } from "@/auth";
-import * as cheerio from 'cheerio';
 
 export const runtime = 'nodejs';
 
@@ -26,6 +27,15 @@ export async function POST(request: Request) {
 
   if (!session || !session.user || !session.user.id) {
     return NextResponse.json({ message: "認証が必要です。" }, { status: 401 });
+  }
+
+  // レート制限チェック (1分間に5回まで)
+  const isRateLimited = await rateLimit(session.user.id);
+  if (isRateLimited) {
+    return NextResponse.json(
+      { message: "リクエスト回数が制限を超えました。しばらく待ってから再度お試しください。" },
+      { status: 429 }
+    );
   }
 
   try {
