@@ -3,7 +3,7 @@ import { rateLimit } from './rate-limit';
 
 describe('rateLimit', () => {
     beforeEach(() => {
-        // Clear cache implicitly by using new user IDs or mocking time
+        // テストごとに異なるユーザーIDを使用してキャッシュの衝突を回避
         vi.useFakeTimers();
     });
 
