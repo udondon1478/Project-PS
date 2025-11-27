@@ -4,8 +4,11 @@ import { LRUCache } from 'lru-cache';
 // キー: ユーザーID, 値: タイムスタンプの配列
 const rateLimitCache = new LRUCache<string, number[]>({
     max: 500, // 同時に追跡する最大ユーザー数
-    ttl: 60 * 1000, // 1分間 (TTLは各エントリの有効期限ですが、ここでは配列自体を更新するため、あくまで目安)
+    ttl: 60 * 1000, // デフォルト1分 (set時にwindowMsで上書きされる)
 });
+
+// 注意: このキャッシュはプロセスローカル（インスタンスごと）です。
+// マルチインスタンスデプロイメントでは、レート制限はプロセスごとに適用されます。
 
 /**
  * レート制限をチェックする関数
@@ -27,7 +30,7 @@ export async function rateLimit(userId: string, limit: number = 5, windowMs: num
 
     // 新しいリクエストのタイムスタンプを追加
     validTimestamps.push(now);
-    rateLimitCache.set(userId, validTimestamps);
+    rateLimitCache.set(userId, validTimestamps, { ttl: windowMs });
 
     return false; // 許可
 }
