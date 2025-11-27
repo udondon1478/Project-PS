@@ -20,6 +20,7 @@ export const authConfig = {
             if (user) {
                 token.id = user.id!;
                 token.termsAgreedAt = user.termsAgreedAt;
+                token.isSafeSearchEnabled = user.isSafeSearchEnabled;
             }
             return token;
         },
@@ -27,6 +28,7 @@ export const authConfig = {
             if (token && session.user) {
                 session.user.id = token.id as string;
                 session.user.termsAgreedAt = token.termsAgreedAt;
+                session.user.isSafeSearchEnabled = token.isSafeSearchEnabled;
             }
             return session;
         },

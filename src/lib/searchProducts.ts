@@ -28,7 +28,17 @@ export async function searchProducts(params: SearchParams): Promise<Product[]> {
     const userId = session?.user?.id;
 
     const tagNames = normalizeQueryParam(params.tags);
-    const negativeTagNames = normalizeQueryParam(params.negativeTags);
+    let negativeTagNames = normalizeQueryParam(params.negativeTags);
+
+    // セーフサーチが有効（デフォルト）または未ログインの場合、R-18タグを除外
+    const isSafeSearchEnabled = session?.user?.isSafeSearchEnabled ?? true;
+    if (isSafeSearchEnabled) {
+      if (!negativeTagNames) {
+        negativeTagNames = ['R-18'];
+      } else if (!negativeTagNames.includes('R-18')) {
+        negativeTagNames.push('R-18');
+      }
+    }
 
     // タグの衝突を検証
     if (tagNames && negativeTagNames) {
