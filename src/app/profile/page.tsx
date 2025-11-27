@@ -56,7 +56,7 @@ export default async function ProfilePage() {
           
           <div className="mt-8">
              <h2 className="text-xl font-semibold mb-4">表示設定</h2>
-             <SafeSearchToggle initialEnabled={user.isSafeSearchEnabled} />
+             <SafeSearchToggle initialEnabled={user.isSafeSearchEnabled ?? true} />
           </div>
         </div>
       </div>
