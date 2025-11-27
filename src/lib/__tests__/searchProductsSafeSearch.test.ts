@@ -29,6 +29,11 @@ const mockedPrismaFindMany = prisma.product.findMany as vi.Mock;
 const mockedAuth = auth as vi.MockedFunction<typeof auth>;
 
 describe('searchProducts - Safe Search', () => {
+  const getNotCondition = () => {
+    const findManyArgs = mockedPrismaFindMany.mock.calls[0][0];
+    return findManyArgs?.where?.AND?.find((c: WhereCondition) => c.NOT);
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockedPrismaFindMany.mockResolvedValue([]);
@@ -39,8 +44,7 @@ describe('searchProducts - Safe Search', () => {
     
     await searchProducts({});
 
-    const findManyArgs = mockedPrismaFindMany.mock.calls[0][0];
-    const notCondition = findManyArgs?.where?.AND?.find((c: WhereCondition) => c.NOT);
+    const notCondition = getNotCondition();
 
     expect(notCondition).toBeDefined();
     expect(notCondition.NOT.productTags.some.tag.name.in).toContain('R-18');
@@ -51,8 +55,7 @@ describe('searchProducts - Safe Search', () => {
     
     await searchProducts({});
 
-    const findManyArgs = mockedPrismaFindMany.mock.calls[0][0];
-    const notCondition = findManyArgs?.where?.AND?.find((c: WhereCondition) => c.NOT);
+    const notCondition = getNotCondition();
 
     // If there are no other negative tags, NOT condition might be undefined or empty
     if (notCondition) {
@@ -67,8 +70,7 @@ describe('searchProducts - Safe Search', () => {
     
     await searchProducts({ negativeTags: ['other-tag'] });
 
-    const findManyArgs = mockedPrismaFindMany.mock.calls[0][0];
-    const notCondition = findManyArgs?.where?.AND?.find((c: WhereCondition) => c.NOT);
+    const notCondition = getNotCondition();
 
     expect(notCondition).toBeDefined();
     expect(notCondition.NOT.productTags.some.tag.name.in).toContain('R-18');
@@ -80,8 +82,7 @@ describe('searchProducts - Safe Search', () => {
     
     await searchProducts({ negativeTags: ['R-18'] });
 
-    const findManyArgs = mockedPrismaFindMany.mock.calls[0][0];
-    const notCondition = findManyArgs?.where?.AND?.find((c: WhereCondition) => c.NOT);
+    const notCondition = getNotCondition();
 
     expect(notCondition).toBeDefined();
     // Should contain R-18, logic handles duplication implicitly by array check or Set, 
@@ -101,8 +102,7 @@ describe('searchProducts - Safe Search', () => {
     
     await searchProducts({});
 
-    const findManyArgs = mockedPrismaFindMany.mock.calls[0][0];
-    const notCondition = findManyArgs?.where?.AND?.find((c: WhereCondition) => c.NOT);
+    const notCondition = getNotCondition();
 
     expect(notCondition).toBeDefined();
     expect(notCondition.NOT.productTags.some.tag.name.in).toContain('R-18');
