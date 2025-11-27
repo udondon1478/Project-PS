@@ -392,7 +392,7 @@ export const useProductSearch = ({
     searchContainerRef,
     searchInputRef,
     suggestionsRef,
-    ageRatingTags,
+    ageRatingTags: isSafeSearchEnabled ? ageRatingTags.filter(tag => tag.name !== 'R-18') : ageRatingTags,
     categoryTags,
     featureTags,
     selectedAgeRatingTags,

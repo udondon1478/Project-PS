@@ -20,10 +20,15 @@ export const authConfig = {
             if (user) {
                 token.id = user.id!;
                 token.termsAgreedAt = user.termsAgreedAt;
-                token.isSafeSearchEnabled = user.isSafeSearchEnabled;
+                token.isSafeSearchEnabled = user.isSafeSearchEnabled ?? true;
             }
-            if (trigger === "update" && session?.termsAgreedAt) {
-                token.termsAgreedAt = session.termsAgreedAt;
+            if (trigger === "update") {
+                if (session?.termsAgreedAt) {
+                    token.termsAgreedAt = session.termsAgreedAt;
+                }
+                if (typeof session?.isSafeSearchEnabled === 'boolean') {
+                    token.isSafeSearchEnabled = session.isSafeSearchEnabled;
+                }
             }
             return token;
         },

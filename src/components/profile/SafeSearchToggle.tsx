@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { updateSafeSearchSetting } from "@/app/actions/user";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +31,7 @@ export default function SafeSearchToggle({ initialEnabled }: SafeSearchTogglePro
   const [isEnabled, setIsEnabled] = useState(initialEnabled);
   const [showConfirm, setShowConfirm] = useState(false);
   const router = useRouter();
+  const { update } = useSession();
 
   const handleToggle = async () => {
     if (isEnabled) {
@@ -51,6 +53,7 @@ export default function SafeSearchToggle({ initialEnabled }: SafeSearchTogglePro
       const result = await updateSafeSearchSetting(enabled);
       if (result.success) {
         setIsEnabled(enabled);
+        await update({ isSafeSearchEnabled: enabled });
         toast.success(enabled ? "セーフサーチを有効にしました" : "セーフサーチを無効にしました");
         router.refresh();
       } else {
