@@ -193,7 +193,7 @@ export const useProductSearch = ({
       }
     }, 300);
     return () => clearTimeout(timerId);
-  }, [searchQuery, selectedTags, selectedNegativeTags]);
+  }, [searchQuery, selectedTags, selectedNegativeTags, isSafeSearchEnabled]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
