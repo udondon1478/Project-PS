@@ -17,12 +17,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-
-// Fallback Switch if not available (I'll check if I can import it, if not I'll replace it)
-// Actually, I didn't see switch.tsx in the list. I'll use a custom toggle or Checkbox.
-// Let's use a Button for now to be safe and simple, or a Checkbox.
-// "Safe Search: [ON/OFF]"
-
 interface SafeSearchToggleProps {
   initialEnabled: boolean;
 }
@@ -30,10 +24,12 @@ interface SafeSearchToggleProps {
 export default function SafeSearchToggle({ initialEnabled }: SafeSearchToggleProps) {
   const [isEnabled, setIsEnabled] = useState(initialEnabled);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { update } = useSession();
 
   const handleToggle = async () => {
+    if (isLoading) return;
     if (isEnabled) {
       // Trying to turn OFF -> Show confirmation
       setShowConfirm(true);
@@ -44,11 +40,14 @@ export default function SafeSearchToggle({ initialEnabled }: SafeSearchTogglePro
   };
 
   const confirmDisable = async () => {
-    await updateSetting(false);
+    // Prevent double submission if already loading
+    if (isLoading) return;
     setShowConfirm(false);
+    await updateSetting(false);
   };
 
   const updateSetting = async (enabled: boolean) => {
+    setIsLoading(true);
     try {
       const result = await updateSafeSearchSetting(enabled);
       if (result.success) {
@@ -61,6 +60,8 @@ export default function SafeSearchToggle({ initialEnabled }: SafeSearchTogglePro
       }
     } catch (error) {
       toast.error("エラーが発生しました");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -76,9 +77,10 @@ export default function SafeSearchToggle({ initialEnabled }: SafeSearchTogglePro
         <Button
             variant={isEnabled ? "default" : "outline"}
             onClick={handleToggle}
+            disabled={isLoading}
             className={isEnabled ? "bg-green-600 hover:bg-green-700" : "text-muted-foreground"}
         >
-            {isEnabled ? "有効" : "無効"}
+            {isLoading ? "処理中..." : (isEnabled ? "有効" : "無効")}
         </Button>
       </div>
 
