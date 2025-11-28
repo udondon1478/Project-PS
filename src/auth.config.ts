@@ -20,7 +20,7 @@ export const authConfig = {
             if (user) {
                 token.id = user.id!;
                 token.termsAgreedAt = user.termsAgreedAt;
-                token.isSafeSearchEnabled = user.isSafeSearchEnabled ?? true;
+                token.isSafeSearchEnabled = user.isSafeSearchEnabled;
             }
             if (typeof token.isSafeSearchEnabled === "undefined") {
                 token.isSafeSearchEnabled = true;
