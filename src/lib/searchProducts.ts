@@ -19,9 +19,8 @@ export interface SearchParams {
   /** 並び替えの基準となるキー。 */
   sort?: string;
   /** 並び替えの順序 ('asc' または 'desc')。 */
-  /** 並び替えの順序 ('asc' または 'desc')。 */
   order?: string;
-  /** 年齢制限タグ（例: 'R-18'）。 */
+  /** 年齢制限タグ（例: 'R-18'）。文字列または文字列の配列を受け入れます。 */
   ageRatingTags?: string | string[];
 }
 
