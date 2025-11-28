@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { updateSafeSearchSetting } from "@/app/actions/user";
@@ -39,7 +40,7 @@ export default function SafeSearchToggle({ initialEnabled }: SafeSearchTogglePro
     }
   };
 
-  const confirmDisable = async (e: React.MouseEvent) => {
+  const confirmDisable = async (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     // Prevent double submission if already loading
     if (isLoading) return;
