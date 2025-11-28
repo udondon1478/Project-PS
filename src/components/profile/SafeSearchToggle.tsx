@@ -43,7 +43,7 @@ export default function SafeSearchToggle({ initialEnabled }: SafeSearchTogglePro
     e.preventDefault();
     // Prevent double submission if already loading
     if (isLoading) return;
-    // Don't close immediately
+    // Dialog will be closed in updateSetting() only on successful update (see line 60-62)
     await updateSetting(false);
   };
 
