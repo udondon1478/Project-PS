@@ -34,7 +34,7 @@ describe('searchProducts', () => {
     // 各テストの前にモックをリセット
     vi.clearAllMocks();
     // デフォルトの認証セッションをモック
-    mockedAuth.mockResolvedValue({ user: { id: 'test-user' } } as Session);
+    mockedAuth.mockResolvedValue({ user: { id: 'test-user', isSafeSearchEnabled: false } } as Session);
   });
 
   it('ネガティブタグを指定した場合、そのタグを持つ商品が除外されるべき', async () => {

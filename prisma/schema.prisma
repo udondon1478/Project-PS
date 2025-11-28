@@ -29,6 +29,7 @@ model User {
   image             String? // この行を追加します
   preferredLanguage String          @default("ja") // 'ja' or 'en'
   showImpliedTags   Boolean         @default(true)
+  isSafeSearchEnabled Boolean       @default(true) // セーフサーチ設定
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   role              Role            @default(USER) // ユーザーの役割を追加

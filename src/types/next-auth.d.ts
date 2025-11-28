@@ -10,12 +10,14 @@ declare module "next-auth" {
             id: string;
             role?: Role;
             termsAgreedAt: Date | null;
+            isSafeSearchEnabled: boolean;
         } & DefaultSession["user"];
     }
 
     interface User {
         role?: Role;
         termsAgreedAt: Date | null;
+        isSafeSearchEnabled: boolean;
     }
 }
 
@@ -26,5 +28,6 @@ declare module "next-auth/jwt" {
     interface JWT {
         id: string;
         termsAgreedAt: Date | null;
+        isSafeSearchEnabled: boolean;
     }
 }

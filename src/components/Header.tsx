@@ -199,7 +199,7 @@ export default function Header() {
       {/* Product Search Component - Placed below the top navigation bar */}
       {/* The ProductSearch component itself handles padding and background */}
       <Suspense fallback={<div>Loading search bar...</div>}>
-        <ProductSearch />
+        <ProductSearch isSafeSearchEnabled={session?.user?.isSafeSearchEnabled ?? true} />
       </Suspense>
 
     </header>

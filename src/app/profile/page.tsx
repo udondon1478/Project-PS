@@ -5,6 +5,7 @@ import ProfileForm from '@/components/profile/ProfileForm';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import SafeSearchToggle from '@/components/profile/SafeSearchToggle';
 
 export default async function ProfilePage() {
   const session = await auth();
@@ -52,6 +53,11 @@ export default async function ProfilePage() {
         <div className="md:col-span-2">
            <h2 className="text-xl font-semibold mb-4">アカウント詳細</h2>
           <ProfileForm user={user} />
+          
+          <div className="mt-8">
+             <h2 className="text-xl font-semibold mb-4">表示設定</h2>
+             <SafeSearchToggle initialEnabled={user.isSafeSearchEnabled ?? true} />
+          </div>
         </div>
       </div>
     </div>

@@ -10,6 +10,7 @@ export const useProductSearch = ({
   onSearchQueryChange,
   onSelectedTagsChange,
   onSelectedNegativeTagsChange,
+  isSafeSearchEnabled = true, // Default to true
 }: {
   initialSearchQuery?: string;
   initialSelectedTags?: string[];
@@ -17,6 +18,7 @@ export const useProductSearch = ({
   onSearchQueryChange?: (query: string) => void;
   onSelectedTagsChange?: (tags: string[]) => void;
   onSelectedNegativeTagsChange?: (tags: string[]) => void;
+  isSafeSearchEnabled?: boolean;
 } = {}) => {
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [selectedTags, setSelectedTags] = useState<string[]>(initialSelectedTags);
@@ -176,8 +178,14 @@ export const useProductSearch = ({
         const filteredSuggestions = data
           .map((tag: { name: string }) => tag.name)
           .filter((tagName: string) => !selectedTags.includes(tagName) && !selectedNegativeTags.includes(tagName));
-        setTagSuggestions(filteredSuggestions);
-        setIsSuggestionsVisible(filteredSuggestions.length > 0);
+        
+        // セーフサーチ有効時はR-18をサジェストから除外
+        const finalSuggestions = isSafeSearchEnabled 
+          ? filteredSuggestions.filter((tag: string) => tag !== 'R-18')
+          : filteredSuggestions;
+
+        setTagSuggestions(finalSuggestions);
+        setIsSuggestionsVisible(finalSuggestions.length > 0);
       } catch (error) {
         console.error("Error fetching tag suggestions:", error);
         setTagSuggestions([]);
@@ -185,7 +193,7 @@ export const useProductSearch = ({
       }
     }, 300);
     return () => clearTimeout(timerId);
-  }, [searchQuery, selectedTags, selectedNegativeTags]);
+  }, [searchQuery, selectedTags, selectedNegativeTags, isSafeSearchEnabled]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -384,7 +392,7 @@ export const useProductSearch = ({
     searchContainerRef,
     searchInputRef,
     suggestionsRef,
-    ageRatingTags,
+    ageRatingTags: isSafeSearchEnabled ? ageRatingTags.filter(tag => tag.name !== 'R-18') : ageRatingTags,
     categoryTags,
     featureTags,
     selectedAgeRatingTags,

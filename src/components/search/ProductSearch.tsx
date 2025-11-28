@@ -14,6 +14,7 @@ export default function ProductSearch({
   onSearchQueryChange,
   onSelectedTagsChange,
   onSelectedNegativeTagsChange,
+  isSafeSearchEnabled = true, // Default to true
 }: {
   initialSearchQuery?: string;
   initialSelectedTags?: string[];
@@ -21,6 +22,7 @@ export default function ProductSearch({
   onSearchQueryChange?: (query: string) => void;
   onSelectedTagsChange?: (tags: string[]) => void;
   onSelectedNegativeTagsChange?: (tags: string[]) => void;
+  isSafeSearchEnabled?: boolean;
 }) {
   const {
     searchQuery,
@@ -66,6 +68,7 @@ export default function ProductSearch({
     onSearchQueryChange,
     onSelectedTagsChange,
     onSelectedNegativeTagsChange,
+    isSafeSearchEnabled,
   });
 
   return (

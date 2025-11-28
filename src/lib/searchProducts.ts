@@ -20,6 +20,8 @@ export interface SearchParams {
   sort?: string;
   /** 並び替えの順序 ('asc' または 'desc')。 */
   order?: string;
+  /** 年齢制限タグ（例: 'R-18'）。文字列または文字列の配列を受け入れます。 */
+  ageRatingTags?: string | string[];
 }
 
 export async function searchProducts(params: SearchParams): Promise<Product[]> {
@@ -27,15 +29,34 @@ export async function searchProducts(params: SearchParams): Promise<Product[]> {
     const session = await auth();
     const userId = session?.user?.id;
 
-    const tagNames = normalizeQueryParam(params.tags);
-    const negativeTagNames = normalizeQueryParam(params.negativeTags);
+    const initialTagNames = normalizeQueryParam(params.tags) || [];
+    const ageRatingTagNames = normalizeQueryParam(params.ageRatingTags) || [];
+    const tagNames = [...new Set([...initialTagNames, ...ageRatingTagNames])];
+    
+    let negativeTagNames = normalizeQueryParam(params.negativeTags);
 
-    // タグの衝突を検証
+    // タグの衝突を検証 (ユーザーの元の意図に基づいてチェック)
     if (tagNames && negativeTagNames) {
       const negativeSet = new Set(negativeTagNames);
       const intersection = tagNames.filter(tag => negativeSet.has(tag));
       if (intersection.length > 0) {
         throw new Error(`検索条件エラー: タグ '${intersection.join(', ')}' は検索条件と除外条件の両方に含まれています。`);
+      }
+    }
+
+    // セーフサーチが有効（デフォルト）または未ログインの場合の処理
+    const isSafeSearchEnabled = session?.user?.isSafeSearchEnabled ?? true;
+    if (isSafeSearchEnabled) {
+      // ユーザーが明示的にR-18を検索しようとしているかチェック
+      if (tagNames && tagNames.includes('R-18')) {
+        throw new Error('セーフサーチが有効なため、R-18コンテンツは検索できません。');
+      }
+
+      // R-18を除外条件に追加 (既存の配列を変更せず、新しい配列を作成)
+      if (!negativeTagNames) {
+        negativeTagNames = ['R-18'];
+      } else if (!negativeTagNames.includes('R-18')) {
+        negativeTagNames = [...negativeTagNames, 'R-18'];
       }
     }
 
@@ -152,7 +173,10 @@ export async function searchProducts(params: SearchParams): Promise<Product[]> {
 
   } catch (error) {
     // カスタムバリデーションエラーはそのままスローする
-    if (error instanceof Error && error.message.startsWith('検索条件エラー:')) {
+    if (error instanceof Error && (
+      error.message.startsWith('検索条件エラー:') ||
+      error.message.startsWith('セーフサーチが有効なため')
+    )) {
       throw error;
     }
     console.error('商品検索エラー:', error);

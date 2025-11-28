@@ -16,10 +16,22 @@ export const authConfig = {
     trustHost: true,
     session: { strategy: "jwt" },
     callbacks: {
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger, session }) {
             if (user) {
                 token.id = user.id!;
                 token.termsAgreedAt = user.termsAgreedAt;
+                token.isSafeSearchEnabled = user.isSafeSearchEnabled;
+            }
+            if (typeof token.isSafeSearchEnabled === "undefined") {
+                token.isSafeSearchEnabled = true;
+            }
+            if (trigger === "update") {
+                if (session?.termsAgreedAt) {
+                    token.termsAgreedAt = session.termsAgreedAt ?? null;
+                }
+                if (typeof session?.isSafeSearchEnabled === 'boolean') {
+                    token.isSafeSearchEnabled = session.isSafeSearchEnabled;
+                }
             }
             return token;
         },
@@ -27,6 +39,7 @@ export const authConfig = {
             if (token && session.user) {
                 session.user.id = token.id as string;
                 session.user.termsAgreedAt = token.termsAgreedAt;
+                session.user.isSafeSearchEnabled = token.isSafeSearchEnabled ?? true;
             }
             return session;
         },
