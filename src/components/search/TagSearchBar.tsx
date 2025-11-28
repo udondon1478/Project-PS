@@ -4,6 +4,8 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Search, X } from 'lucide-react';
 
+import { useTypewriter } from '@/hooks/useTypewriter';
+
 interface TagSearchBarProps {
   searchQuery: string;
   selectedTags: string[];
@@ -40,6 +42,18 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
   setIsSuggestionsVisible,
 }) => {
   const [activeIndex, setActiveIndex] = React.useState<number>(-1);
+
+  const placeholderText = useTypewriter({
+    texts: [
+      "タグで検索 (-でマイナス検索)",
+      "アバター",
+      "アバター -男性",
+      "衣装 Quest対応"
+    ],
+    typingSpeed: 100,
+    deletingSpeed: 50,
+    pauseDuration: 2000,
+  });
 
   // Reset active index when suggestions change or visibility changes
   React.useEffect(() => {
@@ -104,7 +118,7 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
         <Input
           ref={searchInputRef}
           type="text"
-          placeholder="タグで検索 (-でマイナス検索)"
+          placeholder={placeholderText}
           value={searchQuery}
           onChange={handleInputChange}
           onKeyDown={onKeyDown}
