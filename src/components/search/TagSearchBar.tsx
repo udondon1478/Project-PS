@@ -96,7 +96,7 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
   }, [activeIndex, suggestionsRef]);
 
   return (
-    <div className="relative flex-grow" ref={searchContainerRef}>
+    <div className="relative flex-grow" ref={searchContainerRef} id="tour-search-bar">
       <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 p-1 flex-wrap gap-1 min-h-[40px]">
         <Search className="h-5 w-5 text-gray-400 dark:text-gray-300 mx-1 flex-shrink-0" />
         {selectedTags.map(tag => (
