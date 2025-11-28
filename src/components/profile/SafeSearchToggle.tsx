@@ -85,6 +85,7 @@ export default function SafeSearchToggle({ initialEnabled }: SafeSearchTogglePro
             variant={isEnabled ? "default" : "outline"}
             onClick={handleToggle}
             disabled={isLoading}
+            aria-pressed={isEnabled}
             className={isEnabled ? "bg-green-600 hover:bg-green-700" : "text-muted-foreground"}
         >
             {isLoading ? "処理中..." : (isEnabled ? "有効" : "無効")}
@@ -102,7 +103,7 @@ export default function SafeSearchToggle({ initialEnabled }: SafeSearchTogglePro
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>いいえ</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDisable} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogAction onClick={confirmDisable} disabled={isLoading} className="bg-red-600 hover:bg-red-700">
               はい、18歳以上です
             </AlertDialogAction>
           </AlertDialogFooter>
