@@ -64,6 +64,7 @@ export default function SafeSearchToggle({ initialEnabled }: SafeSearchTogglePro
         toast.error("設定の更新に失敗しました");
       }
     } catch (error) {
+      console.error("セーフサーチ設定の更新に失敗しました:", error);
       toast.error("エラーが発生しました");
     } finally {
       setIsLoading(false);
