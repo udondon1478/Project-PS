@@ -1,5 +1,5 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { searchProducts, SearchParams } from '../searchProducts';
+import { searchProducts } from '../searchProducts';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { Session } from 'next-auth';
@@ -40,7 +40,7 @@ describe('searchProducts - Safe Search', () => {
   });
 
   it('should add R-18 to negativeTags when safe search is enabled (default)', async () => {
-    mockedAuth.mockResolvedValue({ user: { id: 'test-user', isSafeSearchEnabled: true } } as any);
+    mockedAuth.mockResolvedValue({ user: { id: 'test-user', isSafeSearchEnabled: true } } as Session);
     
     await searchProducts({});
 
@@ -51,7 +51,7 @@ describe('searchProducts - Safe Search', () => {
   });
 
   it('should NOT add R-18 to negativeTags when safe search is disabled', async () => {
-    mockedAuth.mockResolvedValue({ user: { id: 'test-user', isSafeSearchEnabled: false } } as any);
+    mockedAuth.mockResolvedValue({ user: { id: 'test-user', isSafeSearchEnabled: false } } as Session);
     
     await searchProducts({});
 
@@ -66,7 +66,7 @@ describe('searchProducts - Safe Search', () => {
   });
 
   it('should append R-18 to existing negativeTags when safe search is enabled', async () => {
-    mockedAuth.mockResolvedValue({ user: { id: 'test-user', isSafeSearchEnabled: true } } as any);
+    mockedAuth.mockResolvedValue({ user: { id: 'test-user', isSafeSearchEnabled: true } } as Session);
     
     await searchProducts({ negativeTags: ['other-tag'] });
 
@@ -78,7 +78,7 @@ describe('searchProducts - Safe Search', () => {
   });
 
   it('should not duplicate R-18 if already present when safe search is enabled', async () => {
-    mockedAuth.mockResolvedValue({ user: { id: 'test-user', isSafeSearchEnabled: true } } as any);
+    mockedAuth.mockResolvedValue({ user: { id: 'test-user', isSafeSearchEnabled: true } } as Session);
     
     await searchProducts({ negativeTags: ['R-18'] });
 
@@ -109,7 +109,7 @@ describe('searchProducts - Safe Search', () => {
   });
 
   it('should throw a specific error when searching for R-18 with safe search enabled', async () => {
-    mockedAuth.mockResolvedValue({ user: { id: 'test-user', isSafeSearchEnabled: true } } as any);
+    mockedAuth.mockResolvedValue({ user: { id: 'test-user', isSafeSearchEnabled: true } } as Session);
     
     await expect(searchProducts({ tags: ['R-18'] }))
       .rejects
@@ -117,7 +117,7 @@ describe('searchProducts - Safe Search', () => {
   });
 
   it('should throw a specific error when searching for R-18 via ageRatingTags with safe search enabled', async () => {
-    mockedAuth.mockResolvedValue({ user: { id: 'test-user', isSafeSearchEnabled: true } } as any);
+    mockedAuth.mockResolvedValue({ user: { id: 'test-user', isSafeSearchEnabled: true } } as Session);
     
     await expect(searchProducts({ ageRatingTags: ['R-18'] }))
       .rejects
