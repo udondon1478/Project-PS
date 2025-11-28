@@ -37,7 +37,14 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
     products = await searchProducts(resolvedSearchParams);
   } catch (err: unknown) {
     console.error("Search page failed to fetch products:", err);
-    error = "エラーが発生しました。しばらくしてから再度お試しください。";
+    if (err instanceof Error && (
+      err.message.startsWith('セーフサーチが有効なため') ||
+      err.message.startsWith('検索条件エラー')
+    )) {
+      error = err.message;
+    } else {
+      error = "エラーが発生しました。しばらくしてから再度お試しください。";
+    }
   }
 
   const q = resolvedSearchParams.q || "";

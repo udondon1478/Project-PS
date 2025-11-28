@@ -107,4 +107,20 @@ describe('searchProducts - Safe Search', () => {
     expect(notCondition).toBeDefined();
     expect(notCondition.NOT.productTags.some.tag.name.in).toContain('R-18');
   });
+
+  it('should throw a specific error when searching for R-18 with safe search enabled', async () => {
+    mockedAuth.mockResolvedValue({ user: { id: 'test-user', isSafeSearchEnabled: true } } as any);
+    
+    await expect(searchProducts({ tags: ['R-18'] }))
+      .rejects
+      .toThrow('セーフサーチが有効なため、R-18コンテンツは検索できません。');
+  });
+
+  it('should throw a specific error when searching for R-18 via ageRatingTags with safe search enabled', async () => {
+    mockedAuth.mockResolvedValue({ user: { id: 'test-user', isSafeSearchEnabled: true } } as any);
+    
+    await expect(searchProducts({ ageRatingTags: ['R-18'] }))
+      .rejects
+      .toThrow('セーフサーチが有効なため、R-18コンテンツは検索できません。');
+  });
 });
