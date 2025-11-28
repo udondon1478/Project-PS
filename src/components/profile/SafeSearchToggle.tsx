@@ -44,7 +44,6 @@ export default function SafeSearchToggle({ initialEnabled }: SafeSearchTogglePro
     // Prevent double submission if already loading
     if (isLoading) return;
     // Don't close immediately
-    // setShowConfirm(false);
     await updateSetting(false);
   };
 
