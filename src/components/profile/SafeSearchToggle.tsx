@@ -39,10 +39,12 @@ export default function SafeSearchToggle({ initialEnabled }: SafeSearchTogglePro
     }
   };
 
-  const confirmDisable = async () => {
+  const confirmDisable = async (e: React.MouseEvent) => {
+    e.preventDefault();
     // Prevent double submission if already loading
     if (isLoading) return;
-    setShowConfirm(false);
+    // Don't close immediately
+    // setShowConfirm(false);
     await updateSetting(false);
   };
 
@@ -55,6 +57,10 @@ export default function SafeSearchToggle({ initialEnabled }: SafeSearchTogglePro
         await update({ isSafeSearchEnabled: enabled });
         toast.success(enabled ? "セーフサーチを有効にしました" : "セーフサーチを無効にしました");
         router.refresh();
+        // Close dialog only on success if we were disabling
+        if (!enabled) {
+          setShowConfirm(false);
+        }
       } else {
         toast.error("設定の更新に失敗しました");
       }
