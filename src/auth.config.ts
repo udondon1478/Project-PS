@@ -27,7 +27,7 @@ export const authConfig = {
             }
             if (trigger === "update") {
                 if (session?.termsAgreedAt) {
-                    token.termsAgreedAt = session.termsAgreedAt;
+                    token.termsAgreedAt = session.termsAgreedAt ?? null;
                 }
                 if (typeof session?.isSafeSearchEnabled === 'boolean') {
                     token.isSafeSearchEnabled = session.isSafeSearchEnabled;
