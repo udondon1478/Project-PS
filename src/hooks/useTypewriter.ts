@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface UseTypewriterProps {
   texts: string[];
@@ -17,8 +17,14 @@ export const useTypewriter = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [loopNum, setLoopNum] = useState(0);
   const [typingSpeedState, setTypingSpeedState] = useState(typingSpeed);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    // Clear any existing timer when dependencies change or on cleanup
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+
     if (texts.length === 0) {
       if (displayText !== '') {
         setDisplayText('');
@@ -28,7 +34,23 @@ export const useTypewriter = ({
 
     const i = loopNum % texts.length;
     const fullText = texts[i];
+
     const handleTyping = () => {
+      if (!isDeleting && displayText === fullText) {
+        timerRef.current = setTimeout(() => {
+          setIsDeleting(true);
+          setTypingSpeedState(deletingSpeed);
+        }, pauseDuration);
+        return;
+      }
+
+      if (isDeleting && displayText === '') {
+        setIsDeleting(false);
+        setLoopNum(loopNum + 1);
+        setTypingSpeedState(typingSpeed);
+        return;
+      }
+
       setDisplayText(
         isDeleting
           ? fullText.substring(0, displayText.length - 1)
@@ -36,18 +58,15 @@ export const useTypewriter = ({
       );
 
       setTypingSpeedState(isDeleting ? deletingSpeed : typingSpeed);
-
-      if (!isDeleting && displayText === fullText) {
-        setTimeout(() => setIsDeleting(true), pauseDuration);
-      } else if (isDeleting && displayText === '') {
-        setIsDeleting(false);
-        setLoopNum(loopNum + 1);
-      }
     };
 
-    const timer = setTimeout(handleTyping, typingSpeedState);
+    timerRef.current = setTimeout(handleTyping, typingSpeedState);
 
-    return () => clearTimeout(timer);
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
   }, [displayText, isDeleting, loopNum, texts, typingSpeed, deletingSpeed, pauseDuration, typingSpeedState]);
 
   return displayText;
