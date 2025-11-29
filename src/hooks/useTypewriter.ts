@@ -19,9 +19,15 @@ export const useTypewriter = ({
   const [typingSpeedState, setTypingSpeedState] = useState(typingSpeed);
 
   useEffect(() => {
+    if (texts.length === 0) {
+      if (displayText !== '') {
+        setDisplayText('');
+      }
+      return;
+    }
+
     const i = loopNum % texts.length;
     const fullText = texts[i];
-
     const handleTyping = () => {
       setDisplayText(
         isDeleting
