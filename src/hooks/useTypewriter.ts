@@ -94,7 +94,7 @@ export const useTypewriter = ({
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, []); // Empty dependency array!
+  }, [texts.length === 0]);
 
   // We need a ref to track the current text synchronously
   const currentTextRef = useRef('');

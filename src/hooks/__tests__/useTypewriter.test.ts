@@ -136,4 +136,54 @@ describe('useTypewriter', () => {
     });
     expect(result.current).toBe('');
   });
+
+  it('should start typing when texts update from empty to non-empty', () => {
+    const { result, rerender } = renderHook(
+      (props) => useTypewriter(props),
+      {
+        initialProps: {
+          texts: [] as string[],
+          typingSpeed: 100,
+          deletingSpeed: 50,
+          pauseDuration: 1000,
+        },
+      }
+    );
+
+    expect(result.current).toBe('');
+
+    // Update to non-empty
+    rerender({
+      texts: ['A', 'B'],
+      typingSpeed: 100,
+      deletingSpeed: 50,
+      pauseDuration: 1000,
+    });
+
+    // Advance time to type 'A'
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    expect(result.current).toBe('A');
+
+    // Pause (1000ms) -> Delete 'A' (which happens immediately after pause in this logic? No)
+    // Let's trace:
+    // T=100: 'A' typed. Next delay = 1000.
+    // T=1100: runLoop runs. isDeleting=true. nextText=''. 
+    //         Since nextText is empty, it sets isDeleting=false, loopNum++, nextDelay=100.
+    //         setDisplayText('') happens here.
+    
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(result.current).toBe('');
+
+    // T=1200: runLoop runs. isDeleting=false. fullText='B'. nextText='B'.
+    //         setDisplayText('B').
+    
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    expect(result.current).toBe('B');
+  });
 });
