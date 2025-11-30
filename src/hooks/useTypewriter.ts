@@ -58,7 +58,7 @@ export const useTypewriter = ({
       
       let nextText = currentText;
       let nextDelay = typingSpeedRef.current;
-      let shouldUpdateState = true;
+
 
       if (isDeleting) {
         nextText = currentText.substring(0, currentText.length - 1);
@@ -79,10 +79,8 @@ export const useTypewriter = ({
         }
       }
 
-      if (shouldUpdateState) {
-        currentTextRef.current = nextText;
-        setDisplayText(nextText);
-      }
+      currentTextRef.current = nextText;
+      setDisplayText(nextText);
       
       timerRef.current = setTimeout(runLoop, nextDelay);
     };
