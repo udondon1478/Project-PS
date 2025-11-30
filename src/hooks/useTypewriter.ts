@@ -46,7 +46,7 @@ export const useTypewriter = ({
 
       if (isDeleting && displayText === '') {
         setIsDeleting(false);
-        setLoopNum(loopNum + 1);
+        setLoopNum((prev) => prev + 1);
         setTypingSpeedState(typingSpeed);
         return;
       }
