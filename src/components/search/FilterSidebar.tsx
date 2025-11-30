@@ -78,7 +78,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   return (
     <Sheet open={isFilterSidebarOpen} onOpenChange={setIsFilterSidebarOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="icon" className="h-9 w-9 flex-shrink-0" aria-label="フィルターを開く">
+        <Button variant="outline" size="icon" className="h-9 w-9 flex-shrink-0" aria-label="フィルターを開く" id="tour-filter-button">
           <Filter className="h-4 w-4" />
         </Button>
       </SheetTrigger>

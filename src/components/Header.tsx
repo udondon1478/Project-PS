@@ -85,7 +85,7 @@ export default function Header() {
           {status === "authenticated" ? (
             <>
               <Link href="/register-item">
-                <Button variant="ghost" size="sm">商品登録</Button>
+                <Button variant="ghost" size="sm" id="tour-register-item-mobile">商品登録</Button>
               </Link>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -112,7 +112,7 @@ export default function Header() {
             <>
               <Dialog open={isRegisterModalOpen} onOpenChange={setIsRegisterModalOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" size="sm">商品登録</Button>
+                  <Button variant="ghost" size="sm" id="tour-register-item-mobile">商品登録</Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
@@ -148,7 +148,7 @@ export default function Header() {
           {status === "authenticated" ? (
             <React.Fragment>
               <Link href="/register-item">
-                <Button variant="ghost" size="sm">商品登録</Button>
+                <Button variant="ghost" size="sm" id="tour-register-item-desktop">商品登録</Button>
               </Link>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild data-testid="profile-trigger">
@@ -174,7 +174,7 @@ export default function Header() {
             <React.Fragment>
               <Dialog open={isRegisterModalOpen} onOpenChange={setIsRegisterModalOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" size="sm">商品登録</Button>
+                  <Button variant="ghost" size="sm" id="tour-register-item-desktop">商品登録</Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
