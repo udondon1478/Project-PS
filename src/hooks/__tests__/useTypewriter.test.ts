@@ -119,4 +119,21 @@ describe('useTypewriter', () => {
       vi.advanceTimersByTime(1000);
     });
   });
+
+  it('should handle empty texts array safely', () => {
+    const { result } = renderHook(() =>
+      useTypewriter({
+        texts: [],
+        typingSpeed: 100,
+      })
+    );
+
+    expect(result.current).toBe('');
+
+    // Advance time to ensure no errors or weird updates
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(result.current).toBe('');
+  });
 });

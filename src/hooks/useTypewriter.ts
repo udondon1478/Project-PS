@@ -42,6 +42,10 @@ export const useTypewriter = ({
     }
 
     const tick = () => {
+      if (textsRef.current.length === 0) {
+        setDisplayText('');
+        return;
+      }
       const i = loopNumRef.current % textsRef.current.length;
       const fullText = textsRef.current[i];
       const currentText = displayText; // This will be stale in closure, but we don't use it directly for logic if we track length or use functional update?
@@ -141,6 +145,11 @@ export const useTypewriter = ({
     // So we should maintain a `currentTextRef` that mirrors `displayText`.
     
     const runLoop = () => {
+      if (textsRef.current.length === 0) {
+        setDisplayText('');
+        currentTextRef.current = '';
+        return;
+      }
       const i = loopNumRef.current % textsRef.current.length;
       const fullText = textsRef.current[i];
       const isDeleting = isDeletingRef.current;
