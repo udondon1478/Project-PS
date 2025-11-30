@@ -81,7 +81,7 @@ describe('useTypewriter', () => {
     expect(result.current).toBe('');
   });
 
-  it.skip('should loop to the next text', () => {
+  it('should loop to the next text', () => {
     const { result } = renderHook(() =>
       useTypewriter({
         texts: ['A', 'B'],
@@ -116,8 +116,14 @@ describe('useTypewriter', () => {
     // This triggers re-render. Effect runs again.
     // !isDeleting, text='', fullText='B'.
     // Should switch to 'B' and start typing
+    
+    // We split the advance into two steps to ensure the effect has time to run and schedule the new timer
     act(() => {
-      vi.advanceTimersByTime(200); // 100ms + 100ms buffer
+      vi.advanceTimersByTime(50); // Trigger switch
+    });
+    
+    act(() => {
+      vi.advanceTimersByTime(200); // Trigger next char
     });
     expect(result.current).toBe('B');
   });
