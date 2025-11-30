@@ -19,7 +19,7 @@ export const useTypewriter = ({
   // or is used inside the effect closure
   const isDeletingRef = useRef(false);
   const loopNumRef = useRef(0);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // We need a ref to track the current text synchronously
   const currentTextRef = useRef('');
   
