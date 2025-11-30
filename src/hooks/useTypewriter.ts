@@ -16,7 +16,6 @@ export const useTypewriter = ({
   const [displayText, setDisplayText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [loopNum, setLoopNum] = useState(0);
-  const [typingSpeedState, setTypingSpeedState] = useState(typingSpeed);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -39,7 +38,6 @@ export const useTypewriter = ({
       if (!isDeleting && displayText === fullText) {
         timerRef.current = setTimeout(() => {
           setIsDeleting(true);
-          setTypingSpeedState(deletingSpeed);
         }, pauseDuration);
         return;
       }
@@ -47,7 +45,6 @@ export const useTypewriter = ({
       if (isDeleting && displayText === '') {
         setIsDeleting(false);
         setLoopNum((prev) => prev + 1);
-        setTypingSpeedState(typingSpeed);
         return;
       }
 
@@ -57,17 +54,20 @@ export const useTypewriter = ({
           : fullText.substring(0, displayText.length + 1)
       );
 
-      setTypingSpeedState(isDeleting ? deletingSpeed : typingSpeed);
+      const delay = isDeleting ? deletingSpeed : typingSpeed;
+      timerRef.current = setTimeout(handleTyping, delay);
     };
 
-    timerRef.current = setTimeout(handleTyping, typingSpeedState);
+    // Initial start
+    const initialDelay = isDeleting ? deletingSpeed : typingSpeed;
+    timerRef.current = setTimeout(handleTyping, initialDelay);
 
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
       }
     };
-  }, [displayText, isDeleting, loopNum, texts, typingSpeed, deletingSpeed, pauseDuration, typingSpeedState]);
+  }, [displayText, isDeleting, loopNum, texts, typingSpeed, deletingSpeed, pauseDuration]);
 
   return displayText;
 };
