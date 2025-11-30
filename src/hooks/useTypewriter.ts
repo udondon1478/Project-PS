@@ -20,6 +20,8 @@ export const useTypewriter = ({
   const isDeletingRef = useRef(false);
   const loopNumRef = useRef(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  // We need a ref to track the current text synchronously
+  const currentTextRef = useRef('');
   
   // Keep latest props in refs to access them inside the effect without adding dependencies
   const textsRef = useRef(texts);
@@ -94,10 +96,9 @@ export const useTypewriter = ({
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [texts.length === 0]);
+  }, [texts.length]);
 
-  // We need a ref to track the current text synchronously
-  const currentTextRef = useRef('');
+
 
   return displayText;
 };
