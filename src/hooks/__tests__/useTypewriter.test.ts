@@ -58,19 +58,8 @@ describe('useTypewriter', () => {
     expect(result.current).toBe('Hi');
 
     // Advance pause duration (1000ms)
-    // We need to wait for the typing speed delay (100ms) for the check to happen, 
-    // plus the pause duration (1000ms)
     act(() => {
-      vi.advanceTimersByTime(100); // Trigger check
-    });
-    act(() => {
-      vi.advanceTimersByTime(1000); // Trigger pause completion
-    });
-    
-    // Now deleting starts. Deleting speed is 50ms.
-    // 'Hi' -> 'H'
-    act(() => {
-      vi.advanceTimersByTime(50);
+      vi.advanceTimersByTime(1000); // Trigger pause completion AND first deletion
     });
     expect(result.current).toBe('H');
 
@@ -97,17 +86,9 @@ describe('useTypewriter', () => {
     });
     expect(result.current).toBe('A');
 
-    // Pause
+    // Pause and delete 'A'
     act(() => {
-      vi.advanceTimersByTime(100); // Trigger check
-    });
-    act(() => {
-      vi.advanceTimersByTime(1000); // Trigger pause completion
-    });
-
-    // Delete 'A'
-    act(() => {
-      vi.advanceTimersByTime(50);
+      vi.advanceTimersByTime(1000); // Trigger pause completion AND deletion
     });
     expect(result.current).toBe('');
 
