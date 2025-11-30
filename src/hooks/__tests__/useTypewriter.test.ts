@@ -92,13 +92,8 @@ describe('useTypewriter', () => {
     });
     expect(result.current).toBe('');
 
-    // Should switch to 'B' and start typing
-    // The effect sees isDeleting=true and text='', sets isDeleting=false, loopNum+1.
-    // This triggers re-render. Effect runs again.
-    // !isDeleting, text='', fullText='B'.
-    // Should switch to 'B' and start typing
-    
-    // We split the advance into two steps to ensure the effect has time to run and schedule the new timer
+    // Advance timers to switch to 'B' and type next char.
+    // Split advance allows the effect to run and schedule a new timer.
     act(() => {
       vi.advanceTimersByTime(50); // Trigger switch
     });
