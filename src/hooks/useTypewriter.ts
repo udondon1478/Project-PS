@@ -36,15 +36,6 @@ export const useTypewriter = ({
   }, [texts, typingSpeed, deletingSpeed, pauseDuration]);
 
   useEffect(() => {
-    // Cleanup function to clear timer
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
     if (texts.length === 0) {
       setDisplayText('');
       return;
