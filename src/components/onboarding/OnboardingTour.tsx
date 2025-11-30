@@ -7,6 +7,7 @@ import "driver.js/dist/driver.css";
 export default function OnboardingTour() {
   const [isMounted, setIsMounted] = useState(false);
   const driverRef = useRef<ReturnType<typeof driver> | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
@@ -89,7 +90,7 @@ export default function OnboardingTour() {
       } else {
         attempts++;
         if (attempts < maxAttempts) {
-          setTimeout(checkElements, interval);
+          timeoutRef.current = setTimeout(checkElements, interval);
         }
       }
     };
@@ -99,6 +100,9 @@ export default function OnboardingTour() {
     return () => {
         if (driverRef.current) {
             driverRef.current.destroy();
+        }
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
         }
     };
   }, [isMounted]);
