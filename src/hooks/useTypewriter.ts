@@ -87,8 +87,13 @@ export const useTypewriter = ({
       timerRef.current = setTimeout(runLoop, nextDelay);
     };
 
+    // Clear any existing timer before starting a new one
+    if (timerRef.current) clearTimeout(timerRef.current);
+
     // Initialize currentTextRef
     currentTextRef.current = '';
+    isDeletingRef.current = false;
+    loopNumRef.current = 0;
     
     // Start immediately
     timerRef.current = setTimeout(runLoop, typingSpeedRef.current);
@@ -96,7 +101,7 @@ export const useTypewriter = ({
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [texts.length]);
+  }, [JSON.stringify(texts)]);
 
 
 
