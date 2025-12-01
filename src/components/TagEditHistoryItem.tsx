@@ -127,7 +127,7 @@ const TagEditHistoryItem: React.FC<TagEditHistoryItemProps> = ({ history, tagMap
     <div className="border dark:border-gray-700 p-4 rounded-lg shadow-sm bg-white dark:bg-gray-800/50">
       <div className="flex items-center mb-2">
         <Image
-          src={history.editor.image || '/default-avatar.png'} // Provide a fallback avatar image
+          src={history.editor.image || '/deleted-user.svg'}
           alt={history.editor.name || 'Unknown user'}
           width={40}
           height={40}
