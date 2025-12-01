@@ -7,7 +7,7 @@ import "driver.js/dist/driver.css";
 export default function OnboardingTour() {
   const [isMounted, setIsMounted] = useState(false);
   const driverRef = useRef<ReturnType<typeof driver> | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
