@@ -14,6 +14,11 @@ const productsApiUrl = `**/api/products?tags=${encodedQuery}*`;
 test.describe('Anonymous User Core Features', () => {
 
   test.beforeEach(async ({ page }) => {
+    // オンボーディングツアーをスキップ
+    await page.addInitScript(() => {
+      localStorage.setItem('onboarding_completed', 'true');
+    });
+
     // モックデータで最新商品を返すようにAPIをモック
     await page.route('**/api/products/latest', async (route) => {
       await route.fulfill({
