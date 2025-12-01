@@ -38,11 +38,6 @@ test.describe('Product Registration Flow', () => {
   test.setTimeout(60000);
 
   test.beforeEach(async ({ page, context }) => {
-    // オンボーディングツアーをスキップ
-    await page.addInitScript(() => {
-      localStorage.setItem('onboarding_completed', 'true');
-    });
-
     // 1. Seed required data for the API to work
     await prisma.tagCategory.upsert({
       where: { name: 'other' },

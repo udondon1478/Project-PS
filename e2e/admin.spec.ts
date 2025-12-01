@@ -2,12 +2,6 @@ import { test, expect } from '@playwright/test';
 import { mockSession, MOCK_ADMIN_USER, MOCK_USER } from './lib/auth';
 
 test.describe('Admin Dashboard Access Control', () => {
-  test.beforeEach(async ({ page }) => {
-    // オンボーディングツアーをスキップ
-    await page.addInitScript(() => {
-      localStorage.setItem('onboarding_completed', 'true');
-    });
-  });
 
   // テストケース 3.1: 管理者ユーザー
   // 'page' に加えて 'context' を受け取るように変更

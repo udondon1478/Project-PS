@@ -7,8 +7,6 @@ import { TagSearchBar } from './TagSearchBar';
 import { QuickFilters } from './QuickFilters';
 import { FilterSidebar } from './FilterSidebar';
 
-import OnboardingTour from '@/components/onboarding/OnboardingTour';
-
 export default function ProductSearch({
   initialSearchQuery = '',
   initialSelectedTags = [],
@@ -75,7 +73,6 @@ export default function ProductSearch({
 
   return (
     <div className="p-4 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-      <OnboardingTour />
       <div className="container mx-auto flex items-center gap-2 md:gap-4">
         <TagSearchBar
           searchQuery={searchQuery}

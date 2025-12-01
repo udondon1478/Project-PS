@@ -122,12 +122,8 @@ async function main() {
     if (!testUser) throw new Error('Test user not found');
 
     // 販売者の作成
-    const seller = await prisma.seller.upsert({
-      where: { sellerUrl: 'https://test-seller.booth.pm' },
-      // update: {} のため、既存レコードがある場合は更新されません。
-      // 将来的にテストデータを変更したい場合は、DBをリセットするか、ここを修正してください。
-      update: {},
-      create: {
+    const seller = await prisma.seller.create({
+      data: {
         name: 'Test Seller',
         sellerUrl: 'https://test-seller.booth.pm',
       }
@@ -135,11 +131,8 @@ async function main() {
 
     // 商品1: アバター
     const avatarTag = await prisma.tag.findUnique({ where: { name: 'アバター' } });
-    const product1 = await prisma.product.upsert({
-      where: { boothJpUrl: 'https://booth.pm/ja/items/111111' },
-      // update: {} のため、既存レコードがある場合は更新されません。
-      update: {},
-      create: {
+    const product1 = await prisma.product.create({
+      data: {
         title: 'Test Product 1',
         boothJpUrl: 'https://booth.pm/ja/items/111111',
         boothEnUrl: 'https://booth.pm/en/items/111111',
@@ -155,16 +148,8 @@ async function main() {
     });
 
     if (avatarTag) {
-      await prisma.productTag.upsert({
-        where: {
-          productId_tagId: {
-            productId: product1.id,
-            tagId: avatarTag.id,
-          }
-        },
-        // update: {} のため、既存レコードがある場合は更新されません。
-        update: {},
-        create: {
+      await prisma.productTag.create({
+        data: {
           productId: product1.id,
           tagId: avatarTag.id,
           userId: testUser.id,
@@ -174,11 +159,8 @@ async function main() {
 
     // 商品2: 衣装
     const costumeTag = await prisma.tag.findUnique({ where: { name: '衣装' } });
-    const product2 = await prisma.product.upsert({
-      where: { boothJpUrl: 'https://booth.pm/ja/items/222222' },
-      // update: {} のため、既存レコードがある場合は更新されません。
-      update: {},
-      create: {
+    const product2 = await prisma.product.create({
+      data: {
         title: 'Test Product 2',
         boothJpUrl: 'https://booth.pm/ja/items/222222',
         boothEnUrl: 'https://booth.pm/en/items/222222',
@@ -194,23 +176,15 @@ async function main() {
     });
 
     if (costumeTag) {
-      await prisma.productTag.upsert({
-        where: {
-          productId_tagId: {
-            productId: product2.id,
-            tagId: costumeTag.id,
-          }
-        },
-        // update: {} のため、既存レコードがある場合は更新されません。
-        update: {},
-        create: {
+      await prisma.productTag.create({
+        data: {
           productId: product2.id,
           tagId: costumeTag.id,
           userId: testUser.id,
         }
       });
     }
-    console.log('Test products created/updated');
+    console.log('Test products created');
   }
 
   console.log('Seed data inserted successfully');
