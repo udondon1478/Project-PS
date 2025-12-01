@@ -122,8 +122,10 @@ async function main() {
     if (!testUser) throw new Error('Test user not found');
 
     // 販売者の作成
-    const seller = await prisma.seller.create({
-      data: {
+    const seller = await prisma.seller.upsert({
+      where: { sellerUrl: 'https://test-seller.booth.pm' },
+      update: {},
+      create: {
         name: 'Test Seller',
         sellerUrl: 'https://test-seller.booth.pm',
       }
@@ -131,8 +133,10 @@ async function main() {
 
     // 商品1: アバター
     const avatarTag = await prisma.tag.findUnique({ where: { name: 'アバター' } });
-    const product1 = await prisma.product.create({
-      data: {
+    const product1 = await prisma.product.upsert({
+      where: { boothJpUrl: 'https://booth.pm/ja/items/111111' },
+      update: {},
+      create: {
         title: 'Test Product 1',
         boothJpUrl: 'https://booth.pm/ja/items/111111',
         boothEnUrl: 'https://booth.pm/en/items/111111',
@@ -148,8 +152,15 @@ async function main() {
     });
 
     if (avatarTag) {
-      await prisma.productTag.create({
-        data: {
+      await prisma.productTag.upsert({
+        where: {
+          productId_tagId: {
+            productId: product1.id,
+            tagId: avatarTag.id,
+          }
+        },
+        update: {},
+        create: {
           productId: product1.id,
           tagId: avatarTag.id,
           userId: testUser.id,
@@ -159,8 +170,10 @@ async function main() {
 
     // 商品2: 衣装
     const costumeTag = await prisma.tag.findUnique({ where: { name: '衣装' } });
-    const product2 = await prisma.product.create({
-      data: {
+    const product2 = await prisma.product.upsert({
+      where: { boothJpUrl: 'https://booth.pm/ja/items/222222' },
+      update: {},
+      create: {
         title: 'Test Product 2',
         boothJpUrl: 'https://booth.pm/ja/items/222222',
         boothEnUrl: 'https://booth.pm/en/items/222222',
@@ -176,8 +189,15 @@ async function main() {
     });
 
     if (costumeTag) {
-      await prisma.productTag.create({
-        data: {
+      await prisma.productTag.upsert({
+        where: {
+          productId_tagId: {
+            productId: product2.id,
+            tagId: costumeTag.id,
+          }
+        },
+        update: {},
+        create: {
           productId: product2.id,
           tagId: costumeTag.id,
           userId: testUser.id,
