@@ -21,8 +21,8 @@ jobs:
       - name: Deploy via SSH
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-          export PATH=/home/ubuntu/.nvm/versions/node/v22.17.0/bin:$PATH
           set -e
+          export PATH=/home/ubuntu/.nvm/versions/node/v22.17.0/bin:$PATH
           cd /home/ubuntu/PolySeek/
           git checkout -- package-lock.json
           git pull origin main
