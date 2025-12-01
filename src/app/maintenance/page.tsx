@@ -1,6 +1,4 @@
 export default function MaintenancePage() {
-
-export default function MaintenancePage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-4">
       <div className="max-w-md text-center space-y-6">
