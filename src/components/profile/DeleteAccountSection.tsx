@@ -21,6 +21,7 @@ export default function DeleteAccountSection() {
   const [error, setError] = useState<string | null>(null);
 
   const handleDeleteAccount = async () => {
+    setError(null);
     setIsDeleting(true);
     try {
       const result = await deleteAccount();
@@ -67,6 +68,7 @@ export default function DeleteAccountSection() {
                 handleDeleteAccount();
               }}
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              disabled={isDeleting}
             >
               {isDeleting ? '削除中...' : '削除する'}
             </AlertDialogAction>
