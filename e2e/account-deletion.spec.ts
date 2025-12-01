@@ -20,7 +20,7 @@ test.describe('Account Deletion', () => {
     }
   });
 
-  test('should delete account and prevent re-login', async ({ page }) => {
+  test('should delete account and update DB status', async ({ page }) => {
     await page.goto('/profile');
     
     // アカウント削除ボタンをクリック
@@ -32,6 +32,15 @@ test.describe('Account Deletion', () => {
     // ログアウトされてトップページにリダイレクトされることを確認
     await expect(page).toHaveURL('/');
     
-    // 再ログイン試行が失敗することを確認（実際のOAuthフローはモックが必要）
+    // DBの状態を検証
+    const deletedUser = await prisma?.user.findUnique({
+      where: { id: MOCK_USER.id },
+    });
+
+    expect(deletedUser).not.toBeNull();
+    expect(deletedUser?.status).toBe('DELETED');
+    expect(deletedUser?.name).toBe('Deleted User');
+    expect(deletedUser?.email).toMatch(/^deleted-/);
+    expect(deletedUser?.image).toBeNull();
   });
 });
