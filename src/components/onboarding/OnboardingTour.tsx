@@ -91,6 +91,8 @@ export default function OnboardingTour() {
         attempts++;
         if (attempts < maxAttempts) {
           timeoutRef.current = setTimeout(checkElements, interval);
+        } else {
+          console.warn('[OnboardingTour] Required elements not found after polling');
         }
       }
     };
