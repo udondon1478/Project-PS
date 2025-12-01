@@ -124,6 +124,8 @@ async function main() {
     // 販売者の作成
     const seller = await prisma.seller.upsert({
       where: { sellerUrl: 'https://test-seller.booth.pm' },
+      // update: {} のため、既存レコードがある場合は更新されません。
+      // 将来的にテストデータを変更したい場合は、DBをリセットするか、ここを修正してください。
       update: {},
       create: {
         name: 'Test Seller',
@@ -135,6 +137,7 @@ async function main() {
     const avatarTag = await prisma.tag.findUnique({ where: { name: 'アバター' } });
     const product1 = await prisma.product.upsert({
       where: { boothJpUrl: 'https://booth.pm/ja/items/111111' },
+      // update: {} のため、既存レコードがある場合は更新されません。
       update: {},
       create: {
         title: 'Test Product 1',
@@ -159,6 +162,7 @@ async function main() {
             tagId: avatarTag.id,
           }
         },
+        // update: {} のため、既存レコードがある場合は更新されません。
         update: {},
         create: {
           productId: product1.id,
@@ -172,6 +176,7 @@ async function main() {
     const costumeTag = await prisma.tag.findUnique({ where: { name: '衣装' } });
     const product2 = await prisma.product.upsert({
       where: { boothJpUrl: 'https://booth.pm/ja/items/222222' },
+      // update: {} のため、既存レコードがある場合は更新されません。
       update: {},
       create: {
         title: 'Test Product 2',
@@ -196,6 +201,7 @@ async function main() {
             tagId: costumeTag.id,
           }
         },
+        // update: {} のため、既存レコードがある場合は更新されません。
         update: {},
         create: {
           productId: product2.id,
@@ -204,7 +210,7 @@ async function main() {
         }
       });
     }
-    console.log('Test products created');
+    console.log('Test products created/updated');
   }
 
   console.log('Seed data inserted successfully');
