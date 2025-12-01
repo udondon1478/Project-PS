@@ -32,7 +32,7 @@ export default function MaintenancePage() {
         </p>
         
         <div className="pt-8 text-sm text-muted-foreground">
-          <p>&copy; PolySeek</p>
+          <p>PolySeek</p>
         </div>
       </div>
     </div>
