@@ -20,7 +20,12 @@ const PRODUCT_DETAIL_API_URL = (id: string) => `**/api/products/${id}`;
 
 test.describe('Authenticated User Features', () => {
 
-  test.beforeEach(async ({ context }) => {
+  test.beforeEach(async ({ context, page }) => { // pageを追加
+    // オンボーディングツアーをスキップ
+    await page.addInitScript(() => {
+      localStorage.setItem('onboarding_completed', 'true');
+    });
+
     await mockSession(context, MOCK_USER);
   });
 
