@@ -37,14 +37,30 @@ export const useTypewriter = ({
     pauseDurationRef.current = pauseDuration;
   }, [texts, typingSpeed, deletingSpeed, pauseDuration]);
 
+  // Track changes to texts content without triggering re-renders on every render
+  const [version, setVersion] = useState(0);
+  const prevTextsStringRef = useRef<string | null>(null);
+
+  // Lazy initialization of the ref
+  if (prevTextsStringRef.current === null) {
+    prevTextsStringRef.current = JSON.stringify(texts);
+  }
+
+  // Check for content changes
+  useEffect(() => {
+    const currentString = JSON.stringify(texts);
+    if (currentString !== prevTextsStringRef.current) {
+      prevTextsStringRef.current = currentString;
+      setVersion((v) => v + 1);
+    }
+  }, [texts]);
+
   useEffect(() => {
     if (texts.length === 0) {
       setDisplayText('');
       return;
     }
 
-
-    
     const runLoop = () => {
       if (textsRef.current.length === 0) {
         setDisplayText('');
@@ -56,11 +72,8 @@ export const useTypewriter = ({
       const isDeleting = isDeletingRef.current;
       const currentText = currentTextRef.current;
       
-
-      
       let nextText = currentText;
       let nextDelay = typingSpeedRef.current;
-
 
       if (isDeleting) {
         nextText = currentText.substring(0, currentText.length - 1);
@@ -101,7 +114,7 @@ export const useTypewriter = ({
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [JSON.stringify(texts)]);
+  }, [version]);
 
 
 
