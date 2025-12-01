@@ -56,7 +56,7 @@ export const useTypewriter = ({
   }, [texts]);
 
   useEffect(() => {
-    if (texts.length === 0) {
+    if (textsRef.current.length === 0) {
       setDisplayText('');
       return;
     }
