@@ -6,6 +6,20 @@ const { auth } = NextAuth(authConfig);
 
 export default auth((req) => {
   const { nextUrl } = req;
+
+  // メンテナンスモードの制御
+  const isMaintenanceMode = process.env.MAINTENANCE_MODE === 'true';
+  const isMaintenancePage = nextUrl.pathname === '/maintenance';
+
+  if (isMaintenanceMode) {
+    if (!isMaintenancePage) {
+      return Response.redirect(new URL('/maintenance', nextUrl));
+    }
+    return;
+  } else if (isMaintenancePage) {
+    return Response.redirect(new URL('/', nextUrl));
+  }
+
   const isLoggedIn = !!req.auth;
   const isProtectedRoute = protectedRoutes.some(route =>
     nextUrl.pathname === route || nextUrl.pathname.startsWith(`${route}/`)
