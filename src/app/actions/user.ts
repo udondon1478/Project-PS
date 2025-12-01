@@ -48,13 +48,13 @@ export async function deleteAccount() {
       });
 
       // 3. Anonymize user data
-      // We use a random string for email to satisfy unique constraint
-      const randomString = Math.random().toString(36).substring(2, 15);
+      // We use a UUID for email to satisfy unique constraint and ensure anonymity
+      const randomId = crypto.randomUUID();
       await tx.user.update({
         where: { id: session.user.id },
         data: {
           name: "Deleted User",
-          email: `deleted-${session.user.id}-${randomString}@example.com`,
+          email: `deleted-${randomId}@example.com`,
           image: null,
           status: "DELETED",
           // Keep other fields as is to preserve history/integrity
