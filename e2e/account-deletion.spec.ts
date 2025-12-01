@@ -16,7 +16,10 @@ test.describe('Account Deletion', () => {
     try {
       await prisma?.user.delete({ where: { id: MOCK_USER.id } });
     } catch (e) {
-      // Ignore if already deleted
+      // Ignore P2025: Record not found
+      if (!(e instanceof Error && 'code' in e && (e as any).code === 'P2025')) {
+        throw e;
+      }
     }
   });
 
