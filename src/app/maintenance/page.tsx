@@ -12,7 +12,10 @@ export default function MaintenancePage() {
             strokeWidth={1.5}
             stroke="currentColor"
             className="w-24 h-24 text-primary animate-pulse"
+            role="img"
+            aria-label="メンテナンス作業中"
           >
+            <title>メンテナンス作業中</title>
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
