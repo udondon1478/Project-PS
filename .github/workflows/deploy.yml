@@ -21,7 +21,9 @@ jobs:
       - name: Deploy via SSH
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          set -e
           cd /home/ubuntu/PolySeek/
+          git checkout -- package-lock.json
           git pull origin main
           npm install
           npm run build
