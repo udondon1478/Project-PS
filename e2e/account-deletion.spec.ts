@@ -1,12 +1,23 @@
 import { test, expect } from '@playwright/test';
 import { mockSession, MOCK_USER } from './lib/auth';
 
+import { prisma } from '../src/lib/prisma';
+
 test.describe('Account Deletion', () => {
   test.beforeEach(async ({ context, page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('onboarding_completed', 'true');
     });
     await mockSession(context, MOCK_USER);
+  });
+
+  test.afterEach(async () => {
+    // Clean up the anonymized user after deletion test
+    try {
+      await prisma?.user.delete({ where: { id: MOCK_USER.id } });
+    } catch (e) {
+      // Ignore if already deleted
+    }
   });
 
   test('should delete account and prevent re-login', async ({ page }) => {
