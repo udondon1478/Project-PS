@@ -43,35 +43,37 @@ export default function ProfileForm({ user }: ProfileFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-md">
-      <div className="space-y-2">
-        <Label htmlFor="name">ユーザー名</Label>
-        <Input
-          id="name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="gyazoUrl">新しいプロフィールアイコンのURL (Gyazo URL)</Label>
-        <Input
-          id="gyazoUrl"
-          placeholder="https://gyazo.com/..."
-          value={gyazoUrl}
-          onChange={(e) => setGyazoUrl(e.target.value)}
-        />
-        <p className="text-sm text-gray-500">
-          GyazoのページURLを指定してプロフィールアイコンを更新します。現在のアイコンを保持するには空白のままにしてください。
-        </p>
-      </div>
+    <div className="space-y-8 max-w-md">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="name">ユーザー名</Label>
+          <Input
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="gyazoUrl">新しいプロフィールアイコンのURL (Gyazo URL)</Label>
+          <Input
+            id="gyazoUrl"
+            placeholder="https://gyazo.com/..."
+            value={gyazoUrl}
+            onChange={(e) => setGyazoUrl(e.target.value)}
+          />
+          <p className="text-sm text-gray-500">
+            GyazoのページURLを指定してプロフィールアイコンを更新します。現在のアイコンを保持するには空白のままにしてください。
+          </p>
+        </div>
 
-      {error && <p className="text-red-500">{error}</p>}
-      {success && <p className="text-green-500">{success}</p>}
+        {error && <p className="text-red-500">{error}</p>}
+        {success && <p className="text-green-500">{success}</p>}
 
-      <Button type="submit" disabled={isLoading}>
-        {isLoading ? 'Saving...' : '変更を保存'}
-      </Button>
-    </form>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? 'Saving...' : '変更を保存'}
+        </Button>
+      </form>
+    </div>
   );
 }

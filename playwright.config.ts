@@ -21,7 +21,7 @@ process.env.AUTH_SECRET = TEST_AUTH_SECRET;
 process.env.NEXTAUTH_SECRET = TEST_AUTH_SECRET;
 
 // 環境変数からベースURLを読み込む。未定義の場合はローカルホストをフォールバックとして使用
-const baseURL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+const baseURL = process.env.BASE_URL ?? 'http://localhost:3001';
 
 export default defineConfig({
   fullyParallel: false,
@@ -72,13 +72,15 @@ export default defineConfig({
 
   // テスト実行前に開発サーバーを起動
   webServer: {
-    command: 'npm run start',
+    command: 'npm run start -- -p 3001',
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     env: {
       DATABASE_URL: testDatabaseUrl,
       AUTH_SECRET: TEST_AUTH_SECRET,
       NEXTAUTH_SECRET: TEST_AUTH_SECRET,
+      NEXT_PUBLIC_BASE_URL: baseURL,
+      NEXTAUTH_URL: baseURL,
     },
   },
 });

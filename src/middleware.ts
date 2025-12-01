@@ -28,7 +28,7 @@ export default auth((req) => {
   if (isProtectedRoute && !isLoggedIn) {
     const callbackUrl = nextUrl.pathname + nextUrl.search;
     const encodedCallbackUrl = encodeURIComponent(callbackUrl);
-    return Response.redirect(new URL(`/auth/login?callbackUrl=${encodedCallbackUrl}`, nextUrl));
+    return Response.redirect(new URL(`/api/auth/signin?callbackUrl=${encodedCallbackUrl}`, nextUrl));
   }
 });
 

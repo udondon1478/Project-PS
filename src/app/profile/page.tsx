@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import SafeSearchToggle from '@/components/profile/SafeSearchToggle';
 
+import DeleteAccountSection from '@/components/profile/DeleteAccountSection';
+
 export default async function ProfilePage() {
   const session = await auth();
   if (!session?.user?.id) {
@@ -58,6 +60,8 @@ export default async function ProfilePage() {
              <h2 className="text-xl font-semibold mb-4">表示設定</h2>
              <SafeSearchToggle initialEnabled={user.isSafeSearchEnabled ?? true} />
           </div>
+
+          <DeleteAccountSection />
         </div>
       </div>
     </div>
