@@ -19,6 +19,9 @@ type ReportWithDetails = Report & {
     name: string | null;
     email: string | null;
   };
+  targetName?: string;
+  targetContext?: string;
+  targetUrl?: string;
 };
 
 export default function ReportList() {
@@ -83,10 +86,27 @@ export default function ReportList() {
             <TableRow key={report.id}>
               <TableCell>{new Date(report.createdAt).toLocaleString()}</TableCell>
               <TableCell>
-                <Badge variant="outline">{report.targetType}</Badge>
-                <div className="text-xs text-muted-foreground mt-1">
-                  ID: {report.targetId}
+                <div className="font-medium">
+                  {report.targetUrl ? (
+                    <a
+                      href={report.targetUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline flex items-center gap-1"
+                    >
+                      {report.targetName || "Unknown"}
+                      <span className="text-xs">↗</span>
+                    </a>
+                  ) : (
+                    report.targetName || "Unknown"
+                  )}
                 </div>
+                {report.targetContext && (
+                  <div className="text-xs text-muted-foreground">
+                    on {report.targetContext}
+                  </div>
+                )}
+                <Badge variant="outline" className="mt-1">{report.targetType}</Badge>
               </TableCell>
               <TableCell className="max-w-[200px] truncate" title={report.reason}>
                 {report.reason}

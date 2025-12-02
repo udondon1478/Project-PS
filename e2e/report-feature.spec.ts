@@ -123,6 +123,10 @@ test.describe('Report Feature', () => {
 
     // 6. Verify report is visible
     await expect(page.getByText('This is a test report')).toBeVisible();
+    // Verify target name is displayed and is a link (CodeRabbit fix & URL feature)
+    const link = page.getByRole('link', { name: 'TestTag' });
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute('href', '/search?tags=TestTag');
 
     // 7. Resolve the report
     await page.getByRole('button', { name: '解決' }).click();
