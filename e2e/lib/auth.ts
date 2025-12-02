@@ -32,6 +32,7 @@ export async function mockSession(
       picture: null,
       sub: user.id,
       id: user.id,
+      role: user.role,
       termsAgreedAt: user.termsAgreedAt ?? null,
     },
     secret: process.env.AUTH_SECRET || 'secret',

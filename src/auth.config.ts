@@ -19,6 +19,7 @@ export const authConfig = {
         async jwt({ token, user, trigger, session }) {
             if (user) {
                 token.id = user.id!;
+                token.role = user.role;
                 token.termsAgreedAt = user.termsAgreedAt;
                 token.isSafeSearchEnabled = user.isSafeSearchEnabled;
             }
@@ -38,6 +39,7 @@ export const authConfig = {
         async session({ session, token }) {
             if (token && session.user) {
                 session.user.id = token.id as string;
+                session.user.role = token.role as "USER" | "ADMIN";
                 session.user.termsAgreedAt = token.termsAgreedAt;
                 session.user.isSafeSearchEnabled = token.isSafeSearchEnabled ?? true;
             }
