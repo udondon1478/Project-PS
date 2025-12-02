@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import { ReportStatus } from '@prisma/client';
+import { ReportStatus, Prisma } from '@prisma/client';
 
 const updateSchema = z.object({
   status: z.nativeEnum(ReportStatus),
@@ -37,6 +37,9 @@ export async function PATCH(
     return NextResponse.json(report);
   } catch (error) {
     console.error('Error updating report:', error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      return NextResponse.json({ error: 'Report not found' }, { status: 404 });
+    }
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
