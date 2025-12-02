@@ -29,6 +29,32 @@ test.describe('Report Feature', () => {
     });
   });
 
+  test.afterEach(async () => {
+    // Clean up any existing reports and users
+    await prisma.report.deleteMany();
+    await prisma.productTag.deleteMany({
+      where: {
+        user: {
+          email: { in: ['test@example.com', 'admin@example.com'] }
+        }
+      }
+    });
+    await prisma.product.deleteMany({
+      where: {
+        user: {
+          email: { in: ['test@example.com', 'admin@example.com'] }
+        }
+      }
+    });
+    await prisma.user.deleteMany({
+      where: {
+        email: {
+          in: ['test@example.com', 'admin@example.com']
+        }
+      }
+    });
+  });
+
   test('should allow a user to report a tag and admin to resolve it', async ({ page }) => {
     // 1. Login as a regular user
     await mockSession(page.context(), {
