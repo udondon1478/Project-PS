@@ -127,6 +127,8 @@ images       ProductImage[] // 複数の商品画像
 
   @@index([userId])
   @@index([viewCount]) // 閲覧数でのソート用
+
+  reports      Report[]      // この商品に対する通報
 }
 
 // 商品バリエーションテーブル
@@ -240,6 +242,8 @@ model Tag {
 
   // タグメタデータ編集履歴
   metadataHistory TagMetadataHistory[]
+  
+  reports       Report[]         // このタグに対する通報
 }
 
 // タグの親子関係テーブル
@@ -293,6 +297,8 @@ model ProductTag {
   @@index([productId])
   @@index([tagId])
   @@index([userId])
+
+  reports    Report[]      // この商品タグに対する通報
 }
 
 // タグ翻訳関係テーブル
@@ -407,7 +413,14 @@ model Report {
   reporter    User?            @relation(fields: [reporterId], references: [id], onDelete: SetNull)
   
   targetType  ReportTargetType
-  targetId    String           // Tag.id または ProductTag.id または Product.id
+  tagId       String?
+  tag         Tag?             @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  
+  productTagId String?
+  productTag  ProductTag?      @relation(fields: [productTagId], references: [id], onDelete: Cascade)
+
+  productId   String?
+  product     Product?         @relation(fields: [productId], references: [id], onDelete: Cascade)
   
   reason      String           // 通報理由（自由記述 または 選択肢）
   status      ReportStatus     @default(PENDING)
@@ -416,7 +429,12 @@ model Report {
   updatedAt   DateTime         @updatedAt
 
   @@index([status])
-  @@index([targetType, targetId])
+  @@index([tagId])
+  @@index([productTagId])
+  @@index([productId])
   @@index([reporterId])
-  @@unique([reporterId, targetType, targetId])
+  
+  @@unique([reporterId, tagId])
+  @@unique([reporterId, productTagId])
+  @@unique([reporterId, productId])
 }

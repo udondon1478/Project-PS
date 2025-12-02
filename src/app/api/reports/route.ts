@@ -27,13 +27,25 @@ export async function POST(req: Request) {
 
     const { targetType, targetId, reason } = validation.data;
 
+    let reportData;
+    const baseData = {
+      reporterId: session.user.id,
+      targetType,
+      reason,
+    };
+
+    if (targetType === 'TAG') {
+      reportData = { ...baseData, tagId: targetId };
+    } else if (targetType === 'PRODUCT_TAG') {
+      reportData = { ...baseData, productTagId: targetId };
+    } else if (targetType === 'PRODUCT') {
+      reportData = { ...baseData, productId: targetId };
+    } else {
+      return NextResponse.json({ error: 'Invalid target type' }, { status: 400 });
+    }
+
     const report = await prisma.report.create({
-      data: {
-        reporterId: session.user.id,
-        targetType,
-        targetId,
-        reason,
-      },
+      data: reportData,
     });
 
     return NextResponse.json(report, { status: 201 });
