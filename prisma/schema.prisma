@@ -403,8 +403,8 @@ enum ReportStatus {
 // 通報モデル
 model Report {
   id          String           @id @default(cuid())
-  reporterId  String           // 通報したユーザーID
-  reporter    User             @relation(fields: [reporterId], references: [id])
+  reporterId  String?          // 通報したユーザーID
+  reporter    User?            @relation(fields: [reporterId], references: [id], onDelete: SetNull)
   
   targetType  ReportTargetType
   targetId    String           // Tag.id または ProductTag.id または Product.id

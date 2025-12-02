@@ -7,7 +7,7 @@ CREATE TYPE "ReportStatus" AS ENUM ('PENDING', 'RESOLVED', 'IGNORED');
 -- CreateTable
 CREATE TABLE "Report" (
     "id" TEXT NOT NULL,
-    "reporterId" TEXT NOT NULL,
+    "reporterId" TEXT,
     "targetType" "ReportTargetType" NOT NULL,
     "targetId" TEXT NOT NULL,
     "reason" TEXT NOT NULL,
@@ -25,4 +25,4 @@ CREATE INDEX "Report_status_idx" ON "Report"("status");
 CREATE INDEX "Report_targetType_targetId_idx" ON "Report"("targetType", "targetId");
 
 -- AddForeignKey
-ALTER TABLE "Report" ADD CONSTRAINT "Report_reporterId_fkey" FOREIGN KEY ("reporterId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Report" ADD CONSTRAINT "Report_reporterId_fkey" FOREIGN KEY ("reporterId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
