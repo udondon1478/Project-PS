@@ -24,5 +24,11 @@ CREATE INDEX "Report_status_idx" ON "Report"("status");
 -- CreateIndex
 CREATE INDEX "Report_targetType_targetId_idx" ON "Report"("targetType", "targetId");
 
+-- CreateIndex
+CREATE INDEX "Report_reporterId_idx" ON "Report"("reporterId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Report_reporterId_targetType_targetId_key" ON "Report"("reporterId", "targetType", "targetId");
+
 -- AddForeignKey
 ALTER TABLE "Report" ADD CONSTRAINT "Report_reporterId_fkey" FOREIGN KEY ("reporterId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;

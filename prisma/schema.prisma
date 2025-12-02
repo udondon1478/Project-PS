@@ -417,4 +417,6 @@ model Report {
 
   @@index([status])
   @@index([targetType, targetId])
+  @@index([reporterId])
+  @@unique([reporterId, targetType, targetId])
 }
