@@ -12,9 +12,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { TagDescriptionEditor } from './TagDescriptionEditor';
 import { TagDescriptionHistory } from './TagDescriptionHistory';
-import { Tag, TagMetadataHistory } from '@prisma/client';
+import { Tag, TagMetadataHistory, ReportTargetType } from '@prisma/client';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Flag } from 'lucide-react';
+import { ReportDialog } from './reports/ReportDialog';
 
 // Define the shape of the data expected from the API
 interface TagDetails extends Tag {
@@ -40,19 +42,19 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
   const [error, setError] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   const fetchDetails = async (id: string) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/tags/${id}/details`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch tag details');
-      }
-      const data = await response.json();
+      const res = await fetch(`/api/tags/${id}/details`);
+      if (!res.ok) throw new Error('Failed to fetch tag details');
+      const data = await res.json();
       setDetails(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      console.error(err);
+      setError('Failed to load tag details');
     } finally {
       setLoading(false);
     }
@@ -62,9 +64,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
     if (open && tagId) {
       fetchDetails(tagId);
     } else {
-      // Reset state when modal is closed
       setDetails(null);
-      setShowHistory(false);
     }
   }, [open, tagId]);
 
@@ -79,7 +79,21 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Tag Details</DialogTitle>
+          <div className="flex justify-between items-start pr-8">
+            <DialogTitle>Tag Details</DialogTitle>
+            {details && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-destructive"
+                onClick={() => setIsReportOpen(true)}
+                title="このタグを通報する"
+                aria-label="このタグを通報する"
+              >
+                <Flag className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto pr-4">
           {loading && <p>Loading...</p>}
@@ -150,12 +164,21 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
           </DialogClose>
         </DialogFooter>
         {details && (
+          <>
             <TagDescriptionEditor
-                tag={details}
-                open={isEditorOpen}
-                onOpenChange={setIsEditorOpen}
-                onSuccess={handleEditorSuccess}
+              tag={details}
+              open={isEditorOpen}
+              onOpenChange={setIsEditorOpen}
+              onSuccess={handleEditorSuccess}
             />
+            <ReportDialog
+              open={isReportOpen}
+              onOpenChange={setIsReportOpen}
+              targetType={ReportTargetType.TAG}
+              targetId={details.id}
+              targetName={details.name}
+            />
+          </>
         )}
       </DialogContent>
     </Dialog>
