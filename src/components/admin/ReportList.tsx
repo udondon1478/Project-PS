@@ -172,9 +172,11 @@ export default function ReportList() {
                 </TableCell>
                 <TableCell>
                   {report.reporter.name || "Unknown"}
-                  <div className="text-xs text-muted-foreground">
-                    {report.reporter.email}
-                  </div>
+                  {report.reporter.email && (
+                    <div className="text-xs text-muted-foreground">
+                      {report.reporter.email}
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell>
                   <Badge
