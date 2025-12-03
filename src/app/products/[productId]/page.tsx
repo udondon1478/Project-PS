@@ -371,9 +371,11 @@ const ProductDetailPage = () => {
                                 <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/50" onClick={() => addNegativeTagToSearch(tag.name)}><MinusCircle size={16} /></Button>
                                 <Button variant="ghost" size="icon" className="h-7 w-7 text-green-500 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/50" onClick={() => addTagToSearch(tag.name)}><PlusCircle size={16} /></Button>
                                 <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-500 hover:text-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/50" onClick={() => handleViewTagDetails(tag.id)} aria-label={`${tag.name}の詳細を見る`} data-testid="tag-info-button"><Info size={16} /></Button>
-                                  </TooltipTrigger>
+                                  <span data-testid="tag-info-button">
+                                    <TooltipTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-500 hover:text-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/50" onClick={() => handleViewTagDetails(tag.id)} aria-label={`${tag.name}の詳細を見る`}><Info size={16} /></Button>
+                                    </TooltipTrigger>
+                                  </span>
                                   <TooltipContent><p>{tag.description || 'No description available.'}</p></TooltipContent>
                                 </Tooltip>
                               </div>
