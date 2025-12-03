@@ -7,7 +7,7 @@ import { ReportTargetType, Prisma } from '@prisma/client';
 const reportSchema = z.object({
   targetType: z.nativeEnum(ReportTargetType),
   targetId: z.string().min(1, "Target ID is required"),
-  reason: z.string().min(1, "Reason is required"),
+  reason: z.string().min(1, "Reason is required").max(1000, "Reason must be 1000 characters or less"),
 });
 
 export async function POST(req: Request) {

@@ -88,7 +88,11 @@ export function ReportDialog({
                 onChange={(e) => setReason(e.target.value)}
                 required
                 className="min-h-[100px]"
+                maxLength={1000}
               />
+              <div className="text-right text-xs text-muted-foreground">
+                {reason.length} / 1000
+              </div>
             </div>
           </div>
           <DialogFooter>
