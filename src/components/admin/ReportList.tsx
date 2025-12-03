@@ -74,8 +74,6 @@ export default function ReportList() {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
-
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center p-8 space-y-4">
@@ -90,7 +88,7 @@ export default function ReportList() {
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold">通報一覧</h2>
-      <Table>
+      <Table aria-busy={loading} aria-label={loading ? "Loading reports" : undefined}>
         <TableHeader>
           <TableRow>
             <TableHead>日時</TableHead>
@@ -102,7 +100,39 @@ export default function ReportList() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {reports.length === 0 ? (
+          {loading ? (
+            Array.from({ length: 5 }).map((_, index) => (
+              <TableRow key={`skeleton-${index}`}>
+                <TableCell>
+                  <div className="h-4 w-32 bg-muted/50 animate-pulse rounded" />
+                </TableCell>
+                <TableCell>
+                  <div className="space-y-2">
+                    <div className="h-4 w-40 bg-muted/50 animate-pulse rounded" />
+                    <div className="h-3 w-24 bg-muted/50 animate-pulse rounded" />
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="h-4 w-48 bg-muted/50 animate-pulse rounded" />
+                </TableCell>
+                <TableCell>
+                  <div className="space-y-2">
+                    <div className="h-4 w-24 bg-muted/50 animate-pulse rounded" />
+                    <div className="h-3 w-32 bg-muted/50 animate-pulse rounded" />
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="h-5 w-16 bg-muted/50 animate-pulse rounded-full" />
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    <div className="h-8 w-16 bg-muted/50 animate-pulse rounded" />
+                    <div className="h-8 w-16 bg-muted/50 animate-pulse rounded" />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))
+          ) : reports.length === 0 ? (
             <TableRow>
               <TableCell colSpan={6} className="h-24 text-center text-muted-foreground" role="status" aria-live="polite">
                 通報はありません
