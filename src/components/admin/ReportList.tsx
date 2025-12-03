@@ -27,16 +27,19 @@ type ReportWithDetails = Report & {
 export default function ReportList() {
   const [reports, setReports] = useState<ReportWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchReports = async () => {
     setLoading(true);
+    setError(null);
     try {
       const response = await fetch("/api/admin/reports");
       if (!response.ok) throw new Error("Failed to fetch reports");
       const data = await response.json();
       setReports(data.reports || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching reports:", error);
+      setError(error.message || String(error));
       toast.error("通報一覧の取得に失敗しました");
     } finally {
       setLoading(false);
@@ -66,6 +69,17 @@ export default function ReportList() {
   };
 
   if (loading) return <div>Loading...</div>;
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 space-y-4">
+        <p className="text-destructive font-medium">レポートの取得に失敗しました: {error}</p>
+        <Button onClick={fetchReports} variant="outline">
+          再試行
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
