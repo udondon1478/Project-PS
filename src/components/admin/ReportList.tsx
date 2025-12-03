@@ -151,9 +151,10 @@ export default function ReportList() {
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:underline flex items-center gap-1"
                         data-testid="report-link"
+                        aria-label={`${report.targetName || "Unknown"} (新しいタブで開く)`}
                       >
                         {report.targetName || "Unknown"}
-                        <span className="text-xs">↗</span>
+                        <span className="text-xs" aria-hidden="true">↗</span>
                       </a>
                     ) : (
                       report.targetName || "Unknown"
