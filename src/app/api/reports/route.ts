@@ -6,7 +6,7 @@ import { ReportTargetType, Prisma } from '@prisma/client';
 
 const reportSchema = z.object({
   targetType: z.nativeEnum(ReportTargetType),
-  targetId: z.string(),
+  targetId: z.string().min(1, "Target ID is required"),
   reason: z.string().min(1, "Reason is required"),
 });
 
