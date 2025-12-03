@@ -33,6 +33,12 @@ export function ReportDialog({
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (!open) {
+      setReason("");
+    }
+  }, [open]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reason.trim()) return;
@@ -62,7 +68,6 @@ export function ReportDialog({
         </span>
       );
       onOpenChange(false);
-      setReason("");
     } catch (error) {
       console.error("Error submitting report:", error);
       const message = error instanceof Error ? error.message : "通報の送信に失敗しました。";
@@ -104,10 +109,7 @@ export function ReportDialog({
             <Button
               type="button"
               variant="outline"
-              onClick={() => {
-                onOpenChange(false);
-                setReason("");
-              }}
+              onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
             >
               キャンセル
