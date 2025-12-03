@@ -34,7 +34,7 @@ export default function ReportList() {
       const response = await fetch("/api/admin/reports");
       if (!response.ok) throw new Error("Failed to fetch reports");
       const data = await response.json();
-      setReports(data);
+      setReports(data.reports || []);
     } catch (error) {
       console.error("Error fetching reports:", error);
       toast.error("通報一覧の取得に失敗しました");
@@ -100,6 +100,7 @@ export default function ReportList() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:underline flex items-center gap-1"
+                        data-testid="report-link"
                       >
                         {report.targetName || "Unknown"}
                         <span className="text-xs">↗</span>
@@ -115,7 +116,7 @@ export default function ReportList() {
                   )}
                   <Badge variant="outline" className="mt-1">{report.targetType}</Badge>
                 </TableCell>
-                <TableCell className="max-w-[200px] truncate" title={report.reason}>
+                <TableCell className="max-w-[200px] truncate" title={report.reason} data-testid="report-reason">
                   {report.reason}
                 </TableCell>
                 <TableCell>
@@ -148,7 +149,7 @@ export default function ReportList() {
                       <>
                         <Button
                           size="sm"
-                          data-testid="resolve-button"
+                          data-testid="report-resolve-button"
                           onClick={() => handleStatusChange(report.id, "RESOLVED")}
                         >
                           解決
