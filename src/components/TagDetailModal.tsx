@@ -1,5 +1,6 @@
 "use client";
 
+import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import {
   Dialog,
@@ -37,6 +38,7 @@ interface TagDetailModalProps {
 }
 
 export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProps) {
+  const { data: session } = useSession();
   const [details, setDetails] = useState<TagDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,7 +83,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
         <DialogHeader>
           <div className="flex justify-between items-start pr-8">
             <DialogTitle>Tag Details</DialogTitle>
-            {details && (
+            {details && session?.user && (
               <Button
                 variant="ghost"
                 size="icon"

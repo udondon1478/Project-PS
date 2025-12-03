@@ -52,7 +52,8 @@ export function ReportDialog({
       });
 
       if (!response.ok) {
-        throw new Error("Failed to submit report");
+        const data = await response.json();
+        throw new Error(data.error || "Failed to submit report");
       }
 
       toast.success("通報を受け付けました。ご協力ありがとうございます。");
@@ -60,7 +61,8 @@ export function ReportDialog({
       setReason("");
     } catch (error) {
       console.error("Error submitting report:", error);
-      toast.error("通報の送信に失敗しました。");
+      const message = error instanceof Error ? error.message : "通報の送信に失敗しました。";
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
