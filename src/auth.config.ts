@@ -40,8 +40,8 @@ export const authConfig = {
         async session({ session, token }) {
             if (token && session.user) {
                 session.user.id = token.id as string;
-                session.user.role = token.role as "USER" | "ADMIN";
-                session.user.status = token.status as "ACTIVE" | "SUSPENDED" | "DELETED";
+                session.user.role = (token.role as "USER" | "ADMIN") ?? "USER";
+                session.user.status = (token.status as "ACTIVE" | "SUSPENDED" | "DELETED") ?? "ACTIVE";
                 session.user.termsAgreedAt = token.termsAgreedAt;
                 session.user.isSafeSearchEnabled = token.isSafeSearchEnabled ?? true;
             }
