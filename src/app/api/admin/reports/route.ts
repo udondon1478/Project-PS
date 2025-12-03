@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await auth();
 
@@ -10,31 +10,50 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const reports = await prisma.report.findMany({
-      include: {
-        reporter: {
-          select: {
-            name: true,
-            email: true,
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '20', 10);
+
+    // バリデーション
+    if (isNaN(page) || page < 1) {
+      return NextResponse.json({ error: 'Invalid page parameter' }, { status: 400 });
+    }
+    if (isNaN(limit) || limit < 1 || limit > 100) {
+      return NextResponse.json({ error: 'Invalid limit parameter' }, { status: 400 });
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [reports, total] = await Promise.all([
+      prisma.report.findMany({
+        skip,
+        take: limit,
+        include: {
+          reporter: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+          tag: {
+            select: { name: true },
+          },
+          product: {
+            select: { title: true },
+          },
+          productTag: {
+            include: {
+              tag: { select: { name: true } },
+              product: { select: { title: true, id: true } },
+            },
           },
         },
-        tag: {
-          select: { name: true },
+        orderBy: {
+          createdAt: 'desc',
         },
-        product: {
-          select: { title: true },
-        },
-        productTag: {
-          include: {
-            tag: { select: { name: true } },
-            product: { select: { title: true, id: true } },
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+      }),
+      prisma.report.count(),
+    ]);
 
     // 関連する名前を取得
     const reportsWithDetails = reports.map((report) => {
@@ -62,7 +81,15 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json(reportsWithDetails);
+    return NextResponse.json({
+      reports: reportsWithDetails,
+      metadata: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch (error) {
     console.error('Error fetching reports:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
