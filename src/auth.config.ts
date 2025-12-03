@@ -20,6 +20,7 @@ export const authConfig = {
             if (user) {
                 token.id = user.id!;
                 token.role = user.role;
+                token.status = user.status;
                 token.termsAgreedAt = user.termsAgreedAt;
                 token.isSafeSearchEnabled = user.isSafeSearchEnabled;
             }
@@ -40,6 +41,7 @@ export const authConfig = {
             if (token && session.user) {
                 session.user.id = token.id as string;
                 session.user.role = token.role as "USER" | "ADMIN";
+                session.user.status = token.status as "ACTIVE" | "SUSPENDED" | "DELETED";
                 session.user.termsAgreedAt = token.termsAgreedAt;
                 session.user.isSafeSearchEnabled = token.isSafeSearchEnabled ?? true;
             }

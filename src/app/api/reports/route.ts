@@ -18,6 +18,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Check for suspended user
+    if (session.user.status === 'SUSPENDED') {
+      return NextResponse.json({ error: 'Account suspended' }, { status: 403 });
+    }
+
     const body = await req.json();
     const validation = reportSchema.safeParse(body);
 
@@ -26,6 +31,22 @@ export async function POST(req: Request) {
     }
 
     const { targetType, targetId, reason } = validation.data;
+
+    // Rate limiting: Max 5 reports per 10 minutes
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+    const recentReportsCount = await prisma.report.count({
+      where: {
+        reporterId: session.user.id,
+        createdAt: { gt: tenMinutesAgo },
+      },
+    });
+
+    if (recentReportsCount >= 5) {
+      return NextResponse.json(
+        { error: 'Too many reports. Please try again later.' },
+        { status: 429 }
+      );
+    }
 
     // Check for self-reporting
     if (targetType === 'PRODUCT') {
