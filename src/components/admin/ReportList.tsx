@@ -126,6 +126,7 @@ export default function ReportList() {
                 </TableCell>
                 <TableCell>
                   <Badge
+                    data-testid="report-status-badge"
                     variant={
                       report.status === "PENDING"
                         ? "destructive"
@@ -134,7 +135,11 @@ export default function ReportList() {
                         : "secondary"
                     }
                   >
-                    {report.status}
+                    {report.status === "PENDING"
+                      ? "保留中"
+                      : report.status === "RESOLVED"
+                      ? "解決済み"
+                      : "無視"}
                   </Badge>
                 </TableCell>
                 <TableCell>
@@ -143,6 +148,7 @@ export default function ReportList() {
                       <>
                         <Button
                           size="sm"
+                          data-testid="resolve-button"
                           onClick={() => handleStatusChange(report.id, "RESOLVED")}
                         >
                           解決
@@ -150,6 +156,7 @@ export default function ReportList() {
                         <Button
                           size="sm"
                           variant="outline"
+                          data-testid="ignore-button"
                           onClick={() => handleStatusChange(report.id, "IGNORED")}
                         >
                           無視

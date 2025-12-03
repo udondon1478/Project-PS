@@ -31,7 +31,7 @@ const AdminPageContent = () => {
       <Tabs defaultValue="tags" className="space-y-4">
         <TabsList>
           <TabsTrigger value="tags">タグ管理</TabsTrigger>
-          <TabsTrigger value="reports">通報管理</TabsTrigger>
+          <TabsTrigger value="reports" data-testid="admin-reports-tab">通報管理</TabsTrigger>
         </TabsList>
 
         <TabsContent value="tags" className="space-y-4">

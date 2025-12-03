@@ -121,7 +121,7 @@ test.describe('Report Feature', () => {
     // 5. Go to Admin Panel
     await page.goto('/admin');
     
-    await page.getByRole('tab', { name: '通報管理' }).click();
+    await page.getByTestId('admin-reports-tab').click();
 
     // 6. Verify report is visible
     await expect(page.getByText('This is a test report')).toBeVisible();
@@ -131,9 +131,9 @@ test.describe('Report Feature', () => {
     await expect(link).toHaveAttribute('href', '/search?tags=TestTag');
 
     // 7. Resolve the report
-    await page.getByRole('button', { name: '解決' }).click();
+    await page.getByTestId('resolve-button').click();
     
     // Verify status update (might need reload or it updates automatically)
-    await expect(page.getByText('RESOLVED')).toBeVisible();
+    await expect(page.getByTestId('report-status-badge')).toHaveText('解決済み');
   });
 });
