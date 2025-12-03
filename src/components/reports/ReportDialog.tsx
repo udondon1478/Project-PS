@@ -56,7 +56,11 @@ export function ReportDialog({
         throw new Error(data.error || "Failed to submit report");
       }
 
-      toast.success("通報を受け付けました。ご協力ありがとうございます。");
+      toast.success(
+        <span data-testid="report-success-message">
+          通報を受け付けました。ご協力ありがとうございます。
+        </span>
+      );
       onOpenChange(false);
       setReason("");
     } catch (error) {
@@ -89,6 +93,7 @@ export function ReportDialog({
                 required
                 className="min-h-[100px]"
                 maxLength={1000}
+                data-testid="report-reason-input"
               />
               <div className="text-right text-xs text-muted-foreground">
                 {reason.length} / 1000
@@ -107,7 +112,7 @@ export function ReportDialog({
             >
               キャンセル
             </Button>
-            <Button type="submit" disabled={isSubmitting || !reason.trim()}>
+            <Button type="submit" disabled={isSubmitting || !reason.trim()} data-testid="report-submit-button">
               {isSubmitting ? "送信中..." : "送信"}
             </Button>
           </DialogFooter>

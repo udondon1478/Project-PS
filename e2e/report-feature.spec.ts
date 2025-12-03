@@ -101,14 +101,16 @@ test.describe('Report Feature', () => {
     await page.goto(`/products/${product.id}`);
     
     // Click the info button to open modal
-    await page.getByRole('button', { name: 'TestTagの詳細を見る' }).click();
+    // Click the info button to open modal
+    await page.getByTestId('tag-info-button').first().click();
     
     // 3. Report the tag
-    await page.getByRole('button', { name: 'このタグを通報する' }).click();
-    await page.getByLabel('通報理由').fill('This is a test report');
-    await page.getByRole('button', { name: '送信' }).click();
+    // 3. Report the tag
+    await page.getByTestId('report-tag-button').click();
+    await page.getByTestId('report-reason-input').fill('This is a test report');
+    await page.getByTestId('report-submit-button').click();
     
-    await expect(page.getByText('通報を受け付けました')).toBeVisible();
+    await expect(page.getByTestId('report-success-message')).toBeVisible();
 
     // 4. Login as Admin
     await mockSession(page.context(), {
