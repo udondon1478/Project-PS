@@ -19,6 +19,11 @@ ADD COLUMN     "productId" TEXT,
 ADD COLUMN     "productTagId" TEXT,
 ADD COLUMN     "tagId" TEXT;
 
+-- AddCheckConstraint
+ALTER TABLE "Report" ADD CONSTRAINT "Report_exactly_one_target_check" CHECK (
+    ("tagId" IS NOT NULL)::integer + ("productTagId" IS NOT NULL)::integer + ("productId" IS NOT NULL)::integer = 1
+);
+
 -- CreateIndex
 CREATE INDEX "Report_tagId_idx" ON "Report"("tagId");
 
