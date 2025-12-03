@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/auth';
 
 export async function GET(request: Request, { params }: { params: Promise<{ tagId: string }> }) {
   try {
     const { tagId } = await params;
+    const session = await auth();
 
     if (!tagId) {
       return NextResponse.json({ error: 'Tag ID is required' }, { status: 400 });
@@ -73,6 +75,19 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
       return NextResponse.json({ error: 'Tag not found' }, { status: 404 });
     }
 
+    let hasReported = false;
+    if (session?.user?.id) {
+      const report = await prisma.report.findUnique({
+        where: {
+          reporterId_tagId: {
+            reporterId: session.user.id,
+            tagId: tagId,
+          },
+        },
+      });
+      hasReported = !!report;
+    }
+
     // Format the data for the response
     const response = {
       ...tag,
@@ -84,6 +99,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
         mainImageUrl: p.product.images[0]?.imageUrl || null,
       })),
       history: history,
+      hasReported,
     };
 
     return NextResponse.json(response);

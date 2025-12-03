@@ -29,6 +29,7 @@ interface TagDetails extends Tag {
     mainImageUrl: string | null;
   }[];
   history: (TagMetadataHistory & { editor: { id: string; name: string | null; image: string | null; }})[];
+  hasReported?: boolean;
 }
 
 interface TagDetailModalProps {
@@ -87,12 +88,13 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-muted-foreground hover:text-destructive"
-                onClick={() => setIsReportOpen(true)}
-                title="このタグを通報する"
-                aria-label="このタグを通報する"
+                className={`text-muted-foreground ${details.hasReported ? 'opacity-50 cursor-not-allowed' : 'hover:text-destructive'}`}
+                onClick={() => !details.hasReported && setIsReportOpen(true)}
+                title={details.hasReported ? "既に通報済みです" : "このタグを通報する"}
+                aria-label={details.hasReported ? "既に通報済みです" : "このタグを通報する"}
+                disabled={details.hasReported}
               >
-                <Flag className="h-4 w-4" />
+                <Flag className={`h-4 w-4 ${details.hasReported ? 'fill-current' : ''}`} />
               </Button>
             )}
           </div>
