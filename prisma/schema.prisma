@@ -422,7 +422,7 @@ model Report {
   productId   String?
   product     Product?         @relation(fields: [productId], references: [id], onDelete: Cascade)
   
-  reason      String           // 通報理由（自由記述 または 選択肢）
+  reason      String           @db.VarChar(1000) // 通報理由（自由記述 または 選択肢）
   status      ReportStatus     @default(PENDING)
   
   createdAt   DateTime         @default(now())
