@@ -85,6 +85,8 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
           <div className="flex justify-between items-start pr-8">
             <DialogTitle>Tag Details</DialogTitle>
             {details && session?.user && (
+              // Note: Tags are global entities and do not have an owner, so we don't check for ownership here.
+              // Users can report any tag unless they are suspended or have already reported it.
               <Button
                 variant="ghost"
                 size="icon"
