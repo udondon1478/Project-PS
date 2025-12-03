@@ -24,10 +24,13 @@ type ReportWithDetails = Report & {
   targetUrl?: string;
 };
 
+import { Loader2 } from "lucide-react";
+
 export default function ReportList() {
   const [reports, setReports] = useState<ReportWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const fetchReports = async () => {
     setLoading(true);
@@ -51,6 +54,7 @@ export default function ReportList() {
   }, []);
 
   const handleStatusChange = async (id: string, status: ReportStatus) => {
+    setUpdatingId(id);
     try {
       const response = await fetch(`/api/admin/reports/${id}`, {
         method: "PATCH",
@@ -65,6 +69,8 @@ export default function ReportList() {
     } catch (error) {
       console.error("Error updating status:", error);
       toast.error("ステータスの更新に失敗しました");
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -165,7 +171,11 @@ export default function ReportList() {
                           size="sm"
                           data-testid="report-resolve-button"
                           onClick={() => handleStatusChange(report.id, "RESOLVED")}
+                          disabled={updatingId === report.id}
                         >
+                          {updatingId === report.id && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          )}
                           解決
                         </Button>
                         <Button
@@ -173,7 +183,11 @@ export default function ReportList() {
                           variant="outline"
                           data-testid="ignore-button"
                           onClick={() => handleStatusChange(report.id, "IGNORED")}
+                          disabled={updatingId === report.id}
                         >
+                          {updatingId === report.id && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          )}
                           無視
                         </Button>
                       </>
