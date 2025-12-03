@@ -90,11 +90,11 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
               <Button
                 variant="ghost"
                 size="icon"
-                className={`text-muted-foreground ${details.hasReported || session.user.status === 'SUSPENDED' ? 'opacity-50 cursor-not-allowed' : 'hover:text-destructive'}`}
+                className={`text-muted-foreground ${details.hasReported || session?.user?.status === 'SUSPENDED' ? 'opacity-50 cursor-not-allowed' : 'hover:text-destructive'}`}
                 onClick={() => setIsReportOpen(true)}
-                title={session.user.status === 'SUSPENDED' ? "アカウントが停止されています" : details.hasReported ? "既に通報済みです" : "このタグを通報する"}
-                aria-label={session.user.status === 'SUSPENDED' ? "アカウントが停止されています" : details.hasReported ? "既に通報済みです" : "このタグを通報する"}
-                disabled={details.hasReported || session.user.status === 'SUSPENDED'}
+                title={session?.user?.status === 'SUSPENDED' ? "アカウントが停止されています" : details.hasReported ? "既に通報済みです" : "このタグを通報する"}
+                aria-label={session?.user?.status === 'SUSPENDED' ? "アカウントが停止されています" : details.hasReported ? "既に通報済みです" : "このタグを通報する"}
+                disabled={details.hasReported || session?.user?.status === 'SUSPENDED'}
                 data-testid="report-tag-button"
               >
                 <Flag className={`h-4 w-4 ${details.hasReported ? 'fill-current' : ''}`} />
