@@ -11,7 +11,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
       return NextResponse.json({ error: 'Tag ID is required' }, { status: 400 });
     }
 
-    const [tag, parentTagRelations, childTagRelations, productRelations, history] = await prisma.$transaction([
+    const [tag, parentTagRelations, childTagRelations, productRelations, history, report] = await prisma.$transaction([
       // 1. Fetch the tag itself
       prisma.tag.findUnique({
         where: { id: tagId },
@@ -69,24 +69,25 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
           createdAt: 'desc',
         },
       }),
+
+      // 6. Check if user has reported
+      session?.user?.id
+        ? prisma.report.findUnique({
+            where: {
+              reporterId_tagId: {
+                reporterId: session.user.id,
+                tagId: tagId,
+              },
+            },
+          })
+        : prisma.report.findFirst({ where: { id: '00000000-0000-0000-0000-000000000000' } }),
     ]);
 
     if (!tag) {
       return NextResponse.json({ error: 'Tag not found' }, { status: 404 });
     }
 
-    let hasReported = false;
-    if (session?.user?.id) {
-      const report = await prisma.report.findUnique({
-        where: {
-          reporterId_tagId: {
-            reporterId: session.user.id,
-            tagId: tagId,
-          },
-        },
-      });
-      hasReported = !!report;
-    }
+    const hasReported = !!report;
 
     // Format the data for the response
     const response = {
