@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { ReportTargetType, Prisma } from '@prisma/client';
+import { REPORT_ERROR_MESSAGES } from '@/lib/constants/messages';
 
 const reportSchema = z.object({
   targetType: z.nativeEnum(ReportTargetType),
@@ -15,12 +16,12 @@ export async function POST(req: Request) {
     const session = await auth();
 
     if (!session || !session.user || !session.user.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: REPORT_ERROR_MESSAGES.UNAUTHORIZED }, { status: 401 });
     }
 
     // Check for suspended user
     if (session.user.status === 'SUSPENDED') {
-      return NextResponse.json({ error: 'Account suspended' }, { status: 403 });
+      return NextResponse.json({ error: REPORT_ERROR_MESSAGES.ACCOUNT_SUSPENDED }, { status: 403 });
     }
 
     const body = await req.json();
@@ -43,7 +44,7 @@ export async function POST(req: Request) {
 
     if (recentReportsCount >= 5) {
       return NextResponse.json(
-        { error: 'Too many reports. Please try again later.' },
+        { error: REPORT_ERROR_MESSAGES.TOO_MANY_REPORTS },
         { status: 429 }
       );
     }
@@ -56,7 +57,7 @@ export async function POST(req: Request) {
       });
       if (product && product.userId === session.user.id) {
         return NextResponse.json(
-          { error: '自分の商品は通報できません' },
+          { error: REPORT_ERROR_MESSAGES.OWN_PRODUCT },
           { status: 400 }
         );
       }
@@ -67,7 +68,7 @@ export async function POST(req: Request) {
       });
       if (productTag && productTag.userId === session.user.id) {
         return NextResponse.json(
-          { error: '自分が付けたタグは通報できません' },
+          { error: REPORT_ERROR_MESSAGES.OWN_TAG },
           { status: 400 }
         );
       }
@@ -87,7 +88,7 @@ export async function POST(req: Request) {
     } else if (targetType === 'PRODUCT') {
       reportData = { ...baseData, productId: targetId };
     } else {
-      return NextResponse.json({ error: 'Invalid target type' }, { status: 400 });
+      return NextResponse.json({ error: REPORT_ERROR_MESSAGES.INVALID_TARGET_TYPE }, { status: 400 });
     }
 
     const report = await prisma.report.create({
@@ -99,10 +100,10 @@ export async function POST(req: Request) {
     console.error('Error creating report:', error);
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       return NextResponse.json(
-        { error: 'この対象は既に通報済みです' },
+        { error: REPORT_ERROR_MESSAGES.ALREADY_REPORTED },
         { status: 409 }
       );
     }
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: REPORT_ERROR_MESSAGES.INTERNAL_SERVER_ERROR }, { status: 500 });
   }
 }
