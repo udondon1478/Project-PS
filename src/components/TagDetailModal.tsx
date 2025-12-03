@@ -91,7 +91,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
                 variant="ghost"
                 size="icon"
                 className={`text-muted-foreground ${details.hasReported || session.user.status === 'SUSPENDED' ? 'opacity-50 cursor-not-allowed' : 'hover:text-destructive'}`}
-                onClick={() => !details.hasReported && session.user.status !== 'SUSPENDED' && setIsReportOpen(true)}
+                onClick={() => setIsReportOpen(true)}
                 title={session.user.status === 'SUSPENDED' ? "アカウントが停止されています" : details.hasReported ? "既に通報済みです" : "このタグを通報する"}
                 aria-label={session.user.status === 'SUSPENDED' ? "アカウントが停止されています" : details.hasReported ? "既に通報済みです" : "このタグを通報する"}
                 disabled={details.hasReported || session.user.status === 'SUSPENDED'}
