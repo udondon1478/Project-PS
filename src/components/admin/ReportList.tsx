@@ -82,77 +82,85 @@ export default function ReportList() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {reports.map((report) => (
-            <TableRow key={report.id}>
-              <TableCell>{new Date(report.createdAt).toLocaleString()}</TableCell>
-              <TableCell>
-                <div className="font-medium">
-                  {report.targetUrl ? (
-                    <a
-                      href={report.targetUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline flex items-center gap-1"
-                    >
-                      {report.targetName || "Unknown"}
-                      <span className="text-xs">↗</span>
-                    </a>
-                  ) : (
-                    report.targetName || "Unknown"
-                  )}
-                </div>
-                {report.targetContext && (
-                  <div className="text-xs text-muted-foreground">
-                    on {report.targetContext}
-                  </div>
-                )}
-                <Badge variant="outline" className="mt-1">{report.targetType}</Badge>
-              </TableCell>
-              <TableCell className="max-w-[200px] truncate" title={report.reason}>
-                {report.reason}
-              </TableCell>
-              <TableCell>
-                {report.reporter.name || "Unknown"}
-                <div className="text-xs text-muted-foreground">
-                  {report.reporter.email}
-                </div>
-              </TableCell>
-              <TableCell>
-                <Badge
-                  variant={
-                    report.status === "PENDING"
-                      ? "destructive"
-                      : report.status === "RESOLVED"
-                      ? "default"
-                      : "secondary"
-                  }
-                >
-                  {report.status}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <div className="flex gap-2">
-                  {report.status === "PENDING" && (
-                    <>
-                      <Button
-                        size="sm"
-                        onClick={() => handleStatusChange(report.id, "RESOLVED")}
-                      >
-                        解決
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleStatusChange(report.id, "IGNORED")}
-                      >
-                        無視
-                      </Button>
-                    </>
-                  )}
-                </div>
+          {reports.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} className="h-24 text-center text-muted-foreground" role="status" aria-live="polite">
+                通報はありません
               </TableCell>
             </TableRow>
-          ))}
+          ) : (
+            reports.map((report) => (
+              <TableRow key={report.id}>
+                <TableCell>{new Date(report.createdAt).toLocaleString()}</TableCell>
+                <TableCell>
+                  <div className="font-medium">
+                    {report.targetUrl ? (
+                      <a
+                        href={report.targetUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline flex items-center gap-1"
+                      >
+                        {report.targetName || "Unknown"}
+                        <span className="text-xs">↗</span>
+                      </a>
+                    ) : (
+                      report.targetName || "Unknown"
+                    )}
+                  </div>
+                  {report.targetContext && (
+                    <div className="text-xs text-muted-foreground">
+                      on {report.targetContext}
+                    </div>
+                  )}
+                  <Badge variant="outline" className="mt-1">{report.targetType}</Badge>
+                </TableCell>
+                <TableCell className="max-w-[200px] truncate" title={report.reason}>
+                  {report.reason}
+                </TableCell>
+                <TableCell>
+                  {report.reporter.name || "Unknown"}
+                  <div className="text-xs text-muted-foreground">
+                    {report.reporter.email}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant={
+                      report.status === "PENDING"
+                        ? "destructive"
+                        : report.status === "RESOLVED"
+                        ? "default"
+                        : "secondary"
+                    }
+                  >
+                    {report.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    {report.status === "PENDING" && (
+                      <>
+                        <Button
+                          size="sm"
+                          onClick={() => handleStatusChange(report.id, "RESOLVED")}
+                        >
+                          解決
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleStatusChange(report.id, "IGNORED")}
+                        >
+                          無視
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
     </div>
