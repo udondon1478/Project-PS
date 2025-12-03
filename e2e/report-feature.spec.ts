@@ -101,10 +101,8 @@ test.describe('Report Feature', () => {
     await page.goto(`/products/${product.id}`);
     
     // Click the info button to open modal
-    // Click the info button to open modal
     await page.getByTestId('tag-info-button').first().click();
     
-    // 3. Report the tag
     // 3. Report the tag
     await page.getByTestId('report-tag-button').click();
     await page.getByTestId('report-reason-input').fill('This is a test report');
@@ -124,14 +122,18 @@ test.describe('Report Feature', () => {
     await page.getByTestId('admin-reports-tab').click();
 
     // 6. Verify report is visible
-    await expect(page.getByText('This is a test report')).toBeVisible();
+    const reportRow = page.getByRole('row').filter({ hasText: 'This is a test report' });
+    await expect(reportRow).toBeVisible();
+    
+    await expect(reportRow.getByTestId('report-reason')).toHaveText('This is a test report');
+    
     // Verify target name is displayed and is a link (CodeRabbit fix & URL feature)
-    const link = page.getByRole('link', { name: 'TestTag' });
+    const link = reportRow.getByTestId('report-link');
     await expect(link).toBeVisible();
     await expect(link).toHaveAttribute('href', '/search?tags=TestTag');
 
     // 7. Resolve the report
-    await page.getByTestId('resolve-button').click();
+    await reportRow.getByTestId('report-resolve-button').click();
     
     // Verify status update (might need reload or it updates automatically)
     await expect(page.getByTestId('report-status-badge')).toHaveText('解決済み');
