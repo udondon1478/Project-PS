@@ -80,7 +80,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
               },
             },
           })
-        : prisma.report.findFirst({ where: { id: '00000000-0000-0000-0000-000000000000' } }),
+        : Promise.resolve(null),
     ]);
 
     if (!tag) {
