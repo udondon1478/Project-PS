@@ -11,6 +11,11 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { TagDescriptionEditor } from './TagDescriptionEditor';
 import { TagDescriptionHistory } from './TagDescriptionHistory';
 import { Tag, TagMetadataHistory } from '@prisma/client';
@@ -99,18 +104,26 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
             {details && session?.user && (
               // Note: Tags are global entities and do not have an owner, so we don't check for ownership here.
               // Users can report any tag unless they are suspended or have already reported it.
-              <Button
-                variant="ghost"
-                size="icon"
-                className={`text-muted-foreground ${details.hasReported || session?.user?.status === 'SUSPENDED' ? 'opacity-50 cursor-not-allowed' : 'hover:text-destructive'}`}
-                onClick={() => setIsReportOpen(true)}
-                title={session?.user?.status === 'SUSPENDED' ? "アカウントが停止されています" : details.hasReported ? "既に通報済みです" : "このタグを通報する"}
-                aria-label={session?.user?.status === 'SUSPENDED' ? "アカウントが停止されています" : details.hasReported ? "既に通報済みです" : "このタグを通報する"}
-                disabled={details.hasReported || session?.user?.status === 'SUSPENDED'}
-                data-testid="report-tag-button"
-              >
-                <Flag className={`h-4 w-4 ${details.hasReported ? 'fill-current' : ''}`} />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-block" tabIndex={details.hasReported || session?.user?.status === 'SUSPENDED' ? 0 : -1}>
+                    <Button
+                      variant={details.hasReported ? "secondary" : "ghost"}
+                      size="icon"
+                      className={`${!details.hasReported ? 'text-muted-foreground' : ''} ${details.hasReported || session?.user?.status === 'SUSPENDED' ? 'opacity-50 cursor-not-allowed' : 'hover:text-destructive'}`}
+                      onClick={() => setIsReportOpen(true)}
+                      aria-label={session?.user?.status === 'SUSPENDED' ? "アカウントが停止されています" : details.hasReported ? "既に通報済みです" : "このタグを通報する"}
+                      disabled={details.hasReported || session?.user?.status === 'SUSPENDED'}
+                      data-testid="report-tag-button"
+                    >
+                      <Flag className={`h-4 w-4 ${details.hasReported ? 'fill-current' : ''}`} />
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{session?.user?.status === 'SUSPENDED' ? "アカウントが停止されています" : details.hasReported ? "既に通報済みです" : "このタグを通報する"}</p>
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
         </DialogHeader>
