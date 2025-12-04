@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Report, ReportStatus } from "@prisma/client";
+import { ReportStatus } from "@/lib/constants";
+import { ReportWithDetails } from "@/types/report";
 import {
   Table,
   TableBody,
@@ -14,15 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
-type ReportWithDetails = Report & {
-  reporter: {
-    name: string | null;
-    email: string | null;
-  };
-  targetName?: string;
-  targetContext?: string;
-  targetUrl?: string;
-};
+
 
 import { Loader2 } from "lucide-react";
 
