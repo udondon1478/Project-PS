@@ -13,7 +13,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { TagDescriptionEditor } from './TagDescriptionEditor';
 import { TagDescriptionHistory } from './TagDescriptionHistory';
-import { Tag, TagMetadataHistory, ReportTargetType } from '@prisma/client';
+import { Tag, TagMetadataHistory } from '@prisma/client';
+import { REPORT_TARGET_TAG } from '@/lib/constants';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Flag } from 'lucide-react';
@@ -181,7 +182,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
             <ReportDialog
               open={isReportOpen}
               onOpenChange={setIsReportOpen}
-              targetType={ReportTargetType.TAG}
+              targetType={REPORT_TARGET_TAG}
               targetId={details.id}
               targetName={details.name}
             />

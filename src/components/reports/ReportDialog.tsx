@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ReportTargetType } from "@prisma/client";
+import { ReportTargetType } from "@/lib/constants";
 import { toast } from "sonner";
 
 interface ReportDialogProps {
