@@ -181,7 +181,12 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
             />
             <ReportDialog
               open={isReportOpen}
-              onOpenChange={setIsReportOpen}
+              onOpenChange={(open) => {
+                setIsReportOpen(open);
+                if (!open && tagId) {
+                  fetchDetails(tagId);
+                }
+              }}
               targetType={REPORT_TARGET_TAG}
               targetId={details.id}
               targetName={details.name}
