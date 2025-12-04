@@ -19,6 +19,19 @@ import { toast } from "sonner";
 
 import { Loader2 } from "lucide-react";
 
+const getLocalizedErrorMessage = (error: unknown): string => {
+  const message = error instanceof Error ? error.message : String(error);
+  
+  if (message.includes("Failed to fetch reports")) {
+    return "レポートの取得に失敗しました";
+  }
+  if (message.includes("Failed to update status")) {
+    return "ステータスの更新に失敗しました";
+  }
+  
+  return "予期せぬエラーが発生しました";
+};
+
 export default function ReportList() {
   const [reports, setReports] = useState<ReportWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,8 +48,9 @@ export default function ReportList() {
       setReports(data.reports || []);
     } catch (error: any) {
       console.error("Error fetching reports:", error);
-      setError(error.message || String(error));
-      toast.error("通報一覧の取得に失敗しました");
+      const userMessage = getLocalizedErrorMessage(error);
+      setError(userMessage);
+      toast.error(userMessage);
     } finally {
       setLoading(false);
     }
@@ -61,7 +75,8 @@ export default function ReportList() {
       fetchReports();
     } catch (error) {
       console.error("Error updating status:", error);
-      toast.error("ステータスの更新に失敗しました");
+      const userMessage = getLocalizedErrorMessage(error);
+      toast.error(userMessage);
     } finally {
       setUpdatingId(null);
     }
@@ -70,7 +85,7 @@ export default function ReportList() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center p-8 space-y-4">
-        <p className="text-destructive font-medium">レポートの取得に失敗しました: {error}</p>
+        <p className="text-destructive font-medium">{error}</p>
         <Button onClick={fetchReports} variant="outline">
           再試行
         </Button>
