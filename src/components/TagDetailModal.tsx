@@ -53,12 +53,23 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
     setError(null);
     try {
       const res = await fetch(`/api/tags/${id}/details`);
-      if (!res.ok) throw new Error('Failed to fetch tag details');
+      if (!res.ok) {
+        let errorMessage = 'Failed to fetch tag details';
+        try {
+          const body = await res.json();
+          if (body && typeof body === 'object') {
+            errorMessage = body.error || body.message || errorMessage;
+          }
+        } catch {
+          // Ignore JSON parse errors on error response
+        }
+        throw new Error(errorMessage);
+      }
       const data = await res.json();
       setDetails(data);
     } catch (err) {
       console.error(err);
-      setError('Failed to load tag details');
+      setError(err instanceof Error ? err.message : 'Failed to load tag details');
     } finally {
       setLoading(false);
     }
