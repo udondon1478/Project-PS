@@ -115,6 +115,7 @@ test.describe('Report Feature', () => {
       id: 'admin-1', name: 'Admin User', email: 'admin@example.com', role: 'ADMIN',
       termsAgreedAt: new Date(),
     });
+    await page.reload();
 
     // 5. Go to Admin Panel
     await page.goto('/admin');
