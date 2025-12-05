@@ -13,11 +13,9 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
-
-
-
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle, RefreshCcw } from "lucide-react";
 
 const getLocalizedErrorMessage = (error: unknown): string => {
   const message = error instanceof Error ? error.message : String(error);
@@ -36,21 +34,34 @@ export default function ReportList() {
   const [reports, setReports] = useState<ReportWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isFatalError, setIsFatalError] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const fetchReports = async () => {
     setLoading(true);
     setError(null);
+    setIsFatalError(false);
     try {
       const response = await fetch("/api/admin/reports");
-      if (!response.ok) throw new Error("Failed to fetch reports");
+      if (!response.ok) {
+        const err = new Error("Failed to fetch reports");
+        (err as any).isFatal = true;
+        throw err;
+      }
       const data = await response.json();
       setReports(data.reports || []);
     } catch (error: any) {
       console.error("Error fetching reports:", error);
       const userMessage = getLocalizedErrorMessage(error);
       setError(userMessage);
-      toast.error(userMessage);
+      
+      // Fatal if explicitly marked or if we have no data to show
+      const isFatal = error.isFatal || reports.length === 0;
+      setIsFatalError(isFatal);
+
+      if (!isFatal) {
+        toast.error(userMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -82,7 +93,7 @@ export default function ReportList() {
     }
   };
 
-  if (error) {
+  if (isFatalError) {
     return (
       <div className="flex flex-col items-center justify-center p-8 space-y-4">
         <p className="text-destructive font-medium">{error}</p>
@@ -96,6 +107,26 @@ export default function ReportList() {
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold">通報一覧</h2>
+      
+      {error && !isFatalError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>エラー</AlertTitle>
+          <AlertDescription className="flex items-center justify-between">
+            <span>{error}</span>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={fetchReports} 
+              className="ml-2 bg-background hover:bg-accent"
+            >
+              <RefreshCcw className="mr-2 h-3 w-3" />
+              再試行
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Table aria-busy={loading} aria-label={loading ? "Loading reports" : undefined}>
         <TableHeader>
           <TableRow>
@@ -108,7 +139,7 @@ export default function ReportList() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {loading ? (
+          {loading && reports.length === 0 ? (
             Array.from({ length: 5 }).map((_, index) => (
               <TableRow key={`skeleton-${index}`}>
                 <TableCell>
@@ -148,7 +179,7 @@ export default function ReportList() {
             </TableRow>
           ) : (
             reports.map((report) => (
-              <TableRow key={report.id}>
+              <TableRow key={report.id} className={loading ? "opacity-50 pointer-events-none" : ""}>
                 <TableCell>{new Date(report.createdAt).toLocaleString()}</TableCell>
                 <TableCell>
                   <div className="font-medium">
