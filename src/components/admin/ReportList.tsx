@@ -16,6 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { Loader2, AlertCircle, RefreshCcw } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import "@/lib/i18n"; // Initialize i18n
 
 const getLocalizedErrorMessage = (error: unknown): string => {
   const message = error instanceof Error ? error.message : String(error);
@@ -31,6 +33,7 @@ const getLocalizedErrorMessage = (error: unknown): string => {
 };
 
 export default function ReportList() {
+  const { t } = useTranslation();
   const [reports, setReports] = useState<ReportWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,18 +48,18 @@ export default function ReportList() {
       const response = await fetch("/api/admin/reports");
       if (!response.ok) {
         const err = new Error("Failed to fetch reports");
-        (err as any).isFatal = true;
+        Object.assign(err, { isFatal: true });
         throw err;
       }
       const data = await response.json();
       setReports(data.reports || []);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error fetching reports:", error);
       const userMessage = getLocalizedErrorMessage(error);
       setError(userMessage);
       
       // Fatal if explicitly marked or if we have no data to show
-      const isFatal = error.isFatal || reports.length === 0;
+      const isFatal = (error as { isFatal?: boolean })?.isFatal || reports.length === 0;
       setIsFatalError(isFatal);
 
       if (!isFatal) {
@@ -69,6 +72,7 @@ export default function ReportList() {
 
   useEffect(() => {
     fetchReports();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleStatusChange = async (id: string, status: ReportStatus) => {
@@ -201,7 +205,7 @@ export default function ReportList() {
                   </div>
                   {report.targetContext && (
                     <div className="text-xs text-muted-foreground">
-                      on {report.targetContext}
+                      {t('report.onContext', { context: report.targetContext })}
                     </div>
                   )}
                   <Badge variant="outline" className="mt-1">{report.targetType}</Badge>
