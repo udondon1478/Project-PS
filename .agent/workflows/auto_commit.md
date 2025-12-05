@@ -8,14 +8,14 @@ description: 作業完了時に変更内容を自動的にコミットするワ�
    - `git status`
    - `git diff`
 
-2. 変更内容に基づいて、`.agent/rules/commit-rules.md` のルールに従ったコミットメッセージを生成します。
+1. 変更内容に基づいて、`.agent/rules/commit-rules.md` のルールに従ったコミットメッセージを生成します。
    - 言語: 日本語
    - 形式: `<Type>: <Subject> <Emoji>`
    - Type: feat, fix, refactor, etc.
 
-3. 変更されたファイルをステージングします。
+1. 変更されたファイルをステージングします。
    - 基本的には `git add -u` (追跡済みファイルの更新) を使用しますが、新規ファイルがある場合は `git add .` または個別に指定してください。
    - `git add -u`
 
-4. 生成したメッセージでコミットを実行します。
+1. 生成したメッセージでコミットを実行します。
    - `git commit -m "<message>"`
