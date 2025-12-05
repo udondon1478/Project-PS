@@ -6,6 +6,9 @@ test.describe('Report Feature', () => {
   test.beforeEach(async () => {
     // Clean up any existing reports and users
     await prisma.report.deleteMany();
+    await prisma.tag.deleteMany({
+      where: { name: 'TestTag' }
+    });
     await prisma.productTag.deleteMany({
       where: {
         user: {
@@ -32,6 +35,9 @@ test.describe('Report Feature', () => {
   test.afterEach(async () => {
     // Clean up any existing reports and users
     await prisma.report.deleteMany();
+    await prisma.tag.deleteMany({
+      where: { name: 'TestTag' }
+    });
     await prisma.productTag.deleteMany({
       where: {
         user: {
