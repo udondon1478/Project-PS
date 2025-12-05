@@ -107,7 +107,7 @@ test.describe('Report Feature', () => {
     await page.goto(`/products/${product.id}`);
     
     // Click the info button to open modal
-    await page.getByTestId('tag-info-button').first().click();
+    await page.getByTestId('tag-info-button-TestTag').click();
     
     // 3. Report the tag
     await page.getByTestId('report-tag-button').click();
