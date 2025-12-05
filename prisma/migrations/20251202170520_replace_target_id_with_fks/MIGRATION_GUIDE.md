@@ -12,7 +12,10 @@
 
 以下のSQLクエリを実行して、各ユニーク制約に違反する可能性のある重複データを確認してください。
 
-### A. Tag Report (`reporterId` + `tagId`) の重複
+### 1-1. マイグレーション適用前 (Pre-migration)
+*`targetId` / `targetType` カラムが存在する状態で実行します。*
+
+#### A. Tag Report (`reporterId` + `tagId`) の重複
 
 ```sql
 SELECT "reporterId", "targetId" AS "tagId", COUNT(*) as "count"
@@ -22,7 +25,7 @@ GROUP BY "reporterId", "targetId"
 HAVING COUNT(*) > 1;
 ```
 
-### B. Product Tag Report (`reporterId` + `productTagId`) の重複
+#### B. Product Tag Report (`reporterId` + `productTagId`) の重複
 
 ```sql
 SELECT "reporterId", "targetId" AS "productTagId", COUNT(*) as "count"
@@ -32,13 +35,46 @@ GROUP BY "reporterId", "targetId"
 HAVING COUNT(*) > 1;
 ```
 
-### C. Product Report (`reporterId` + `productId`) の重複
+#### C. Product Report (`reporterId` + `productId`) の重複
 
 ```sql
 SELECT "reporterId", "targetId" AS "productId", COUNT(*) as "count"
 FROM "Report"
 WHERE "targetType" = 'PRODUCT'
 GROUP BY "reporterId", "targetId"
+HAVING COUNT(*) > 1;
+```
+
+### 1-2. マイグレーション適用後 (Post-migration)
+*マイグレーション適用後に、新しく作成されたカラム (`tagId`, `productTagId`, `productId`) に対して重複チェックを行う場合に使用します。*
+
+#### A. Tag Report (`reporterId` + `tagId`) の重複
+
+```sql
+SELECT "reporterId", "tagId", COUNT(*) as "count"
+FROM "Report"
+WHERE "tagId" IS NOT NULL
+GROUP BY "reporterId", "tagId"
+HAVING COUNT(*) > 1;
+```
+
+#### B. Product Tag Report (`reporterId` + `productTagId`) の重複
+
+```sql
+SELECT "reporterId", "productTagId", COUNT(*) as "count"
+FROM "Report"
+WHERE "productTagId" IS NOT NULL
+GROUP BY "reporterId", "productTagId"
+HAVING COUNT(*) > 1;
+```
+
+#### C. Product Report (`reporterId` + `productId`) の重複
+
+```sql
+SELECT "reporterId", "productId", COUNT(*) as "count"
+FROM "Report"
+WHERE "productId" IS NOT NULL
+GROUP BY "reporterId", "productId"
 HAVING COUNT(*) > 1;
 ```
 
