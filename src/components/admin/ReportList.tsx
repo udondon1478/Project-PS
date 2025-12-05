@@ -32,6 +32,16 @@ const getLocalizedErrorMessage = (error: unknown): string => {
   return "予期せぬエラーが発生しました";
 };
 
+const STATUS_CONFIG: Record<ReportStatus, {
+  label: string;
+  variant: "default" | "destructive" | "secondary";
+  showActions: boolean;
+}> = {
+  [ReportStatus.PENDING]: { label: "保留中", variant: "destructive", showActions: true },
+  [ReportStatus.RESOLVED]: { label: "解決済み", variant: "default", showActions: false },
+  [ReportStatus.IGNORED]: { label: "無視", variant: "secondary", showActions: false },
+};
+
 export default function ReportList() {
   const { t } = useTranslation();
   const [reports, setReports] = useState<ReportWithDetails[]>([]);
@@ -224,24 +234,14 @@ export default function ReportList() {
                 <TableCell>
                   <Badge
                     data-testid="report-status-badge"
-                    variant={
-                      report.status === "PENDING"
-                        ? "destructive"
-                        : report.status === "RESOLVED"
-                        ? "default"
-                        : "secondary"
-                    }
+                    variant={STATUS_CONFIG[report.status].variant}
                   >
-                    {report.status === "PENDING"
-                      ? "保留中"
-                      : report.status === "RESOLVED"
-                      ? "解決済み"
-                      : "無視"}
+                    {STATUS_CONFIG[report.status].label}
                   </Badge>
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-2">
-                    {report.status === "PENDING" && (
+                    {STATUS_CONFIG[report.status].showActions && (
                       <>
                         <Button
                           size="sm"
