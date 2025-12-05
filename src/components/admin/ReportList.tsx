@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { ReportStatus } from "@/lib/constants";
 import { ReportWithDetails } from "@/types/report";
 import {
@@ -50,7 +50,13 @@ export default function ReportList() {
   const [isFatalError, setIsFatalError] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const fetchReports = async () => {
+  // Keep ref in sync with state to use in useCallback without triggering re-renders
+  const reportsRef = useRef(reports);
+  useEffect(() => {
+    reportsRef.current = reports;
+  }, [reports]);
+
+  const fetchReports = useCallback(async () => {
     setLoading(true);
     setError(null);
     setIsFatalError(false);
@@ -69,7 +75,7 @@ export default function ReportList() {
       setError(userMessage);
       
       // Fatal if explicitly marked or if we have no data to show
-      const isFatal = (error as { isFatal?: boolean })?.isFatal || reports.length === 0;
+      const isFatal = (error as { isFatal?: boolean })?.isFatal || reportsRef.current.length === 0;
       setIsFatalError(isFatal);
 
       if (!isFatal) {
@@ -78,12 +84,11 @@ export default function ReportList() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchReports();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchReports]);
 
   const handleStatusChange = async (id: string, status: ReportStatus) => {
     setUpdatingId(id);
