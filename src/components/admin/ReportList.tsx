@@ -251,7 +251,7 @@ export default function ReportList() {
                         <Button
                           size="sm"
                           data-testid="report-resolve-button"
-                          onClick={() => handleStatusChange(report.id, "RESOLVED")}
+                          onClick={() => handleStatusChange(report.id, ReportStatus.RESOLVED)}
                           disabled={updatingId === report.id}
                         >
                           {updatingId === report.id && (
@@ -263,7 +263,7 @@ export default function ReportList() {
                           size="sm"
                           variant="outline"
                           data-testid="ignore-button"
-                          onClick={() => handleStatusChange(report.id, "IGNORED")}
+                          onClick={() => handleStatusChange(report.id, ReportStatus.IGNORED)}
                           disabled={updatingId === report.id}
                         >
                           {updatingId === report.id && (
