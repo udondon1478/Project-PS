@@ -46,6 +46,7 @@ HAVING COUNT(*) > 1;
 ```
 
 ### 1-2. マイグレーション適用後 (Post-migration)
+
 *マイグレーション適用後に、新しく作成されたカラム (`tagId`, `productTagId`, `productId`) に対して重複チェックを行う場合に使用します。*
 
 #### A. Tag Report (`reporterId` + `tagId`) の重複
