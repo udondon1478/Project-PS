@@ -347,7 +347,7 @@ test.describe('Anonymous User Core Features', () => {
 
     // デバッグ用: 最終値を確認
     const finalValue = await maxPriceSlider.getAttribute('aria-valuenow');
-    console.log(`[Test 1.4] Final Max Price Slider Value: ${finalValue}`);
+    if (process.env.E2E_DEBUG) console.log(`[Test 1.4] Final Max Price Slider Value: ${finalValue}`);
 
     // 適用ボタンをクリック
     await page.getByRole('button', { name: 'フィルターを適用' }).click();
@@ -355,7 +355,7 @@ test.describe('Anonymous User Core Features', () => {
     // URLパターンの検証
     const urlPattern = new RegExp(`search\\?.*categoryName=${encodeQuery(negativeTag)}.*&maxPrice=[0-9]+`);
     
-    console.log(`[Test 1.4] Current URL: ${page.url()}`);
+    if (process.env.E2E_DEBUG) console.log(`[Test 1.4] Current URL: ${page.url()}`);
     
     // URLが期待通りか待機・検証
     await page.waitForURL(urlPattern);
