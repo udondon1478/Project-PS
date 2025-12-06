@@ -23,7 +23,10 @@ export async function generateMetadata({ searchParams }: SearchPageProps): Promi
   if (q) {
     title = `検索キーワード: ${q}`;
   } else if (tags) {
-    title = `タグ: ${tags} -${negativeTags}`;
+    title = `タグ: ${tags}`;
+    if (negativeTags) {
+      title += ` -${negativeTags}`;
+    }
   }
 
   return {
