@@ -328,19 +328,21 @@ test.describe('Anonymous User Core Features', () => {
     // 現在の最大値から待機しながら値を下げていく
     // 確実に10,000未満になるまで操作する（10,000だとフィルタ無効扱いになるため）
     // タイムアウト付きでループ
-    const startTime = Date.now();
-    while (Date.now() - startTime < 5000) {
+    // 現在の最大値から確実に10,000円未満（フィルタ有効化ライン）になるまで操作する
+    const targetPrice = 10000;
+
+    // 安全のためループ回数制限を設ける
+    for (let i = 0; i < 50; i++) {
         const valueStr = await maxPriceSlider.getAttribute('aria-valuenow');
         const value = parseInt(valueStr || '10000', 10);
         
-        if (value < 10000) {
-            console.log(`[Test 1.4] Target value reached: ${value}`);
+        if (value < targetPrice) {
             break;
         }
         
         await maxPriceSlider.press('ArrowLeft');
-        // 少し待機しないと値の更新が反映されない可能性がある
-        await page.waitForTimeout(100);
+        // 値が更新される（直前の値と変わる）のを待機
+        await expect(maxPriceSlider).not.toHaveAttribute('aria-valuenow', valueStr || '', { timeout: 1000 });
     }
 
     // デバッグ用: 最終値を確認
