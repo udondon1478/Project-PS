@@ -134,26 +134,45 @@ export async function searchProducts(params: SearchParams): Promise<Product[]> {
       });
     }
 
+    let minPrice: number | undefined;
+    let maxPrice: number | undefined;
+
     if (params.minPrice) {
-      const min = Number(params.minPrice);
-      if (!isNaN(min)) {
-        whereConditions.push({
-          highPrice: {
-            gte: min,
-          },
-        });
+      const parsed = Number(params.minPrice);
+      if (!isNaN(parsed)) {
+        minPrice = parsed;
       }
     }
 
     if (params.maxPrice) {
-      const max = Number(params.maxPrice);
-      if (!isNaN(max)) {
-        whereConditions.push({
-          lowPrice: {
-            lte: max,
-          },
-        });
+      const parsed = Number(params.maxPrice);
+      if (!isNaN(parsed)) {
+        maxPrice = parsed;
       }
+    }
+
+    // 価格条件の矛盾をチェック
+    if (minPrice !== undefined && maxPrice !== undefined && minPrice > maxPrice) {
+      throw new Error('検索条件エラー: 最低価格が最高価格より高くなっています。');
+    }
+
+    // Note: The function intends to match overlapping price ranges.
+    // Product [low, high] overlaps with Filter [min, max] if high >= min AND low <= max.
+    
+    if (minPrice !== undefined) {
+      whereConditions.push({
+        highPrice: {
+          gte: minPrice,
+        },
+      });
+    }
+
+    if (maxPrice !== undefined) {
+      whereConditions.push({
+        lowPrice: {
+          lte: maxPrice,
+        },
+      });
     }
 
     const allowedSortKeys = ['createdAt', 'lowPrice', 'highPrice', 'viewCount', 'publishedAt'] as const;
