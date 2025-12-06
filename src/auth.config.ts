@@ -1,6 +1,7 @@
 import type { NextAuthConfig } from "next-auth"
 import Google from "next-auth/providers/google"
 import Discord from "next-auth/providers/discord"
+import { Role, UserStatus } from "@prisma/client"
 
 export const authConfig = {
     providers: [
@@ -40,8 +41,12 @@ export const authConfig = {
         async session({ session, token }) {
             if (token && session.user) {
                 session.user.id = token.id as string;
-                session.user.role = (token.role as "USER" | "ADMIN") ?? "USER";
-                session.user.status = (token.status as "ACTIVE" | "SUSPENDED" | "DELETED") ?? "ACTIVE";
+                session.user.role = Object.values(Role).includes(token.role as Role)
+                    ? (token.role as Role)
+                    : Role.USER;
+                session.user.status = Object.values(UserStatus).includes(token.status as UserStatus)
+                    ? (token.status as UserStatus)
+                    : UserStatus.ACTIVE;
                 session.user.termsAgreedAt = token.termsAgreedAt;
                 session.user.isSafeSearchEnabled = token.isSafeSearchEnabled ?? true;
             }
