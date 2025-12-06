@@ -190,40 +190,35 @@ test.describe('Anonymous User Core Features', () => {
     };
 
     // ProductTagの削除
-    if (query && negativeTag && (prodId1 || prodId2)) {
-       const tagNames = [query, negativeTag].filter(Boolean);
-       const prodIds = [prodId1, prodId2, prodId3].filter(Boolean);
-       
-       if (tagNames.length > 0 || prodIds.length > 0) {
-          await safeDelete('ProductTag', () => prisma.productTag.deleteMany({
-            where: {
-              OR: [
-                { tag: { name: { in: tagNames as string[] } } },
-                { product: { id: { in: prodIds as string[] } } }
-              ]
-            }
-          }));
-       }
+    // ProductTagの削除
+    const tagNames = [query, negativeTag].filter(Boolean) as string[];
+    const prodIds = [prodId1, prodId2, prodId3].filter(Boolean) as string[];
+
+    if (tagNames.length > 0 || prodIds.length > 0) {
+      await safeDelete('ProductTag', () => prisma.productTag.deleteMany({
+        where: {
+          OR: [
+            { tag: { name: { in: tagNames } } },
+            { product: { id: { in: prodIds } } }
+          ]
+        }
+      }));
     }
     
     // Productの削除
-    if (prodId1 || prodId2 || prodId3) {
-      const prodIds = [prodId1, prodId2, prodId3].filter(Boolean) as string[];
-      if (prodIds.length > 0) {
-        await safeDelete('Product', () => prisma.product.deleteMany({
-          where: { id: { in: prodIds } }
-        }));
-      }
+    // Productの削除
+    if (prodIds.length > 0) {
+      await safeDelete('Product', () => prisma.product.deleteMany({
+        where: { id: { in: prodIds } }
+      }));
     }
 
     // Tagの削除
-    if (query || negativeTag) {
-      const tagNames = [query, negativeTag].filter(Boolean) as string[];
-      if (tagNames.length > 0) {
-        await safeDelete('Tag', () => prisma.tag.deleteMany({
-          where: { name: { in: tagNames } }
-        }));
-      }
+    // Tagの削除
+    if (tagNames.length > 0) {
+      await safeDelete('Tag', () => prisma.tag.deleteMany({
+        where: { name: { in: tagNames } }
+      }));
     }
 
     // Userの削除
