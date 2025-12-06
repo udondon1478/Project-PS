@@ -12,6 +12,7 @@ export async function mockSession(
 
   // Ensure clean state
   try {
+    await prisma?.product.deleteMany({ where: { userId: user.id } });
     await prisma?.user.delete({ where: { id: user.id } });
   } catch (e) {
     // Ignore P2025: Record not found
