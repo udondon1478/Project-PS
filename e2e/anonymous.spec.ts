@@ -135,28 +135,59 @@ test.describe('Anonymous User Core Features', () => {
 
   test.afterEach(async () => {
     // クリーンアップ
-    // 依存関係があるため順序に注意
-    // ProductTagはCascadeで消える設定になっている場合が多いが、明示的に消すのが安全
-    await prisma.productTag.deleteMany({
-      where: {
-        OR: [
-          { tag: { name: { in: [query, negativeTag] } } },
-          { product: { id: { in: [prodId1, prodId2] } } }
-        ]
+    // 各削除処理を独立して行い、一部が失敗しても他が実行されるようにする
+    const safeDelete = async (label: string, deleteFn: () => Promise<any>) => {
+      try {
+        await deleteFn();
+      } catch (error) {
+        // レコードが存在しない場合のエラーは許容するが、それ以外は警告ログを出す
+        console.warn(`[Teardown] Failed to cleanup ${label}:`, error);
       }
-    });
+    };
+
+    // ProductTagの削除
+    if (query && negativeTag && (prodId1 || prodId2)) {
+       const tagNames = [query, negativeTag].filter(Boolean);
+       const prodIds = [prodId1, prodId2].filter(Boolean);
+       
+       if (tagNames.length > 0 || prodIds.length > 0) {
+          await safeDelete('ProductTag', () => prisma.productTag.deleteMany({
+            where: {
+              OR: [
+                { tag: { name: { in: tagNames as string[] } } },
+                { product: { id: { in: prodIds as string[] } } }
+              ]
+            }
+          }));
+       }
+    }
     
-    await prisma.product.deleteMany({
-      where: { id: { in: [prodId1, prodId2] } }
-    });
+    // Productの削除
+    if (prodId1 || prodId2) {
+      const prodIds = [prodId1, prodId2].filter(Boolean) as string[];
+      if (prodIds.length > 0) {
+        await safeDelete('Product', () => prisma.product.deleteMany({
+          where: { id: { in: prodIds } }
+        }));
+      }
+    }
 
-    await prisma.tag.deleteMany({
-      where: { name: { in: [query, negativeTag] } }
-    });
+    // Tagの削除
+    if (query || negativeTag) {
+      const tagNames = [query, negativeTag].filter(Boolean) as string[];
+      if (tagNames.length > 0) {
+        await safeDelete('Tag', () => prisma.tag.deleteMany({
+          where: { name: { in: tagNames } }
+        }));
+      }
+    }
 
-    await prisma.user.deleteMany({
-      where: { id: userId }
-    });
+    // Userの削除
+    if (userId) {
+      await safeDelete('User', () => prisma.user.deleteMany({
+        where: { id: userId }
+      }));
+    }
   });
 
   // テストケース 1.1: トップページの表示と最新商品の確認
