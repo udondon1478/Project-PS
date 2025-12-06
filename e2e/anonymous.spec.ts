@@ -46,7 +46,16 @@ test.describe('Anonymous User Core Features', () => {
     });
 
     const tag2 = await prisma.tag.create({
-      data: { name: negativeTag, language: 'ja' }
+      data: {
+        name: negativeTag,
+        language: 'ja',
+        tagCategory: {
+          connectOrCreate: {
+            where: { name: 'product_category' },
+            create: { name: 'product_category', color: 'blue' }
+          }
+        }
+      }
     });
 
     // '全年齢'タグを取得または作成（APIがこのタグを持つ商品のみを返すため）
@@ -272,13 +281,37 @@ test.describe('Anonymous User Core Features', () => {
     await page.getByLabel('フィルターを開く').click();
     await expect(page.getByText('フィルター', { exact: true })).toBeVisible();
 
-    // UI操作が不安定なため、URLパラメータを直接指定して遷移
-    await page.goto('/search?categoryName=product_category');
+    // カテゴリを選択
+    await page.getByLabel('カテゴリを選択').click();
+    await page.getByLabel(negativeTag).click();
 
-    // URLパラメータの確認
-    const urlPattern = new RegExp(`search\\?.*categoryName=.*`);
+    // 価格帯スライダーを操作
+    // 注: スライダーの操作はUIの実装に大きく依存するため、これは一例です
+    const minPriceSlider = page.getByLabel('最小額');
+    await minPriceSlider.focus();
+
+    await minPriceSlider.press('ArrowRight'); // スライダーを右に動かす（値を増やす）
+    await minPriceSlider.press('ArrowRight');
+    await minPriceSlider.press('ArrowRight');
+
+    const maxPriceSlider = page.getByLabel('最大額');
+    await maxPriceSlider.press('ArrowLeft'); // スライダーを左に動かす（値を減らす）
+    await maxPriceSlider.press('ArrowLeft');
+    await maxPriceSlider.press('ArrowLeft');
+
+    // 適用ボタンをクリック
+    await page.getByRole('button', { name: 'フィルターを適用' }).click();
+
+    // WebKitでのスライダー操作の揺らぎ(200 vs 300)などを許容するため、正規表現でパラメータの存在を確認する
+    // categoryNameは必須、minPrice/maxPriceは数値が含まれていればよしとする
+    const urlPattern = new RegExp(`search\\?.*categoryName=${encodeQuery(negativeTag)}.*&minPrice=[0-9]+&maxPrice=[0-9]+`);
+    
     console.log(`[Test 1.4] Current URL: ${page.url()}`);
+    
+    // URLが期待通りか待機・検証
+    await page.waitForURL(urlPattern);
     await expect(page).toHaveURL(urlPattern);
+    
     await expect(page.locator('[data-testid="product-grid"]')).toBeVisible();
   });
 
@@ -339,7 +372,6 @@ test.describe('Anonymous User Core Features', () => {
     const request = await likeApiPromise;
     expect(request.method()).toBe('POST');
 
-    // 8. APIが401エラーを返した後、UIが元の状態に戻ることを確認
     // 8. APIが401エラーを返した後、UIが元の状態に戻ることを確認
     // ハートアイコンが再び塗りつぶされていないことを確認 (APIエラーにより楽観的更新がロールバックされるのを待つ)
     await expect(heartIcon).toHaveAttribute('fill', 'none', { timeout: 10000 });
