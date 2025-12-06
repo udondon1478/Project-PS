@@ -248,7 +248,10 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
         </ScrollArea>
         <SheetFooter className="mt-auto pt-4 border-t">
           <Button variant="ghost" onClick={clearAllTagsAndFilters} className="mr-auto">すべてクリア</Button>
-          <Button onClick={applyFiltersAndSearch}>フィルターを適用</Button>
+          <Button onClick={() => {
+            applyFiltersAndSearch();
+            setIsFilterSidebarOpen(false);
+          }}>フィルターを適用</Button>
         </SheetFooter>
       </SheetContent>
     </Sheet>
