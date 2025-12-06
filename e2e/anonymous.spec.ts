@@ -28,8 +28,8 @@ test.describe('Anonymous User Core Features', () => {
     prodTitle1 = `Test Product 1 ${uniqueId}`;
     prodTitle2 = `Test Product 2 ${uniqueId}`;
 
-    // デバッグ用ログ
-    page.on('request', request => console.log('>>', request.method(), request.url()));
+    // デバッグ用ログ（必要に応じて有効化）
+    // page.on('request', request => console.log('>>', request.method(), request.url()));
 
     // テストデータ作成
     const user = await prisma.user.create({
