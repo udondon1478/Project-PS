@@ -23,7 +23,10 @@ export async function generateMetadata({ searchParams }: SearchPageProps): Promi
   if (q) {
     title = `検索キーワード: ${q}`;
   } else if (tags) {
-    title = `タグ: ${tags} -${negativeTags}`;
+    title = `タグ: ${tags}`;
+    if (negativeTags) {
+      title += ` -${negativeTags}`;
+    }
   }
 
   return {
@@ -100,7 +103,7 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8" data-testid="product-grid">
+    <div className="container mx-auto px-4 py-8">
       {q && <p>Search query: {q}</p>}
       {category && <p>Category: {category}</p>}
       {/*tags && <p>Tags: {tags}</p>*/}

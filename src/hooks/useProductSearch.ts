@@ -332,6 +332,7 @@ export const useProductSearch = ({
     if (selectedNegativeTags.length > 0) queryParams.append("negativeTags", selectedNegativeTags.join(','));
     if (selectedAgeRatingTags.length > 0) queryParams.append("ageRatingTags", selectedAgeRatingTags.join(','));
     if (detailedFilters.category) queryParams.append("categoryName", detailedFilters.category);
+
     if (priceRange[0] !== 0) queryParams.append("minPrice", priceRange[0].toString());
     if (!((priceRange[1] === 10000 && !isHighPriceFilterEnabled) || (isHighPriceFilterEnabled && priceRange[1] === 100000))) {
       queryParams.append("maxPrice", priceRange[1].toString());
@@ -339,6 +340,7 @@ export const useProductSearch = ({
     if (isHighPriceFilterEnabled) queryParams.append("isHighPrice", "true");
     if (isLiked) queryParams.append("liked", "true");
     if (isOwned) queryParams.append("owned", "true");
+    
     router.replace(`/search?${queryParams.toString()}`);
   }, [selectedTags, selectedNegativeTags, selectedAgeRatingTags, detailedFilters, priceRange, isHighPriceFilterEnabled, router, isLiked, isOwned]);
 

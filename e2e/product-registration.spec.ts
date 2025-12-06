@@ -25,8 +25,8 @@ const MOCK_PRODUCT_INFO = {
   publishedAt: new Date().toISOString(),
   sellerName: MOCK_SELLER_NAME,
   sellerUrl: 'https://seller.example.com',
-  sellerIconUrl: 'https://via.placeholder.com/50',
-  images: [{ imageUrl: 'https://via.placeholder.com/150', isMain: true, order: 0 }],
+  sellerIconUrl: '/pslogo.svg',
+  images: [{ imageUrl: '/pslogo.svg', isMain: true, order: 0 }],
   variations: [{ name: 'Default', price: 500, type: 'download', order: 0, isMain: true }],
 };
 
@@ -107,7 +107,7 @@ test.describe('Product Registration Flow', () => {
     await page.route(API_TAGS_BY_TYPE_URL, async (route) => {
       const url = new URL(route.request().url());
       const categoryNames = url.searchParams.get('categoryNames');
-      let data = [];
+      let data: any[] = [];
       if (categoryNames === 'age_rating') {
         data = MOCK_AGE_RATING_TAGS;
       } else if (categoryNames === 'product_category') {
@@ -224,7 +224,7 @@ test.describe('Product Registration Flow', () => {
 
       // 検索結果ページへの遷移と結果の確認
       await page.waitForURL(`**/search?tags=${ENCODED_TEST_TAG}`);
-      await expect(page).toHaveTitle(`タグ: ${TEST_TAG} -`);
+      await expect(page).toHaveTitle(new RegExp(`タグ: ${TEST_TAG} -.*PolySeek`));
       
       // ★ 実際のDBを検索した結果が表示されることを確認
       await expect(page.getByText(MOCK_PRODUCT_TITLE)).toBeVisible();
