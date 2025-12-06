@@ -16,6 +16,8 @@ test.describe('Anonymous User Core Features', () => {
   let prodId2: string;
   let prodTitle1: string;
   let prodTitle2: string;
+  let prodId3: string;
+  let prodTitle3: string;
 
   test.beforeEach(async ({ page }) => {
     uniqueId = generateUniqueId();
@@ -27,6 +29,8 @@ test.describe('Anonymous User Core Features', () => {
     prodId2 = `prod_2_${uniqueId}`;
     prodTitle1 = `Test Product 1 ${uniqueId}`;
     prodTitle2 = `Test Product 2 ${uniqueId}`;
+    prodId3 = `prod_3_${uniqueId}`;
+    prodTitle3 = `Test Product 3 ${uniqueId}`;
 
     // デバッグ用ログ（必要に応じて有効化）
     // page.on('request', request => console.log('>>', request.method(), request.url()));
@@ -136,6 +140,37 @@ test.describe('Anonymous User Core Features', () => {
       }
     });
 
+    await prisma.product.create({
+      data: {
+        id: prodId3,
+        title: prodTitle3,
+        lowPrice: 50000,
+        highPrice: 50000,
+        boothJpUrl: `https://booth.pm/ja/items/333333${uniqueId}`,
+        boothEnUrl: `https://booth.pm/en/items/333333${uniqueId}`,
+        userId: user.id,
+        productTags: {
+          create: [
+            {
+              tagId: tag2.id,
+              userId: user.id
+            },
+            {
+              tagId: allAgeTag.id,
+              userId: user.id
+            }
+          ]
+        },
+        images: {
+          create: {
+            imageUrl: '/pslogo.svg',
+            isMain: true
+          }
+        },
+        publishedAt: new Date(),
+      }
+    });
+
     // オンボーディングツアーをスキップ
     await page.addInitScript(() => {
       localStorage.setItem('onboarding_completed', 'true');
@@ -157,7 +192,7 @@ test.describe('Anonymous User Core Features', () => {
     // ProductTagの削除
     if (query && negativeTag && (prodId1 || prodId2)) {
        const tagNames = [query, negativeTag].filter(Boolean);
-       const prodIds = [prodId1, prodId2].filter(Boolean);
+       const prodIds = [prodId1, prodId2, prodId3].filter(Boolean);
        
        if (tagNames.length > 0 || prodIds.length > 0) {
           await safeDelete('ProductTag', () => prisma.productTag.deleteMany({
@@ -172,8 +207,8 @@ test.describe('Anonymous User Core Features', () => {
     }
     
     // Productの削除
-    if (prodId1 || prodId2) {
-      const prodIds = [prodId1, prodId2].filter(Boolean) as string[];
+    if (prodId1 || prodId2 || prodId3) {
+      const prodIds = [prodId1, prodId2, prodId3].filter(Boolean) as string[];
       if (prodIds.length > 0) {
         await safeDelete('Product', () => prisma.product.deleteMany({
           where: { id: { in: prodIds } }
@@ -277,34 +312,51 @@ test.describe('Anonymous User Core Features', () => {
   test('1.4: should perform a filter search', async ({ page }) => {
     await page.goto('/search'); // 検索ページに直接アクセス
 
+    // フィルタリング前に両方の商品が表示されているか確認は難しい（ページネーション等の影響）
+    // とりあえずフィルタリング処理を進める
+
     // フィルターボタンをクリックしてサイドバーを開く
     await page.getByLabel('フィルターを開く').click();
     await expect(page.getByText('フィルター', { exact: true })).toBeVisible();
 
-    // カテゴリを選択
+    // カテゴリを選択 (negativeTagを持つ商品に絞る -> prodId2(2,000) と prodId3(50,000))
     await page.getByLabel('カテゴリを選択').click();
     await page.getByLabel(negativeTag).click();
 
     // 価格帯スライダーを操作
-    // 注: スライダーの操作はUIの実装に大きく依存するため、これは一例です
-    const minPriceSlider = page.getByLabel('最小額');
-    await minPriceSlider.focus();
-
-    await minPriceSlider.press('ArrowRight'); // スライダーを右に動かす（値を増やす）
-    await minPriceSlider.press('ArrowRight');
-    await minPriceSlider.press('ArrowRight');
-
+    // 50,000円を除外したいので、最大価格を大幅に下げる
+    // デフォルトの最大値が不明だが、ArrowLeftを多めに押すことで下げる
     const maxPriceSlider = page.getByLabel('最大額');
-    await maxPriceSlider.press('ArrowLeft'); // スライダーを左に動かす（値を減らす）
-    await maxPriceSlider.press('ArrowLeft');
-    await maxPriceSlider.press('ArrowLeft');
+    await maxPriceSlider.focus();
+    
+    // 現在の最大値から確実に50,000円以下になるように操作
+    // 現在の最大値から待機しながら値を下げていく
+    // 確実に10,000未満になるまで操作する（10,000だとフィルタ無効扱いになるため）
+    // タイムアウト付きでループ
+    const startTime = Date.now();
+    while (Date.now() - startTime < 5000) {
+        const valueStr = await maxPriceSlider.getAttribute('aria-valuenow');
+        const value = parseInt(valueStr || '10000', 10);
+        
+        if (value < 10000) {
+            console.log(`[Test 1.4] Target value reached: ${value}`);
+            break;
+        }
+        
+        await maxPriceSlider.press('ArrowLeft');
+        // 少し待機しないと値の更新が反映されない可能性がある
+        await page.waitForTimeout(100);
+    }
+
+    // デバッグ用: 最終値を確認
+    const finalValue = await maxPriceSlider.getAttribute('aria-valuenow');
+    console.log(`[Test 1.4] Final Max Price Slider Value: ${finalValue}`);
 
     // 適用ボタンをクリック
     await page.getByRole('button', { name: 'フィルターを適用' }).click();
 
-    // WebKitでのスライダー操作の揺らぎ(200 vs 300)などを許容するため、正規表現でパラメータの存在を確認する
-    // categoryNameは必須、minPrice/maxPriceは数値が含まれていればよしとする
-    const urlPattern = new RegExp(`search\\?.*categoryName=${encodeQuery(negativeTag)}.*&minPrice=[0-9]+&maxPrice=[0-9]+`);
+    // URLパターンの検証
+    const urlPattern = new RegExp(`search\\?.*categoryName=${encodeQuery(negativeTag)}.*&maxPrice=[0-9]+`);
     
     console.log(`[Test 1.4] Current URL: ${page.url()}`);
     
@@ -313,6 +365,13 @@ test.describe('Anonymous User Core Features', () => {
     await expect(page).toHaveURL(urlPattern);
     
     await expect(page.locator('[data-testid="product-grid"]')).toBeVisible();
+
+    // 検証:
+    // prodId2 (2,000円) -> 表示されるはず
+    await expect(page.getByText(prodTitle2)).toBeVisible();
+
+    // prodId3 (50,000円) -> 表示されないはず
+    await expect(page.getByText(prodTitle3)).not.toBeVisible();
   });
 
   // テストケース 1.5: 商品詳細ページへの遷移

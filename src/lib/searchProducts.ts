@@ -22,6 +22,10 @@ export interface SearchParams {
   order?: string;
   /** 年齢制限タグ（例: 'R-18'）。文字列または文字列の配列を受け入れます。 */
   ageRatingTags?: string | string[];
+  /** 最低価格 */
+  minPrice?: string;
+  /** 最高価格 */
+  maxPrice?: string;
 }
 
 export async function searchProducts(params: SearchParams): Promise<Product[]> {
@@ -112,6 +116,28 @@ export async function searchProducts(params: SearchParams): Promise<Product[]> {
           },
         },
       });
+    }
+
+    if (params.minPrice) {
+      const min = Number(params.minPrice);
+      if (!isNaN(min)) {
+        whereConditions.push({
+          highPrice: {
+            gte: min,
+          },
+        });
+      }
+    }
+
+    if (params.maxPrice) {
+      const max = Number(params.maxPrice);
+      if (!isNaN(max)) {
+        whereConditions.push({
+          lowPrice: {
+            lte: max,
+          },
+        });
+      }
     }
 
     const allowedSortKeys = ['createdAt', 'lowPrice', 'highPrice', 'viewCount', 'publishedAt'] as const;
