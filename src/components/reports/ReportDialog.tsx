@@ -109,7 +109,10 @@ export function ReportDialog({
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => {
+                setReason("");
+                onOpenChange(false);
+              }}
               disabled={isSubmitting}
             >
               キャンセル
