@@ -1,49 +1,42 @@
 import { test, expect } from '@playwright/test';
 import { encodeQuery } from './helpers/url';
 import { prisma } from '@/lib/prisma';
+import { randomUUID } from 'crypto';
 
-const query = 'アバター';
-const negativeTag = '衣装';
-const negativeQuery = `-${negativeTag}`;
-const encodedQuery = encodeQuery(query);
-const encodedNegativeQuery = encodeQuery(negativeTag);
+// テストごとにユニークなIDを生成するためのヘルパー
+const generateUniqueId = () => randomUUID().split('-')[0];
 
 test.describe('Anonymous User Core Features', () => {
+  let uniqueId: string;
+  let query: string;
+  let negativeTag: string;
+  let negativeQuery: string;
+  let userId: string;
+  let prodId1: string;
+  let prodId2: string;
+  let prodTitle1: string;
+  let prodTitle2: string;
 
   test.beforeEach(async ({ page }) => {
+    uniqueId = generateUniqueId();
+    query = `アバター-${uniqueId}`;
+    negativeTag = `衣装-${uniqueId}`;
+    negativeQuery = `-${negativeTag}`;
+    userId = `user_${uniqueId}`;
+    prodId1 = `prod_1_${uniqueId}`;
+    prodId2 = `prod_2_${uniqueId}`;
+    prodTitle1 = `Test Product 1 ${uniqueId}`;
+    prodTitle2 = `Test Product 2 ${uniqueId}`;
+
     // デバッグ用ログ
     page.on('request', request => console.log('>>', request.method(), request.url()));
-
-    // DBクリーンアップ
-    const deleteTags = prisma.tag.deleteMany({
-      where: { name: { in: [query, negativeTag] } }
-    });
-    const deleteProducts = prisma.product.deleteMany({
-      where: { id: { in: ['prod_1', 'prod_2'] } }
-    });
-    const deleteUsers = prisma.user.deleteMany({
-      where: { id: 'user_1' }
-    });
-    
-    // 依存関係があるため順序に注意（ProductTagなどはCascadeで消えるはずだが念のため）
-    await prisma.productTag.deleteMany({
-      where: {
-        OR: [
-          { tag: { name: { in: [query, negativeTag] } } },
-          { product: { id: { in: ['prod_1', 'prod_2'] } } }
-        ]
-      }
-    });
-    await deleteProducts;
-    await deleteTags;
-    await deleteUsers;
 
     // テストデータ作成
     const user = await prisma.user.create({
       data: {
-        id: 'user_1',
-        email: 'test-seller@example.com',
-        name: 'Seller 1',
+        id: userId,
+        email: `test-seller-${uniqueId}@example.com`,
+        name: `Seller ${uniqueId}`,
         role: 'USER',
       }
     });
@@ -56,20 +49,42 @@ test.describe('Anonymous User Core Features', () => {
       data: { name: negativeTag, language: 'ja' }
     });
 
+    // '全年齢'タグを取得または作成（APIがこのタグを持つ商品のみを返すため）
+    const allAgeTag = await prisma.tag.upsert({
+      where: { name: '全年齢' },
+      update: {},
+      create: {
+        name: '全年齢',
+        language: 'ja',
+        tagCategory: {
+          connectOrCreate: {
+            where: { name: 'age_rating' },
+            create: { name: 'age_rating', color: 'gray' }
+          }
+        }
+      }
+    });
+
     await prisma.product.create({
       data: {
-        id: 'prod_1',
-        title: 'Test Product 1',
+        id: prodId1,
+        title: prodTitle1,
         lowPrice: 1000,
         highPrice: 1000,
-        boothJpUrl: 'https://booth.pm/ja/items/111111',
-        boothEnUrl: 'https://booth.pm/en/items/111111',
+        boothJpUrl: `https://booth.pm/ja/items/111111${uniqueId}`,
+        boothEnUrl: `https://booth.pm/en/items/111111${uniqueId}`,
         userId: user.id,
         productTags: {
-          create: {
-            tagId: tag1.id,
-            userId: user.id
-          }
+          create: [
+            {
+              tagId: tag1.id,
+              userId: user.id
+            },
+            {
+              tagId: allAgeTag.id,
+              userId: user.id
+            }
+          ]
         },
         images: {
           create: {
@@ -83,18 +98,24 @@ test.describe('Anonymous User Core Features', () => {
 
     await prisma.product.create({
       data: {
-        id: 'prod_2',
-        title: 'Test Product 2',
+        id: prodId2,
+        title: prodTitle2,
         lowPrice: 2000,
         highPrice: 2000,
-        boothJpUrl: 'https://booth.pm/ja/items/222222',
-        boothEnUrl: 'https://booth.pm/en/items/222222',
+        boothJpUrl: `https://booth.pm/ja/items/222222${uniqueId}`,
+        boothEnUrl: `https://booth.pm/en/items/222222${uniqueId}`,
         userId: user.id,
         productTags: {
-          create: {
-            tagId: tag2.id,
-            userId: user.id
-          }
+          create: [
+            {
+              tagId: tag2.id,
+              userId: user.id
+            },
+            {
+              tagId: allAgeTag.id,
+              userId: user.id
+            }
+          ]
         },
         images: {
           create: {
@@ -114,22 +135,27 @@ test.describe('Anonymous User Core Features', () => {
 
   test.afterEach(async () => {
     // クリーンアップ
+    // 依存関係があるため順序に注意
+    // ProductTagはCascadeで消える設定になっている場合が多いが、明示的に消すのが安全
     await prisma.productTag.deleteMany({
       where: {
         OR: [
           { tag: { name: { in: [query, negativeTag] } } },
-          { product: { id: { in: ['prod_1', 'prod_2'] } } }
+          { product: { id: { in: [prodId1, prodId2] } } }
         ]
       }
     });
+    
     await prisma.product.deleteMany({
-      where: { id: { in: ['prod_1', 'prod_2'] } }
+      where: { id: { in: [prodId1, prodId2] } }
     });
+
     await prisma.tag.deleteMany({
       where: { name: { in: [query, negativeTag] } }
     });
+
     await prisma.user.deleteMany({
-      where: { id: 'user_1' }
+      where: { id: userId }
     });
   });
 
@@ -144,10 +170,9 @@ test.describe('Anonymous User Core Features', () => {
 
     // 最新の商品セクションと商品カードを確認
     await expect(page.getByRole('heading', { name: '最新の商品' })).toBeVisible();
-    // 実際のDBには他のデータも入っている可能性があるため、作成したデータが表示されているかを確認
     await expect(page.locator('[data-testid="product-grid"]')).toBeVisible();
-    await expect(page.getByText('Test Product 1')).toBeVisible();
-    await expect(page.getByText('Test Product 2')).toBeVisible();
+    await expect(page.getByText(prodTitle1)).toBeVisible();
+    await expect(page.getByText(prodTitle2)).toBeVisible();
   });
 
   // テストケース 1.2: タグ検索（基本）
@@ -167,14 +192,11 @@ test.describe('Anonymous User Core Features', () => {
 
     await page.getByRole('button', { name: '検索' }).click();
 
-    // URLパターンの修正: クエリパラメータの順序や追加パラメータに柔軟に対応
-    // URLの完全一致待機は不安定なため、タイトルとコンテンツの確認を優先
-    // await page.waitForURL(`**/search?*tags=${encodedQuery}*`);
     await expect(page).toHaveTitle(`タグ: ${query} - PolySeek`);
     
     await expect(page.locator('[data-testid="product-grid"]')).toBeVisible();
     // 検索結果に商品が含まれているか確認
-    await expect(page.getByText('Test Product 1')).toBeVisible();
+    await expect(page.getByText(prodTitle1)).toBeVisible();
   });
 
   // テストケース 1.3: タグ検索（マイナス検索）
@@ -201,19 +223,14 @@ test.describe('Anonymous User Core Features', () => {
 
     await page.getByRole('button', { name: '検索' }).click();
 
-    // URLの完全一致待機は不安定なため、タイトルとコンテンツの確認を優先
-    // await page.waitForURL(`**/search?*tags=${encodedQuery}*negativeTags=${encodedNegativeQuery}*`);
     await expect(page).toHaveTitle(`タグ: ${query} -${negativeTag} - PolySeek`);
 
     await expect(page.locator('[data-testid="product-grid"]')).toBeVisible();
-    // マイナス検索なので Test Product 2 (negativeTagを持つ) は表示されないはず？
-    // いや、negativeTag='衣装'。prod_2は'衣装'を持つ。
-    // なのでprod_2は除外される。
-    // prod_1は'アバター'を持つ。
-    // 検索クエリは 'アバター -衣装'。
-    // prod_1は'アバター'を持ち、'衣装'を持たないので表示されるはず。
-    await expect(page.getByText('Test Product 1')).toBeVisible();
-    await expect(page.getByText('Test Product 2')).not.toBeVisible();
+    
+    // prod_1はqueryタグを持つので表示される
+    await expect(page.getByText(prodTitle1)).toBeVisible();
+    // prod_2はnegativeTagを持つので表示されない
+    await expect(page.getByText(prodTitle2)).not.toBeVisible();
   });
 
   // テストケース 1.4: フィルター検索（価格・カテゴリ）
@@ -225,11 +242,7 @@ test.describe('Anonymous User Core Features', () => {
 
     // カテゴリを選択
     await page.getByLabel('カテゴリを選択').click();
-    // 注: カテゴリ選択肢がDBデータに依存する場合、適切なデータが必要
-    // ここではUI操作の確認にとどめるか、必要なカテゴリデータを作成する必要がある
-    // 一旦スキップするか、汎用的な操作のみにする
-    // await page.getByLabel(negativeTag).click(); 
-
+    
     // 価格帯スライダーを操作
     const minPriceSlider = page.getByLabel('最小額');
     await minPriceSlider.focus();
@@ -258,21 +271,19 @@ test.describe('Anonymous User Core Features', () => {
     await page.waitForLoadState('networkidle');
     await expect(page.locator('[data-testid="product-grid"]')).toBeVisible();
 
-    // 最初に表示されている商品カードをクリック
-    await page.getByRole('link', { name: 'Test Product 1' }).first().click();
+    // 作成した商品をクリック
+    await page.getByRole('link', { name: prodTitle1 }).first().click();
 
     // 商品詳細ページへの遷移を確認
-    await page.waitForURL('**/products/prod_1');
-    await expect(page.getByRole('heading', { name: 'Test Product 1' })).toBeVisible();
-    // DBに保存されていないdescriptionは表示されないため、アサーションを削除または調整
-    // await expect(page.getByText('This is a test product description.')).toBeVisible();
-    await expect(page.getByText('アバター')).toBeVisible();
+    await page.waitForURL(`**/products/${prodId1}`);
+    await expect(page.getByRole('heading', { name: prodTitle1 })).toBeVisible();
+    await expect(page.getByText(query)).toBeVisible();
   });
 
   // テストケース 1.6: ログインしていない状態でのアクション
   test('1.6: should fail to like item and revert UI when logged out', async ({ page }) => {
     // 3. 商品詳細ページに移動
-    await page.goto('/products/prod_1');
+    await page.goto(`/products/${prodId1}`);
 
     // 4. いいねボタンをクリック
     const likeButton = page.getByRole('button', { name: '欲しいものに追加' });
@@ -300,7 +311,7 @@ test.describe('Anonymous User Core Features', () => {
 
     // リクエストを待機するためのPromiseを作成
     const likeApiPromise = page.waitForRequest(request => 
-      request.url().includes('/api/products/prod_1/like') && request.method() === 'POST'
+      request.url().includes(`/api/products/${prodId1}/like`) && request.method() === 'POST'
     );
 
     await likeButton.click();
@@ -312,7 +323,7 @@ test.describe('Anonymous User Core Features', () => {
     // 8. APIが401エラーを返した後、UIが元の状態に戻ることを確認
     // 実際のAPIレスポンスを待つ
     const response = await page.waitForResponse(response => 
-      response.url().includes('/api/products/prod_1/like') && response.status() === 401
+      response.url().includes(`/api/products/${prodId1}/like`) && response.status() === 401
     );
     expect(response.status()).toBe(401);
 
