@@ -4,16 +4,18 @@
 
 import * as Sentry from "@sentry/nextjs";
 
+const isProduction = process.env.NODE_ENV === "production";
+
 Sentry.init({
-  dsn: "https://e22235c04302a9075630c68b8a523d3c@o4510493746659328.ingest.us.sentry.io/4510493748559872",
+  dsn: process.env.SENTRY_DSN,
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 0.1,
+  tracesSampleRate: isProduction ? 0.1 : 1.0,
 
   // Enable logs to be sent to Sentry
-  enableLogs: false,
+  enableLogs: !isProduction,
 
   // Enable sending user PII (Personally Identifiable Information)
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,
+  sendDefaultPii: false,
 });
