@@ -42,12 +42,11 @@ export async function generateMetadata({ params }: { params: Promise<{ productId
   return {
     title: productTitle,
     description: productDescription,
-    // @ts-expect-error: Next.js types do not support 'product' yet, but it is valid OGP.
     openGraph: {
       title: productTitle,
       description: productDescription,
       images: productImages,
-      type: 'product',
+      type: 'website',
       url: productUrl,
     },
     twitter: {

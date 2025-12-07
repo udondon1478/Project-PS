@@ -11,6 +11,7 @@ import { Toaster } from "@/components/ui/sonner";
 import AuthGuard from "@/components/AuthGuard";
 import MainLayout from "@/components/MainLayout";
 import Footer from "@/components/Footer";
+import { BASE_URL } from "@/lib/constants";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,6 +24,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(BASE_URL),
   title: {
     template: '%s - PolySeek',
     default: 'PolySeek',
