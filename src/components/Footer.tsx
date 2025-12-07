@@ -11,6 +11,9 @@ export default function Footer() {
           </p>
         </div>
         <div className="flex gap-4 items-center">
+          <Link href="/about" className="text-sm font-medium hover:underline underline-offset-4 text-muted-foreground">
+            PolySeekについて
+          </Link>
           <Link href="/terms" className="text-sm font-medium hover:underline underline-offset-4 text-muted-foreground">
             利用規約
           </Link>
