@@ -234,7 +234,7 @@ test.describe('Anonymous User Core Features', () => {
     await page.goto('/');
 
     // ヘッダーの要素を確認
-    await expect(page.getByRole('link', { name: /PolySeek/i })).toBeVisible();
+    await expect(page.getByRole('banner').getByRole('link', { name: /PolySeek/i })).toBeVisible();
     await expect(page.locator('input[data-slot="input"][placeholder="タグで検索 (-でマイナス検索)"]')).toBeVisible();
     await expect(page.getByRole('button', { name: 'ログイン' })).toBeVisible();
 
