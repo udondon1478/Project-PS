@@ -18,3 +18,5 @@ export const ReportStatus = {
 } as const;
 
 export type ReportStatus = (typeof ReportStatus)[keyof typeof ReportStatus];
+
+export const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://polyseek.jp';

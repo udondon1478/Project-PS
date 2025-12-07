@@ -1,12 +1,13 @@
 import { MetadataRoute } from 'next';
 import { prisma } from '@/lib/prisma'; // Assumes prisma client is available here
 
+import { BASE_URL } from '@/lib/constants';
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://polyseek.com'; // Adjust domain as needed
 
   // Static routes
   const routes = ['', '/about', '/terms', '/privacy', '/search'].map((route) => ({
-    url: `${baseUrl}${route}`,
+    url: `${BASE_URL}${route}`,
     lastModified: new Date(),
     changeFrequency: 'daily' as const,
     priority: route === '' ? 1 : 0.8,
@@ -24,7 +25,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   });
 
   const productRoutes = products.map((product) => ({
-    url: `${baseUrl}/products/${product.id}`,
+    url: `${BASE_URL}/products/${product.id}`,
     lastModified: product.updatedAt,
     changeFrequency: 'weekly' as const,
     priority: 0.6,

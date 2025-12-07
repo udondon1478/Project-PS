@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
+import { BASE_URL } from '@/lib/constants';
 
 export async function generateMetadata({ params }: { params: Promise<{ productId: string }> }): Promise<Metadata> {
   const { productId } = await params;
@@ -36,8 +37,7 @@ export async function generateMetadata({ params }: { params: Promise<{ productId
   }
 
   /* productUrlの生成 */
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://polyseek.jp';
-  const productUrl = `${baseUrl}/products/${productId}`;
+  const productUrl = `${BASE_URL}/products/${productId}`;
 
   return {
     title: productTitle,
