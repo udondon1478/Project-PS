@@ -22,6 +22,26 @@ export interface SearchParams {
   order?: string;
   /** 年齢制限タグ（例: 'R-18'）。文字列または文字列の配列を受け入れます。 */
   ageRatingTags?: string | string[];
+  /**
+   * 最低価格。
+   * - 形式: 数字の文字列 (例: "1000")
+   * - 通貨: 日本円 (JPY)
+   * - 条件: この価格以上 (Inclusive: >=)
+   * @remarks
+   * URLパラメータから値を構築する場合、呼び出し元で適切なパースとバリデーションを行ってください。
+   * 現状は文字列型ですが、将来的には数値型への移行が検討されています。
+   */
+  minPrice?: string;
+  /**
+   * 最高価格。
+   * - 形式: 数字の文字列 (例: "5000")
+   * - 通貨: 日本円 (JPY)
+   * - 条件: この価格以下 (Inclusive: <=)
+   * @remarks
+   * URLパラメータから値を構築する場合、呼び出し元で適切なパースとバリデーションを行ってください。
+   * 現状は文字列型ですが、将来的には数値型への移行が検討されています。
+   */
+  maxPrice?: string;
 }
 
 export async function searchProducts(params: SearchParams): Promise<Product[]> {
@@ -110,6 +130,47 @@ export async function searchProducts(params: SearchParams): Promise<Product[]> {
               },
             },
           },
+        },
+      });
+    }
+
+    let minPrice: number | undefined;
+    let maxPrice: number | undefined;
+
+    if (params.minPrice) {
+      const parsed = Number(params.minPrice);
+      if (!isNaN(parsed)) {
+        minPrice = parsed;
+      }
+    }
+
+    if (params.maxPrice) {
+      const parsed = Number(params.maxPrice);
+      if (!isNaN(parsed)) {
+        maxPrice = parsed;
+      }
+    }
+
+    // 価格条件の矛盾をチェック
+    if (minPrice !== undefined && maxPrice !== undefined && minPrice > maxPrice) {
+      throw new Error('検索条件エラー: 最低価格が最高価格より高くなっています。');
+    }
+
+    // Note: The function intends to match overlapping price ranges.
+    // Product [low, high] overlaps with Filter [min, max] if high >= min AND low <= max.
+    
+    if (minPrice !== undefined) {
+      whereConditions.push({
+        highPrice: {
+          gte: minPrice,
+        },
+      });
+    }
+
+    if (maxPrice !== undefined) {
+      whereConditions.push({
+        lowPrice: {
+          lte: maxPrice,
         },
       });
     }

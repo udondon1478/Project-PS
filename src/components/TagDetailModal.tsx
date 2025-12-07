@@ -1,5 +1,6 @@
 "use client";
 
+import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import {
   Dialog,
@@ -10,11 +11,19 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { TagDescriptionEditor } from './TagDescriptionEditor';
 import { TagDescriptionHistory } from './TagDescriptionHistory';
 import { Tag, TagMetadataHistory } from '@prisma/client';
+import { REPORT_TARGET_TAG } from '@/lib/constants';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Flag } from 'lucide-react';
+import { ReportDialog } from './reports/ReportDialog';
 
 // Define the shape of the data expected from the API
 interface TagDetails extends Tag {
@@ -26,6 +35,7 @@ interface TagDetails extends Tag {
     mainImageUrl: string | null;
   }[];
   history: (TagMetadataHistory & { editor: { id: string; name: string | null; image: string | null; }})[];
+  hasReported?: boolean;
 }
 
 interface TagDetailModalProps {
@@ -35,24 +45,36 @@ interface TagDetailModalProps {
 }
 
 export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProps) {
+  const { data: session } = useSession();
   const [details, setDetails] = useState<TagDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   const fetchDetails = async (id: string) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/tags/${id}/details`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch tag details');
+      const res = await fetch(`/api/tags/${id}/details`);
+      if (!res.ok) {
+        let errorMessage = 'Failed to fetch tag details';
+        try {
+          const body = await res.json();
+          if (body && typeof body === 'object') {
+            errorMessage = body.error || body.message || errorMessage;
+          }
+        } catch {
+          // Ignore JSON parse errors on error response
+        }
+        throw new Error(errorMessage);
       }
-      const data = await response.json();
+      const data = await res.json();
       setDetails(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Failed to load tag details');
     } finally {
       setLoading(false);
     }
@@ -62,9 +84,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
     if (open && tagId) {
       fetchDetails(tagId);
     } else {
-      // Reset state when modal is closed
       setDetails(null);
-      setShowHistory(false);
     }
   }, [open, tagId]);
 
@@ -79,7 +99,33 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Tag Details</DialogTitle>
+          <div className="flex justify-between items-start pr-8">
+            <DialogTitle>Tag Details</DialogTitle>
+            {details && session?.user && (
+              // Note: Tags are global entities and do not have an owner, so we don't check for ownership here.
+              // Users can report any tag unless they are suspended or have already reported it.
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-block" tabIndex={details.hasReported || session?.user?.status === 'SUSPENDED' ? 0 : -1}>
+                    <Button
+                      variant={details.hasReported ? "secondary" : "ghost"}
+                      size="icon"
+                      className={`${!details.hasReported ? 'text-muted-foreground' : ''} ${details.hasReported || session?.user?.status === 'SUSPENDED' ? 'opacity-50 cursor-not-allowed' : 'hover:text-destructive'}`}
+                      onClick={() => setIsReportOpen(true)}
+                      aria-label={session?.user?.status === 'SUSPENDED' ? "アカウントが停止されています" : details.hasReported ? "既に通報済みです" : "このタグを通報する"}
+                      disabled={details.hasReported || session?.user?.status === 'SUSPENDED'}
+                      data-testid="report-tag-button"
+                    >
+                      <Flag className={`h-4 w-4 ${details.hasReported ? 'fill-current' : ''}`} />
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{session?.user?.status === 'SUSPENDED' ? "アカウントが停止されています" : details.hasReported ? "既に通報済みです" : "このタグを通報する"}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto pr-4">
           {loading && <p>Loading...</p>}
@@ -150,12 +196,26 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
           </DialogClose>
         </DialogFooter>
         {details && (
+          <>
             <TagDescriptionEditor
-                tag={details}
-                open={isEditorOpen}
-                onOpenChange={setIsEditorOpen}
-                onSuccess={handleEditorSuccess}
+              tag={details}
+              open={isEditorOpen}
+              onOpenChange={setIsEditorOpen}
+              onSuccess={handleEditorSuccess}
             />
+            <ReportDialog
+              open={isReportOpen}
+              onOpenChange={(open) => {
+                setIsReportOpen(open);
+                if (!open && tagId) {
+                  fetchDetails(tagId);
+                }
+              }}
+              targetType={REPORT_TARGET_TAG}
+              targetId={details.id}
+              targetName={details.name}
+            />
+          </>
         )}
       </DialogContent>
     </Dialog>

@@ -17,7 +17,6 @@ import {
   SheetHeader,
   SheetTitle,
   SheetFooter,
-  SheetClose,
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -249,9 +248,10 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
         </ScrollArea>
         <SheetFooter className="mt-auto pt-4 border-t">
           <Button variant="ghost" onClick={clearAllTagsAndFilters} className="mr-auto">すべてクリア</Button>
-          <SheetClose asChild>
-            <Button onClick={applyFiltersAndSearch}>フィルターを適用</Button>
-          </SheetClose>
+          <Button onClick={() => {
+            applyFiltersAndSearch();
+            setIsFilterSidebarOpen(false);
+          }}>フィルターを適用</Button>
         </SheetFooter>
       </SheetContent>
     </Sheet>
