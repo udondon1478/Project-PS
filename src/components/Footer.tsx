@@ -3,14 +3,14 @@ import { ExternalLink } from 'lucide-react';
 
 export default function Footer() {
   return (
-    <footer className="border-t bg-background py-6 md:py-0">
+    <footer className="border-t bg-background py-8 md:py-0">
       <div className="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
-        <div className="flex flex-col items-center px-8 md:flex-row md:px-0">
+        <div className="flex flex-col items-center md:items-start order-2 md:order-1">
           <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
             © 2024 PolySeek
           </p>
         </div>
-        <div className="flex gap-4 items-center">
+        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 items-center order-1 md:order-2">
           <Link href="/about" className="text-sm font-medium hover:underline underline-offset-4 text-muted-foreground">
             PolySeekについて
           </Link>
