@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ productId
 
     if (product) {
       productTitle = product.title;
-      productDescription = product.description?.substring(0, 150) || ""; // 説明文は適度な長さでカット
+      productDescription = product.description?.substring(0, 150) || "PolySeekで公開されている商品です。"; // 説明文は適度な長さでカット
       if (product.images.length > 0) {
         productImages = product.images.map(img => img.imageUrl);
       }
