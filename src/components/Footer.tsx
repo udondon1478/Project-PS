@@ -1,5 +1,5 @@
 
-import Link from 'next/link';
+
 import { ExternalLink } from 'lucide-react';
 
 export default function Footer() {
@@ -12,7 +12,7 @@ export default function Footer() {
             <a
               href="https://github.com/udondon1478/Project-PS"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="font-medium underline underline-offset-4"
             >
               PolySeek
@@ -21,15 +21,15 @@ export default function Footer() {
           </p>
         </div>
         <div className="flex gap-4">
-            <Link
+            <a
               href="https://forms.gle/PVdUpKCM4ZgMyK5fA"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm font-medium hover:underline underline-offset-4 flex items-center gap-1 text-muted-foreground"
             >
               削除申請・バグ報告
-              <ExternalLink className="h-3 w-3" />
-            </Link>
+              <ExternalLink className="h-3 w-3" aria-hidden="true" />
+            </a>
         </div>
       </div>
     </footer>
