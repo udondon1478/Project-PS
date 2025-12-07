@@ -41,6 +41,8 @@ cp .env.example .env.local
     ```
 *   `AUTH_GITHUB_ID`: GitHub OAuth認証用のクライアントIDです。
 *   `AUTH_GITHUB_SECRET`: GitHub OAuth認証用のクライアントシークレットです。
+*   `SENTRY_DSN`: Sentryのサーバーサイド監視用DSNです。Sentryのプロジェクト設定 > Client Keys (DSN) から取得できます。
+*   `NEXT_PUBLIC_SENTRY_DSN`: Sentryのクライアントサイド監視用DSNです。通常は `SENTRY_DSN` と同じ値を設定します。
 
 ### Step 3: データベースの起動
 
