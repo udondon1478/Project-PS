@@ -13,11 +13,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   // Dynamic routes (Products)
-  // Performance optimization: Limit to recent 1000 products or implement pagination strategies for larger sites
+  // Performance optimization: Limit to recent 100 products or implement pagination strategies for larger sites
   const products = await prisma.product.findMany({
     take: 100,
     orderBy: { publishedAt: 'desc' },
     select: { id: true, updatedAt: true },
+  }).catch((error) => {
+    console.error('Failed to fetch products for sitemap:', error);
+    return [];
   });
 
   const productRoutes = products.map((product) => ({
