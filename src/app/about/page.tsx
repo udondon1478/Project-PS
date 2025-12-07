@@ -38,7 +38,9 @@ export default function AboutPage() {
       <section className="mb-8 bg-muted p-6 rounded-lg">
         <h2 className="text-lg font-bold mb-2">免責事項</h2>
         <p className="text-sm text-muted-foreground">
-          PolySeekは、非公式のファンサイト/ツールであり、ピクシブ株式会社（BOOTH）やメタバースプラットフォーム運営会社とは一切関係ありません。<br />
+          PolySeekは、非公式のファンサイト/ツールであり、ピクシブ株式会社（BOOTH）やメタバースプラットフォーム運営会社とは一切関係ありません。
+        </p>
+        <p className="text-sm text-muted-foreground">
           掲載されている商品情報の権利は、各販売者および配信元プラットフォームに帰属します。
         </p>
       </section>
