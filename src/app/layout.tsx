@@ -10,6 +10,7 @@ import { ThemeProvider } from "@/components/theme-provider"; // ThemeProviderを
 import { Toaster } from "@/components/ui/sonner";
 import AuthGuard from "@/components/AuthGuard";
 import MainLayout from "@/components/MainLayout";
+import Footer from "@/components/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -52,6 +53,7 @@ export default function RootLayout({
                 {children}
               </MainLayout>
             </AuthGuard>
+            <Footer />
             <Toaster />
           </ThemeProvider>
         </SessionProvider>
