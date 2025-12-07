@@ -127,6 +127,7 @@ images       ProductImage[] // 複数の商品画像
 
   @@index([userId])
   @@index([viewCount]) // 閲覧数でのソート用
+  @@index([publishedAt])
 
   reports      Report[]      // この商品に対する通報
 }
