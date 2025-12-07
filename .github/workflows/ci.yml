@@ -61,6 +61,7 @@ jobs:
       # 3. ビルド確認
       - name: Build Next.js App
         env:
+          NEXT_PUBLIC_SENTRY_ENABLED: "false"
           DATABASE_URL: "postgresql://testuser:testpass@localhost:5433/testdb"
           AUTH_SECRET: "dummy_secret_for_ci_build"
           GOOGLE_CLIENT_ID: "dummy_client_id"
@@ -72,6 +73,7 @@ jobs:
       # 4. E2Eテストの実行
       - name: Run Playwright tests
         env:
+          NEXT_PUBLIC_SENTRY_ENABLED: "false"
           # テスト実行用環境変数
           DATABASE_URL: "postgresql://testuser:testpass@localhost:5433/testdb"
           AUTH_SECRET: "dummy_secret_for_ci_test"
