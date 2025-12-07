@@ -35,6 +35,10 @@ export async function generateMetadata({ params }: { params: Promise<{ productId
     console.error("Failed to fetch product for metadata:", error);
   }
 
+  /* productUrlの生成 */
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://polyseek.jp';
+  const productUrl = `${baseUrl}/products/${productId}`;
+
   return {
     title: productTitle,
     description: productDescription,
@@ -42,7 +46,9 @@ export async function generateMetadata({ params }: { params: Promise<{ productId
       title: productTitle,
       description: productDescription,
       images: productImages,
-      type: 'website', // 商品ページだが汎用的にwebsite、または article
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      type: 'product' as const as any,
+      url: productUrl,
     },
     twitter: {
       card: 'summary_large_image',
