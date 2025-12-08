@@ -4,7 +4,7 @@ import { rateLimit } from '@/lib/rate-limit';
 import { NextResponse } from 'next/server';
 import { auth } from "@/auth";
 import * as cheerio from 'cheerio';
-import { boothQueue } from '@/lib/booth-queue';
+import { boothQueue, addToBoothQueue } from '@/lib/booth-queue';
 
 function isSchemaOrgOffer(offers: unknown): offers is SchemaOrgOffer {
   return typeof offers === 'object' && offers !== null && '@type' in offers && offers['@type'] === 'Offer';
@@ -71,8 +71,8 @@ export async function POST(request: Request) {
         message: 'この商品は既に登録されています。情報を更新しますか？'
       }, { status: 200 });
     } else {
-      // キューに追加して実行 (レートリミット対策)
-      const result = await boothQueue.add(async () => {
+      // キューに追加して実行 (レートリミット対策 + バックプレッシャー)
+      const result = await addToBoothQueue(async () => {
         console.log('Product not found, scraping Booth.pm...');
 
         const subdomainRegex = /^https:\/\/[a-zA-Z0-9-]+\.booth\.pm\//;
@@ -271,17 +271,27 @@ export async function POST(request: Request) {
         }, { status: 200 });
       });
 
-      if (!result) {
-        return NextResponse.json(
-          { message: "サーバーが混雑しています。しばらく待ってから再度お試しください。" }, 
-          { status: 503 }
-        );
-      }
-
       return result;
     }
   } catch (error) {
     console.error("商品情報取得エラー:", error);
+    
+    // バックプレッシャーエラーのハンドリング
+    if (error instanceof Error && error.message === 'Queue is full') {
+       return NextResponse.json(
+        { message: "現在リクエストが混み合っています。しばらく待ってから再度お試しください。" }, 
+        { status: 503 }
+      );
+    }
+
+    // タイムアウトエラーのハンドリング (PQueue/TimeoutError)
+    if (error instanceof Error && error.name === 'TimeoutError') {
+      return NextResponse.json(
+        { message: "処理がタイムアウトしました。しばらく待ってから再度お試しください。" }, 
+        { status: 504 }
+      );
+    }
+
     const errorMessage = error instanceof Error ? error.message : "不明なエラー";
     return NextResponse.json({ message: "商品情報の取得に失敗しました。", error: errorMessage }, { status: 500 });
   }
