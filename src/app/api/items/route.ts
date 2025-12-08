@@ -72,7 +72,7 @@ export async function POST(request: Request) {
       }, { status: 200 });
     } else {
       // キューに追加して実行 (レートリミット対策)
-      return await boothQueue.add(async () => {
+      const result = await boothQueue.add(async () => {
         console.log('Product not found, scraping Booth.pm...');
 
         const subdomainRegex = /^https:\/\/[a-zA-Z0-9-]+\.booth\.pm\//;
@@ -270,6 +270,15 @@ export async function POST(request: Request) {
           message: '新しい商品が見つかりました。タグを入力して登録してください。'
         }, { status: 200 });
       });
+
+      if (!result) {
+        return NextResponse.json(
+          { message: "サーバーが混雑しています。しばらく待ってから再度お試しください。" }, 
+          { status: 503 }
+        );
+      }
+
+      return result;
     }
   } catch (error) {
     console.error("商品情報取得エラー:", error);
