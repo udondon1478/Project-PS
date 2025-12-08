@@ -30,8 +30,6 @@ describe('boothQueue', () => {
 
     // t1, t2, t3 should be very close to each other (burst)
     // t4 should be approx 2000ms after t1
-    
-    console.log('Start times:', startTimes);
 
     // Expect first 3 requests to execute within a short window
     expect(t3 - t1).toBeLessThan(1000); 
