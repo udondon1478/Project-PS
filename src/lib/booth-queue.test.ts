@@ -24,7 +24,7 @@ describe('boothQueue', () => {
     startTimes.sort((a, b) => a - b);
 
     const t1 = startTimes[0];
-    const t2 = startTimes[1];
+
     const t3 = startTimes[2];
     const t4 = startTimes[3];
 
