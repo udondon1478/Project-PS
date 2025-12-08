@@ -173,11 +173,19 @@ export async function POST(request: Request) {
           // Schema.orgから価格を抽出
           if (isSchemaOrgOffer(productInfo.offers)) {
             const price = parseFloat(productInfo.offers.price);
-            lowPrice = price;
-            highPrice = price;
+            if (Number.isFinite(price)) {
+              lowPrice = price;
+              highPrice = price;
+            }
           } else if (isSchemaOrgAggregateOffer(productInfo.offers)) {
-            lowPrice = parseFloat(productInfo.offers.lowPrice);
-            highPrice = parseFloat(productInfo.offers.highPrice);
+            const low = parseFloat(productInfo.offers.lowPrice);
+            const high = parseFloat(productInfo.offers.highPrice);
+            if (Number.isFinite(low)) {
+              lowPrice = low;
+            }
+            if (Number.isFinite(high)) {
+              highPrice = high;
+            }
           } else {
             console.warn("Schema.org offers structure is unexpected:", productInfo.offers);
           }
