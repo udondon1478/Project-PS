@@ -118,13 +118,15 @@ export async function POST(request: Request) {
           const price = parseFloat(priceText.replace('¥', '').replace(',', '').trim());
           const type = $(elem).find('.u-tpg-caption1').text().trim();
 
-          variations.push({
-            name,
-            price,
-            type,
-            order: i,
-            isMain: i === 0
-          });
+          if (Number.isFinite(price)) {
+            variations.push({
+              name,
+              price,
+              type,
+              order: i,
+              isMain: i === 0
+            });
+          }
         });
 
         const schemaOrgData = $('script[type="application/ld+json"]').html();
@@ -136,14 +138,16 @@ export async function POST(request: Request) {
           title = $('title').text().replace(/ - BOOTH$/, '') || "タイトル不明";
 
           // 価格 (バリエーションから取得を優先)
-          if (variations.length > 0) {
-            lowPrice = Math.min(...variations.map(v => v.price));
-            highPrice = Math.max(...variations.map(v => v.price));
+          const validVariationPrices = variations.map(v => v.price).filter(Number.isFinite);
+
+          if (validVariationPrices.length > 0) {
+            lowPrice = Math.min(...validVariationPrices);
+            highPrice = Math.max(...validVariationPrices);
           } else {
             const priceText = $('.price').text().trim();
             if (priceText) {
               const priceValue = parseFloat(priceText.replace('¥', '').replace(',', ''));
-              if (!isNaN(priceValue)) {
+              if (Number.isFinite(priceValue)) {
                 lowPrice = priceValue;
                 highPrice = priceValue;
               }
@@ -180,8 +184,11 @@ export async function POST(request: Request) {
 
           // Schema.orgから価格が取得できなかった場合、バリエーションから取得を試みる
           if ((lowPrice === 0 && highPrice === 0) && variations.length > 0) {
-            lowPrice = Math.min(...variations.map(v => v.price));
-            highPrice = Math.max(...variations.map(v => v.price));
+            const validVariationPrices = variations.map(v => v.price).filter(Number.isFinite);
+            if (validVariationPrices.length > 0) {
+              lowPrice = Math.min(...validVariationPrices);
+              highPrice = Math.max(...validVariationPrices);
+            }
           }
 
           // Schema.orgデータにpublishedAtがないため、ここでは現在時刻を仮の値とする
