@@ -19,7 +19,7 @@ const QUEUE_CONFIG = {
 
 const MAX_QUEUE_SIZE = 10; // キューの最大待機数
 
-export const createBoothQueue = (options?: any) => new PQueue({ ...QUEUE_CONFIG, ...options });
+export const createBoothQueue = (options?: ConstructorParameters<typeof PQueue>[0]) => new PQueue({ ...QUEUE_CONFIG, ...options });
 
 export const boothQueue = createBoothQueue();
 

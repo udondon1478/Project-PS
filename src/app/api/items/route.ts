@@ -4,7 +4,7 @@ import { rateLimit } from '@/lib/rate-limit';
 import { NextResponse } from 'next/server';
 import { auth } from "@/auth";
 import * as cheerio from 'cheerio';
-import { boothQueue, addToBoothQueue } from '@/lib/booth-queue';
+import { addToBoothQueue } from '@/lib/booth-queue';
 
 function isSchemaOrgOffer(offers: unknown): offers is SchemaOrgOffer {
   return typeof offers === 'object' && offers !== null && '@type' in offers && offers['@type'] === 'Offer';
