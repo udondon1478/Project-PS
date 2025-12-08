@@ -300,6 +300,23 @@ export async function POST(request: Request) {
     }
 
     const errorMessage = error instanceof Error ? error.message : "不明なエラー";
-    return NextResponse.json({ message: "商品情報の取得に失敗しました。", error: errorMessage }, { status: 500 });
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    // サーバーサイドログには常に詳細を出力
+    console.error("Critical Error in /api/items:", { message: errorMessage, stack: errorStack });
+
+    // クライアントへのレスポンス
+    const isDev = process.env.NODE_ENV === 'development';
+    const clientMessage = isDev 
+      ? `商品情報の取得に失敗しました。詳細: ${errorMessage}` 
+      : "商品情報の取得に失敗しました。";
+
+    return NextResponse.json(
+      { 
+        message: clientMessage,
+        ...(isDev && { error: errorMessage, stack: errorStack }) // 開発環境のみ詳細を含める
+      }, 
+      { status: 500 }
+    );
   }
 }
