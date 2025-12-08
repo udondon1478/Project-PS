@@ -8,8 +8,12 @@ import PQueue from 'p-queue';
  *
  * これにより、サーバー全体でBooth.pmへのアクセスが2秒に3回以下に制限されます。
  */
-export const boothQueue = new PQueue({
+const QUEUE_CONFIG = {
   concurrency: 3,
   interval: 2000,
   intervalCap: 3,
-});
+};
+
+export const createBoothQueue = () => new PQueue(QUEUE_CONFIG);
+
+export const boothQueue = createBoothQueue();

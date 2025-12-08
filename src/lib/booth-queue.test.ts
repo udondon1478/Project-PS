@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { boothQueue } from './booth-queue';
+import { createBoothQueue } from './booth-queue';
 
 describe('boothQueue', () => {
   it('should process tasks with the configured interval and concurrency', async () => {
+    const boothQueue = createBoothQueue();
     const startTimes: number[] = [];
     const task = async () => {
       startTimes.push(Date.now());
