@@ -115,7 +115,7 @@ export async function POST(request: Request) {
         $('.variations .variation-item').each((i, elem) => {
           const name = $(elem).find('.variation-name').text().trim();
           const priceText = $(elem).find('.variation-price').text().trim();
-          const price = parseFloat(priceText.replace('¥', '').replace(',', '').trim());
+          const price = parseFloat(priceText.replace('¥', '').replace(/,/g, '').trim());
           const type = $(elem).find('.u-tpg-caption1').text().trim();
 
           if (Number.isFinite(price)) {
@@ -146,7 +146,7 @@ export async function POST(request: Request) {
           } else {
             const priceText = $('.price').text().trim();
             if (priceText) {
-              const priceValue = parseFloat(priceText.replace('¥', '').replace(',', ''));
+              const priceValue = parseFloat(priceText.replace('¥', '').replace(/,/g, ''));
               if (Number.isFinite(priceValue)) {
                 lowPrice = priceValue;
                 highPrice = priceValue;
@@ -172,14 +172,14 @@ export async function POST(request: Request) {
 
           // Schema.orgから価格を抽出
           if (isSchemaOrgOffer(productInfo.offers)) {
-            const price = parseFloat(productInfo.offers.price);
+            const price = parseFloat(String(productInfo.offers.price).replace(/,/g, ''));
             if (Number.isFinite(price)) {
               lowPrice = price;
               highPrice = price;
             }
           } else if (isSchemaOrgAggregateOffer(productInfo.offers)) {
-            const low = parseFloat(productInfo.offers.lowPrice);
-            const high = parseFloat(productInfo.offers.highPrice);
+            const low = parseFloat(String(productInfo.offers.lowPrice).replace(/,/g, ''));
+            const high = parseFloat(String(productInfo.offers.highPrice).replace(/,/g, ''));
             if (Number.isFinite(low)) {
               lowPrice = low;
             }
