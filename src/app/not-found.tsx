@@ -11,11 +11,11 @@ export default function NotFound() {
         URLをご確認の上、再度お試しください。
       </p>
       <div className="mt-4">
-        <Link href="/">
-          <Button>
+        <Button asChild>
+          <Link href="/">
             トップページへ戻る
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
     </div>
   );
