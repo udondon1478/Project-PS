@@ -6,6 +6,10 @@ export default function Footer() {
     <footer className="border-t bg-background py-8 md:py-0">
       <div className="container flex flex-col items-center justify-between gap-4 px-4 md:h-24 md:flex-row">
         <div className="flex flex-col items-center md:items-start order-2 md:order-1">
+          <p className="text-center text-xs text-muted-foreground md:text-left mb-2">
+            本サービスはBOOTH非公式のファンサイトです。<br className="md:hidden" />
+            BOOTHおよびピクシブ株式会社とは一切関係ありません。
+          </p>
           <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
             © 2024 PolySeek
           </p>
