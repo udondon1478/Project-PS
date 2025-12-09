@@ -289,7 +289,7 @@ export async function POST(request: Request) {
       return result;
     }
   } catch (error) {
-    console.error("商品情報取得エラー:", error);
+
     
     // バックプレッシャーエラーのハンドリング
     if (error instanceof Error && error.message === 'Queue is full') {
@@ -311,7 +311,7 @@ export async function POST(request: Request) {
     const errorStack = error instanceof Error ? error.stack : undefined;
     
     // サーバーサイドログには常に詳細を出力
-    console.error("Critical Error in /api/items:", { message: errorMessage, stack: errorStack });
+    console.error("Critical Error in /api/items:", { error, message: errorMessage, stack: errorStack });
 
     // クライアントへのレスポンス
     const isDev = process.env.NODE_ENV === 'development';
