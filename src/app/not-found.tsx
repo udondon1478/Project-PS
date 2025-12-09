@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 text-center px-4">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-4 text-center px-4">
       <h1 className="text-6xl font-black text-primary/20">404</h1>
       <h2 className="text-2xl font-bold tracking-tight">ページが見つかりません</h2>
       <p className="text-muted-foreground max-w-[500px]">
@@ -23,6 +23,6 @@ export default function NotFound() {
           </Link>
         </Button>
       </div>
-    </div>
+    </main>
   );
 }
