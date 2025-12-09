@@ -1,5 +1,11 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+
+export const metadata: Metadata = {
+  title: 'ページが見つかりません',
+  description: 'お探しのページは削除されたか、URLが変更された可能性があります。',
+};
 
 export default function NotFound() {
   return (
