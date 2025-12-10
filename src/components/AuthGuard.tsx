@@ -13,7 +13,7 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
     const isLoginPage = pathname === "/auth/login";
     const isAgreementPage = pathname === "/auth/agreement";
     // 利用規約とプライバシーポリシーは同意ページから読めるようにするため、常に許可
-    const isTermsOrPrivacyPage = pathname === "/terms" || pathname === "/privacy";
+    const isTermsOrPrivacyPage = ["/terms", "/privacy"].some(path => pathname === path || (pathname.startsWith(path + "/")));
     const isPublicPage = ["/terms", "/privacy", "/", "/search", "/products"].some(path => pathname === path || (path !== "/" && pathname.startsWith(path + "/"))) || pathname.startsWith("/api") || pathname.startsWith("/auth");
     const hasAgreed = session?.user?.termsAgreedAt;
 
