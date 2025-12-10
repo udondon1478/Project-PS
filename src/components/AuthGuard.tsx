@@ -12,6 +12,8 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
 
     const isLoginPage = pathname === "/auth/login";
     const isAgreementPage = pathname === "/auth/agreement";
+    // 利用規約とプライバシーポリシーは同意ページから読めるようにするため、常に許可
+    const isTermsOrPrivacyPage = pathname === "/terms" || pathname === "/privacy";
     const isPublicPage = ["/terms", "/privacy", "/", "/search", "/products"].some(path => pathname === path || (path !== "/" && pathname.startsWith(path + "/"))) || pathname.startsWith("/api") || pathname.startsWith("/auth");
     const hasAgreed = session?.user?.termsAgreedAt;
 
@@ -24,7 +26,8 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
                 router.replace("/auth/login");
             }
         } else if (status === "authenticated" && !hasAgreed) {
-            if (!isAgreementPage && !isPublicPage) {
+            // 認証済みだが未同意の場合、/terms と /privacy 以外は同意ページへリダイレクト
+            if (!isAgreementPage && !isTermsOrPrivacyPage) {
                 router.replace("/auth/agreement");
             }
         } else if (status === "authenticated" && hasAgreed) {
@@ -32,7 +35,7 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
                 router.replace("/");
             }
         }
-    }, [session, status, pathname, router, hasAgreed, isAgreementPage, isPublicPage]);
+    }, [session, status, pathname, router, hasAgreed, isAgreementPage, isPublicPage, isTermsOrPrivacyPage]);
 
     if (status === "loading") {
         return null; // Or a spinner
@@ -44,8 +47,8 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
         return null;
     }
 
-    // 認証済みだが未同意の場合も、保護ページではコンテンツを表示しない
-    if (status === "authenticated" && !hasAgreed && !isAgreementPage && !isPublicPage) {
+    // 認証済みだが未同意の場合、/termsと/privacy以外はコンテンツを表示しない
+    if (status === "authenticated" && !hasAgreed && !isAgreementPage && !isTermsOrPrivacyPage) {
         return null;
     }
 
