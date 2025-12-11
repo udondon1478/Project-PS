@@ -51,7 +51,7 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
         return null;
     }
 
-    // 認証済みだが未同意の場合、同意ページと除外ページ以外はコンテンツを表示しない
+    // 認証済みだが未同意の場合、規約/プライバシーページ（shouldForceAgreementがfalseになる）と同意ページ以外はコンテンツを表示しない
     if (shouldForceAgreement && !isAgreementPage) {
         return null;
     }
