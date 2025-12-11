@@ -38,7 +38,8 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
                 router.replace("/");
             }
         }
-    }, [session, status, pathname, router, hasAgreed, isAgreementPage, isPublicPage, isTermsOrPrivacyPage, shouldForceAgreement]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [session, status, pathname, router]);
 
     if (status === "loading") {
         return null; // Or a spinner
