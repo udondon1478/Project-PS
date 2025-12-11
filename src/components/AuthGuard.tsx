@@ -38,7 +38,7 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
                 router.replace("/");
             }
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- 派生値（hasAgreed, isAgreementPage等）はsession, status, pathnameから算出されるため除外
     }, [session, status, pathname, router]);
 
     if (status === "loading") {
