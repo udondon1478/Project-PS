@@ -12,8 +12,13 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
 
     const isLoginPage = pathname === "/auth/login";
     const isAgreementPage = pathname === "/auth/agreement";
+    // 利用規約とプライバシーポリシーは同意ページから読めるようにするため、常に許可
+    const isTermsOrPrivacyPage = ["/terms", "/privacy"].some(path => pathname === path || (pathname.startsWith(path + "/")));
     const isPublicPage = ["/terms", "/privacy", "/", "/search", "/products"].some(path => pathname === path || (path !== "/" && pathname.startsWith(path + "/"))) || pathname.startsWith("/api") || pathname.startsWith("/auth");
     const hasAgreed = session?.user?.termsAgreedAt;
+
+    // 認証済みだが未同意、かつ規約/プライバシーポリシーページでないかどうか
+    const shouldForceAgreement = status === "authenticated" && !hasAgreed && !isTermsOrPrivacyPage;
 
     useEffect(() => {
         if (status === "loading") return;
@@ -23,8 +28,9 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
             if (!isPublicPage) {
                 router.replace("/auth/login");
             }
-        } else if (status === "authenticated" && !hasAgreed) {
-            if (!isAgreementPage && !isPublicPage) {
+        } else if (shouldForceAgreement) {
+            // shouldForceAgreementの条件を満たす場合、同意ページ以外ならリダイレクト
+            if (!isAgreementPage) {
                 router.replace("/auth/agreement");
             }
         } else if (status === "authenticated" && hasAgreed) {
@@ -32,7 +38,8 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
                 router.replace("/");
             }
         }
-    }, [session, status, pathname, router, hasAgreed, isAgreementPage, isPublicPage]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- 派生値（hasAgreed, isAgreementPage等）はsession, status, pathnameから算出されるため除外
+    }, [session, status, pathname, router]);
 
     if (status === "loading") {
         return null; // Or a spinner
@@ -44,8 +51,8 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
         return null;
     }
 
-    // 認証済みだが未同意の場合も、保護ページではコンテンツを表示しない
-    if (status === "authenticated" && !hasAgreed && !isAgreementPage && !isPublicPage) {
+    // 認証済みだが未同意の場合、規約/プライバシーページ（shouldForceAgreementがfalseになる）と同意ページ以外はコンテンツを表示しない
+    if (shouldForceAgreement && !isAgreementPage) {
         return null;
     }
 
