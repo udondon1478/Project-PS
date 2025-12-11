@@ -17,6 +17,9 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
     const isPublicPage = ["/terms", "/privacy", "/", "/search", "/products"].some(path => pathname === path || (path !== "/" && pathname.startsWith(path + "/"))) || pathname.startsWith("/api") || pathname.startsWith("/auth");
     const hasAgreed = session?.user?.termsAgreedAt;
 
+    // 認証済みだが未同意、かつ規約/プライバシーポリシーページでないかどうか
+    const shouldForceAgreement = status === "authenticated" && !hasAgreed && !isTermsOrPrivacyPage;
+
     useEffect(() => {
         if (status === "loading") return;
 
@@ -25,9 +28,9 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
             if (!isPublicPage) {
                 router.replace("/auth/login");
             }
-        } else if (status === "authenticated" && !hasAgreed) {
-            // 認証済みだが未同意の場合、/terms と /privacy 以外は同意ページへリダイレクト
-            if (!isAgreementPage && !isTermsOrPrivacyPage) {
+        } else if (shouldForceAgreement) {
+            // shouldForceAgreementの条件を満たす場合、同意ページ以外ならリダイレクト
+            if (!isAgreementPage) {
                 router.replace("/auth/agreement");
             }
         } else if (status === "authenticated" && hasAgreed) {
@@ -35,7 +38,7 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
                 router.replace("/");
             }
         }
-    }, [session, status, pathname, router, hasAgreed, isAgreementPage, isPublicPage, isTermsOrPrivacyPage]);
+    }, [session, status, pathname, router, hasAgreed, isAgreementPage, isPublicPage, isTermsOrPrivacyPage, shouldForceAgreement]);
 
     if (status === "loading") {
         return null; // Or a spinner
@@ -47,8 +50,8 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
         return null;
     }
 
-    // 認証済みだが未同意の場合、/termsと/privacy以外はコンテンツを表示しない
-    if (status === "authenticated" && !hasAgreed && !isAgreementPage && !isTermsOrPrivacyPage) {
+    // 認証済みだが未同意の場合、同意ページと除外ページ以外はコンテンツを表示しない
+    if (shouldForceAgreement && !isAgreementPage) {
         return null;
     }
 
