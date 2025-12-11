@@ -6,31 +6,37 @@ import * as Sentry from "@sentry/nextjs";
 
 const isProduction = process.env.NODE_ENV === "production";
 
-Sentry.init({
-  enabled: process.env.NEXT_PUBLIC_SENTRY_ENABLED !== "false",
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+// Sentryが既に初期化済みの場合は再初期化をスキップ（重複インスタンス化を防止）
+if (Sentry.isInitialized()) {
+  // eslint-disable-next-line no-console
+  console.debug("Sentry is already initialized, skipping re-initialization");
+} else {
+  Sentry.init({
+    enabled: process.env.NEXT_PUBLIC_SENTRY_ENABLED !== "false",
+    dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
-  // Adjust this value in production, or use tracesSampler for greater control
-  tracesSampleRate: isProduction ? 0.1 : 1.0,
+    // Adjust this value in production, or use tracesSampler for greater control
+    tracesSampleRate: isProduction ? 0.1 : 1.0,
 
-  // Setting this option to true will print useful information to the console while you're setting up Sentry.
-  debug: !isProduction,
+    // Setting this option to true will print useful information to the console while you're setting up Sentry.
+    debug: !isProduction,
 
-  replaysOnErrorSampleRate: 1.0,
+    replaysOnErrorSampleRate: 1.0,
 
-  // This sets the sample rate to be 10%. You may want this to be 100% while
-  // in development and sample at a lower rate in production
-  replaysSessionSampleRate: isProduction ? 0.1 : 1.0,
+    // This sets the sample rate to be 10%. You may want this to be 100% while
+    // in development and sample at a lower rate in production
+    replaysSessionSampleRate: isProduction ? 0.1 : 1.0,
 
-  // You can remove this option if you're not planning to use the Sentry Session Replay feature:
-  integrations: (integrations) => {
-    return [
-      ...integrations.filter((integration) => integration.name !== "Replay"),
-      Sentry.replayIntegration({
-        // Additional Replay configuration goes in here, for example:
-        maskAllText: true,
-        blockAllMedia: true,
-      }),
-    ];
-  },
-});
+    // You can remove this option if you're not planning to use the Sentry Session Replay feature:
+    integrations: (integrations) => {
+      return [
+        ...integrations.filter((integration) => integration.name !== "Replay"),
+        Sentry.replayIntegration({
+          // Additional Replay configuration goes in here, for example:
+          maskAllText: true,
+          blockAllMedia: true,
+        }),
+      ];
+    },
+  });
+}
