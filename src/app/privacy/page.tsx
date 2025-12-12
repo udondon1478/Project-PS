@@ -22,7 +22,21 @@ export default function PrivacyPage() {
       </ul>
       <h3 className="text-lg font-bold mt-4 mb-2">Cookieおよび類似技術</h3>
       <p className="mb-4">
-        ログイン状態の維持や設定の保存のためにCookieを使用します。
+        本サービスでは、以下の種類のCookieおよび類似技術を使用しています。
+      </p>
+      <h4 className="font-bold mt-2 mb-1">必須Cookie（Essential Cookies）</h4>
+      <p className="mb-4">
+        ログイン状態の維持や設定の保存など、サービス提供に不可欠な機能のために使用します。
+        これらは本サービスを利用するために必須であり、同意の有無にかかわらず使用されます。
+      </p>
+      <h4 className="font-bold mt-2 mb-1">分析Cookie（Analytics Cookies）</h4>
+      <p className="mb-4">
+        サービス利用状況の分析やエラー監視のため、Google AnalyticsおよびSentryが使用するCookieです。
+        これらは<strong>ユーザーの同意後にのみ</strong>使用されます。
+        初回訪問時に表示される同意バナーで「拒否する」を選択した場合、これらのCookieは使用されません。
+      </p>
+      <p className="mb-4">
+        同意は、ブラウザのローカルストレージ（Local Storage）をクリアすることで、いつでも撤回することができます。
       </p>
 
       <h2 className="text-xl font-bold mt-8 mb-4">第2条（個人情報の利用目的）</h2>

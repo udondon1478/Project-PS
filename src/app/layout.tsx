@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { GoogleAnalytics } from '@next/third-parties/google';
 import "./globals.css";
 import { config } from '@fortawesome/fontawesome-svg-core'
 import '@fortawesome/fontawesome-svg-core/styles.css'
@@ -12,6 +11,9 @@ import { Toaster } from "@/components/ui/sonner";
 import AuthGuard from "@/components/AuthGuard";
 import MainLayout from "@/components/MainLayout";
 import Footer from "@/components/Footer";
+import { CookieConsentProvider } from "@/contexts/CookieConsentContext";
+import CookieBanner from "@/components/CookieBanner";
+import AnalyticsLoader from "@/components/AnalyticsLoader";
 import { BASE_URL } from "@/lib/constants";
 
 const geistSans = Geist({
@@ -44,25 +46,28 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SessionProvider> {/* SessionProviderでラップ */}
-          <ThemeProvider // ThemeProviderでラップ
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <Header />
-            <AuthGuard>
-              <MainLayout>
-                {children}
-              </MainLayout>
-            </AuthGuard>
-            <Footer />
-            <Toaster />
-          </ThemeProvider>
+          <CookieConsentProvider>
+            <ThemeProvider // ThemeProviderでラップ
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <Header />
+              <AuthGuard>
+                <MainLayout>
+                  {children}
+                </MainLayout>
+              </AuthGuard>
+              <Footer />
+              <Toaster />
+              <CookieBanner />
+            </ThemeProvider>
+            {process.env.NEXT_PUBLIC_GA_ID && (
+              <AnalyticsLoader gaId={process.env.NEXT_PUBLIC_GA_ID} />
+            )}
+          </CookieConsentProvider>
         </SessionProvider>
-        {process.env.NEXT_PUBLIC_GA_ID && (
-          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
-        )}
       </body>
     </html>
   );
