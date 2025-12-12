@@ -6,7 +6,7 @@ import * as Sentry from "@sentry/nextjs";
 
 const isProduction = process.env.NODE_ENV === "production";
 
-import { getStoredConsent } from "./src/lib/cookieConsentStorage";
+import { getStoredConsent } from "@/lib/cookieConsentStorage";
 
 export function initSentry() {
   // Sentryが既に初期化済みの場合は再初期化をスキップ（重複インスタンス化を防止）
