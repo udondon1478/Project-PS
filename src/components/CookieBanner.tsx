@@ -29,7 +29,7 @@ export default function CookieBanner() {
           <div className="flex-1">
             <p id="cookie-banner-description" className="text-sm text-muted-foreground">
               当サイトでは、サービス改善のためGoogle AnalyticsおよびSentryを使用しています。
-              これらのツールはCookieを使用して匿名の利用統計を収集します。
+              これらのツールはCookieやsessionStorageを使用して匿名の利用統計を収集します。
               詳細は<Link href="/privacy" className="text-primary hover:underline">プライバシーポリシー</Link>をご覧ください。
             </p>
           </div>

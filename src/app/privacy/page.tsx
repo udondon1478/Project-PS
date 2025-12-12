@@ -29,14 +29,14 @@ export default function PrivacyPage() {
         ログイン状態の維持や設定の保存など、サービス提供に不可欠な機能のために使用します。
         これらは本サービスを利用するために必須であり、同意の有無にかかわらず使用されます。
       </p>
-      <h4 className="font-bold mt-2 mb-1">分析Cookie（Analytics Cookies）</h4>
+      <h4 className="font-bold mt-2 mb-1">分析Cookie・ストレージ（Analytics Cookies & Storage）</h4>
       <p className="mb-4">
-        サービス利用状況の分析やエラー監視のため、Google AnalyticsおよびSentryが使用するCookieです。
+        サービス利用状況の分析やエラー監視のため、Google AnalyticsのCookieおよびSentryのsessionStorageを使用しています。
         これらは<strong>ユーザーの同意後にのみ</strong>使用されます。
-        初回訪問時に表示される同意バナーで「拒否する」を選択した場合、これらのCookieは使用されません。
+        初回訪問時に表示される同意バナーで「拒否する」を選択した場合、これらは使用されません。
       </p>
       <p className="mb-4">
-        同意は、ブラウザのローカルストレージ（Local Storage）をクリアすることで、いつでも撤回することができます。
+        同意は、ブラウザのローカルストレージ（Local Storage）をクリアすることで撤回できます。クリア後、次回訪問時に同意バナーが再表示され、改めて選択することができます。
       </p>
 
       <h2 className="text-xl font-bold mt-8 mb-4">第2条（個人情報の利用目的）</h2>
