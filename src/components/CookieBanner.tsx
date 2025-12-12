@@ -19,9 +19,8 @@ export default function CookieBanner() {
   }
 
   return (
-    <div 
+    <section 
       className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
-      role="region"
       aria-live="polite"
       aria-label="Cookie同意"
       aria-describedby="cookie-banner-description"
@@ -57,6 +56,6 @@ export default function CookieBanner() {
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
