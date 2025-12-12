@@ -26,20 +26,32 @@ export function CookieConsentProvider({ children }: CookieConsentProviderProps) 
 
   // localStorageから同意状態を復元
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === 'accepted' || stored === 'rejected') {
-      setHasConsent(stored);
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored === 'accepted' || stored === 'rejected') {
+        setHasConsent(stored);
+      }
+    } catch (e) {
+      console.error('Failed to access localStorage:', e);
     }
     setIsHydrated(true);
   }, []);
 
   const acceptCookies = useCallback(() => {
-    localStorage.setItem(STORAGE_KEY, 'accepted');
+    try {
+      localStorage.setItem(STORAGE_KEY, 'accepted');
+    } catch (e) {
+      console.error('Failed to save consent to localStorage:', e);
+    }
     setHasConsent('accepted');
   }, []);
 
   const rejectCookies = useCallback(() => {
-    localStorage.setItem(STORAGE_KEY, 'rejected');
+    try {
+      localStorage.setItem(STORAGE_KEY, 'rejected');
+    } catch (e) {
+      console.error('Failed to save consent to localStorage:', e);
+    }
     setHasConsent('rejected');
   }, []);
 
