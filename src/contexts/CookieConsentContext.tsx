@@ -1,10 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-
-const STORAGE_KEY = 'polyseek_cookie_consent';
-
-type ConsentStatus = 'accepted' | 'rejected' | null;
+import { getStoredConsent, setStoredConsent, ConsentStatus } from '@/lib/cookieConsentStorage';
 
 interface CookieConsentContextType {
   hasConsent: ConsentStatus;
@@ -34,20 +31,12 @@ export function CookieConsentProvider({ children }: CookieConsentProviderProps) 
   }, []);
 
   const acceptCookies = useCallback(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, 'accepted');
-    } catch (e) {
-      console.error('Failed to save consent to localStorage:', e);
-    }
+    setStoredConsent('accepted');
     setHasConsent('accepted');
   }, []);
 
   const rejectCookies = useCallback(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, 'rejected');
-    } catch (e) {
-      console.error('Failed to save consent to localStorage:', e);
-    }
+    setStoredConsent('rejected');
     setHasConsent('rejected');
   }, []);
 
@@ -76,24 +65,4 @@ export function useCookieConsent(): CookieConsentContextType {
     throw new Error('useCookieConsent must be used within a CookieConsentProvider');
   }
   return context;
-}
-
-/**
- * サーバーサイドやSentryなどのContext外から同意状態を確認するためのユーティリティ
- * typeof windowチェックとtry/catchを行い、安全にlocalStorageにアクセスします。
- */
-export function getStoredConsent(): ConsentStatus {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === 'accepted' || stored === 'rejected') {
-      return stored;
-    }
-  } catch {
-    // どんな例外が発生してもnullを返す（呼び出し元へはエラーを伝播させない）
-    return null;
-  }
-  return null;
 }
