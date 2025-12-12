@@ -26,13 +26,9 @@ export function CookieConsentProvider({ children }: CookieConsentProviderProps) 
 
   // localStorageから同意状態を復元
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored === 'accepted' || stored === 'rejected') {
-        setHasConsent(stored);
-      }
-    } catch (e) {
-      console.error('Failed to access localStorage:', e);
+    const stored = getStoredConsent();
+    if (stored) {
+      setHasConsent(stored);
     }
     setIsHydrated(true);
   }, []);
@@ -84,14 +80,20 @@ export function useCookieConsent(): CookieConsentContextType {
 
 /**
  * サーバーサイドやSentryなどのContext外から同意状態を確認するためのユーティリティ
+ * typeof windowチェックとtry/catchを行い、安全にlocalStorageにアクセスします。
  */
 export function getStoredConsent(): ConsentStatus {
   if (typeof window === 'undefined') {
     return null;
   }
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored === 'accepted' || stored === 'rejected') {
-    return stored;
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === 'accepted' || stored === 'rejected') {
+      return stored;
+    }
+  } catch {
+    // どんな例外が発生してもnullを返す（呼び出し元へはエラーを伝播させない）
+    return null;
   }
   return null;
 }
