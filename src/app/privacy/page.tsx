@@ -50,6 +50,20 @@ export default function PrivacyPage() {
       <ul className="list-disc pl-6 mb-4">
         <li>Google : アカウント認証のため</li>
         <li>Discord: アカウント認証のため</li>
+        <li>
+          Google Analytics（Google LLC）：サービス利用状況の分析のため。IPアドレス、ページビュー、サイト内の行動履歴等を収集します。詳細は
+          <a href="https://policies.google.com/technologies/partner-sites" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
+            Googleのプライバシーポリシー
+          </a>
+          をご覧ください。
+        </li>
+        <li>
+          Sentry（Functional Software, Inc.）：エラー監視およびサービス品質向上のため。エラー発生時のデバイス情報、ブラウザ情報、エラー内容、操作のリプレイ（テキストおよびメディアはマスク処理）を収集します。詳細は
+          <a href="https://sentry.io/privacy/" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
+            Sentryのプライバシーポリシー
+          </a>
+          をご覧ください。
+        </li>
       </ul>
 
       <h2 className="text-xl font-bold mt-8 mb-4">第5条（情報の収集モジュールと自動検知）</h2>
