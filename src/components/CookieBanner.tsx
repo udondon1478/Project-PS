@@ -3,6 +3,7 @@
 import { useCookieConsent } from '@/contexts/CookieConsentContext';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { initSentry } from '../../sentry.client.config';
 
 export default function CookieBanner() {
   const { hasConsent, acceptCookies, rejectCookies, isHydrated } = useCookieConsent();
@@ -45,7 +46,10 @@ export default function CookieBanner() {
             </Button>
             <Button
               size="sm"
-              onClick={acceptCookies}
+              onClick={() => {
+                acceptCookies();
+                initSentry();
+              }}
               aria-label="Cookieに同意する"
             >
               同意する

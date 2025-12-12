@@ -7,17 +7,19 @@ import * as Sentry from "@sentry/nextjs";
 const isProduction = process.env.NODE_ENV === "production";
 
 // クライアントサイドでlocalStorageから同意状態を確認
-const hasAnalyticsConsent = typeof window !== 'undefined'
-  && localStorage.getItem('polyseek_cookie_consent') === 'accepted';
+// const hasAnalyticsConsent = typeof window !== 'undefined'
+//   && localStorage.getItem('polyseek_cookie_consent') === 'accepted';
 
-// Sentryが既に初期化済みの場合は再初期化をスキップ（重複インスタンス化を防止）
-if (Sentry.isInitialized()) {
-  // eslint-disable-next-line no-console
-  console.debug("Sentry is already initialized, skipping re-initialization");
-} else {
+export function initSentry() {
+  // Sentryが既に初期化済みの場合は再初期化をスキップ（重複インスタンス化を防止）
+  if (Sentry.isInitialized()) {
+    // eslint-disable-next-line no-console
+    console.debug("Sentry is already initialized, skipping re-initialization");
+    return;
+  }
+
   Sentry.init({
-    // Cookie同意がない場合はSentryを無効化
-    enabled: process.env.NEXT_PUBLIC_SENTRY_ENABLED !== "false" && hasAnalyticsConsent,
+    // enabled: process.env.NEXT_PUBLIC_SENTRY_ENABLED !== "false" && hasAnalyticsConsent,
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
     // Adjust this value in production, or use tracesSampler for greater control

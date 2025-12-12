@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useCookieConsent } from '@/contexts/CookieConsentContext';
+import { initSentry } from '../../sentry.client.config';
 
 // スクリプト要素のID（重複挿入防止用）
 const GA_SCRIPT_ID = 'google-analytics-script';
@@ -22,6 +23,9 @@ export default function AnalyticsLoader({ gaId }: AnalyticsLoaderProps) {
     if (!isAnalyticsEnabled) {
       return;
     }
+
+    // initialize Sentry
+    initSentry();
 
     // 既にロード済みの場合は何もしない（DOM検出 または window.gtag存在確認）
     const existingScript = document.getElementById(GA_SCRIPT_ID);
