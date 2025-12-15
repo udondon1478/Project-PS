@@ -125,3 +125,10 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Onboarding Tour Fixes */
+.driver-popover-step-filter .driver-popover-arrow {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
