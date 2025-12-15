@@ -74,6 +74,11 @@ export default function OnboardingTour() {
 
                   arrow.style.left = `${clampedLeft}px`;
                   arrow.style.transform = 'none';
+                  
+                  // Force visibility
+                  arrow.style.display = 'block';
+                  arrow.style.visibility = 'visible';
+                  arrow.style.opacity = '1';
                 }
               }
             }
@@ -84,7 +89,36 @@ export default function OnboardingTour() {
               title: '商品登録',
               description: 'BoothのURLを入力し、タグをつけることで、データベースに商品を追加・共有できます。',
               side: "bottom",
-              align: 'start',
+              onPopoverRender: (popover) => {
+                const targetElement = document.querySelector(registerButtonId);
+                const arrow = popover.arrow;
+                const wrapper = popover.wrapper;
+
+                if (targetElement && arrow && wrapper) {
+                  const targetRect = targetElement.getBoundingClientRect();
+                  const wrapperRect = wrapper.getBoundingClientRect();
+
+                  // Calculate center of target relative to wrapper
+                  const targetCenter = targetRect.left + (targetRect.width / 2);
+                  const wrapperLeft = wrapperRect.left;
+                  
+                  // Position arrow to point at target center
+                  const arrowLeft = targetCenter - wrapperLeft - 7; // 7 is half arrow width
+
+                  // Ensure arrow stays within wrapper bounds
+                  const minLeft = 5;
+                  const maxLeft = wrapperRect.width - 20;
+                  const clampedLeft = Math.max(minLeft, Math.min(arrowLeft, maxLeft));
+                  
+                  arrow.style.left = `${clampedLeft}px`;
+                  arrow.style.transform = 'none';
+                  
+                  // Force visibility
+                  arrow.style.display = 'block';
+                  arrow.style.visibility = 'visible';
+                  arrow.style.opacity = '1';
+                }
+              },
               onNextClick: () => {
                 localStorage.setItem('onboarding_completed', 'true');
                 driverObj.destroy();
