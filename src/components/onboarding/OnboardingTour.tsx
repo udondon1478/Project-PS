@@ -49,8 +49,33 @@ export default function OnboardingTour() {
               title: 'フィルター',
               description: '価格帯やカテゴリで絞り込みができます。',
               side: "bottom",
-              align: 'center',
-              popoverClass: 'driver-popover-step-filter'
+              onPopoverRender: (popover) => {
+                const targetElement = document.querySelector('#tour-filter-button');
+                const arrow = popover.arrow;
+                const wrapper = popover.wrapper;
+
+                if (targetElement && arrow && wrapper) {
+                  const targetRect = targetElement.getBoundingClientRect();
+                  const wrapperRect = wrapper.getBoundingClientRect();
+
+                  // Calculate center of target relative to wrapper
+                  // We want the arrow to point to the center of the target
+                  const targetCenter = targetRect.left + (targetRect.width / 2);
+                  const wrapperLeft = wrapperRect.left;
+                  
+                  // Position arrow to point at target center
+                  // 7 is approx half of arrow width (14px usually)
+                  const arrowLeft = targetCenter - wrapperLeft - 7;
+                  
+                  // Ensure arrow stays within wrapper bounds (with 5px padding)
+                  const minLeft = 5;
+                  const maxLeft = wrapperRect.width - 20; // 14px arrow + padding
+                  const clampedLeft = Math.max(minLeft, Math.min(arrowLeft, maxLeft));
+
+                  arrow.style.left = `${clampedLeft}px`;
+                  arrow.style.transform = 'none';
+                }
+              }
             }
           },
           {
