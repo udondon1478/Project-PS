@@ -49,7 +49,7 @@ export default function OnboardingTour() {
               title: 'フィルター',
               description: '価格帯やカテゴリで絞り込みができます。',
               side: "bottom",
-              align: 'start'
+              align: 'center'
             }
           },
           {
