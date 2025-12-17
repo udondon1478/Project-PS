@@ -9,8 +9,16 @@ export default function OnboardingTour() {
   const driverRef = useRef<ReturnType<typeof driver> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const arrowAnimationRef = useRef<number | null>(null);
+
   useEffect(() => {
     setIsMounted(true);
+    
+    return () => {
+        if (arrowAnimationRef.current) {
+            cancelAnimationFrame(arrowAnimationRef.current);
+        }
+    };
   }, []);
 
   useEffect(() => {
@@ -24,6 +32,46 @@ export default function OnboardingTour() {
     const isMobile = window.innerWidth < 768;
     const registerButtonId = isMobile ? '#tour-register-item-mobile' : '#tour-register-item-desktop';
 
+    const updateArrowPosition = (targetSelector: string, popover: any) => {
+        const targetElement = document.querySelector(targetSelector);
+        const arrow = popover.arrow;
+        const wrapper = popover.wrapper;
+
+        if (targetElement && arrow && wrapper) {
+            const targetRect = targetElement.getBoundingClientRect();
+            const wrapperRect = wrapper.getBoundingClientRect();
+
+            // Calculate center of target relative to wrapper
+            const targetCenter = targetRect.left + (targetRect.width / 2);
+            const wrapperLeft = wrapperRect.left;
+            
+            // Position arrow to point at target center
+            const arrowLeft = targetCenter - wrapperLeft - 7; // 7 is half arrow width
+
+            // Ensure arrow stays within wrapper bounds
+            const minLeft = 5;
+            const maxLeft = wrapperRect.width - 20;
+            const clampedLeft = Math.max(minLeft, Math.min(arrowLeft, maxLeft));
+            
+            arrow.style.left = `${clampedLeft}px`;
+            arrow.style.transform = 'none';
+            
+            // Force visibility
+            arrow.style.display = 'block';
+            arrow.style.visibility = 'visible';
+            arrow.style.opacity = '1';
+        }
+        
+        arrowAnimationRef.current = requestAnimationFrame(() => updateArrowPosition(targetSelector, popover));
+    };
+
+    const stopArrowAnimation = () => {
+        if (arrowAnimationRef.current) {
+            cancelAnimationFrame(arrowAnimationRef.current);
+            arrowAnimationRef.current = null;
+        }
+    };
+
     const startTour = () => {
       const driverObj = driver({
         showProgress: true,
@@ -36,6 +84,7 @@ export default function OnboardingTour() {
         steps: [
           {
             element: '#tour-search-bar',
+            onDeselected: stopArrowAnimation,
             popover: {
               title: '検索バー',
               description: '欲しいアセットをタグで検索できます。-をつけると除外検索も可能です。',
@@ -45,79 +94,27 @@ export default function OnboardingTour() {
           },
           {
             element: '#tour-filter-button',
+            onDeselected: stopArrowAnimation,
             popover: {
               title: 'フィルター',
               description: '価格帯やカテゴリで絞り込みができます。',
               side: "bottom",
               onPopoverRender: (popover) => {
-                const targetElement = document.querySelector('#tour-filter-button');
-                const arrow = popover.arrow;
-                const wrapper = popover.wrapper;
-
-                if (targetElement && arrow && wrapper) {
-                  const targetRect = targetElement.getBoundingClientRect();
-                  const wrapperRect = wrapper.getBoundingClientRect();
-
-                  // Calculate center of target relative to wrapper
-                  // We want the arrow to point to the center of the target
-                  const targetCenter = targetRect.left + (targetRect.width / 2);
-                  const wrapperLeft = wrapperRect.left;
-                  
-                  // Position arrow to point at target center
-                  // 7 is approx half of arrow width (14px usually)
-                  const arrowLeft = targetCenter - wrapperLeft - 7;
-                  
-                  // Ensure arrow stays within wrapper bounds (with 5px padding)
-                  const minLeft = 5;
-                  const maxLeft = wrapperRect.width - 20; // 14px arrow + padding
-                  const clampedLeft = Math.max(minLeft, Math.min(arrowLeft, maxLeft));
-
-                  arrow.style.left = `${clampedLeft}px`;
-                  arrow.style.transform = 'none';
-                  
-                  // Force visibility
-                  arrow.style.display = 'block';
-                  arrow.style.visibility = 'visible';
-                  arrow.style.opacity = '1';
-                }
+                stopArrowAnimation(); // Clear existing animation if any
+                updateArrowPosition('#tour-filter-button', popover);
               }
             }
           },
           {
             element: registerButtonId,
+            onDeselected: stopArrowAnimation,
             popover: {
               title: '商品登録',
               description: 'BoothのURLを入力し、タグをつけることで、データベースに商品を追加・共有できます。',
               side: "bottom",
               onPopoverRender: (popover) => {
-                const targetElement = document.querySelector(registerButtonId);
-                const arrow = popover.arrow;
-                const wrapper = popover.wrapper;
-
-                if (targetElement && arrow && wrapper) {
-                  const targetRect = targetElement.getBoundingClientRect();
-                  const wrapperRect = wrapper.getBoundingClientRect();
-
-                  // Calculate center of target relative to wrapper
-                  const targetCenter = targetRect.left + (targetRect.width / 2);
-                  const wrapperLeft = wrapperRect.left;
-                  
-                  // Position arrow to point at target center
-                  const arrowLeft = targetCenter - wrapperLeft - 7; // 7 is half arrow width
-
-                  // Ensure arrow stays within wrapper bounds
-                  const minLeft = 5;
-                  const maxLeft = wrapperRect.width - 20;
-                  const clampedLeft = Math.max(minLeft, Math.min(arrowLeft, maxLeft));
-                  
-                  arrow.style.left = `${clampedLeft}px`;
-                  arrow.style.transform = 'none';
-                  
-                  // Force visibility
-                  arrow.style.display = 'block';
-                  arrow.style.visibility = 'visible';
-                  arrow.style.opacity = '1';
-                }
+                stopArrowAnimation(); // Clear existing animation if any
+                updateArrowPosition(registerButtonId, popover);
               },
               onNextClick: () => {
                 localStorage.setItem('onboarding_completed', 'true');
@@ -127,6 +124,7 @@ export default function OnboardingTour() {
           }
         ],
         onDestroyed: () => {
+          stopArrowAnimation();
           // Do nothing here to prevent marking complete on skip/close
         }
       });
