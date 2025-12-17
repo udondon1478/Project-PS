@@ -3,6 +3,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { driver } from 'driver.js';
 import "driver.js/dist/driver.css";
+const ARROW_PADDING_MIN = 5;
+const ARROW_PADDING_EXTRA = 20;
+const DEFAULT_ARROW_HALF_WIDTH = 7;
 
 export default function OnboardingTour() {
   const [isMounted, setIsMounted] = useState(false);
@@ -33,6 +36,9 @@ export default function OnboardingTour() {
     const registerButtonId = isMobile ? '#tour-register-item-mobile' : '#tour-register-item-desktop';
 
     const updateArrowPosition = (targetSelector: string, popover: any) => {
+        // Only run for bottom-positioned popovers
+        if (popover.placement && !popover.placement.includes('bottom')) return;
+
         const targetElement = document.querySelector(targetSelector);
         const arrow = popover.arrow;
         const wrapper = popover.wrapper;
@@ -45,12 +51,16 @@ export default function OnboardingTour() {
             const targetCenter = targetRect.left + (targetRect.width / 2);
             const wrapperLeft = wrapperRect.left;
             
+            // Determine arrow dimensions
+            const currentArrowWidth = arrow.offsetWidth || (DEFAULT_ARROW_HALF_WIDTH * 2);
+            const arrowHalfWidth = currentArrowWidth / 2;
+
             // Position arrow to point at target center
-            const arrowLeft = targetCenter - wrapperLeft - 7; // 7 is half arrow width
+            const arrowLeft = targetCenter - wrapperLeft - arrowHalfWidth;
 
             // Ensure arrow stays within wrapper bounds
-            const minLeft = 5;
-            const maxLeft = wrapperRect.width - 20;
+            const minLeft = ARROW_PADDING_MIN;
+            const maxLeft = wrapperRect.width - currentArrowWidth - ARROW_PADDING_EXTRA;
             const clampedLeft = Math.max(minLeft, Math.min(arrowLeft, maxLeft));
             
             arrow.style.left = `${clampedLeft}px`;
