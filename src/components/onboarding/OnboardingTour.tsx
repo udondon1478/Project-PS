@@ -34,6 +34,9 @@ export default function OnboardingTour() {
     // Determine which register button to target based on screen width
     const isMobile = window.innerWidth < 768;
     const registerButtonId = isMobile ? '#tour-register-item-mobile' : '#tour-register-item-desktop';
+    
+    let cleanupListeners: (() => void) | null = null;
+
 
     const updateArrowPosition = (targetSelector: string, popover: any) => {
         // Only run for bottom-positioned popovers
@@ -72,10 +75,34 @@ export default function OnboardingTour() {
             arrow.style.opacity = '1';
         }
         
-        arrowAnimationRef.current = requestAnimationFrame(() => updateArrowPosition(targetSelector, popover));
+    };
+
+    const startArrowTracking = (targetSelector: string, popover: any) => {
+        // Initial update
+        updateArrowPosition(targetSelector, popover);
+
+        const onUpdate = () => {
+            if (arrowAnimationRef.current) return;
+            arrowAnimationRef.current = requestAnimationFrame(() => {
+                updateArrowPosition(targetSelector, popover);
+                arrowAnimationRef.current = null;
+            });
+        };
+
+        window.addEventListener('resize', onUpdate);
+        window.addEventListener('scroll', onUpdate, { capture: true });
+
+        cleanupListeners = () => {
+            window.removeEventListener('resize', onUpdate);
+            window.removeEventListener('scroll', onUpdate, { capture: true });
+        };
     };
 
     const stopArrowAnimation = () => {
+        if (cleanupListeners) {
+             cleanupListeners();
+             cleanupListeners = null;
+        }
         if (arrowAnimationRef.current) {
             cancelAnimationFrame(arrowAnimationRef.current);
             arrowAnimationRef.current = null;
@@ -111,7 +138,7 @@ export default function OnboardingTour() {
               side: "bottom",
               onPopoverRender: (popover) => {
                 stopArrowAnimation(); // Clear existing animation if any
-                updateArrowPosition('#tour-filter-button', popover);
+                startArrowTracking('#tour-filter-button', popover);
               }
             }
           },
@@ -124,7 +151,7 @@ export default function OnboardingTour() {
               side: "bottom",
               onPopoverRender: (popover) => {
                 stopArrowAnimation(); // Clear existing animation if any
-                updateArrowPosition(registerButtonId, popover);
+                startArrowTracking(registerButtonId, popover);
               },
               onNextClick: () => {
                 localStorage.setItem('onboarding_completed', 'true');
