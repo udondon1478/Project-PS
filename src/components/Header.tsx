@@ -24,7 +24,6 @@ import {
 import { Button } from '@/components/ui/button';
 import React from 'react';
 import ProductSearch from '@/components/search/ProductSearch'; // Import ProductSearch
-import AuthDropdown from '@/components/AuthDropdown';
 
 // 認証状態のプレースホルダーは削除
 
@@ -36,6 +35,8 @@ export default function Header() {
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [prevScrollPos, setPrevScrollPos] = useState(0);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
 
   const handleScroll = useCallback(() => {
@@ -125,13 +126,57 @@ export default function Header() {
                     <Button onClick={() => signIn('google')}>Googleでログイン</Button>
                     <Button onClick={() => signIn('discord')}>Discordでログイン</Button>
                   </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    ※ セキュリティ向上のため、メールアドレス・パスワードでのアカウント登録には対応しておりません。
+                    <Link href="/faq#oauth" className="underline ml-1" onClick={() => setIsRegisterModalOpen(false)}>詳しくはこちら</Link>
+                  </p>
                 </DialogContent>
               </Dialog>
               <Link href="/" className="flex items-center">
                 <Image src={(theme === 'dark' || (theme === 'system' && systemTheme === 'dark')) ? "/pslogo-white.svg" : "/pslogo.svg"} alt="PolySeek Logo" width={24} height={24} className="h-6 w-auto" />
               </Link>
-              <AuthDropdown label="新規登録" />
-              <AuthDropdown label="ログイン" />
+              <Dialog open={isSignUpModalOpen} onOpenChange={setIsSignUpModalOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm">新規登録</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>新規登録</DialogTitle>
+                    <DialogDescription>
+                      以下のいずれかの方法で登録してください。
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex flex-col space-y-4">
+                    <Button onClick={() => signIn('google')}>Googleで登録</Button>
+                    <Button onClick={() => signIn('discord')}>Discordで登録</Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    ※ セキュリティ向上のため、メールアドレス・パスワードでのアカウント登録には対応しておりません。
+                    <Link href="/faq#oauth" className="underline ml-1" onClick={() => setIsSignUpModalOpen(false)}>詳しくはこちら</Link>
+                  </p>
+                </DialogContent>
+              </Dialog>
+              <Dialog open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm">ログイン</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>ログイン</DialogTitle>
+                    <DialogDescription>
+                      以下のいずれかの方法でログインしてください。
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex flex-col space-y-4">
+                    <Button onClick={() => signIn('google')}>Googleでログイン</Button>
+                    <Button onClick={() => signIn('discord')}>Discordでログイン</Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    ※ セキュリティ向上のため、メールアドレス・パスワードでのアカウント登録には対応しておりません。
+                    <Link href="/faq#oauth" className="underline ml-1" onClick={() => setIsLoginModalOpen(false)}>詳しくはこちら</Link>
+                  </p>
+                </DialogContent>
+              </Dialog>
             </>
           )}
         </div>
@@ -187,10 +232,54 @@ export default function Header() {
                     <Button onClick={() => signIn('google')}>Googleでログイン</Button>
                     <Button onClick={() => signIn('discord')}>Discordでログイン</Button>
                   </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    ※ セキュリティ向上のため、メールアドレス・パスワードでのアカウント登録には対応しておりません。
+                    <Link href="/faq#oauth" className="underline ml-1" onClick={() => setIsRegisterModalOpen(false)}>詳しくはこちら</Link>
+                  </p>
                 </DialogContent>
               </Dialog>
-              <AuthDropdown label="新規登録" />
-              <AuthDropdown label="ログイン" />
+              <Dialog open={isSignUpModalOpen} onOpenChange={setIsSignUpModalOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm">新規登録</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>新規登録</DialogTitle>
+                    <DialogDescription>
+                      以下のいずれかの方法で登録してください。
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex flex-col space-y-4">
+                    <Button onClick={() => signIn('google')}>Googleで登録</Button>
+                    <Button onClick={() => signIn('discord')}>Discordで登録</Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    ※ セキュリティ向上のため、メールアドレス・パスワードでのアカウント登録には対応しておりません。
+                    <Link href="/faq#oauth" className="underline ml-1" onClick={() => setIsSignUpModalOpen(false)}>詳しくはこちら</Link>
+                  </p>
+                </DialogContent>
+              </Dialog>
+              <Dialog open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm">ログイン</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>ログイン</DialogTitle>
+                    <DialogDescription>
+                      以下のいずれかの方法でログインしてください。
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex flex-col space-y-4">
+                    <Button onClick={() => signIn('google')}>Googleでログイン</Button>
+                    <Button onClick={() => signIn('discord')}>Discordでログイン</Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    ※ セキュリティ向上のため、メールアドレス・パスワードでのアカウント登録には対応しておりません。
+                    <Link href="/faq#oauth" className="underline ml-1" onClick={() => setIsLoginModalOpen(false)}>詳しくはこちら</Link>
+                  </p>
+                </DialogContent>
+              </Dialog>
             </React.Fragment>
           )}
         </nav>

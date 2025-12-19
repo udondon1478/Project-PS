@@ -9,7 +9,48 @@ export default function FAQPage() {
   return (
     <div className="container mx-auto p-8 prose dark:prose-invert max-w-3xl">
       <h1 className="text-3xl font-bold mb-6">よくある質問・使い方</h1>
+
+
       
+      <section id="oauth" className="mb-8">
+        <h2 className="text-2xl font-bold mb-4">アカウント登録・認証について</h2>
+        <p className="mb-4">
+          PolySeekでは、GoogleまたはDiscordアカウントを使用したログイン(OAuth認証)のみに対応しています。メールアドレス・パスワードでのアカウント登録には対応しておりません。
+        </p>
+        
+        <h3 className="text-xl font-semibold mb-3">なぜメールアドレス・パスワードでの登録ができないのか</h3>
+        <ul className="list-disc pl-6 mb-4">
+          <li>
+            <strong>セキュリティの観点:</strong> GoogleやDiscordといった大手サービスは、24時間体制の監視、高度な暗号化、多要素認証など、個人運営のサーバーでは実現困難な堅牢なセキュリティ対策を講じています。
+          </li>
+          <li>
+            <strong>リスク回避:</strong> パスワードを当サービスのサーバーに保存しないことで、万が一の情報漏洩時のリスクを最小限に抑えています。
+          </li>
+          <li>
+            <strong>利便性:</strong> 既存のアカウントを使用できるため、新たにパスワードを覚える必要がありません。
+          </li>
+        </ul>
+
+        <h3 className="text-xl font-semibold mb-3">外部アカウント連携の仕組みと安全性</h3>
+        <ul className="list-disc pl-6 mb-4">
+          <li>
+            <strong>共有される情報:</strong> PolySeekがアクセスできるのは、メールアドレス、表示名、プロフィール画像のみです。
+          </li>
+          <li>
+            <strong>パスワードは共有されません:</strong> ユーザーのパスワードがPolySeekに送信されることは一切ありません。認証はすべてGoogleまたはDiscord側で行われます。
+          </li>
+          <li>
+            <strong>いつでも連携解除可能:</strong> GoogleやDiscordのアカウント設定から、PolySeekへのアクセス許可をいつでも取り消すことができます。
+          </li>
+        </ul>
+
+        <h3 className="text-xl font-semibold mb-3">サポートしているプロバイダー</h3>
+        <ul className="list-disc pl-6 mb-4">
+          <li><strong>Google:</strong> Googleアカウントをお持ちの方</li>
+          <li><strong>Discord:</strong> Discordアカウントをお持ちの方</li>
+        </ul>
+      </section>
+
       <section className="mb-8">
         <h2 className="text-2xl font-bold mb-4">タグ検索について</h2>
         <p className="mb-4">
