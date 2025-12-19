@@ -48,7 +48,7 @@ export default function FAQPage() {
         </ul>
       </section>
 
-      <section className="mb-8">
+      <section id="tag-search" className="mb-8">
         <h2 className="text-2xl font-bold mb-4">タグ検索について</h2>
         <p className="mb-4">
           PolySeekでは、タグを使用した柔軟な検索が可能です。
@@ -68,7 +68,7 @@ export default function FAQPage() {
         </ul>
       </section>
 
-      <section className="mb-8">
+      <section id="minus-search" className="mb-8">
         <h2 className="text-2xl font-bold mb-4">マイナス検索（除外検索）</h2>
         <p className="mb-4">
           特定のタグを含まない商品を検索したい場合は、タグの前に「-（半角マイナス）」を付けて検索します。
@@ -85,7 +85,7 @@ export default function FAQPage() {
         </ul>
       </section>
 
-      <section className="mb-8">
+      <section id="item-registration" className="mb-8">
         <h2 className="text-2xl font-bold mb-4">商品登録について</h2>
         <p className="mb-4">
           BOOTHの商品ページのURLを入力して、簡単に商品をPolySeek上に登録できます。
@@ -114,7 +114,7 @@ export default function FAQPage() {
         </ul>
       </section>
 
-      <section className="mb-8">
+      <section id="safe-search" className="mb-8">
         <h2 className="text-2xl font-bold mb-4">セーフサーチ機能</h2>
         <p className="mb-4">
           未成年者や、公共の場で閲覧する場合などに配慮し、成人向けコンテンツを非表示にする機能があります。
