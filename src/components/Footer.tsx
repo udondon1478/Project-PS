@@ -18,6 +18,9 @@ export default function Footer() {
           <Link href="/about" className="text-sm font-medium hover:underline underline-offset-4 text-muted-foreground">
             PolySeekについて
           </Link>
+          <Link href="/faq" className="text-sm font-medium hover:underline underline-offset-4 text-muted-foreground">
+            ヘルプ
+          </Link>
           <Link href="/terms" className="text-sm font-medium hover:underline underline-offset-4 text-muted-foreground">
             利用規約
           </Link>
