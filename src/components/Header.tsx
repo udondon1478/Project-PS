@@ -24,6 +24,7 @@ import {
 import { Button } from '@/components/ui/button';
 import React from 'react';
 import ProductSearch from '@/components/search/ProductSearch'; // Import ProductSearch
+import { AuthDialogNotice } from '@/components/AuthDialogNotice';
 
 // 認証状態のプレースホルダーは削除
 
@@ -126,10 +127,8 @@ export default function Header() {
                     <Button onClick={() => signIn('google')}>Googleでログイン</Button>
                     <Button onClick={() => signIn('discord')}>Discordでログイン</Button>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    ※ セキュリティ向上のため、メールアドレス・パスワードでのアカウント登録には対応しておりません。
-                    <Link href="/faq#oauth" className="underline ml-1" onClick={() => setIsRegisterModalOpen(false)}>詳しくはこちら</Link>
-                  </p>
+                  <AuthDialogNotice onClose={() => setIsRegisterModalOpen(false)} />
+
                 </DialogContent>
               </Dialog>
               <Link href="/" className="flex items-center">
@@ -150,10 +149,8 @@ export default function Header() {
                     <Button onClick={() => signIn('google')}>Googleで登録</Button>
                     <Button onClick={() => signIn('discord')}>Discordで登録</Button>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    ※ セキュリティ向上のため、メールアドレス・パスワードでのアカウント登録には対応しておりません。
-                    <Link href="/faq#oauth" className="underline ml-1" onClick={() => setIsSignUpModalOpen(false)}>詳しくはこちら</Link>
-                  </p>
+                  <AuthDialogNotice onClose={() => setIsSignUpModalOpen(false)} />
+
                 </DialogContent>
               </Dialog>
               <Dialog open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen}>
@@ -171,10 +168,8 @@ export default function Header() {
                     <Button onClick={() => signIn('google')}>Googleでログイン</Button>
                     <Button onClick={() => signIn('discord')}>Discordでログイン</Button>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    ※ セキュリティ向上のため、メールアドレス・パスワードでのアカウント登録には対応しておりません。
-                    <Link href="/faq#oauth" className="underline ml-1" onClick={() => setIsLoginModalOpen(false)}>詳しくはこちら</Link>
-                  </p>
+                  <AuthDialogNotice onClose={() => setIsLoginModalOpen(false)} />
+
                 </DialogContent>
               </Dialog>
             </>
@@ -232,10 +227,8 @@ export default function Header() {
                     <Button onClick={() => signIn('google')}>Googleでログイン</Button>
                     <Button onClick={() => signIn('discord')}>Discordでログイン</Button>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    ※ セキュリティ向上のため、メールアドレス・パスワードでのアカウント登録には対応しておりません。
-                    <Link href="/faq#oauth" className="underline ml-1" onClick={() => setIsRegisterModalOpen(false)}>詳しくはこちら</Link>
-                  </p>
+                  <AuthDialogNotice onClose={() => setIsRegisterModalOpen(false)} />
+
                 </DialogContent>
               </Dialog>
               <Dialog open={isSignUpModalOpen} onOpenChange={setIsSignUpModalOpen}>
@@ -253,10 +246,8 @@ export default function Header() {
                     <Button onClick={() => signIn('google')}>Googleで登録</Button>
                     <Button onClick={() => signIn('discord')}>Discordで登録</Button>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    ※ セキュリティ向上のため、メールアドレス・パスワードでのアカウント登録には対応しておりません。
-                    <Link href="/faq#oauth" className="underline ml-1" onClick={() => setIsSignUpModalOpen(false)}>詳しくはこちら</Link>
-                  </p>
+                  <AuthDialogNotice onClose={() => setIsSignUpModalOpen(false)} />
+
                 </DialogContent>
               </Dialog>
               <Dialog open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen}>
@@ -274,10 +265,8 @@ export default function Header() {
                     <Button onClick={() => signIn('google')}>Googleでログイン</Button>
                     <Button onClick={() => signIn('discord')}>Discordでログイン</Button>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    ※ セキュリティ向上のため、メールアドレス・パスワードでのアカウント登録には対応しておりません。
-                    <Link href="/faq#oauth" className="underline ml-1" onClick={() => setIsLoginModalOpen(false)}>詳しくはこちら</Link>
-                  </p>
+                  <AuthDialogNotice onClose={() => setIsLoginModalOpen(false)} />
+
                 </DialogContent>
               </Dialog>
             </React.Fragment>
