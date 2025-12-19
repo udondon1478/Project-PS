@@ -106,7 +106,7 @@ export default function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
               <Link href="/" className="flex items-center">
-                <Image src={(theme === 'dark' || (theme === 'system' && systemTheme === 'dark')) ? "/pslogo-white.svg" : "/pslogo.svg"} alt="PolySeek Logo" width={24} height={24} className="h-6 w-auto" />
+                <Image src="/images/PolySeek_10_export_icon.svg" alt="PolySeek Logo" width={32} height={32} className="h-8 w-auto" />
               </Link>
               <Button variant="ghost" size="sm" onClick={() => signOut()}>ログアウト</Button>
             </>
@@ -132,7 +132,7 @@ export default function Header() {
                 </DialogContent>
               </Dialog>
               <Link href="/" className="flex items-center">
-                <Image src={(theme === 'dark' || (theme === 'system' && systemTheme === 'dark')) ? "/pslogo-white.svg" : "/pslogo.svg"} alt="PolySeek Logo" width={24} height={24} className="h-6 w-auto" />
+                <Image src="/images/PolySeek_10_export_icon.svg" alt="PolySeek Logo" width={32} height={32} className="h-8 w-auto" />
               </Link>
               <Dialog open={isSignUpModalOpen} onOpenChange={setIsSignUpModalOpen}>
                 <DialogTrigger asChild>
@@ -178,8 +178,8 @@ export default function Header() {
 
         {/* Desktop Navigation (Hidden on small screens) */}
         <Link href="/" className="hidden md:flex items-center space-x-2">
-          <Image src={(theme === 'dark' || (theme === 'system' && systemTheme === 'dark')) ? "/pslogo-white.svg" : "/pslogo.svg"} alt="PolySeek Logo" width={24} height={24} className="h-6 w-auto" />
-          <span className="text-xl font-bold text-gray-900 dark:text-white">PolySeek</span>
+          <Image src="/images/PolySeek_10_export_icon.svg" alt="PolySeek Logo" width={32} height={32} className="h-8 w-auto" />
+          <Image src="/images/PolySeek_logo_type.svg" alt="PolySeek" width={100} height={24} className="h-6 w-auto" />
         </Link>
         <nav className="hidden md:flex items-center space-x-2">
           {status === "loading" && (

@@ -33,6 +33,9 @@ export const metadata: Metadata = {
     default: 'PolySeek',
   },
   description: "PolySeek - VRChatアバター・衣装・ギミック検索プラットフォーム",
+  icons: {
+    icon: '/images/PolySeek_icon.png',
+  },
 };
 
 export default function RootLayout({
