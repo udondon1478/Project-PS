@@ -9,9 +9,6 @@ export default function FAQPage() {
   return (
     <div className="container mx-auto p-8 prose dark:prose-invert max-w-3xl">
       <h1 className="text-3xl font-bold mb-6">よくある質問・使い方</h1>
-
-
-      
       <section id="oauth" className="mb-8">
         <h2 className="text-2xl font-bold mb-4">アカウント登録・認証について</h2>
         <p className="mb-4">
