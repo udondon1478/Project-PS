@@ -3,14 +3,25 @@
 import { useEffect, useState, useRef } from 'react';
 import { driver } from 'driver.js';
 import "driver.js/dist/driver.css";
+const ARROW_PADDING_MIN = 5;
+const ARROW_PADDING_EXTRA = 20;
+const DEFAULT_ARROW_HALF_WIDTH = 7;
 
 export default function OnboardingTour() {
   const [isMounted, setIsMounted] = useState(false);
   const driverRef = useRef<ReturnType<typeof driver> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const arrowAnimationRef = useRef<number | null>(null);
+
   useEffect(() => {
     setIsMounted(true);
+    
+    return () => {
+        if (arrowAnimationRef.current) {
+            cancelAnimationFrame(arrowAnimationRef.current);
+        }
+    };
   }, []);
 
   useEffect(() => {
@@ -23,6 +34,80 @@ export default function OnboardingTour() {
     // Determine which register button to target based on screen width
     const isMobile = window.innerWidth < 768;
     const registerButtonId = isMobile ? '#tour-register-item-mobile' : '#tour-register-item-desktop';
+    
+    let cleanupListeners: (() => void) | null = null;
+
+
+    const updateArrowPosition = (targetSelector: string, popover: any) => {
+        // Only run for bottom-positioned popovers
+        if (popover.placement && !popover.placement.includes('bottom')) return;
+
+        const targetElement = document.querySelector(targetSelector);
+        const arrow = popover.arrow;
+        const wrapper = popover.wrapper;
+
+        if (targetElement && arrow && wrapper) {
+            const targetRect = targetElement.getBoundingClientRect();
+            const wrapperRect = wrapper.getBoundingClientRect();
+
+            // Calculate center of target relative to wrapper
+            const targetCenter = targetRect.left + (targetRect.width / 2);
+            const wrapperLeft = wrapperRect.left;
+            
+            // Determine arrow dimensions
+            const currentArrowWidth = arrow.offsetWidth || (DEFAULT_ARROW_HALF_WIDTH * 2);
+            const arrowHalfWidth = currentArrowWidth / 2;
+
+            // Position arrow to point at target center
+            const arrowLeft = targetCenter - wrapperLeft - arrowHalfWidth;
+
+            // Ensure arrow stays within wrapper bounds
+            const minLeft = ARROW_PADDING_MIN;
+            const maxLeft = wrapperRect.width - currentArrowWidth - ARROW_PADDING_EXTRA;
+            const clampedLeft = Math.max(minLeft, Math.min(arrowLeft, maxLeft));
+            
+            arrow.style.left = `${clampedLeft}px`;
+            arrow.style.transform = 'none';
+            
+            // Force visibility
+            arrow.style.display = 'block';
+            arrow.style.visibility = 'visible';
+            arrow.style.opacity = '1';
+        }
+        
+    };
+
+    const startArrowTracking = (targetSelector: string, popover: any) => {
+        // Initial update
+        updateArrowPosition(targetSelector, popover);
+
+        const onUpdate = () => {
+            if (arrowAnimationRef.current) return;
+            arrowAnimationRef.current = requestAnimationFrame(() => {
+                updateArrowPosition(targetSelector, popover);
+                arrowAnimationRef.current = null;
+            });
+        };
+
+        window.addEventListener('resize', onUpdate);
+        window.addEventListener('scroll', onUpdate, { capture: true });
+
+        cleanupListeners = () => {
+            window.removeEventListener('resize', onUpdate);
+            window.removeEventListener('scroll', onUpdate, { capture: true });
+        };
+    };
+
+    const stopArrowAnimation = () => {
+        if (cleanupListeners) {
+             cleanupListeners();
+             cleanupListeners = null;
+        }
+        if (arrowAnimationRef.current) {
+            cancelAnimationFrame(arrowAnimationRef.current);
+            arrowAnimationRef.current = null;
+        }
+    };
 
     const startTour = () => {
       const driverObj = driver({
@@ -36,6 +121,7 @@ export default function OnboardingTour() {
         steps: [
           {
             element: '#tour-search-bar',
+            onDeselected: stopArrowAnimation,
             popover: {
               title: '検索バー',
               description: '欲しいアセットをタグで検索できます。-をつけると除外検索も可能です。',
@@ -45,20 +131,28 @@ export default function OnboardingTour() {
           },
           {
             element: '#tour-filter-button',
+            onDeselected: stopArrowAnimation,
             popover: {
               title: 'フィルター',
               description: '価格帯やカテゴリで絞り込みができます。',
               side: "bottom",
-              align: 'start'
+              onPopoverRender: (popover) => {
+                stopArrowAnimation(); // Clear existing animation if any
+                startArrowTracking('#tour-filter-button', popover);
+              }
             }
           },
           {
             element: registerButtonId,
+            onDeselected: stopArrowAnimation,
             popover: {
               title: '商品登録',
               description: 'BoothのURLを入力し、タグをつけることで、データベースに商品を追加・共有できます。',
               side: "bottom",
-              align: 'start',
+              onPopoverRender: (popover) => {
+                stopArrowAnimation(); // Clear existing animation if any
+                startArrowTracking(registerButtonId, popover);
+              },
               onNextClick: () => {
                 localStorage.setItem('onboarding_completed', 'true');
                 driverObj.destroy();
@@ -67,6 +161,7 @@ export default function OnboardingTour() {
           }
         ],
         onDestroyed: () => {
+          stopArrowAnimation();
           // Do nothing here to prevent marking complete on skip/close
         }
       });
