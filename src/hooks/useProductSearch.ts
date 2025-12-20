@@ -406,7 +406,7 @@ export const useProductSearch = ({
   }, [selectedTags, selectedNegativeTags, selectedAgeRatingTags, detailedFilters, priceRange, isHighPriceFilterEnabled, router, isLiked, isOwned, sortBy]);
 
   // ソート変更時に新しい値を直接受け取ってURLを更新するハンドラー
-  const handleSortChange = (value: SortOption) => {
+  const handleSortChange = useCallback((value: SortOption) => {
     setSortBy(value);
     setIsFilterSidebarOpen(false);
     
@@ -424,7 +424,21 @@ export const useProductSearch = ({
     });
     
     router.replace(`/search?${queryParams.toString()}`);
-  };
+  }, [
+    selectedTags,
+    selectedNegativeTags,
+    selectedAgeRatingTags,
+    detailedFilters,
+    priceRange,
+    isHighPriceFilterEnabled,
+    isLiked,
+    isOwned,
+    sortBy,
+    buildSearchQueryParams,
+    router,
+    setSortBy,
+    setIsFilterSidebarOpen
+  ]);
 
   const handleDetailedFilterChange = (filterType: keyof typeof detailedFilters, value: string | null) => {
     setDetailedFilters(prev => ({ ...prev, [filterType]: value }));
