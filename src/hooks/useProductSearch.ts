@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 
 export const useProductSearch = ({
   initialSearchQuery = '',
@@ -38,10 +38,12 @@ export const useProductSearch = ({
   const [isHighPriceFilterEnabled, setIsHighPriceFilterEnabled] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isOwned, setIsOwned] = useState(false);
+  const [sortBy, setSortBy] = useState<string>('newest');
 
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
   const suggestionsRef = useRef<HTMLUListElement>(null);
 
   const [ageRatingTags, setAgeRatingTags] = useState<{ id: string; name: string; color?: string | null }[]>([]);
@@ -120,9 +122,11 @@ export const useProductSearch = ({
       const savedTags = sessionStorage.getItem('polyseek-search-tags');
       const savedNegativeTags = sessionStorage.getItem('polyseek-search-negative-tags');
       const savedAgeRatingTags = sessionStorage.getItem('polyseek-search-age-rating-tags');
+      const savedSortBy = sessionStorage.getItem('polyseek-search-sort');
       if (savedTags) try { setSelectedTags(JSON.parse(savedTags)); } catch (e) { console.error(e); }
       if (savedNegativeTags) try { setSelectedNegativeTags(JSON.parse(savedNegativeTags)); } catch (e) { console.error(e); }
       if (savedAgeRatingTags) try { setSelectedAgeRatingTags(JSON.parse(savedAgeRatingTags)); } catch (e) { console.error(e); }
+      if (savedSortBy) setSortBy(savedSortBy);
     }
     const urlMinPriceStr = urlSearchParams.get("minPrice");
     const urlMaxPriceStr = urlSearchParams.get("maxPrice");
@@ -132,6 +136,12 @@ export const useProductSearch = ({
 
     setIsLiked(urlIsLiked);
     setIsOwned(urlIsOwned);
+
+    // URLからsortパラメータを読み込み
+    const urlSort = urlSearchParams.get("sort");
+    if (urlSort && ['newest', 'price-low', 'price-high'].includes(urlSort)) {
+      setSortBy(urlSort);
+    }
 
     if (urlMinPriceStr !== null || urlMaxPriceStr !== null || urlIsHighPrice) {
         const DEFAULT_MIN = 0;
@@ -207,11 +217,16 @@ export const useProductSearch = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // 検索ページ（/search）にいる場合のみsessionStorageに保存
+  // 他のページ（商品詳細等）では保存しないことで、検索状態の上書きを防止
   useEffect(() => {
-    sessionStorage.setItem('polyseek-search-tags', JSON.stringify(selectedTags));
-    sessionStorage.setItem('polyseek-search-negative-tags', JSON.stringify(selectedNegativeTags));
-    sessionStorage.setItem('polyseek-search-age-rating-tags', JSON.stringify(selectedAgeRatingTags));
-  }, [selectedTags, selectedNegativeTags, selectedAgeRatingTags]);
+    if (pathname === '/search') {
+      sessionStorage.setItem('polyseek-search-tags', JSON.stringify(selectedTags));
+      sessionStorage.setItem('polyseek-search-negative-tags', JSON.stringify(selectedNegativeTags));
+      sessionStorage.setItem('polyseek-search-age-rating-tags', JSON.stringify(selectedAgeRatingTags));
+      sessionStorage.setItem('polyseek-search-sort', sortBy);
+    }
+  }, [selectedTags, selectedNegativeTags, selectedAgeRatingTags, sortBy, pathname]);
 
   useEffect(() => {
     setPriceRange(currentPriceRange => {
@@ -340,6 +355,30 @@ export const useProductSearch = ({
     if (isHighPriceFilterEnabled) queryParams.append("isHighPrice", "true");
     if (isLiked) queryParams.append("liked", "true");
     if (isOwned) queryParams.append("owned", "true");
+    if (sortBy && sortBy !== 'newest') queryParams.append("sort", sortBy);
+    
+    router.replace(`/search?${queryParams.toString()}`);
+  }, [selectedTags, selectedNegativeTags, selectedAgeRatingTags, detailedFilters, priceRange, isHighPriceFilterEnabled, router, isLiked, isOwned, sortBy]);
+
+  // ソート変更時に新しい値を直接受け取ってURLを更新するハンドラー
+  const handleSortChange = useCallback((newSortBy: string) => {
+    setSortBy(newSortBy);
+    setIsFilterSidebarOpen(false);
+    const queryParams = new URLSearchParams();
+    if (selectedTags.length > 0) queryParams.append("tags", selectedTags.join(','));
+    if (selectedNegativeTags.length > 0) queryParams.append("negativeTags", selectedNegativeTags.join(','));
+    if (selectedAgeRatingTags.length > 0) queryParams.append("ageRatingTags", selectedAgeRatingTags.join(','));
+    if (detailedFilters.category) queryParams.append("categoryName", detailedFilters.category);
+
+    if (priceRange[0] !== 0) queryParams.append("minPrice", priceRange[0].toString());
+    if (!((priceRange[1] === 10000 && !isHighPriceFilterEnabled) || (isHighPriceFilterEnabled && priceRange[1] === 100000))) {
+      queryParams.append("maxPrice", priceRange[1].toString());
+    }
+    if (isHighPriceFilterEnabled) queryParams.append("isHighPrice", "true");
+    if (isLiked) queryParams.append("liked", "true");
+    if (isOwned) queryParams.append("owned", "true");
+    // 新しいソート値を直接使用
+    if (newSortBy && newSortBy !== 'newest') queryParams.append("sort", newSortBy);
     
     router.replace(`/search?${queryParams.toString()}`);
   }, [selectedTags, selectedNegativeTags, selectedAgeRatingTags, detailedFilters, priceRange, isHighPriceFilterEnabled, router, isLiked, isOwned]);
@@ -357,6 +396,7 @@ export const useProductSearch = ({
     setIsOwned(false);
     setPriceRange([0, 10000]);
     setIsHighPriceFilterEnabled(false);
+    setSortBy('newest');
   };
 
   const applyFiltersAndSearch = () => {
@@ -409,5 +449,8 @@ export const useProductSearch = ({
     applyFiltersAndSearch,
     isFeatureTagSelected,
     isNegativeTagSelected,
+    sortBy,
+    setSortBy,
+    handleSortChange,
   };
 };
