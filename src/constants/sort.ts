@@ -4,3 +4,7 @@
 export const SORT_VALUES = ['newest', 'price-low', 'price-high'] as const;
 
 export type SortOption = typeof SORT_VALUES[number];
+
+export function isSortOption(value: unknown): value is SortOption {
+  return (SORT_VALUES as readonly unknown[]).includes(value);
+}
