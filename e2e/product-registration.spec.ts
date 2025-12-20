@@ -150,10 +150,11 @@ test.describe('Product Registration Flow', () => {
       await expect(page.getByText(`by ${MOCK_SELLER_NAME}`)).toBeVisible();
 
       // カテゴリなどを選択 (getByLabel ではなく、SelectTriggerのIDやRoleを使う)
+      
       // '対象年齢' の SelectTrigger をクリック
-      //await page.locator('button[role="combobox"][id="ageRating"]').click();
-      // '全年齢' の SelectItem をクリック
-      const ageRatingTrigger = page.locator('button[role="combobox"]').nth(0); // IDではなく順序やラベルで特定推奨だが、現状のID依存ならそのままでも可
+      // 修正: nth(0) ではなく getByLabel で堅牢に指定
+      const ageRatingTrigger = page.getByLabel('対象年齢');
+      await expect(ageRatingTrigger).toBeVisible();
       await ageRatingTrigger.click();
       await expect(page.getByRole('option', { name: '全年齢' })).toBeVisible(); // オプションが表示されるのを待つ
       await page.getByRole('option', { name: '全年齢' }).click();
@@ -162,7 +163,7 @@ test.describe('Product Registration Flow', () => {
 
 
       // 'カテゴリー' の SelectTrigger をクリック
-      const categoryTrigger = page.locator('button[role="combobox"]').nth(1);
+      const categoryTrigger = page.getByLabel('カテゴリー');
       await categoryTrigger.click();
       await expect(page.getByRole('option', { name: 'アバター' })).toBeVisible(); // オプションが表示されるのを待つ
       await page.getByRole('option', { name: 'アバター' }).click();
