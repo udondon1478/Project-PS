@@ -35,10 +35,10 @@ export const metadata: Metadata = {
   description: "PolySeek - VRChatアバター・衣装・ギミック検索プラットフォーム",
   icons: {
     icon: [
-      { url: '/images/PolySeek_10_export_icon.svg', type: 'image/svg+xml' },
-      { url: '/images/PolySeek_icon.png', type: 'image/png' },
+      { url: '/images/PolySeek_10_export_icon.svg', type: 'image/svg+xml', sizes: 'any' },
+      { url: '/images/PolySeek_icon.png', type: 'image/png', sizes: '32x32' },
     ],
-    apple: '/images/PolySeek_icon.png',
+    apple: { url: '/images/PolySeek_icon.png', sizes: '180x180' },
   },
 };
 
