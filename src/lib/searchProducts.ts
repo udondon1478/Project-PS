@@ -16,7 +16,18 @@ export interface SearchParams {
   tags?: string | string[];
   /** 検索から除外するタグの配列。指定されたタグを持つ商品は除外される。 */
   negativeTags?: string | string[];
-  /** 並び替えの基準となるキー。 */
+  /**
+   * 並び替えの基準となるキー。
+   *
+   * ユーザーフレンドリーな値:
+   * - 'newest': 新着順 (createdAt DESC)
+   * - 'price-low': 価格の安い順 (lowPrice ASC)
+   * - 'price-high': 価格の高い順 (highPrice DESC)
+   *
+   * レガシーな値（後方互換性のため維持）:
+   * - 'createdAt', 'lowPrice', 'highPrice', 'viewCount', 'publishedAt'
+   *   これらは `order` パラメータと組み合わせて使用
+   */
   sort?: string;
   /** 並び替えの順序 ('asc' または 'desc')。 */
   order?: string;
@@ -175,16 +186,32 @@ export async function searchProducts(params: SearchParams): Promise<Product[]> {
       });
     }
 
+    // ユーザーフレンドリーなソートパラメータマッピング
+    const SORT_MAPPINGS: Record<string, { field: 'createdAt' | 'lowPrice' | 'highPrice'; order: 'asc' | 'desc' }> = {
+      'newest': { field: 'createdAt', order: 'desc' },
+      'price-low': { field: 'lowPrice', order: 'asc' },
+      'price-high': { field: 'highPrice', order: 'desc' },
+    };
+
+    // レガシーソートキー（後方互換性のため維持）
     const allowedSortKeys = ['createdAt', 'lowPrice', 'highPrice', 'viewCount', 'publishedAt'] as const;
     type SortKey = typeof allowedSortKeys[number];
 
     const orderBy: Prisma.ProductOrderByWithRelationInput = {};
-    const sortKey = params.sort as SortKey;
 
-    if (params.sort && allowedSortKeys.includes(sortKey)) {
-      orderBy[sortKey] = params.order === 'asc' ? 'asc' : 'desc';
+    // まずユーザーフレンドリーなソート値をチェック
+    if (params.sort && SORT_MAPPINGS[params.sort]) {
+      const mapping = SORT_MAPPINGS[params.sort];
+      orderBy[mapping.field] = mapping.order;
     } else {
-      orderBy.createdAt = 'desc';
+      // レガシーなfield/orderパターンにフォールバック
+      const sortKey = params.sort as SortKey;
+      if (params.sort && allowedSortKeys.includes(sortKey)) {
+        orderBy[sortKey] = params.order === 'asc' ? 'asc' : 'desc';
+      } else {
+        // デフォルト: 新着順
+        orderBy.createdAt = 'desc';
+      }
     }
 
     const products = await prisma.product.findMany({

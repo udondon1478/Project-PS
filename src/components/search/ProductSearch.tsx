@@ -6,6 +6,7 @@ import { useProductSearch } from '@/hooks/useProductSearch';
 import { TagSearchBar } from './TagSearchBar';
 import { QuickFilters } from './QuickFilters';
 import { FilterSidebar } from './FilterSidebar';
+import { SortSelector } from './SortSelector';
 
 import OnboardingTour from '@/components/onboarding/OnboardingTour';
 
@@ -63,6 +64,8 @@ export default function ProductSearch({
     isFeatureTagSelected,
     isNegativeTagSelected,
     setIsComposing,
+    sortBy,
+    handleSortChange,
   } = useProductSearch({
     initialSearchQuery,
     initialSelectedTags,
@@ -130,6 +133,11 @@ export default function ProductSearch({
           setIsOwned={setIsOwned}
           clearAllTagsAndFilters={clearAllTagsAndFilters}
           applyFiltersAndSearch={applyFiltersAndSearch}
+        />
+
+        <SortSelector
+          value={sortBy}
+          onChange={handleSortChange}
         />
 
         <Button onClick={handleSearch} size="sm" className="hidden md:inline-flex">
