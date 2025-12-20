@@ -276,7 +276,7 @@ const ProductDetailPage = () => {
               {product.seller && (
                 <a href={product.seller.sellerUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300 hover:underline">
                   <Image
-                    src={product.seller.iconUrl || '/pslogo.svg'}
+                    src={product.seller.iconUrl || '/images/PolySeek_10_export_icon.svg'}
                     alt={product.seller.name}
                     width={28} height={28} className="rounded-full"
                   />

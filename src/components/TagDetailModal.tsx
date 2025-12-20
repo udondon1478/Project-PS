@@ -178,7 +178,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
                     {details.products.map(product => (
                       <Link href={`/products/${product.id}`} key={product.id} className="block group">
                         <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden">
-                          <Image src={product.mainImageUrl || '/pslogo.svg'} alt={product.title} width={200} height={200} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                          <Image src={product.mainImageUrl || '/images/PolySeek_10_export_icon.svg'} alt={product.title} width={200} height={200} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                         </div>
                         <p className="text-xs mt-1 truncate">{product.title}</p>
                       </Link>
