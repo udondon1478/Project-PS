@@ -406,7 +406,6 @@ export const useProductSearch = ({
   }, [selectedTags, selectedNegativeTags, selectedAgeRatingTags, detailedFilters, priceRange, isHighPriceFilterEnabled, router, isLiked, isOwned, sortBy]);
 
   // ソート変更時に新しい値を直接受け取ってURLを更新するハンドラー
-  // ソート変更時に新しい値を直接受け取ってURLを更新するハンドラー
   const handleSortChange = (value: SortOption) => {
     setSortBy(value);
     setIsFilterSidebarOpen(false);
