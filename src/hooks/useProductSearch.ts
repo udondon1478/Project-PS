@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { SortOption } from '@/components/search/SortSelector';
+import { SortOption, SORT_VALUES } from '@/constants/sort';
 
 export const useProductSearch = ({
   initialSearchQuery = '',
@@ -24,7 +24,6 @@ export const useProductSearch = ({
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [selectedTags, setSelectedTags] = useState<string[]>(initialSelectedTags);
   const [selectedNegativeTags, setSelectedNegativeTags] = useState<string[]>(initialSelectedNegativeTags);
-
 
   const searchParams = useSearchParams();
   const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
@@ -128,7 +127,9 @@ export const useProductSearch = ({
       if (savedTags) try { setSelectedTags(JSON.parse(savedTags)); } catch (e) { console.error(e); }
       if (savedNegativeTags) try { setSelectedNegativeTags(JSON.parse(savedNegativeTags)); } catch (e) { console.error(e); }
       if (savedAgeRatingTags) try { setSelectedAgeRatingTags(JSON.parse(savedAgeRatingTags)); } catch (e) { console.error(e); }
-      if (savedSortBy) setSortBy(savedSortBy as SortOption);
+      if (savedSortBy && (SORT_VALUES as readonly string[]).includes(savedSortBy)) {
+        setSortBy(savedSortBy as SortOption);
+      }
     }
     const urlMinPriceStr = urlSearchParams.get("minPrice");
     const urlMaxPriceStr = urlSearchParams.get("maxPrice");
@@ -141,7 +142,7 @@ export const useProductSearch = ({
 
     // URLからsortパラメータを読み込み
     const urlSort = urlSearchParams.get("sort");
-    if (urlSort && ['newest', 'price-low', 'price-high'].includes(urlSort)) {
+    if (urlSort && (SORT_VALUES as readonly string[]).includes(urlSort)) {
       setSortBy(urlSort as SortOption);
     }
 

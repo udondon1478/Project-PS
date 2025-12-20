@@ -9,17 +9,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { SORT_VALUES, type SortOption } from '@/constants/sort';
 
 /**
- * ソートオプションの定義
+ * ソートオプションのラベル定義
  */
-const SORT_OPTIONS = [
-  { value: 'newest', label: '新着順' },
-  { value: 'price-low', label: '価格の安い順' },
-  { value: 'price-high', label: '価格の高い順' },
-] as const;
+const SORT_LABELS: Record<SortOption, string> = {
+  'newest': '新着順',
+  'price-low': '価格の安い順',
+  'price-high': '価格の高い順',
+};
 
-export type SortOption = typeof SORT_OPTIONS[number]['value'];
+const SORT_OPTIONS = SORT_VALUES.map((value) => ({
+  value,
+  label: SORT_LABELS[value],
+}));
 
 interface SortSelectorProps {
   /** 現在のソート値 */
