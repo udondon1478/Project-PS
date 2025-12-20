@@ -23,9 +23,9 @@ export type SortOption = typeof SORT_OPTIONS[number]['value'];
 
 interface SortSelectorProps {
   /** 現在のソート値 */
-  value: string;
+  value: SortOption;
   /** 値変更時のコールバック */
-  onChange: (value: string) => void;
+  onChange: (value: SortOption) => void;
   /** 無効状態フラグ */
   disabled?: boolean;
 }
