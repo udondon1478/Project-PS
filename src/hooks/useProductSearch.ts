@@ -4,6 +4,50 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { SortOption, SORT_VALUES } from '@/constants/sort';
 
+// Helper to build search query parameters
+const buildSearchQueryParams = ({
+  selectedTags,
+  selectedNegativeTags,
+  selectedAgeRatingTags,
+  detailedFilters,
+  priceRange,
+  isHighPriceFilterEnabled,
+  isLiked,
+  isOwned,
+  sortBy,
+  overrideSortBy,
+}: {
+  selectedTags: string[];
+  selectedNegativeTags: string[];
+  selectedAgeRatingTags: string[];
+  detailedFilters: { category: string | null };
+  priceRange: [number, number];
+  isHighPriceFilterEnabled: boolean;
+  isLiked: boolean;
+  isOwned: boolean;
+  sortBy: SortOption;
+  overrideSortBy?: SortOption;
+}) => {
+  const queryParams = new URLSearchParams();
+  if (selectedTags.length > 0) queryParams.append("tags", selectedTags.join(','));
+  if (selectedNegativeTags.length > 0) queryParams.append("negativeTags", selectedNegativeTags.join(','));
+  if (selectedAgeRatingTags.length > 0) queryParams.append("ageRatingTags", selectedAgeRatingTags.join(','));
+  if (detailedFilters.category) queryParams.append("categoryName", detailedFilters.category);
+
+  if (priceRange[0] !== 0) queryParams.append("minPrice", priceRange[0].toString());
+  if (!((priceRange[1] === 10000 && !isHighPriceFilterEnabled) || (isHighPriceFilterEnabled && priceRange[1] === 100000))) {
+    queryParams.append("maxPrice", priceRange[1].toString());
+  }
+  if (isHighPriceFilterEnabled) queryParams.append("isHighPrice", "true");
+  if (isLiked) queryParams.append("liked", "true");
+  if (isOwned) queryParams.append("owned", "true");
+  
+  const finalSort = overrideSortBy || sortBy;
+  if (finalSort && finalSort !== 'newest') queryParams.append("sort", finalSort);
+
+  return queryParams;
+};
+
 export const useProductSearch = ({
   initialSearchQuery = '',
   initialSelectedTags = [],
@@ -345,43 +389,40 @@ export const useProductSearch = ({
 
   const handleSearch = useCallback(() => {
     setIsFilterSidebarOpen(false);
-    const queryParams = new URLSearchParams();
-    if (selectedTags.length > 0) queryParams.append("tags", selectedTags.join(','));
-    if (selectedNegativeTags.length > 0) queryParams.append("negativeTags", selectedNegativeTags.join(','));
-    if (selectedAgeRatingTags.length > 0) queryParams.append("ageRatingTags", selectedAgeRatingTags.join(','));
-    if (detailedFilters.category) queryParams.append("categoryName", detailedFilters.category);
-
-    if (priceRange[0] !== 0) queryParams.append("minPrice", priceRange[0].toString());
-    if (!((priceRange[1] === 10000 && !isHighPriceFilterEnabled) || (isHighPriceFilterEnabled && priceRange[1] === 100000))) {
-      queryParams.append("maxPrice", priceRange[1].toString());
-    }
-    if (isHighPriceFilterEnabled) queryParams.append("isHighPrice", "true");
-    if (isLiked) queryParams.append("liked", "true");
-    if (isOwned) queryParams.append("owned", "true");
-    if (sortBy && sortBy !== 'newest') queryParams.append("sort", sortBy);
+    
+    const queryParams = buildSearchQueryParams({
+      selectedTags,
+      selectedNegativeTags,
+      selectedAgeRatingTags,
+      detailedFilters,
+      priceRange,
+      isHighPriceFilterEnabled,
+      isLiked,
+      isOwned,
+      sortBy
+    });
     
     router.replace(`/search?${queryParams.toString()}`);
   }, [selectedTags, selectedNegativeTags, selectedAgeRatingTags, detailedFilters, priceRange, isHighPriceFilterEnabled, router, isLiked, isOwned, sortBy]);
 
   // ソート変更時に新しい値を直接受け取ってURLを更新するハンドラー
+  // ソート変更時に新しい値を直接受け取ってURLを更新するハンドラー
   const handleSortChange = (value: SortOption) => {
     setSortBy(value);
     setIsFilterSidebarOpen(false);
-    const queryParams = new URLSearchParams();
-    if (selectedTags.length > 0) queryParams.append("tags", selectedTags.join(','));
-    if (selectedNegativeTags.length > 0) queryParams.append("negativeTags", selectedNegativeTags.join(','));
-    if (selectedAgeRatingTags.length > 0) queryParams.append("ageRatingTags", selectedAgeRatingTags.join(','));
-    if (detailedFilters.category) queryParams.append("categoryName", detailedFilters.category);
-
-    if (priceRange[0] !== 0) queryParams.append("minPrice", priceRange[0].toString());
-    if (!((priceRange[1] === 10000 && !isHighPriceFilterEnabled) || (isHighPriceFilterEnabled && priceRange[1] === 100000))) {
-      queryParams.append("maxPrice", priceRange[1].toString());
-    }
-    if (isHighPriceFilterEnabled) queryParams.append("isHighPrice", "true");
-    if (isLiked) queryParams.append("liked", "true");
-    if (isOwned) queryParams.append("owned", "true");
-    // 新しいソート値を直接使用
-    if (value && value !== 'newest') queryParams.append("sort", value);
+    
+    const queryParams = buildSearchQueryParams({
+      selectedTags,
+      selectedNegativeTags,
+      selectedAgeRatingTags,
+      detailedFilters,
+      priceRange,
+      isHighPriceFilterEnabled,
+      isLiked,
+      isOwned,
+      sortBy,
+      overrideSortBy: value
+    });
     
     router.replace(`/search?${queryParams.toString()}`);
   };
