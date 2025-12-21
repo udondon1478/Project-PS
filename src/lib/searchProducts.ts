@@ -53,12 +53,31 @@ export interface SearchParams {
    * 現状は文字列型ですが、将来的には数値型への移行が検討されています。
    */
   maxPrice?: string;
+  /** ページ番号（1始まり）。デフォルト: 1 */
+  page?: number;
+  /** 1ページあたりの件数。デフォルト: 24 */
+  pageSize?: number;
 }
 
-export async function searchProducts(params: SearchParams): Promise<Product[]> {
+/**
+ * 検索結果の戻り値型
+ */
+export interface SearchResult {
+  /** 商品一覧 */
+  products: Product[];
+  /** 総件数 */
+  total: number;
+}
+
+export async function searchProducts(params: SearchParams): Promise<SearchResult> {
   try {
     const session = await auth();
     const userId = session?.user?.id;
+
+    // ページネーションパラメータのバリデーション
+    const page = Math.max(1, params.page ?? 1);
+    const pageSize = Math.max(1, Math.min(100, params.pageSize ?? 24));
+    const skip = (page - 1) * pageSize;
 
     const initialTagNames = normalizeQueryParam(params.tags) || [];
     const ageRatingTagNames = normalizeQueryParam(params.ageRatingTags) || [];
@@ -214,50 +233,61 @@ export async function searchProducts(params: SearchParams): Promise<Product[]> {
       }
     }
 
-    const products = await prisma.product.findMany({
-      where: whereConditions.length > 0 ? { AND: whereConditions } : {},
-      orderBy,
-      include: {
-        productTags: {
-          include: {
-            tag: true,
-          },
-        },
-        images: {
-          where: {
-            isMain: true,
-          },
-          take: 1,
-        },
-        variations: {
-          orderBy: {
-            order: 'asc',
-          },
-        },
-        likes: {
-          where: { userId },
-        },
-        productOwners: {
-          where: { userId },
-        },
-      },
-    });
+    const whereClause = whereConditions.length > 0 ? { AND: whereConditions } : {};
 
-    return products.map(product => ({
-      id: product.id,
-      title: product.title,
-      lowPrice: product.lowPrice,
-      highPrice: product.highPrice,
-      mainImageUrl: product.images.length > 0 ? product.images[0].imageUrl : null,
-      tags: product.productTags.map(pt => pt.tag.name),
-      variations: product.variations.map(v => ({
-        id: v.id,
-        name: v.name,
-        price: v.price,
+    // 商品取得とカウントを並列実行
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where: whereClause,
+        orderBy,
+        skip,
+        take: pageSize,
+        include: {
+          productTags: {
+            include: {
+              tag: true,
+            },
+          },
+          images: {
+            where: {
+              isMain: true,
+            },
+            take: 1,
+          },
+          variations: {
+            orderBy: {
+              order: 'asc',
+            },
+          },
+          likes: {
+            where: { userId },
+          },
+          productOwners: {
+            where: { userId },
+          },
+        },
+      }),
+      prisma.product.count({ where: whereClause }),
+    ]);
+
+    return {
+      products: products.map(product => ({
+        id: product.id,
+        title: product.title,
+        lowPrice: product.lowPrice,
+        highPrice: product.highPrice,
+        mainImageUrl: product.images.length > 0 ? product.images[0].imageUrl : null,
+        tags: product.productTags.map(pt => pt.tag.name),
+        variations: product.variations.map(v => ({
+          id: v.id,
+          name: v.name,
+          price: v.price,
+        })),
+        isLiked: product.likes.length > 0,
+        isOwned: product.productOwners.length > 0,
       })),
-      isLiked: product.likes.length > 0,
-      isOwned: product.productOwners.length > 0,
-    }));
+      total,
+    };
 
   } catch (error) {
     // カスタムバリデーションエラーはそのままスローする

@@ -9,6 +9,7 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     product: {
       findMany: vi.fn(),
+      count: vi.fn(),
     },
   },
 }));
@@ -27,6 +28,7 @@ type WhereCondition = {
 
 // モックされた関数に型アサーションを適用
 const mockedPrismaFindMany = prisma.product.findMany as vi.Mock;
+const mockedPrismaCount = prisma.product.count as vi.Mock;
 const mockedAuth = auth as vi.MockedFunction<typeof auth>;
 
 describe('searchProducts', () => {
@@ -35,6 +37,8 @@ describe('searchProducts', () => {
     vi.clearAllMocks();
     // デフォルトの認証セッションをモック
     mockedAuth.mockResolvedValue({ user: { id: 'test-user', isSafeSearchEnabled: false } } as Session);
+    // デフォルトのカウント結果をモック
+    mockedPrismaCount.mockResolvedValue(0);
   });
 
   it('ネガティブタグを指定した場合、そのタグを持つ商品が除外されるべき', async () => {
@@ -126,4 +130,71 @@ describe('searchProducts', () => {
       /検索条件エラー: タグ '(3D, キャラ|キャラ, 3D)' は検索条件と除外条件の両方に含まれています。/
     );
   });
+
+  // ページネーションテスト
+  describe('ページネーション', () => {
+    it('pageとpageSizeを指定した場合、正しいskipとtakeがPrismaに渡されるべき', async () => {
+      mockedPrismaFindMany.mockResolvedValue([]);
+      mockedPrismaCount.mockResolvedValue(100);
+      
+      const params: SearchParams = { page: 3, pageSize: 10 };
+      await searchProducts(params);
+
+      const findManyArgs = mockedPrismaFindMany.mock.calls[0][0];
+      expect(findManyArgs.skip).toBe(20); // (3 - 1) * 10
+      expect(findManyArgs.take).toBe(10);
+    });
+
+    it('pageが指定されない場合、デフォルト値（page=1, pageSize=24）が適用されるべき', async () => {
+      mockedPrismaFindMany.mockResolvedValue([]);
+      mockedPrismaCount.mockResolvedValue(50);
+      
+      await searchProducts({});
+
+      const findManyArgs = mockedPrismaFindMany.mock.calls[0][0];
+      expect(findManyArgs.skip).toBe(0); // (1 - 1) * 24
+      expect(findManyArgs.take).toBe(24);
+    });
+
+    it('検索結果にtotalカウントが含まれるべき', async () => {
+      mockedPrismaFindMany.mockResolvedValue([]);
+      mockedPrismaCount.mockResolvedValue(150);
+      
+      const result = await searchProducts({});
+      
+      expect(result.total).toBe(150);
+      expect(result.products).toEqual([]);
+    });
+
+    it('pageが0以下の場合、page=1として扱われるべき', async () => {
+      mockedPrismaFindMany.mockResolvedValue([]);
+      mockedPrismaCount.mockResolvedValue(10);
+      
+      await searchProducts({ page: 0 });
+      
+      const findManyArgs = mockedPrismaFindMany.mock.calls[0][0];
+      expect(findManyArgs.skip).toBe(0);
+    });
+
+    it('pageSizeが100を超える場合、100に制限されるべき', async () => {
+      mockedPrismaFindMany.mockResolvedValue([]);
+      mockedPrismaCount.mockResolvedValue(200);
+      
+      await searchProducts({ pageSize: 200 });
+      
+      const findManyArgs = mockedPrismaFindMany.mock.calls[0][0];
+      expect(findManyArgs.take).toBe(100);
+    });
+
+    it('pageSizeが負の数の場合、1に制限されるべき', async () => {
+      mockedPrismaFindMany.mockResolvedValue([]);
+      mockedPrismaCount.mockResolvedValue(10);
+      
+      await searchProducts({ pageSize: -5 });
+      
+      const findManyArgs = mockedPrismaFindMany.mock.calls[0][0];
+      expect(findManyArgs.take).toBe(1);
+    });
+  });
 });
+
