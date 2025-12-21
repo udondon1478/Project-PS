@@ -37,6 +37,7 @@ export default function Header() {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
 
   const handleScroll = useCallback(() => {
@@ -64,6 +65,10 @@ export default function Header() {
     };
   }, [handleScroll]);
 
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   return (
     // Apply bg-white to the outer header to ensure ProductSearch background blends correctly
     <header
@@ -78,7 +83,7 @@ export default function Header() {
         {/* Mobile Navigation (Visible on small screens) */}
         {/* Mobile Navigation (Visible on small screens) */}
         <div className="md:hidden flex items-center justify-between w-full">
-          {status === "authenticated" ? (
+          {status === "authenticated" && isMounted ? (
             <>
               <Link href="/register-item">
                 <Button variant="ghost" size="sm" id="tour-register-item-mobile">商品登録</Button>
@@ -177,7 +182,7 @@ export default function Header() {
         </Link>
         <nav className="hidden md:flex items-center space-x-2">
 {/* loading indicator removed */}
-          {status === "authenticated" ? (
+          {status === "authenticated" && isMounted ? (
             <React.Fragment>
               <Link href="/register-item">
                 <Button variant="ghost" size="sm" id="tour-register-item-desktop">商品登録</Button>
