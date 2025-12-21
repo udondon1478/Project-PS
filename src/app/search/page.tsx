@@ -39,6 +39,8 @@ function buildBaseUrl(searchParams: SearchParams & { page?: string }): string {
     if (value === undefined || value === null) continue;
     
     if (Array.isArray(value)) {
+      // URLを短く保つため、配列はカンマ区切り文字列としてシリアライズする
+      // normalizeQueryParamで自動的に配列に戻されるため安全
       params.set(key, value.join(','));
     } else {
       params.set(key, String(value));
