@@ -24,6 +24,7 @@ import {
 import { Button } from '@/components/ui/button';
 import React from 'react';
 import ProductSearch from '@/components/search/ProductSearch'; // Import ProductSearch
+import { ProductSearchSkeleton } from '@/components/search/ProductSearchSkeleton';
 import { AuthDialogNotice } from '@/components/AuthDialogNotice';
 
 // 認証状態のプレースホルダーは削除
@@ -268,7 +269,7 @@ export default function Header() {
 
       {/* Product Search Component - Placed below the top navigation bar */}
       {/* The ProductSearch component itself handles padding and background */}
-      <Suspense fallback={<div>Loading search bar...</div>}>
+      <Suspense fallback={<ProductSearchSkeleton />}>
         <ProductSearch isSafeSearchEnabled={session?.user?.isSafeSearchEnabled ?? true} />
       </Suspense>
 
