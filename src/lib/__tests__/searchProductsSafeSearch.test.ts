@@ -9,6 +9,7 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     product: {
       findMany: vi.fn(),
+      count: vi.fn(),
     },
   },
 }));
@@ -26,6 +27,7 @@ type WhereCondition = {
 };
 
 const mockedPrismaFindMany = prisma.product.findMany as vi.Mock;
+const mockedPrismaCount = prisma.product.count as vi.Mock;
 const mockedAuth = auth as vi.MockedFunction<typeof auth>;
 
 describe('searchProducts - Safe Search', () => {
@@ -37,6 +39,7 @@ describe('searchProducts - Safe Search', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockedPrismaFindMany.mockResolvedValue([]);
+    mockedPrismaCount.mockResolvedValue(0);
   });
 
   it('should add R-18 to negativeTags when safe search is enabled (default)', async () => {
