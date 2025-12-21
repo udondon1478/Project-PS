@@ -1,14 +1,33 @@
 import React from 'react';
 import ProductCard from './ProductCard';
+import ProductCardSkeleton from './ProductCardSkeleton';
 import { Product } from "@/types/product";
 
 interface ProductGridProps {
   products: Product[];
   showLikeButton?: boolean;
   showOwnButton?: boolean;
+  isLoading?: boolean;
+  skeletonCount?: number;
 }
 
-const ProductGrid = ({ products, showLikeButton = false, showOwnButton = false }: ProductGridProps) => {
+const ProductGrid = ({ 
+  products, 
+  showLikeButton = false, 
+  showOwnButton = false,
+  isLoading = false,
+  skeletonCount = 8 
+}: ProductGridProps) => {
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" data-testid="product-grid-skeleton">
+        {[...Array(skeletonCount)].map((_, index) => (
+          <ProductCardSkeleton key={index} />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" data-testid="product-grid">
       {products.map((product) => (

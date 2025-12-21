@@ -32,7 +32,6 @@ export default function Header() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { theme, systemTheme } = useTheme(); // Add useTheme hook
-  const [mounted, setMounted] = useState(false); // Add mounted state
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [prevScrollPos, setPrevScrollPos] = useState(0);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
@@ -58,17 +57,12 @@ export default function Header() {
   }, [prevScrollPos]);
 
   useEffect(() => {
-    setMounted(true); // Set mounted to true after component mounts
     window.addEventListener('scroll', handleScroll);
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
   }, [handleScroll]);
-
-  if (!mounted) { // Render nothing until mounted to prevent hydration mismatch
-    return null;
-  }
 
   return (
     // Apply bg-white to the outer header to ensure ProductSearch background blends correctly
@@ -182,9 +176,7 @@ export default function Header() {
           <Image src="/images/PolySeek_logo_type.svg" alt="PolySeek" width={100} height={24} className="h-6 w-auto" />
         </Link>
         <nav className="hidden md:flex items-center space-x-2">
-          {status === "loading" && (
-            <div className="h-8 w-20 animate-pulse bg-gray-200 rounded"></div>
-          )}
+{/* loading indicator removed */}
           {status === "authenticated" ? (
             <React.Fragment>
               <Link href="/register-item">

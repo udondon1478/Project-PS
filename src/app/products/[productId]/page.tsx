@@ -28,6 +28,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { TagDetailModal } from '@/components/TagDetailModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLink } from '@fortawesome/free-solid-svg-icons';
+import ProductDetailSkeleton from '@/components/ProductDetailSkeleton';
+
 
 interface ProductDetail {
   id: string;
@@ -262,7 +264,7 @@ const ProductDetailPage = () => {
     }
   };
 
-  if (loading) return <div className="container mx-auto px-4 py-8 text-center">Loading...</div>;
+  if (loading) return <ProductDetailSkeleton />;
   if (error) return <div className="container mx-auto px-4 py-8 text-center text-red-500">Error: {error}</div>;
   if (!product) return <div className="container mx-auto px-4 py-8 text-center">Product not found.</div>;
 
