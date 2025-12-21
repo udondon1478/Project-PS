@@ -83,7 +83,6 @@ export function Pagination({
 
   return (
     <nav 
-      role="navigation" 
       aria-label="ページネーション"
       className={cn("flex items-center justify-center gap-1", className)}
     >
