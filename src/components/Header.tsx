@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useRouter } from 'next/navigation';
-import { useTheme } from 'next-themes';
+
 import {
   Dialog,
   DialogContent,
@@ -31,7 +31,7 @@ import { AuthDialogNotice } from '@/components/AuthDialogNotice';
 export default function Header() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const { theme, systemTheme } = useTheme(); // Add useTheme hook
+
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [prevScrollPos, setPrevScrollPos] = useState(0);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
