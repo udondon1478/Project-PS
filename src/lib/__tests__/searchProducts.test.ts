@@ -185,6 +185,16 @@ describe('searchProducts', () => {
       const findManyArgs = mockedPrismaFindMany.mock.calls[0][0];
       expect(findManyArgs.take).toBe(100);
     });
+
+    it('pageSizeが負の数の場合、1に制限されるべき', async () => {
+      mockedPrismaFindMany.mockResolvedValue([]);
+      mockedPrismaCount.mockResolvedValue(10);
+      
+      await searchProducts({ pageSize: -5 });
+      
+      const findManyArgs = mockedPrismaFindMany.mock.calls[0][0];
+      expect(findManyArgs.take).toBe(1);
+    });
   });
 });
 
