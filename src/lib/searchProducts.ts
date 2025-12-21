@@ -69,6 +69,15 @@ export interface SearchResult {
   total: number;
 }
 
+/**
+ * Search for products that match the provided filter, sorting, and pagination parameters and return a paginated result.
+ *
+ * Applies query text, category, required tags, excluded tags, age-rating tags, price range (overlapping range logic), sorting (friendly and legacy keys), and pagination. Enforces safe-search by default (adds `R-18` to exclusions and disallows explicit `R-18` searches when enabled) and validates tag/exclusion collisions and price-range consistency.
+ *
+ * @param params - Search parameters (q, category, tags, negativeTags, ageRatingTags, minPrice, maxPrice, sort, order, page, pageSize). page is treated as at least 1; pageSize is clamped to [1, 100] with a default of 24.
+ * @returns An object containing `products` (array of products with fields: id, title, lowPrice, highPrice, mainImageUrl, tags, variations, isLiked, isOwned) and `total` (total number of matched products).
+ * @throws Error when a tag is present in both inclusion and exclusion lists (message starts with "検索条件エラー:"), when minPrice > maxPrice ("検索条件エラー: 最低価格が最高価格より高くなっています。"), or when safe-search blocks an explicit `R-18` search ("セーフサーチが有効なため、R-18コンテンツは検索できません。").
+ */
 export async function searchProducts(params: SearchParams): Promise<SearchResult> {
   try {
     const session = await auth();

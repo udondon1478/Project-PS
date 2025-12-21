@@ -17,7 +17,14 @@ interface PaginationProps {
 }
 
 /**
- * ページ番号のリストを生成（現在ページ±2、省略記号付き）
+ * Generate an ordered sequence of page indicators including numbers and 'ellipsis' markers.
+ *
+ * Always includes page 1 and, when totalPages > 1, the last page; includes a compact window around
+ * the current page and uses the string literal `'ellipsis'` to represent skipped ranges.
+ *
+ * @param currentPage - The currently active page (1-based)
+ * @param totalPages - The total number of available pages
+ * @returns An array of page numbers and the string `'ellipsis'` in display order
  */
 function getPageNumbers(currentPage: number, totalPages: number): (number | 'ellipsis')[] {
   const pages: (number | 'ellipsis')[] = [];
@@ -54,7 +61,11 @@ function getPageNumbers(currentPage: number, totalPages: number): (number | 'ell
 }
 
 /**
- * ページ番号付きのURLを構築
+ * Builds a URL targeting a specific pagination page.
+ *
+ * @param baseUrl - The base URL to which the page parameter may be appended
+ * @param page - The 1-based page number to target
+ * @returns The URL for the given page; returns `baseUrl` unchanged for page 1, otherwise `baseUrl` with a `page` query parameter appended
  */
 function buildPageUrl(baseUrl: string, page: number): string {
   const separator = baseUrl.includes('?') ? '&' : '?';
@@ -62,15 +73,21 @@ function buildPageUrl(baseUrl: string, page: number): string {
 }
 
 /**
- * ページネーションコンポーネント
- * 
+ * Render a pagination navigation bar with previous/next controls and a concise sequence of page links.
+ *
+ * The component always shows page 1 and the last page (when totalPages > 1), displays a window of pages around
+ * the current page, and inserts ellipsis where ranges are omitted. Previous and Next controls are disabled
+ * at the boundaries; the current page is rendered as non-interactive and marked with `aria-current="page"`.
+ *
+ * @param currentPage - The active page number (1-based)
+ * @param totalPages - The total number of pages available
+ * @param baseUrl - Base URL to build page links from; if `page` is 1 the `baseUrl` is used unchanged (supports existing query string)
+ * @param className - Optional additional CSS class names for the root nav element
+ * @returns The pagination navigation element
+ *
  * @example
  * ```tsx
- * <Pagination 
- *   currentPage={2} 
- *   totalPages={10} 
- *   baseUrl="/search?tags=3D" 
- * />
+ * <Pagination currentPage={2} totalPages={10} baseUrl="/search?tags=3D" />
  * ```
  */
 export function Pagination({ 

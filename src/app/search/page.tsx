@@ -18,7 +18,10 @@ type SearchPageProps = {
 };
 
 /**
- * ページ番号を抽出・バリデーション
+ * Parse and validate a page query parameter into a 1-based page number.
+ *
+ * @param pageParam - The raw page parameter from a query (string, first element of string array, or undefined)
+ * @returns The parsed page number as an integer; `1` if the parameter is missing, not a valid integer, or less than 1
  */
 function parsePageParam(pageParam: string | string[] | undefined): number {
   if (!pageParam) return 1;
@@ -29,7 +32,13 @@ function parsePageParam(pageParam: string | string[] | undefined): number {
 }
 
 /**
- * 現在のページパラメータを除いたbaseURLを構築
+ * Build the "/search" base URL from provided search parameters while omitting the `page` parameter.
+ *
+ * Array-valued parameters are serialized as comma-separated strings; `undefined` and `null`
+ * values are skipped.
+ *
+ * @param searchParams - Search parameters; any `page` field will be excluded from the resulting URL
+ * @returns The `/search` URL with a serialized query string when parameters remain, or `"/search"` when none
  */
 function buildBaseUrl(searchParams: SearchParams & { page?: string }): string {
   const params = new URLSearchParams();
@@ -51,6 +60,12 @@ function buildBaseUrl(searchParams: SearchParams & { page?: string }): string {
   return queryString ? `/search?${queryString}` : '/search';
 }
 
+/**
+ * Builds page-aware metadata for the search results page.
+ *
+ * @param searchParams - A promise that resolves to search parameters (may include `q`, `tags`, `negativeTags`, and optional `page`)
+ * @returns Metadata with a `title` derived from the query or tags (and appended with " - ページ N" when page > 1). `description` is set to a page-aware string for pages greater than 1 and is `undefined` for the first page.
+ */
 export async function generateMetadata({ searchParams }: SearchPageProps): Promise<Metadata> {
   const resolvedSearchParams = await searchParams;
   const q = resolvedSearchParams.q;
