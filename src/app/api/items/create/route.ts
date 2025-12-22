@@ -140,6 +140,16 @@ export async function POST(request: Request) {
                 isMain: variation.isMain,
               })),
             },
+            tagEditHistory: { // 初期タグ登録履歴 (Version 1) を作成
+              create: {
+                editorId: userId,
+                version: 1,
+                addedTags: tagIds,
+                removedTags: [],
+                keptTags: [],
+                comment: '初期登録',
+              },
+            },
           },
           include: {
             images: true,
@@ -150,6 +160,7 @@ export async function POST(request: Request) {
             },
             variations: true, // バリエーション情報もインクルード
             seller: true, // sellerリレーションを含める
+            tagEditHistory: true, // 作成された履歴も含める
           },
         });
     
