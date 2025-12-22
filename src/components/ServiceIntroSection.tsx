@@ -1,5 +1,3 @@
-"use client";
-
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Search, Tags, Link as LinkIcon, User } from "lucide-react";
 
