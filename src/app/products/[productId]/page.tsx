@@ -237,9 +237,7 @@ const ProductDetailPage = () => {
     try {
       const response = await fetch(`/api/products/${productId}/like`, {
         method: !originalIsLiked ? 'POST' : 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        
       });
 
       // 401 Unauthorized or Redirect (unexpected for API) means we should revert
