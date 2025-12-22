@@ -45,6 +45,7 @@ export default function Header() {
   const [prevScrollPos, setPrevScrollPos] = useState(0);
   type DialogType = 'register' | 'signup' | 'login' | null;
   const [activeDialog, setActiveDialog] = useState<DialogType>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false); // Sheetの状態管理を追加
   const headerRef = useRef<HTMLElement>(null);
 
   const handleScroll = useCallback(() => {
@@ -95,7 +96,7 @@ export default function Header() {
 
            {/* Menu Trigger - Right Aligned */}
            <div className="ml-auto">
-             <Sheet>
+             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                <SheetTrigger asChild>
                  <Button variant="ghost" size="icon" aria-label="Menu">
                    <Menu className="h-6 w-6" />
@@ -137,9 +138,9 @@ export default function Header() {
                     </>
                   ) : (
                     <>
-                       <Button variant="ghost" className="w-full justify-start" onClick={() => setActiveDialog('register')}>商品登録</Button>
-                       <Button variant="ghost" className="w-full justify-start" onClick={() => setActiveDialog('signup')}>新規登録</Button>
-                       <Button variant="ghost" className="w-full justify-start" onClick={() => setActiveDialog('login')}>ログイン</Button>
+                       <Button variant="ghost" className="w-full justify-start" onClick={() => { setActiveDialog('register'); setIsSheetOpen(false); }}>商品登録</Button>
+                       <Button variant="ghost" className="w-full justify-start" onClick={() => { setActiveDialog('signup'); setIsSheetOpen(false); }}>新規登録</Button>
+                       <Button variant="ghost" className="w-full justify-start" onClick={() => { setActiveDialog('login'); setIsSheetOpen(false); }}>ログイン</Button>
                     </>
                   )}
                </div>
