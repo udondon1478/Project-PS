@@ -9,16 +9,16 @@ export interface Feature {
 
 export const features: Feature[] = [
   {
-    id: "tag-search",
+    id: "advanced-search",
     icon: Search,
-    title: "タグ検索",
-    description: "コミュニティ主導のデータベースで、欲しい商品を素早く見つけられます。",
+    title: "豊富な検索条件",
+    description: "マイナス検索や多様なフィルターで、\n欲しい商品を素早く見つけられます。",
   },
   {
-    id: "price-filter",
+    id: "tag-system",
     icon: Tags,
-    title: "価格フィルター",
-    description: "価格範囲を指定して商品を絞り込み、予算に合った商品を探せます。",
+    title: "タグシステム",
+    description: "コミュニティ主導のタグ付けで、\nマイナージャンルの商品も\n簡単に見つけられます。",
   },
   {
     id: "product-registration",
@@ -29,7 +29,7 @@ export const features: Feature[] = [
   {
     id: "user-auth",
     icon: User,
-    title: "ユーザー認証",
-    description: "ログインしてお気に入りや所持品を管理し、購入履歴を追跡できます。",
+    title: "ログイン機能",
+    description: "PolySeekアカウントに欲しい商品や\n購入済み商品を登録していくことで、リスト内からPolySeek独自のタグを\n用いた検索も可能です\n※BOOTHとの連携機能ではありません",
   },
 ];

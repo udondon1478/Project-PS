@@ -24,7 +24,7 @@ export default function ServiceIntroSection() {
                 <feature.icon className="h-6 w-6" />
               </div>
               <CardTitle className="text-lg">{feature.title}</CardTitle>
-              <CardDescription>{feature.description}</CardDescription>
+              <CardDescription className="whitespace-pre-wrap">{feature.description}</CardDescription>
             </CardHeader>
           </Card>
         ))}
