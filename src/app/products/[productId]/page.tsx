@@ -266,7 +266,7 @@ const ProductDetailPage = () => {
 
   if (loading) return <ProductDetailSkeleton />;
   if (error) return <div className="container mx-auto px-4 py-8 text-center text-red-500">Error: {error}</div>;
-  if (!product) return <div className="container mx-auto px-4 py-8 text-center">Product not found.</div>;
+  if (!product) return <div className="container mx-auto px-4 py-8 text-center">商品が見つかりませんでした。</div>;
 
   return (
     <>
@@ -315,13 +315,13 @@ const ProductDetailPage = () => {
             )}
 
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4 border-b pb-2 dark:border-gray-700">Description</h2>
+              <h2 className="text-2xl font-bold mb-4 border-b pb-2 dark:border-gray-700">説明</h2>
               {product.description ? (
                 <div className="prose dark:prose-invert max-w-none bg-gray-50 dark:bg-gray-900/50 p-6 rounded-lg border dark:border-gray-800">
                   <ReactMarkdown>{product.description}</ReactMarkdown>
                 </div>
               ) : (
-                <p className="text-gray-500 dark:text-gray-400">Descriptionはありません。</p>
+                <p className="text-gray-500 dark:text-gray-400">説明文はありません。</p>
               )}
             </section>
           </main>
@@ -376,7 +376,7 @@ const ProductDetailPage = () => {
                                     <TooltipTrigger asChild data-testid={`tag-info-button-${tag.name}`}>
                                       <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-500 hover:text-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/50" onClick={() => handleViewTagDetails(tag.id)} aria-label={`${tag.name}の詳細を見る`}><Info size={16} /></Button>
                                     </TooltipTrigger>
-                                  <TooltipContent><p>{tag.description || 'No description available.'}</p></TooltipContent>
+                                  <TooltipContent><p>{tag.description || '説明文はありません。'}</p></TooltipContent>
                                 </Tooltip>
                               </div>
                             </div>

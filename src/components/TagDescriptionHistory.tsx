@@ -20,7 +20,7 @@ interface TagDescriptionHistoryProps {
 
 export function TagDescriptionHistory({ history }: TagDescriptionHistoryProps) {
   if (history.length === 0) {
-    return <p className="text-sm text-gray-500 dark:text-gray-400">No description history found.</p>;
+    return <p className="text-sm text-gray-500 dark:text-gray-400">説明の変更履歴はありません。</p>;
   }
 
   return (
@@ -31,29 +31,29 @@ export function TagDescriptionHistory({ history }: TagDescriptionHistoryProps) {
             <div className="flex items-center gap-2">
               <Image
                 src={item.editor.image || '/images/PolySeek_10_export_icon.svg'}
-                alt={item.editor.name || 'User'}
+                alt={item.editor.name || 'ユーザー'}
                 width={24}
                 height={24}
                 className="rounded-full"
               />
-              <span className="font-semibold text-sm">{item.editor.name || 'Unknown User'}</span>
+              <span className="font-semibold text-sm">{item.editor.name || '不明なユーザー'}</span>
             </div>
             <span className="text-xs text-gray-500 dark:text-gray-400">
               {new Date(item.createdAt).toLocaleString()}
             </span>
           </div>
           <div>
-            <p className="text-xs text-gray-500">Before:</p>
+            <p className="text-xs text-gray-500">変更前:</p>
             <blockquote className="p-2 text-sm border-l-4 border-red-500 bg-red-50 dark:bg-red-900/20 rounded-r-lg my-1">
-              {item.oldValue || 'N/A'}
+              {item.oldValue || 'なし'}
             </blockquote>
-            <p className="text-xs text-gray-500">After:</p>
+            <p className="text-xs text-gray-500">変更後:</p>
             <blockquote className="p-2 text-sm border-l-4 border-green-500 bg-green-50 dark:bg-green-900/20 rounded-r-lg my-1">
-              {item.newValue || 'N/A'}
+              {item.newValue || 'なし'}
             </blockquote>
             {item.comment && (
               <>
-                <p className="text-xs text-gray-500 mt-2">Comment:</p>
+                <p className="text-xs text-gray-500 mt-2">コメント:</p>
                 <p className="p-2 text-sm">{item.comment}</p>
               </>
             )}

@@ -48,13 +48,13 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save description');
+        throw new Error(errorData.error || '説明の保存に失敗しました');
       }
 
       onSuccess();
       onOpenChange(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      setError(err instanceof Error ? err.message : '不明なエラーが発生しました');
     } finally {
       setIsSaving(false);
     }
@@ -69,26 +69,26 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Edit Tag Description: {tag.name}</DialogTitle>
+            <DialogTitle>タグ説明の編集: {tag.name}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid w-full gap-1.5">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">説明</Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Enter tag description..."
+                placeholder="タグの説明を入力..."
                 rows={5}
               />
             </div>
             <div className="grid w-full gap-1.5">
-              <Label htmlFor="comment">Comment (Optional)</Label>
+              <Label htmlFor="comment">コメント (任意)</Label>
               <Input
                 id="comment"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                placeholder="Why are you making this change?"
+                placeholder="変更の理由を入力してください"
               />
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
@@ -96,11 +96,11 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="secondary">
-                Cancel
+                キャンセル
               </Button>
             </DialogClose>
             <Button type="submit" disabled={isSaving}>
-              {isSaving ? 'Saving...' : 'Save'}
+              {isSaving ? '保存中...' : '保存'}
             </Button>
           </DialogFooter>
         </form>
