@@ -24,7 +24,9 @@ import {
 import { Button } from '@/components/ui/button';
 import React from 'react';
 import ProductSearch from '@/components/search/ProductSearch'; // Import ProductSearch
+import { ProductSearchSkeleton } from '@/components/search/ProductSearchSkeleton';
 import { AuthDialogNotice } from '@/components/AuthDialogNotice';
+import { HeaderNavigationSkeleton } from '@/components/HeaderNavigationSkeleton';
 
 // 認証状態のプレースホルダーは削除
 
@@ -37,7 +39,6 @@ export default function Header() {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
 
   const handleScroll = useCallback(() => {
@@ -65,10 +66,6 @@ export default function Header() {
     };
   }, [handleScroll]);
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
   return (
     // Apply bg-white to the outer header to ensure ProductSearch background blends correctly
     <header
@@ -82,8 +79,10 @@ export default function Header() {
       <div className="container mx-auto py-3 px-4 md:px-6 flex items-center justify-between border-b border-gray-200 dark:border-gray-700"> {/* Reduced padding slightly, added border */}
         {/* Mobile Navigation (Visible on small screens) */}
         {/* Mobile Navigation (Visible on small screens) */}
-        <div className="md:hidden flex items-center justify-between w-full">
-          {status === "authenticated" && isMounted ? (
+        <div className="md:hidden flex items-center justify-between w-full" suppressHydrationWarning>
+          {status === "loading" ? (
+            <HeaderNavigationSkeleton variant="mobile" />
+          ) : status === "authenticated" ? (
             <>
               <Link href="/register-item">
                 <Button variant="ghost" size="sm" id="tour-register-item-mobile">商品登録</Button>
@@ -180,9 +179,10 @@ export default function Header() {
           <Image src="/images/PolySeek_10_export_icon.svg" alt="PolySeek Logo" width={32} height={32} className="h-8 w-auto" />
           <Image src="/images/PolySeek_logo_type.svg" alt="PolySeek" width={100} height={24} className="h-6 w-auto" />
         </Link>
-        <nav className="hidden md:flex items-center space-x-2">
-{/* loading indicator removed */}
-          {status === "authenticated" && isMounted ? (
+        <nav className="hidden md:flex items-center space-x-2" suppressHydrationWarning>
+          {status === "loading" ? (
+            <HeaderNavigationSkeleton variant="desktop" />
+          ) : status === "authenticated" ? (
             <React.Fragment>
               <Link href="/register-item">
                 <Button variant="ghost" size="sm" id="tour-register-item-desktop">商品登録</Button>
@@ -273,7 +273,7 @@ export default function Header() {
 
       {/* Product Search Component - Placed below the top navigation bar */}
       {/* The ProductSearch component itself handles padding and background */}
-      <Suspense fallback={<div>Loading search bar...</div>}>
+      <Suspense fallback={<ProductSearchSkeleton />}>
         <ProductSearch isSafeSearchEnabled={session?.user?.isSafeSearchEnabled ?? true} />
       </Suspense>
 
