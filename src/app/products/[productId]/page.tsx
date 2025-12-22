@@ -243,8 +243,9 @@ const ProductDetailPage = () => {
       // 401 Unauthorized or Redirect (unexpected for API) means we should revert
       if (response.status === 401 || response.redirected) {
         setIsLiked(originalIsLiked);
-        // 必要に応じてログインダイアログを表示する処理をここに追加可能
-        // if (response.status === 401) setActiveDialog('login');
+        if (response.status === 401) {
+          alert('この操作を行うにはログインが必要です。');
+        }
         return;
       }
 
@@ -270,6 +271,14 @@ const ProductDetailPage = () => {
       const response = await fetch(`/api/products/${productId}/own`, {
         method: !originalIsOwned ? 'POST' : 'DELETE',
       });
+      // 401 Unauthorized or Redirect (unexpected for API) means we should revert
+      if (response.status === 401 || response.redirected) {
+        setIsOwned(originalIsOwned);
+        if (response.status === 401) {
+          alert('この操作を行うにはログインが必要です。');
+        }
+        return;
+      }
       if (!response.ok) setIsOwned(originalIsOwned);
     } catch (error) {
       console.error("Failed to toggle owned status:", error);

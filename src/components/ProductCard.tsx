@@ -42,6 +42,9 @@ const ProductCard = ({ product, showLikeButton = false, showOwnButton = false }:
 
       if (response.status === 401 || response.redirected) {
         setIsLiked(originalIsLiked);
+        if (response.status === 401) {
+          alert('この操作を行うにはログインが必要です。');
+        }
         return;
       }
 
@@ -72,6 +75,9 @@ const ProductCard = ({ product, showLikeButton = false, showOwnButton = false }:
 
       if (response.status === 401 || response.redirected) {
         setIsOwned(originalIsOwned);
+        if (response.status === 401) {
+          alert('この操作を行うにはログインが必要です。');
+        }
         return;
       }
 
