@@ -11,7 +11,7 @@ export default function Footer() {
             BOOTHおよびピクシブ株式会社とは一切関係ありません。
           </p>
           <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
-            © 2024 PolySeek
+            © 2025 PolySeek
           </p>
         </div>
         <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 items-center order-1 md:order-2">
