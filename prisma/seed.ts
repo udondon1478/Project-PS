@@ -69,7 +69,6 @@ async function main() {
     { name: '全年齢', tagCategoryId: ageRatingCategory.id },
     { name: 'R-15', tagCategoryId: ageRatingCategory.id },
     { name: 'R-18', tagCategoryId: ageRatingCategory.id },
-    { name: 'NSFW', tagCategoryId: ageRatingCategory.id },
   ];
 
   for (const tagData of ageRatingTags) {
@@ -85,9 +84,9 @@ async function main() {
     { name: 'アバター', tagCategoryId: productCategory.id },
     { name: '衣装', tagCategoryId: productCategory.id },
     { name: 'アクセサリー', tagCategoryId: productCategory.id },
-    { name: 'プロップ', tagCategoryId: productCategory.id },
+    { name: 'プロップ(小道具)', tagCategoryId: productCategory.id },
     { name: 'ワールド', tagCategoryId: productCategory.id },
-    { name: 'ツール', tagCategoryId: productCategory.id },
+    { name: 'ツール・ギミック', tagCategoryId: productCategory.id },
     { name: 'その他', tagCategoryId: productCategory.id },
   ];
 
@@ -104,8 +103,6 @@ async function main() {
     { name: 'Quest対応', tagCategoryId: featureCategory.id },
     { name: 'PhysBone対応', tagCategoryId: featureCategory.id },
     { name: 'Modular Avatar対応', tagCategoryId: featureCategory.id },
-    { name: 'SDK3', tagCategoryId: featureCategory.id },
-    { name: 'SDK2', tagCategoryId: featureCategory.id },
   ];
 
   for (const tagData of featureTags) {
