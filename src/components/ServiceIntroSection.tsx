@@ -13,7 +13,7 @@ export default function ServiceIntroSection() {
         </h2>
         <p className="text-muted-foreground max-w-2xl mx-auto">
           PolySeekは、VRChat向けの3Dアバターやアクセサリーをタグベースで検索できるサービスです。
-          マイナス検索や価格フィルターを活用して、欲しい商品をすばやく見つけましょう。
+          一つの商品に対し、みんなでタグを付与していくことで検索性が向上します。
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
