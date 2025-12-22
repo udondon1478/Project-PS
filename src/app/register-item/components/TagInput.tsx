@@ -73,7 +73,7 @@ export const TagInput = ({ value: tags, onChange: setTags, disabled, id }: TagIn
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (isComposing) return;
 
-    if ((e.key === 'Enter' || e.key === 'Tab') && inputValue) {
+    if ((e.key === 'Enter' || e.key === 'Tab' || e.key === ' ') && inputValue) {
       e.preventDefault();
       addTag(inputValue);
     } else if (e.key === 'Backspace' && !inputValue && tags.length > 0) {
@@ -127,6 +127,9 @@ export const TagInput = ({ value: tags, onChange: setTags, disabled, id }: TagIn
           disabled={disabled}
         />
       </div>
+      <p className="text-xs text-muted-foreground mt-1">
+        タグは入力後に半角スペースまたはTabキーで確定されます
+      </p>
       {suggestions.length > 0 && (
         <ul className="mt-2 border rounded-md bg-background list-none p-0">
           {suggestions.map((suggestion) => (
