@@ -233,11 +233,28 @@ const ProductDetailPage = () => {
     setIsProcessingLike(true);
     const originalIsLiked = isLiked;
     setIsLiked(!originalIsLiked);
+
     try {
       const response = await fetch(`/api/products/${productId}/like`, {
         method: !originalIsLiked ? 'POST' : 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
-      if (!response.ok) setIsLiked(originalIsLiked);
+
+      // 401 Unauthorized or Redirect (unexpected for API) means we should revert
+      if (response.status === 401 || response.redirected) {
+        setIsLiked(originalIsLiked);
+        // 必要に応じてログインダイアログを表示する処理をここに追加可能
+        // if (response.status === 401) setActiveDialog('login');
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // 成功時は何もしない（楽観的更新を維持）
     } catch (error) {
       console.error("Failed to toggle like status:", error);
       setIsLiked(originalIsLiked);
