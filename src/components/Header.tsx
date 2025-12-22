@@ -26,6 +26,7 @@ import React from 'react';
 import ProductSearch from '@/components/search/ProductSearch'; // Import ProductSearch
 import { ProductSearchSkeleton } from '@/components/search/ProductSearchSkeleton';
 import { AuthDialogNotice } from '@/components/AuthDialogNotice';
+import { HeaderNavigationSkeleton } from '@/components/HeaderNavigationSkeleton';
 
 // 認証状態のプレースホルダーは削除
 
@@ -80,14 +81,7 @@ export default function Header() {
         {/* Mobile Navigation (Visible on small screens) */}
         <div className="md:hidden flex items-center justify-between w-full" suppressHydrationWarning>
           {status === "loading" ? (
-            <>
-              {/* Loading placeholder */}
-              <div className="h-8 w-20 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
-              <Link href="/" className="flex items-center">
-                <Image src="/images/PolySeek_10_export_icon.svg" alt="PolySeek Logo" width={32} height={32} className="h-8 w-auto" />
-              </Link>
-              <div className="h-8 w-28 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
-            </>
+            <HeaderNavigationSkeleton variant="mobile" />
           ) : status === "authenticated" ? (
             <>
               <Link href="/register-item">
@@ -187,12 +181,7 @@ export default function Header() {
         </Link>
         <nav className="hidden md:flex items-center space-x-2" suppressHydrationWarning>
           {status === "loading" ? (
-            <React.Fragment>
-              {/* Loading placeholder */}
-              <div className="h-8 w-20 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
-              <div className="h-8 w-28 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
-              <div className="h-8 w-24 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
-            </React.Fragment>
+            <HeaderNavigationSkeleton variant="desktop" />
           ) : status === "authenticated" ? (
             <React.Fragment>
               <Link href="/register-item">
