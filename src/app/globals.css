@@ -49,6 +49,8 @@
 }
 
 :root {
+  --header-height-mobile: 8rem;
+  --header-height-desktop: 10rem;
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);

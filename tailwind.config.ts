@@ -9,6 +9,10 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      spacing: {
+        'header-mobile': 'var(--header-height-mobile)',
+        'header-desktop': 'var(--header-height-desktop)',
+      },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic':
