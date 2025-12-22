@@ -128,7 +128,7 @@ export const TagInput = ({ value: tags, onChange: setTags, disabled, id }: TagIn
         />
       </div>
       <p className="text-xs text-muted-foreground mt-1">
-        タグは入力後に半角スペースまたはTabキーで確定されます
+        タグは入力後に半角スペース、Tabキー、またはEnterキーで確定されます
       </p>
       {suggestions.length > 0 && (
         <ul className="mt-2 border rounded-md bg-background list-none p-0">
