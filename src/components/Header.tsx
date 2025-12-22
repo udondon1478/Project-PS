@@ -27,6 +27,7 @@ import {
   SheetContent,
   SheetTrigger,
   SheetTitle,
+  SheetClose,
 } from "@/components/ui/sheet";
 import { Menu } from 'lucide-react';
 import React from 'react';
@@ -112,19 +113,29 @@ export default function Header() {
                     </div>
                   ) : status === "authenticated" ? (
                     <>
-                      <Link href="/register-item" onClick={() => document.body.click()}> {/* Simple close hack via outside click simulation if needed, or better just rely on Link nav or SheetClose if available but for now Link suffices as route changes close mobile menus usually? No, next/link doesn't auto close. Ideally we want to wrap these in SheetClose or handle state. For this step, I will stick to basic structure.*/}
-                         <Button variant="ghost" className="w-full justify-start">商品登録</Button>
-                      </Link>
-                      <Link href="/profile">
-                         <Button variant="ghost" className="w-full justify-start">プロフィール編集</Button>
-                      </Link>
-                      <Link href="/profile/likes">
-                         <Button variant="ghost" className="w-full justify-start">いいねした商品</Button>
-                      </Link>
-                      <Link href="/profile/owned">
-                         <Button variant="ghost" className="w-full justify-start">所有済み商品</Button>
-                      </Link>
-                      <Button variant="ghost" className="w-full justify-start" onClick={() => signOut()}>ログアウト</Button>
+                      <SheetClose asChild>
+                        <Link href="/register-item">
+                           <Button variant="ghost" className="w-full justify-start">商品登録</Button>
+                        </Link>
+                      </SheetClose>
+                      <SheetClose asChild>
+                        <Link href="/profile">
+                           <Button variant="ghost" className="w-full justify-start">プロフィール編集</Button>
+                        </Link>
+                      </SheetClose>
+                      <SheetClose asChild>
+                        <Link href="/profile/likes">
+                           <Button variant="ghost" className="w-full justify-start">いいねした商品</Button>
+                        </Link>
+                      </SheetClose>
+                      <SheetClose asChild>
+                        <Link href="/profile/owned">
+                           <Button variant="ghost" className="w-full justify-start">所有済み商品</Button>
+                        </Link>
+                      </SheetClose>
+                      <SheetClose asChild>
+                        <Button variant="ghost" className="w-full justify-start" onClick={() => signOut()}>ログアウト</Button>
+                      </SheetClose>
                     </>
                   ) : (
                     <>
