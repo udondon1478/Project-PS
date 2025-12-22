@@ -59,7 +59,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
     try {
       const res = await fetch(`/api/tags/${id}/details`);
       if (!res.ok) {
-        let errorMessage = 'Failed to fetch tag details';
+        let errorMessage = 'タグ詳細の取得に失敗しました';
         try {
           const body = await res.json();
           if (body && typeof body === 'object') {
@@ -74,7 +74,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
       setDetails(data);
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? err.message : 'Failed to load tag details');
+      setError(err instanceof Error ? err.message : 'タグ詳細の取得に失敗しました');
     } finally {
       setLoading(false);
     }
@@ -100,7 +100,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
       <DialogContent className="max-w-3xl h-[90vh] flex flex-col">
         <DialogHeader>
           <div className="flex justify-between items-start pr-8">
-            <DialogTitle>Tag Details</DialogTitle>
+            <DialogTitle>タグ詳細</DialogTitle>
             {details && session?.user && (
               // Note: Tags are global entities and do not have an owner, so we don't check for ownership here.
               // Users can report any tag unless they are suspended or have already reported it.
@@ -128,7 +128,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
           </div>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto pr-4">
-          {loading && <p>Loading...</p>}
+          {loading && <p>読み込み中...</p>}
           {error && <p className="text-red-500">{error}</p>}
           {details && (
             <div className="space-y-6">
@@ -136,12 +136,12 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
 
               {/* Description Section */}
               <section>
-                <h3 className="text-lg font-semibold border-b mb-2">Description</h3>
-                <p className="text-base whitespace-pre-wrap">{details.description || 'No description available.'}</p>
+                <h3 className="text-lg font-semibold border-b mb-2">説明</h3>
+                <p className="text-base whitespace-pre-wrap">{details.description || '説明文はありません。'}</p>
                 <div className="flex gap-2 mt-2">
-                  <Button size="sm" onClick={() => setIsEditorOpen(true)}>Edit Description</Button>
+                  <Button size="sm" onClick={() => setIsEditorOpen(true)}>説明を編集</Button>
                   <Button size="sm" variant="outline" onClick={() => setShowHistory(!showHistory)}>
-                    {showHistory ? 'Hide' : 'View'} History
+                    {showHistory ? '履歴を隠す' : '履歴を表示'}
                   </Button>
                 </div>
                 {showHistory && <div className="mt-4"><TagDescriptionHistory history={details.history} /></div>}
@@ -150,10 +150,10 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
               {/* Tag Hierarchy Section */}
               {(details.parentTags.length > 0 || details.childTags.length > 0) && (
                 <section>
-                  <h3 className="text-lg font-semibold border-b mb-2">Hierarchy</h3>
+                  <h3 className="text-lg font-semibold border-b mb-2">階層構造</h3>
                   {details.parentTags.length > 0 && (
                     <div>
-                      <h4 className="font-semibold">Parent Tags:</h4>
+                      <h4 className="font-semibold">親タグ:</h4>
                       <div className="flex flex-wrap gap-2 mt-1">
                         {details.parentTags.map(tag => <Link key={tag.id} href={`/search?tags=${tag.name}`} className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded-md text-sm hover:bg-gray-300">{tag.name}</Link>)}
                       </div>
@@ -161,7 +161,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
                   )}
                   {details.childTags.length > 0 && (
                     <div className="mt-2">
-                      <h4 className="font-semibold">Child Tags:</h4>
+                      <h4 className="font-semibold">子タグ:</h4>
                       <div className="flex flex-wrap gap-2 mt-1">
                         {details.childTags.map(tag => <Link key={tag.id} href={`/search?tags=${tag.name}`} className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded-md text-sm hover:bg-gray-300">{tag.name}</Link>)}
                       </div>
@@ -173,7 +173,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
               {/* Products Section */}
               {details.products.length > 0 && (
                 <section>
-                  <h3 className="text-lg font-semibold border-b mb-2">Products with this tag</h3>
+                  <h3 className="text-lg font-semibold border-b mb-2">このタグが付いた商品</h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                     {details.products.map(product => (
                       <Link href={`/products/${product.id}`} key={product.id} className="block group">
@@ -192,7 +192,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
         </div>
         <DialogFooter className="flex-shrink-0">
           <DialogClose asChild>
-            <Button type="button" variant="outline">Close</Button>
+            <Button type="button" variant="outline">閉じる</Button>
           </DialogClose>
         </DialogFooter>
         {details && (

@@ -128,7 +128,7 @@ const TagEditHistoryItem: React.FC<TagEditHistoryItemProps> = ({ history, tagMap
       <div className="flex items-center mb-2">
         <Image
           src={history.editor.image || '/deleted-user.svg'}
-          alt={history.editor.name || 'Unknown user'}
+          alt={history.editor.name || '不明なユーザー'}
           width={40}
           height={40}
           className="rounded-full mr-3"
