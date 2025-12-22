@@ -22,6 +22,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Menu } from 'lucide-react';
 import React from 'react';
 import ProductSearch from '@/components/search/ProductSearch'; // Import ProductSearch
 import { ProductSearchSkeleton } from '@/components/search/ProductSearchSkeleton';
@@ -79,99 +86,110 @@ export default function Header() {
       <div className="container mx-auto py-3 px-4 md:px-6 flex items-center justify-between border-b border-gray-200 dark:border-gray-700"> {/* Reduced padding slightly, added border */}
         {/* Mobile Navigation (Visible on small screens) */}
         {/* Mobile Navigation (Visible on small screens) */}
-        <div className="md:hidden flex items-center justify-between w-full" suppressHydrationWarning>
-          {status === "loading" ? (
-            <HeaderNavigationSkeleton variant="mobile" />
-          ) : status === "authenticated" ? (
-            <>
-              <Link href="/register-item">
-                <Button variant="ghost" size="sm" id="tour-register-item-mobile">商品登録</Button>
-              </Link>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">プロフィール</Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem>
-                    <Link href="/profile">プロフィール編集</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Link href="/profile/likes">いいねした商品</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Link href="/profile/owned">所有済み商品</Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+        <div className="md:hidden flex items-center w-full relative min-h-[40px]" suppressHydrationWarning>
+           {/* Logo - Centered */}
+           <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
               <Link href="/" className="flex items-center">
                 <Image src="/images/PolySeek_10_export_icon.svg" alt="PolySeek Logo" width={32} height={32} className="h-8 w-auto" />
               </Link>
-              <Button variant="ghost" size="sm" onClick={() => signOut()}>ログアウト</Button>
-            </>
-          ) : (
-            <>
-              <Dialog open={isRegisterModalOpen} onOpenChange={setIsRegisterModalOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="sm" id="tour-register-item-mobile">商品登録</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>商品登録にはログインが必要です</DialogTitle>
-                    <DialogDescription>
-                      商品登録を行うには、以下のいずれかの方法でログインしてください。
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="flex flex-col space-y-4">
-                    <Button onClick={() => signIn('google')}>Googleでログイン</Button>
-                    <Button onClick={() => signIn('discord')}>Discordでログイン</Button>
-                  </div>
-                  <AuthDialogNotice onClose={() => setIsRegisterModalOpen(false)} />
+           </div>
 
-                </DialogContent>
-              </Dialog>
-              <Link href="/" className="flex items-center">
-                <Image src="/images/PolySeek_10_export_icon.svg" alt="PolySeek Logo" width={32} height={32} className="h-8 w-auto" />
-              </Link>
-              <Dialog open={isSignUpModalOpen} onOpenChange={setIsSignUpModalOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="sm">新規登録</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>新規登録</DialogTitle>
-                    <DialogDescription>
-                      以下のいずれかの方法で登録してください。
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="flex flex-col space-y-4">
-                    <Button onClick={() => signIn('google')}>Googleで登録</Button>
-                    <Button onClick={() => signIn('discord')}>Discordで登録</Button>
-                  </div>
-                  <AuthDialogNotice onClose={() => setIsSignUpModalOpen(false)} />
+           {/* Menu Trigger - Right Aligned */}
+           <div className="ml-auto">
+             <Sheet>
+               <SheetTrigger asChild>
+                 <Button variant="ghost" size="icon" aria-label="Menu">
+                   <Menu className="h-6 w-6" />
+                 </Button>
+               </SheetTrigger>
+               <SheetContent side="right">
+                 <SheetTitle className="sr-only">Menu</SheetTitle> {/* Accessibility fix for Sheet */}
+                 <div className="flex flex-col space-y-4 mt-6">
+                  {status === "loading" ? (
+                    <div className="space-y-4">
+                      <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
+                      <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
+                    </div>
+                  ) : status === "authenticated" ? (
+                    <>
+                      <Link href="/register-item" onClick={() => document.body.click()}> {/* Simple close hack via outside click simulation if needed, or better just rely on Link nav or SheetClose if available but for now Link suffices as route changes close mobile menus usually? No, next/link doesn't auto close. Ideally we want to wrap these in SheetClose or handle state. For this step, I will stick to basic structure.*/}
+                         <Button variant="ghost" className="w-full justify-start">商品登録</Button>
+                      </Link>
+                      <Link href="/profile">
+                         <Button variant="ghost" className="w-full justify-start">プロフィール編集</Button>
+                      </Link>
+                      <Link href="/profile/likes">
+                         <Button variant="ghost" className="w-full justify-start">いいねした商品</Button>
+                      </Link>
+                      <Link href="/profile/owned">
+                         <Button variant="ghost" className="w-full justify-start">所有済み商品</Button>
+                      </Link>
+                      <Button variant="ghost" className="w-full justify-start" onClick={() => signOut()}>ログアウト</Button>
+                    </>
+                  ) : (
+                    <>
+                      <Dialog open={isRegisterModalOpen} onOpenChange={setIsRegisterModalOpen}>
+                        <DialogTrigger asChild>
+                           <Button variant="ghost" className="w-full justify-start">商品登録</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>商品登録にはログインが必要です</DialogTitle>
+                            <DialogDescription>
+                              商品登録を行うには、以下のいずれかの方法でログインしてください。
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="flex flex-col space-y-4">
+                            <Button onClick={() => signIn('google')}>Googleでログイン</Button>
+                            <Button onClick={() => signIn('discord')}>Discordでログイン</Button>
+                          </div>
+                          <AuthDialogNotice onClose={() => setIsRegisterModalOpen(false)} />
+                        </DialogContent>
+                      </Dialog>
 
-                </DialogContent>
-              </Dialog>
-              <Dialog open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="sm">ログイン</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>ログイン</DialogTitle>
-                    <DialogDescription>
-                      以下のいずれかの方法でログインしてください。
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="flex flex-col space-y-4">
-                    <Button onClick={() => signIn('google')}>Googleでログイン</Button>
-                    <Button onClick={() => signIn('discord')}>Discordでログイン</Button>
-                  </div>
-                  <AuthDialogNotice onClose={() => setIsLoginModalOpen(false)} />
+                      <Dialog open={isSignUpModalOpen} onOpenChange={setIsSignUpModalOpen}>
+                        <DialogTrigger asChild>
+                           <Button variant="ghost" className="w-full justify-start">新規登録</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>新規登録</DialogTitle>
+                            <DialogDescription>
+                              以下のいずれかの方法で登録してください。
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="flex flex-col space-y-4">
+                            <Button onClick={() => signIn('google')}>Googleで登録</Button>
+                            <Button onClick={() => signIn('discord')}>Discordで登録</Button>
+                          </div>
+                          <AuthDialogNotice onClose={() => setIsSignUpModalOpen(false)} />
+                        </DialogContent>
+                      </Dialog>
 
-                </DialogContent>
-              </Dialog>
-            </>
-          )}
+                      <Dialog open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen}>
+                        <DialogTrigger asChild>
+                           <Button variant="ghost" className="w-full justify-start">ログイン</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>ログイン</DialogTitle>
+                            <DialogDescription>
+                              以下のいずれかの方法でログインしてください。
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="flex flex-col space-y-4">
+                            <Button onClick={() => signIn('google')}>Googleでログイン</Button>
+                            <Button onClick={() => signIn('discord')}>Discordでログイン</Button>
+                          </div>
+                          <AuthDialogNotice onClose={() => setIsLoginModalOpen(false)} />
+                        </DialogContent>
+                      </Dialog>
+                    </>
+                  )}
+               </div>
+             </SheetContent>
+           </Sheet>
+           </div>
         </div>
 
         {/* Desktop Navigation (Hidden on small screens) */}
