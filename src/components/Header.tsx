@@ -79,7 +79,16 @@ export default function Header() {
         {/* Mobile Navigation (Visible on small screens) */}
         {/* Mobile Navigation (Visible on small screens) */}
         <div className="md:hidden flex items-center justify-between w-full" suppressHydrationWarning>
-          {status === "authenticated" ? (
+          {status === "loading" ? (
+            <>
+              {/* Loading placeholder */}
+              <div className="h-8 w-20 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
+              <Link href="/" className="flex items-center">
+                <Image src="/images/PolySeek_10_export_icon.svg" alt="PolySeek Logo" width={32} height={32} className="h-8 w-auto" />
+              </Link>
+              <div className="h-8 w-20 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
+            </>
+          ) : status === "authenticated" ? (
             <>
               <Link href="/register-item">
                 <Button variant="ghost" size="sm" id="tour-register-item-mobile">商品登録</Button>
@@ -177,8 +186,14 @@ export default function Header() {
           <Image src="/images/PolySeek_logo_type.svg" alt="PolySeek" width={100} height={24} className="h-6 w-auto" />
         </Link>
         <nav className="hidden md:flex items-center space-x-2" suppressHydrationWarning>
-{/* loading indicator removed */}
-          {status === "authenticated" ? (
+          {status === "loading" ? (
+            <React.Fragment>
+              {/* Loading placeholder */}
+              <div className="h-8 w-20 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
+              <div className="h-8 w-24 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
+              <div className="h-8 w-20 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
+            </React.Fragment>
+          ) : status === "authenticated" ? (
             <React.Fragment>
               <Link href="/register-item">
                 <Button variant="ghost" size="sm" id="tour-register-item-desktop">商品登録</Button>
