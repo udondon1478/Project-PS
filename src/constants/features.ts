@@ -1,6 +1,13 @@
-import { Search, Tags, Link as LinkIcon, User } from "lucide-react";
+import { Search, Tags, Link as LinkIcon, User, type LucideIcon } from "lucide-react";
 
-export const features = [
+export interface Feature {
+  id: string;
+  icon: LucideIcon;
+  title: string;
+  description: string;
+}
+
+export const features: Feature[] = [
   {
     id: "tag-search",
     icon: Search,
