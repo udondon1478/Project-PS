@@ -13,7 +13,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -44,9 +43,8 @@ export default function Header() {
 
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [prevScrollPos, setPrevScrollPos] = useState(0);
-  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
-  const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  type DialogType = 'register' | 'signup' | 'login' | null;
+  const [activeDialog, setActiveDialog] = useState<DialogType>(null);
   const headerRef = useRef<HTMLElement>(null);
 
   const handleScroll = useCallback(() => {
@@ -139,62 +137,9 @@ export default function Header() {
                     </>
                   ) : (
                     <>
-                      <Dialog open={isRegisterModalOpen} onOpenChange={setIsRegisterModalOpen}>
-                        <DialogTrigger asChild>
-                           <Button variant="ghost" className="w-full justify-start">商品登録</Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>商品登録にはログインが必要です</DialogTitle>
-                            <DialogDescription>
-                              商品登録を行うには、以下のいずれかの方法でログインしてください。
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="flex flex-col space-y-4">
-                            <Button onClick={() => signIn('google')}>Googleでログイン</Button>
-                            <Button onClick={() => signIn('discord')}>Discordでログイン</Button>
-                          </div>
-                          <AuthDialogNotice onClose={() => setIsRegisterModalOpen(false)} />
-                        </DialogContent>
-                      </Dialog>
-
-                      <Dialog open={isSignUpModalOpen} onOpenChange={setIsSignUpModalOpen}>
-                        <DialogTrigger asChild>
-                           <Button variant="ghost" className="w-full justify-start">新規登録</Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>新規登録</DialogTitle>
-                            <DialogDescription>
-                              以下のいずれかの方法で登録してください。
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="flex flex-col space-y-4">
-                            <Button onClick={() => signIn('google')}>Googleで登録</Button>
-                            <Button onClick={() => signIn('discord')}>Discordで登録</Button>
-                          </div>
-                          <AuthDialogNotice onClose={() => setIsSignUpModalOpen(false)} />
-                        </DialogContent>
-                      </Dialog>
-
-                      <Dialog open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen}>
-                        <DialogTrigger asChild>
-                           <Button variant="ghost" className="w-full justify-start">ログイン</Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>ログイン</DialogTitle>
-                            <DialogDescription>
-                              以下のいずれかの方法でログインしてください。
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="flex flex-col space-y-4">
-                            <Button onClick={() => signIn('google')}>Googleでログイン</Button>
-                            <Button onClick={() => signIn('discord')}>Discordでログイン</Button>
-                          </div>
-                          <AuthDialogNotice onClose={() => setIsLoginModalOpen(false)} />
-                        </DialogContent>
-                      </Dialog>
+                       <Button variant="ghost" className="w-full justify-start" onClick={() => setActiveDialog('register')}>商品登録</Button>
+                       <Button variant="ghost" className="w-full justify-start" onClick={() => setActiveDialog('signup')}>新規登録</Button>
+                       <Button variant="ghost" className="w-full justify-start" onClick={() => setActiveDialog('login')}>ログイン</Button>
                     </>
                   )}
                </div>
@@ -238,63 +183,9 @@ export default function Header() {
             </React.Fragment>
           ) : (
             <React.Fragment>
-              <Dialog open={isRegisterModalOpen} onOpenChange={setIsRegisterModalOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="sm" id="tour-register-item-desktop">商品登録</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>商品登録にはログインが必要です</DialogTitle>
-                    <DialogDescription>
-                      商品登録を行うには、以下のいずれかの方法でログインしてください。
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="flex flex-col space-y-4">
-                    <Button onClick={() => signIn('google')}>Googleでログイン</Button>
-                    <Button onClick={() => signIn('discord')}>Discordでログイン</Button>
-                  </div>
-                  <AuthDialogNotice onClose={() => setIsRegisterModalOpen(false)} />
-
-                </DialogContent>
-              </Dialog>
-              <Dialog open={isSignUpModalOpen} onOpenChange={setIsSignUpModalOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="sm">新規登録</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>新規登録</DialogTitle>
-                    <DialogDescription>
-                      以下のいずれかの方法で登録してください。
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="flex flex-col space-y-4">
-                    <Button onClick={() => signIn('google')}>Googleで登録</Button>
-                    <Button onClick={() => signIn('discord')}>Discordで登録</Button>
-                  </div>
-                  <AuthDialogNotice onClose={() => setIsSignUpModalOpen(false)} />
-
-                </DialogContent>
-              </Dialog>
-              <Dialog open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="sm">ログイン</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>ログイン</DialogTitle>
-                    <DialogDescription>
-                      以下のいずれかの方法でログインしてください。
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="flex flex-col space-y-4">
-                    <Button onClick={() => signIn('google')}>Googleでログイン</Button>
-                    <Button onClick={() => signIn('discord')}>Discordでログイン</Button>
-                  </div>
-                  <AuthDialogNotice onClose={() => setIsLoginModalOpen(false)} />
-
-                </DialogContent>
-              </Dialog>
+              <Button variant="ghost" size="sm" id="tour-register-item-desktop" onClick={() => setActiveDialog('register')}>商品登録</Button>
+              <Button variant="ghost" size="sm" onClick={() => setActiveDialog('signup')}>新規登録</Button>
+              <Button variant="ghost" size="sm" onClick={() => setActiveDialog('login')}>ログイン</Button>
             </React.Fragment>
           )}
         </nav>
@@ -306,6 +197,55 @@ export default function Header() {
         <ProductSearch isSafeSearchEnabled={session?.user?.isSafeSearchEnabled ?? true} />
       </Suspense>
 
+    <Dialog open={!!activeDialog} onOpenChange={(open) => !open && setActiveDialog(null)}>
+        <DialogContent>
+          {activeDialog === 'register' && (
+             <>
+              <DialogHeader>
+                <DialogTitle>商品登録にはログインが必要です</DialogTitle>
+                <DialogDescription>
+                  商品登録を行うには、以下のいずれかの方法でログインしてください。
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-col space-y-4">
+                <Button onClick={() => signIn('google')}>Googleでログイン</Button>
+                <Button onClick={() => signIn('discord')}>Discordでログイン</Button>
+              </div>
+              <AuthDialogNotice onClose={() => setActiveDialog(null)} />
+            </>
+          )}
+          {activeDialog === 'signup' && (
+            <>
+              <DialogHeader>
+                <DialogTitle>新規登録</DialogTitle>
+                <DialogDescription>
+                  以下のいずれかの方法で登録してください。
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-col space-y-4">
+                <Button onClick={() => signIn('google')}>Googleで登録</Button>
+                <Button onClick={() => signIn('discord')}>Discordで登録</Button>
+              </div>
+              <AuthDialogNotice onClose={() => setActiveDialog(null)} />
+            </>
+          )}
+          {activeDialog === 'login' && (
+             <>
+              <DialogHeader>
+                <DialogTitle>ログイン</DialogTitle>
+                <DialogDescription>
+                  以下のいずれかの方法でログインしてください。
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-col space-y-4">
+                <Button onClick={() => signIn('google')}>Googleでログイン</Button>
+                <Button onClick={() => signIn('discord')}>Discordでログイン</Button>
+              </div>
+              <AuthDialogNotice onClose={() => setActiveDialog(null)} />
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }
