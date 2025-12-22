@@ -42,11 +42,7 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
     }, [session, status, pathname, router]);
 
     if (status === "loading") {
-        // 公開ページの場合はロード中でもコンテンツを表示する（スケルトン表示のため）
-        if (isPublicPage) {
-            return <>{children}</>;
-        }
-        return null; // Or a spinner for protected pages
+        return null; // Or a spinner
     }
 
     // If unauthenticated and on a protected page, don't render children

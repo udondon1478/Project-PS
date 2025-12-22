@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useRouter } from 'next/navigation';
-
+import { useTheme } from 'next-themes';
 import {
   Dialog,
   DialogContent,
@@ -31,13 +31,13 @@ import { AuthDialogNotice } from '@/components/AuthDialogNotice';
 export default function Header() {
   const { data: session, status } = useSession();
   const router = useRouter();
-
+  const { theme, systemTheme } = useTheme(); // Add useTheme hook
+  const [mounted, setMounted] = useState(false); // Add mounted state
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [prevScrollPos, setPrevScrollPos] = useState(0);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
 
   const handleScroll = useCallback(() => {
@@ -58,6 +58,7 @@ export default function Header() {
   }, [prevScrollPos]);
 
   useEffect(() => {
+    setMounted(true); // Set mounted to true after component mounts
     window.addEventListener('scroll', handleScroll);
 
     return () => {
@@ -65,9 +66,9 @@ export default function Header() {
     };
   }, [handleScroll]);
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  if (!mounted) { // Render nothing until mounted to prevent hydration mismatch
+    return null;
+  }
 
   return (
     // Apply bg-white to the outer header to ensure ProductSearch background blends correctly
@@ -83,7 +84,7 @@ export default function Header() {
         {/* Mobile Navigation (Visible on small screens) */}
         {/* Mobile Navigation (Visible on small screens) */}
         <div className="md:hidden flex items-center justify-between w-full">
-          {status === "authenticated" && isMounted ? (
+          {status === "authenticated" ? (
             <>
               <Link href="/register-item">
                 <Button variant="ghost" size="sm" id="tour-register-item-mobile">商品登録</Button>
@@ -181,8 +182,10 @@ export default function Header() {
           <Image src="/images/PolySeek_logo_type.svg" alt="PolySeek" width={100} height={24} className="h-6 w-auto" />
         </Link>
         <nav className="hidden md:flex items-center space-x-2">
-{/* loading indicator removed */}
-          {status === "authenticated" && isMounted ? (
+          {status === "loading" && (
+            <div className="h-8 w-20 animate-pulse bg-gray-200 rounded"></div>
+          )}
+          {status === "authenticated" ? (
             <React.Fragment>
               <Link href="/register-item">
                 <Button variant="ghost" size="sm" id="tour-register-item-desktop">商品登録</Button>

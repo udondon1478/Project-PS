@@ -31,6 +31,10 @@ export default function Home() {
     fetchProducts();
   }, []);
 
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   if (error) {
     return <div>Error: {error}</div>;
   }
@@ -38,12 +42,7 @@ export default function Home() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">最新の商品</h1>
-      <ProductGrid 
-        products={products} 
-        showLikeButton={true} 
-        showOwnButton={true} 
-        isLoading={loading}
-      />
+      <ProductGrid products={products} showLikeButton={true} showOwnButton={true} />
     </div>
   );
 }
