@@ -1,28 +1,5 @@
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Search, Tags, Link as LinkIcon, User } from "lucide-react";
-
-const features = [
-  {
-    icon: Search,
-    title: "タグ検索",
-    description: "コミュニティ主導のデータベースで、欲しい商品を素早く見つけられます。",
-  },
-  {
-    icon: Tags,
-    title: "価格フィルター",
-    description: "価格範囲を指定して商品を絞り込み、予算に合った商品を探せます。",
-  },
-  {
-    icon: LinkIcon,
-    title: "商品登録",
-    description: "BOOTH.pmのURLを入力するだけで、商品情報を簡単に登録できます。",
-  },
-  {
-    icon: User,
-    title: "ユーザー認証",
-    description: "ログインしてお気に入りや所持品を管理し、購入履歴を追跡できます。",
-  },
-];
+import { features } from "@/constants/features";
 
 export default function ServiceIntroSection() {
   return (
@@ -41,7 +18,7 @@ export default function ServiceIntroSection() {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {features.map((feature) => (
-          <Card key={feature.title} className="text-center">
+          <Card key={feature.id} className="text-center">
             <CardHeader className="flex flex-col items-center gap-3">
               <div className="p-3 rounded-full bg-primary/10 text-primary">
                 <feature.icon className="h-6 w-6" />
