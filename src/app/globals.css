@@ -46,6 +46,9 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  /* Header height spacing utilities */
+  --spacing-header-mobile: var(--header-height-mobile);
+  --spacing-header-desktop: var(--header-height-desktop);
 }
 
 :root {

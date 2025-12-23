@@ -5,7 +5,7 @@ export default function ServiceIntroSection() {
   return (
     <section
       aria-label="サービス紹介"
-      className="mb-12"
+      className="mt-4 md:mt-0 mb-12"
     >
       <div className="text-center mb-8">
         <h2 className="text-2xl md:text-3xl font-bold mb-4">
