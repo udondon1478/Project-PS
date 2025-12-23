@@ -67,18 +67,10 @@ test.describe('Verify Like API Header Removal', () => {
     const request = await requestPromise;
     const response = await responsePromise;
 
-    // ヘッダーの確認 (存在しない、または application/json でないこと)
-    // 注: ブラウザが自動的に何か付ける可能性はあるが、明示的な 'content-type': 'application/json' がないことを確認したい
-    // fetchでbodyがない場合、通常Content-Typeは付かない
+    // Content-Typeヘッダーが送信されていないことを確認
     const headers = request.headers();
-    console.log('Request Headers:', headers);
-    
-    // アサーション: content-typeが含まれていない、または application/json ではないことを確認
-    // Next.js (browsers) might add text/plain key if body is missing?? No, usually undefined.
-    const contentType = headers['content-type'];
-    expect(contentType).not.toBe('application/json');
+    expect(headers['content-type']).toBeUndefined();
 
-    // サーバーが201を返したことを確認
     expect(response.status()).toBe(201);
 
     // UIが更新されたことを確認
