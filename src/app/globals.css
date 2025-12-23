@@ -52,9 +52,9 @@
 }
 
 :root {
+  /* Controls header height for mobile and desktop breakpoints (rem). Use var(--header-height-mobile) for mobile and var(--header-height-desktop) for larger screens. */
   --header-height-mobile: 8rem;
   --header-height-desktop: 10rem;
-  /* Use responsive header height */
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
