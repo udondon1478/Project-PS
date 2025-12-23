@@ -7,7 +7,7 @@ const PRODUCT_ID = 'prod_verify_header_rem';
 test.describe('Verify Like API Header Removal', () => {
 
   test.beforeEach(async ({ context, page }) => {
-    // スキップ
+    // オンボーディングをスキップするために localStorage に onboarding_completed=true を設定
     await page.addInitScript(() => {
       localStorage.setItem('onboarding_completed', 'true');
     });
