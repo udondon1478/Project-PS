@@ -37,7 +37,6 @@ const ProductCard = ({ product, showLikeButton = false, showOwnButton = false }:
       const method = !originalIsLiked ? 'POST' : 'DELETE';
       const response = await fetch(`/api/products/${product.id}/like`, { 
         method,
-        headers: { 'Content-Type': 'application/json' },
       });
 
       if (response.status === 401 || response.redirected) {
@@ -70,7 +69,6 @@ const ProductCard = ({ product, showLikeButton = false, showOwnButton = false }:
       const method = !originalIsOwned ? 'POST' : 'DELETE';
       const response = await fetch(`/api/products/${product.id}/own`, { 
         method,
-        headers: { 'Content-Type': 'application/json' },
       });
 
       if (response.status === 401 || response.redirected) {
