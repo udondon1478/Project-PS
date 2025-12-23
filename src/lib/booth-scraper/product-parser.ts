@@ -110,10 +110,9 @@ export function parseProductPage(html: string, url: string): ProductPageResult |
   
   // Normalize seller URL to absolute
   if (sellerUrl && !sellerUrl.startsWith('http')) {
-      // Handle relative paths? Usually Booth calls are absolute or relative to domain
-      // If relative, assume booth.pm subdomain logic is handled or we need a base.
-      // E.g. https://booth.pm/ja/items/123 -> seller might be https://user.booth.pm/
-      // Usually it's absolute.
+      if (sellerUrl.startsWith('/')) {
+        sellerUrl = `https://booth.pm${sellerUrl}`;
+      }
   }
 
   const sellerIcon = $('.market-item-detail-shop-icon img').attr('src') || $('.nav-info-shop-icon').attr('src');

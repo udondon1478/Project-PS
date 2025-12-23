@@ -75,8 +75,32 @@ class BoothScraperOrchestrator {
     }
 
     this.shouldStop = false;
-    const runId = `run_${Date.now()}`;
-    const startTime = Date.now();
+    
+    // Check for interrupted run to resume
+    const existingRun = await prisma.scraperRun.findFirst({
+      where: {
+        status: 'RUNNING',
+        metadata: {
+          path: ['mode'],
+          equals: mode,
+        },
+      },
+      orderBy: { startTime: 'desc' },
+    });
+
+    let runId: string;
+    let startTime: number;
+    let resumed = false;
+
+    if (existingRun) {
+      runId = existingRun.runId;
+      startTime = existingRun.startTime.getTime();
+      resumed = true;
+      this.addLog(`Resuming interrupted run: ${runId}`);
+    } else {
+      runId = `run_${Date.now()}`;
+      startTime = Date.now();
+    }
 
     // Initialize Status
     this.currentStatus = {
@@ -84,13 +108,13 @@ class BoothScraperOrchestrator {
       mode,
       status: 'running',
       progress: {
-        pagesProcessed: 0,
-        productsFound: 0,
+        pagesProcessed: existingRun ? existingRun.processedPages : 0,
+        productsFound: existingRun ? existingRun.productsFound : 0,
         productsExisting: 0,
-        productsCreated: 0,
+        productsCreated: existingRun ? existingRun.productsCreated : 0,
         productsSkipped: 0,
-        productsFailed: 0,
-        lastProcessedPage: 0,
+        productsFailed: existingRun ? (existingRun.failedUrls?.length || 0) : 0,
+        lastProcessedPage: existingRun?.lastProcessedPage || 0,
       },
       timings: {
         startTime,
@@ -99,17 +123,19 @@ class BoothScraperOrchestrator {
       logs: [],
     };
 
-    // DB Record
-    await prisma.scraperRun.create({
-      data: {
-        runId,
-        status: 'running',
-        startTime: new Date(startTime),
-        metadata: { mode, options } as any,
-      },
-    });
+    if (!resumed) {
+      // Create new DB Record only if not resuming
+      await prisma.scraperRun.create({
+        data: {
+          runId,
+          status: 'RUNNING',
+          startTime: new Date(startTime),
+          metadata: { mode, options } as any,
+        },
+      });
+    }
 
-    this.runWorkflow(mode, userId, options).catch(async (err) => {
+    this.runWorkflow(mode, userId, options, resumed).catch(async (err) => {
       console.error('Orchestrator Error:', err);
       if (this.currentStatus) {
         this.currentStatus.status = 'failed';
@@ -121,7 +147,7 @@ class BoothScraperOrchestrator {
     return runId;
   }
 
-  private async runWorkflow(mode: ScraperMode, userId: string, options: ScraperOptions) {
+  private async runWorkflow(mode: ScraperMode, userId: string, options: ScraperOptions, resumed: boolean = false) {
     const isBackfill = mode === 'BACKFILL';
     
     const defaultInterval = isBackfill ? 4000 : 2500;
@@ -140,10 +166,13 @@ class BoothScraperOrchestrator {
       maxPages = options.pageLimit;
     }
 
-    if (isBackfill) {
+    if (resumed && this.currentStatus?.progress.lastProcessedPage) {
+        startPage = this.currentStatus.progress.lastProcessedPage + 1;
+        this.addLog(`Run resumed from page ${startPage} (RunID: ${this.currentStatus.runId})`);
+    } else if (isBackfill) {
       const lastBackfill = await prisma.scraperRun.findFirst({
         where: {
-          status: 'completed',
+          status: 'COMPLETED',
           metadata: {
             path: ['mode'],
             equals: 'BACKFILL',
@@ -296,7 +325,7 @@ class BoothScraperOrchestrator {
         await prisma.scraperRun.update({
         where: { runId: this.currentStatus.runId },
         data: {
-            status: this.currentStatus.status,
+            status: this.currentStatus.status === 'running' ? 'RUNNING' : this.currentStatus.status === 'completed' ? 'COMPLETED' : 'FAILED',
             endTime: new Date(),
             productsFound: this.currentStatus.progress.productsFound,
             productsCreated: this.currentStatus.progress.productsCreated,
