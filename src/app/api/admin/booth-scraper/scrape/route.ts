@@ -1,10 +1,11 @@
 import { auth } from "@/auth";
 import { orchestrator } from "@/lib/booth-scraper/orchestrator";
 import { NextResponse } from "next/server";
+import { Role } from "@prisma/client";
 
 export async function POST(req: Request) {
   const session = await auth();
-  if (!session?.user || session.user.role !== 'ADMIN') {
+  if (!session?.user || session.user.role !== Role.ADMIN) {
     return new NextResponse('Unauthorized: Admin access required', { status: 403 });
   }
 
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   const session = await auth();
-  if (!session?.user || session.user.role !== 'ADMIN') {
+  if (!session?.user || session.user.role !== Role.ADMIN) {
     return new NextResponse('Unauthorized', { status: 403 });
   }
   
