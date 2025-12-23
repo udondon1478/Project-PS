@@ -32,16 +32,18 @@ interface SortSelectorProps {
   onChange: (value: SortOption) => void;
   /** 無効状態フラグ */
   disabled?: boolean;
+  /** 追加のクラス名 */
+  className?: string;
 }
 
 /**
  * 商品検索のソートセレクターコンポーネント
  */
-export function SortSelector({ value, onChange, disabled = false }: SortSelectorProps) {
+export function SortSelector({ value, onChange, disabled = false, className }: SortSelectorProps) {
   return (
     <Select value={value} onValueChange={onChange} disabled={disabled}>
       <SelectTrigger 
-        className="w-[140px] md:w-[160px] shrink-0"
+        className={`w-[140px] md:w-[160px] shrink-0 ${className || ''}`}
         size="sm"
         aria-label="並び替え"
       >
