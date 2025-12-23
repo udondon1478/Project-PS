@@ -131,8 +131,9 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
           </div>
           
           <div>
-             <label className="block text-sm font-medium mb-1">Page Limit</label>
+             <label htmlFor="pageLimit" className="block text-sm font-medium mb-1">Page Limit</label>
              <input 
+               id="pageLimit"
                type="number" 
                value={pageLimit} 
                onChange={(e) => setPageLimit(Number(e.target.value))}
