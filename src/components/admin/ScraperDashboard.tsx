@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 // Type definitions to match Prisma/API
@@ -41,6 +41,9 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
   const [activeStatus, setActiveStatus] = useState<ScraperStatus | null>(null);
   const [loading, setLoading] = useState(false);
   
+  const activeStatusRef = useRef(activeStatus);
+  activeStatusRef.current = activeStatus;
+  
   // Config Inputs
   const [mode, setMode] = useState<'NEW' | 'BACKFILL'>('NEW');
   const [pageLimit, setPageLimit] = useState<number>(3);
@@ -56,7 +59,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
           setActiveStatus(data.status);
           if (data.status && data.status.status === 'running') {
              // Continue polling
-          } else if (activeStatus?.status === 'running' && data.status?.status !== 'running') {
+          } else if (activeStatusRef.current?.status === 'running' && data.status?.status !== 'running') {
             // Just finished
             router.refresh(); // Refresh list
           }
@@ -69,7 +72,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
     fetchStatus();
     const interval = setInterval(fetchStatus, 2000);
     return () => clearInterval(interval);
-  }, [router, activeStatus?.status]);
+  }, [router]);
 
   const handleStart = async () => {
     setLoading(true);
