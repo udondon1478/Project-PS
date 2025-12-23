@@ -44,7 +44,7 @@ export async function POST(req: Request) {
   }
 }
 
-export async function GET(req: Request) {
+export async function GET() {
   const session = await auth();
   if (!session?.user || session.user.role !== Role.ADMIN) {
     return new NextResponse('Unauthorized', { status: 403 });
