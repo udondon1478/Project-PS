@@ -25,9 +25,22 @@ export async function POST(req: Request) {
       message: `Scraper started in ${mode} mode`,
       status: orchestrator.getStatus() 
     });
-  } catch (error: any) {
-    console.error('Scraper Start Error:', error);
-    return NextResponse.json({ error: error.message || 'Failed to start scraper' }, { status: 500 }); // 500 or 400 depending on error, safe default
+  } catch (error: unknown) {
+    console.error('Scraper Start Error:', typeof error === 'object' ? JSON.stringify(error, Object.getOwnPropertyNames(error)) : String(error));
+    
+    const message = error instanceof Error ? error.message : 'Failed to start scraper';
+    
+    let status = 500;
+    if (typeof error === 'object' && error !== null) {
+      const err = error as Record<string, unknown>;
+      if (typeof err.status === 'number') {
+        status = err.status;
+      } else if (typeof err.statusCode === 'number') {
+        status = err.statusCode;
+      }
+    }
+
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
