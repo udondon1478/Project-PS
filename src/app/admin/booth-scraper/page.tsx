@@ -8,15 +8,22 @@ export default async function BoothScraperAdminPage() {
   if (!userIsAdmin) redirect("/");
 
   // Fetch recent runs
-  const recentRuns = await prisma.scraperRun.findMany({
+  const runs = await prisma.scraperRun.findMany({
     take: 10,
     orderBy: { startTime: 'desc' },
   });
 
+  // Explicitly serialize Date fields to strings for passing to Client Component
+  const recentRuns = runs.map(r => ({
+    ...r,
+    startTime: r.startTime?.toISOString(),
+    endTime: r.endTime?.toISOString()
+  }));
+
   return (
     <div className="container mx-auto p-4 pt-20">
       <h1 className="text-2xl font-bold mb-4">BOOTH Scraper Control</h1>
-      <ScraperDashboard recentRuns={JSON.parse(JSON.stringify(recentRuns))} />
+      <ScraperDashboard recentRuns={recentRuns} />
     </div>
   );
 }
