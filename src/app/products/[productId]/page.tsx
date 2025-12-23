@@ -233,11 +233,27 @@ const ProductDetailPage = () => {
     setIsProcessingLike(true);
     const originalIsLiked = isLiked;
     setIsLiked(!originalIsLiked);
+
     try {
       const response = await fetch(`/api/products/${productId}/like`, {
         method: !originalIsLiked ? 'POST' : 'DELETE',
+        
       });
-      if (!response.ok) setIsLiked(originalIsLiked);
+
+      // 401 Unauthorized or Redirect (unexpected for API) means we should revert
+      if (response.status === 401 || response.redirected) {
+        setIsLiked(originalIsLiked);
+        if (response.status === 401) {
+          alert('この操作を行うにはログインが必要です。');
+        }
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // 成功時は何もしない（楽観的更新を維持）
     } catch (error) {
       console.error("Failed to toggle like status:", error);
       setIsLiked(originalIsLiked);
@@ -255,6 +271,14 @@ const ProductDetailPage = () => {
       const response = await fetch(`/api/products/${productId}/own`, {
         method: !originalIsOwned ? 'POST' : 'DELETE',
       });
+      // 401 Unauthorized or Redirect (unexpected for API) means we should revert
+      if (response.status === 401 || response.redirected) {
+        setIsOwned(originalIsOwned);
+        if (response.status === 401) {
+          alert('この操作を行うにはログインが必要です。');
+        }
+        return;
+      }
       if (!response.ok) setIsOwned(originalIsOwned);
     } catch (error) {
       console.error("Failed to toggle owned status:", error);
@@ -327,7 +351,7 @@ const ProductDetailPage = () => {
           </main>
 
           <aside className="lg:col-span-4">
-            <div className="sticky top-32 space-y-6">
+            <div className="sticky top-header-desktop space-y-6">
               <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-lg border dark:border-slate-700">
                 <h2 className="text-xl font-semibold mb-4">アクション</h2>
                 <div className="space-y-3">

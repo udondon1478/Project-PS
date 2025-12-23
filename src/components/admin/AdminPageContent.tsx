@@ -25,7 +25,7 @@ const AdminPageContent = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 pt-40"> {/* pt-40を追加 */}
+    <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">管理者画面</h1>
 
       <Tabs defaultValue="tags" className="space-y-4">

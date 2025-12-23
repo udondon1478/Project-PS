@@ -35,10 +35,20 @@ const ProductCard = ({ product, showLikeButton = false, showOwnButton = false }:
 
     try {
       const method = !originalIsLiked ? 'POST' : 'DELETE';
-      const response = await fetch(`/api/products/${product.id}/like`, { method });
-      if (!response.ok) {
+      const response = await fetch(`/api/products/${product.id}/like`, { 
+        method,
+      });
+
+      if (response.status === 401 || response.redirected) {
         setIsLiked(originalIsLiked);
-        console.error('Failed to update like status');
+        if (response.status === 401) {
+          alert('この操作を行うにはログインが必要です。');
+        }
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
     } catch (error) {
       setIsLiked(originalIsLiked);
@@ -57,10 +67,20 @@ const ProductCard = ({ product, showLikeButton = false, showOwnButton = false }:
 
     try {
       const method = !originalIsOwned ? 'POST' : 'DELETE';
-      const response = await fetch(`/api/products/${product.id}/own`, { method });
-      if (!response.ok) {
+      const response = await fetch(`/api/products/${product.id}/own`, { 
+        method,
+      });
+
+      if (response.status === 401 || response.redirected) {
         setIsOwned(originalIsOwned);
-        console.error('Failed to update own status');
+        if (response.status === 401) {
+          alert('この操作を行うにはログインが必要です。');
+        }
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
     } catch (error) {
       setIsOwned(originalIsOwned);
