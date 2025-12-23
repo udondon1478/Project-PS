@@ -22,6 +22,8 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Slider } from '@/components/ui/slider';
 import { Filter, X } from 'lucide-react';
+import { SortSelector } from './SortSelector';
+import { type SortOption } from '@/constants/sort';
 
 interface FilterSidebarProps {
   isFilterSidebarOpen: boolean;
@@ -47,6 +49,8 @@ interface FilterSidebarProps {
   setIsOwned: (isOwned: boolean) => void;
   clearAllTagsAndFilters: () => void;
   applyFiltersAndSearch: () => void;
+  sortBy: SortOption;
+  onSortChange: (value: SortOption) => void;
 }
 
 export const FilterSidebar: React.FC<FilterSidebarProps> = ({
@@ -73,6 +77,8 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   setIsOwned,
   clearAllTagsAndFilters,
   applyFiltersAndSearch,
+  sortBy,
+  onSortChange,
 }) => {
   return (
     <Sheet open={isFilterSidebarOpen} onOpenChange={setIsFilterSidebarOpen}>
@@ -92,6 +98,14 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
           <div className="space-y-4">
             {/* Quick Filters (Inside Sheet for Mobile) */}
             <div className="md:hidden space-y-4">
+              <div>
+                <h4 className="font-medium mb-2 text-sm">並び替え</h4>
+                <SortSelector 
+                  value={sortBy} 
+                  onChange={onSortChange} 
+                  className="w-full"
+                />
+              </div>
               <div>
                 <h4 className="font-medium mb-2 text-sm">対象年齢</h4>
                 <DropdownMenu>

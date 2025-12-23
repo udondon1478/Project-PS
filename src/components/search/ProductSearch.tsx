@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Search } from 'lucide-react';
 import { useProductSearch } from '@/hooks/useProductSearch';
 import { TagSearchBar } from './TagSearchBar';
 import { QuickFilters } from './QuickFilters';
@@ -133,11 +134,24 @@ export default function ProductSearch({
           setIsOwned={setIsOwned}
           clearAllTagsAndFilters={clearAllTagsAndFilters}
           applyFiltersAndSearch={applyFiltersAndSearch}
+          sortBy={sortBy}
+          onSortChange={handleSortChange}
         />
+
+        <Button
+          variant="outline"
+          size="icon"
+          className="md:hidden h-9 w-9 flex-shrink-0"
+          onClick={handleSearch}
+          aria-label="検索"
+        >
+          <Search className="h-4 w-4" />
+        </Button>
 
         <SortSelector
           value={sortBy}
           onChange={handleSortChange}
+          className="hidden md:flex"
         />
 
         <Button onClick={handleSearch} size="sm" className="hidden md:inline-flex">

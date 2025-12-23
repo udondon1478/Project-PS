@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Input } from '@/components/ui/input';
-import { Search, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 import { useTypewriter } from '@/hooks/useTypewriter';
 
@@ -96,9 +96,8 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
   }, [activeIndex, suggestionsRef]);
 
   return (
-    <div className="relative flex-grow" ref={searchContainerRef} id="tour-search-bar">
+    <div className="relative flex-grow max-w-full overflow-x-hidden" ref={searchContainerRef} id="tour-search-bar">
       <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 p-1 flex-wrap gap-1 min-h-[40px]">
-        <Search className="h-5 w-5 text-gray-400 dark:text-gray-300 mx-1 flex-shrink-0" />
         {selectedTags.map(tag => (
           <span key={tag} className="flex items-center bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded whitespace-nowrap">
             {tag}
@@ -125,7 +124,7 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
           onCompositionStart={handleCompositionStart}
           onCompositionEnd={handleCompositionEnd}
           onFocus={() => searchQuery.length > 0 && setIsSuggestionsVisible(true)}
-          className="flex-grow border-none focus:ring-0 focus:outline-none p-1 h-auto text-sm min-w-[100px]"
+          className="flex-grow border-none focus:ring-0 focus:outline-none p-1 h-auto text-sm min-w-[80px] md:min-w-[100px]"
           role="combobox"
           aria-controls="tag-suggestions-list"
           aria-expanded={isSuggestionsVisible && tagSuggestions.length > 0}
