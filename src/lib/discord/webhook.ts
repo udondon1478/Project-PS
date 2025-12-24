@@ -1,7 +1,5 @@
 import { Product, ProductImage, Tag, ProductTag, Seller } from '@prisma/client';
 
-// const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
-
 type ProductWithDetails = Product & {
   images: ProductImage[];
   productTags: (ProductTag & { tag: Tag })[];

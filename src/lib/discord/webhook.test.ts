@@ -1,4 +1,3 @@
-
 import { sendDiscordNotification } from './webhook';
 import { describe, it, expect, beforeEach, afterAll, vi, type Mock } from 'vitest';
 
