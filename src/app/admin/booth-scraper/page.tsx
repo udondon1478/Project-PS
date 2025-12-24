@@ -16,7 +16,7 @@ export default async function BoothScraperAdminPage() {
   // Explicitly serialize Date fields to strings for passing to Client Component
   const recentRuns = runs.map(r => ({
     ...r,
-    startTime: r.startTime?.toISOString(),
+    startTime: r.startTime.toISOString(),
     endTime: r.endTime?.toISOString()
   }));
 
