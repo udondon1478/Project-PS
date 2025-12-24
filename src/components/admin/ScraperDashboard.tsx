@@ -158,6 +158,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
         </div>
 
         <button 
+          type="button"
           onClick={handleStart} 
           disabled={loading || activeStatus?.status === 'running'}
           className={`px-4 py-2 rounded text-white font-medium ${
