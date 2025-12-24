@@ -119,8 +119,9 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Mode</label>
+            <label htmlFor="mode-select" className="block text-sm font-medium mb-1">Mode</label>
             <select 
+              id="mode-select"
               value={mode} 
               onChange={(e) => setMode(e.target.value as any)}
               className="w-full p-2 border rounded dark:bg-gray-700"
