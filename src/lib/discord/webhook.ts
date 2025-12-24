@@ -24,6 +24,11 @@ export async function sendDiscordNotification(product: ProductWithDetails) {
       ? (product.description.length > descriptionLimit ? product.description.substring(0, descriptionLimit) + '...' : product.description)
       : 'No description';
 
+    let tagsValue = tags || 'None';
+    if (tagsValue.length > 1024) {
+      tagsValue = tagsValue.substring(0, 1021) + '...';
+    }
+
     const payload = {
       username: "BOOTH Scraper Bot",
       avatar_url: "https://asset.booth.pm/static-images/booth_logo_icon_red.png", // Generic BOOTH icon or app icon
@@ -46,7 +51,7 @@ export async function sendDiscordNotification(product: ProductWithDetails) {
             },
             {
               name: 'Tags',
-              value: tags || 'None',
+              value: tagsValue,
               inline: false,
             }
           ],
