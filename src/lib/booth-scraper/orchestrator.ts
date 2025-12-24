@@ -63,6 +63,14 @@ import { waitJitter } from './utils';
 // Removed local waitJitter definition
 
 
+
+const STATUS_MAP = {
+  running: 'RUNNING',
+  completed: 'COMPLETED',
+  failed: 'FAILED',
+  stopping: 'FAILED',
+} as const;
+
 class BoothScraperOrchestrator {
   private static instance: BoothScraperOrchestrator;
   private currentStatus: ScraperStatus | null = null;
@@ -380,7 +388,7 @@ class BoothScraperOrchestrator {
         await prisma.scraperRun.update({
         where: { runId: this.currentStatus.runId },
         data: {
-            status: this.currentStatus.status === 'running' ? 'RUNNING' : this.currentStatus.status === 'completed' ? 'COMPLETED' : 'FAILED',
+            status: STATUS_MAP[this.currentStatus.status] ?? 'FAILED',
             endTime: new Date(),
             productsFound: this.currentStatus.progress.productsFound,
             productsCreated: this.currentStatus.progress.productsCreated,
