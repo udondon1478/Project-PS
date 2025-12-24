@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import PQueue from 'p-queue';
 import { ListingCrawler } from './listing-crawler';
 import { checkExistingProducts } from './product-checker';
@@ -166,7 +167,7 @@ class BoothScraperOrchestrator {
           runId,
           status: 'RUNNING',
           startTime: new Date(startTime),
-          metadata: { mode, options } as any,
+          metadata: { mode, options } as unknown as Prisma.JsonObject,
         },
       });
     }
