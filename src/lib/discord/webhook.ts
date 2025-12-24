@@ -83,16 +83,24 @@ export async function sendDiscordNotification(product: ProductWithDetails) {
       ]
     };
 
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-    if (!response.ok) {
-      console.error(`Failed to send Discord notification: ${response.status} ${response.statusText}`);
+    try {
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        console.error(`Failed to send Discord notification: ${response.status} ${response.statusText}`);
+      }
+    } finally {
+      clearTimeout(timeoutId);
     }
   } catch (error) {
     console.error('Error sending Discord notification:', error);
