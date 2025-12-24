@@ -321,8 +321,8 @@ const ProductDetailPage = () => {
                       </CarouselItem>
                     ))}
                   </CarouselContent>
-                  <CarouselPrevious className="left-4" />
-                  <CarouselNext className="right-4" />
+                  <CarouselPrevious className="left-4 size-12 lg:size-8" />
+                  <CarouselNext className="right-4 size-12 lg:size-8" />
                 </Carousel>
                 <Carousel setApi={setThumbnailApi} opts={{ containScroll: 'keepSnaps', dragFree: true }} className="w-full mt-4">
                   <CarouselContent className="-ml-2">
@@ -351,7 +351,7 @@ const ProductDetailPage = () => {
           </main>
 
           <aside className="lg:col-span-4">
-            <div className="sticky top-header-desktop space-y-6">
+            <div className="lg:sticky lg:top-header-desktop space-y-6">
               <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-lg border dark:border-slate-700">
                 <h2 className="text-xl font-semibold mb-4">アクション</h2>
                 <div className="space-y-3">
@@ -414,7 +414,7 @@ const ProductDetailPage = () => {
                               タグ編集履歴を閲覧
                             </Button>
                           </DialogTrigger>
-                           <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
+                           <DialogContent className="max-w-[95vw] sm:max-w-xl lg:max-w-3xl h-[90vh] flex flex-col">
                             <DialogHeader className="flex-shrink-0"><DialogTitle>タグ編集履歴</DialogTitle></DialogHeader>
                             <div className="flex-grow min-h-0">
                               <ScrollArea className="h-full">
