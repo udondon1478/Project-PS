@@ -54,22 +54,16 @@ export class BoothHttpClient {
 
     // 2. Perform fetch with timeout and custom UA
     const controller = new AbortController();
-    // Allow user to pass their own signal, but we also want a default timeout.
-    // Combining signals is complex in native fetch without extra deps, 
-    // so we'll just prioritize our timeout if user doesn't pass one, 
-    // or rely on the user's signal if provided (though requirements say '30s timeout setting').
-    // We'll enforce the 30s timeout here.
     const timeoutId = setTimeout(() => controller.abort(), 30000);
     
-    // Handle external abort signal if provided
-    const onAbort = () => controller.abort();
+    const signals: AbortSignal[] = [controller.signal];
     if (init?.signal) {
-      if (init.signal.aborted) {
-        controller.abort();
-      } else {
-        init.signal.addEventListener('abort', onAbort);
-      }
+      signals.push(init.signal);
     }
+
+    // Use AbortSignal.any to combine signals (Node.js 20+)
+    // Using cast to avoid potential TypeScript lib issues if restricted
+    const signal = (AbortSignal as any).any(signals);
 
     try {
       const response = await fetch(url, {
@@ -78,13 +72,12 @@ export class BoothHttpClient {
           ...init?.headers,
           'User-Agent': USER_AGENT,
         },
-        signal: controller.signal,
+        signal,
       });
 
       return response;
     } finally {
       clearTimeout(timeoutId);
-      init?.signal?.removeEventListener('abort', onAbort);
     }
   }
 }
