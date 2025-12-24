@@ -19,6 +19,16 @@ export type ScraperMode = 'NEW' | 'BACKFILL';
 export interface ScraperOptions {
   pageLimit?: number;
   rateLimitOverride?: number; // interval in ms
+  /**
+   * 既存の商品チェック（checkExistingProducts）が失敗した場合の動作を指定します。
+   * 
+   * - 'continue': 空のセットで処理を続行し、すべての商品を新規として扱います。
+   *               重複登録の試行が発生する可能性がありますが、DBのユニーク制約により
+   *               実際の重複は防止されます。（デフォルト）
+   * - 'stop': バッチ処理を停止し、エラーをログに記録します。
+   *           データの整合性を優先する場合に使用してください。
+   */
+  onExistenceCheckFailure?: 'continue' | 'stop';
 }
 
 export interface ScraperStatus {
@@ -77,10 +87,14 @@ class BoothScraperOrchestrator {
     }
   }
 
+  private options: ScraperOptions = {};
+
   public async start(mode: ScraperMode, userId: string, options: ScraperOptions = {}): Promise<string> {
     if (this.currentStatus?.status === 'running') {
       throw new Error('Scraper is already running');
     }
+    
+    this.options = options;
 
     this.shouldStop = false;
     
@@ -236,9 +250,22 @@ class BoothScraperOrchestrator {
     try {
         existingSet = await checkExistingProducts(urls);
     } catch (e) {
-        console.error('Failed to check existence', e);
-        // If fail, assume none exist to be safe? Or fail?
-        // Let's assume we proceed and might get unique constraints, but `checkExistingProducts` shouldn't fail easily.
+        const errorMsg = e instanceof Error ? e.message : String(e);
+        console.error('Failed to check existence:', errorMsg);
+        
+        const failureAction = this.options.onExistenceCheckFailure ?? 'continue';
+        
+        if (failureAction === 'stop') {
+            // 整合性優先: バッチ処理を停止
+            this.addLog(`Existence check failed, stopping batch as configured: ${errorMsg}`);
+            this.currentStatus.progress.productsFailed += urls.length;
+            return; // このバッチをスキップ
+        } else {
+            // 継続モード（デフォルト）: 空のセットで続行
+            // 注意: すべての商品が新規として扱われ、DBのユニーク制約により
+            // 既存商品の重複登録試行は失敗しますが、処理は継続されます
+            this.addLog(`Existence check failed, continuing with empty set (may cause duplicate insert attempts): ${errorMsg}`);
+        }
     }
 
     // Filter out existing
