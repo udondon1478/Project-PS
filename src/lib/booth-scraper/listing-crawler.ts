@@ -3,6 +3,7 @@ import { setTimeout } from 'timers/promises';
 import { getVrChatSearchUrl } from './urls';
 import { boothHttpClient } from './http-client';
 import { parseListingPage } from './listing-parser';
+import { waitJitter } from './utils';
 
 export interface CrawlerOptions {
   maxPages?: number;
@@ -21,29 +22,15 @@ export class ListingCrawler {
     });
   }
 
-  /**
-   * Adds random jitter to the request timing.
-   * Target: ±500ms variability using simple sleep.
-   * Since p-queue enforces minimum 2500ms spacing between starts,
-   * adding a random 0-1000ms delay here simply pushes the execution time back,
-   * effectively varying the interval between 2500ms and 3500ms+ (depending on execution time).
-   * 
-   * If strictly ±500ms centered on 2500ms is needed, we'd need reduced p-queue interval.
-   * Assuming the requirement means "add random noise to the timing".
-   */
-  private async waitJitter() {
-    const jitter = Math.floor(Math.random() * 1000); // 0 to 1000ms
-    if (jitter > 0) {
-      await setTimeout(jitter);
-    }
-  }
+
 
   private async fetchPageWithRetry(page: number, attempt = 1): Promise<{ productUrls: string[], hasNextPage: boolean }> {
     const url = getVrChatSearchUrl(page);
 
     try {
       // Jitter before fetch
-      await this.waitJitter();
+      // Jitter before fetch
+      await waitJitter();
       
       console.log(`[Crawler] Fetching page ${page} (Attempt ${attempt})...`);
       const res = await boothHttpClient.fetch(url);

@@ -34,10 +34,10 @@ export interface ScraperStatus {
   logs: string[];
 }
 
-const waitJitter = async () => {
-  const ms = Math.floor(Math.random() * 1000);
-  if (ms > 0) await new Promise(r => setTimeout(r, ms));
-};
+import { waitJitter } from './utils';
+
+// Removed local waitJitter definition
+
 
 class BoothScraperOrchestrator {
   private static instance: BoothScraperOrchestrator;
