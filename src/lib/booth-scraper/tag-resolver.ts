@@ -1,10 +1,16 @@
+import { prisma as globalPrisma } from '../prisma';
+import type { Prisma, PrismaClient } from '@prisma/client';
 
-import { prisma as db } from '../prisma';
-import type { Tag, TagCategory } from '@prisma/client';
+type TxClient = Prisma.TransactionClient | PrismaClient;
 
 export class TagResolver {
   private ageRatingCategoryName = 'age_rating';
   private defaultLanguage = 'ja';
+  private db: TxClient;
+
+  constructor(db: TxClient = globalPrisma) {
+    this.db = db;
+  }
 
   /**
    * タグ名の配列を受け取り、Tag IDの配列を返す。
@@ -15,7 +21,7 @@ export class TagResolver {
     if (normalizedNames.length === 0) return [];
 
     // 1. Find existing tags
-    const existingTags = await db.tag.findMany({
+    const existingTags = await this.db.tag.findMany({
       where: {
         name: { in: normalizedNames },
       },
@@ -30,12 +36,10 @@ export class TagResolver {
     
     const newTagIds: string[] = [];
     
-    // Create tags sequentially or in transaction locally?
-    // Using simple loop for now as bulk create with potentially failing constraints (if race condition) is tricky.
-    // Ideally we assume single scraper instance or handle errors.
+    // Create tags sequentially
     for (const name of missingTagNames) {
       try {
-        const newTag = await db.tag.create({
+        const newTag = await this.db.tag.create({
           data: {
             name,
             language: this.defaultLanguage,
@@ -46,7 +50,7 @@ export class TagResolver {
       } catch (error) {
         // Tag might have been created by another process in the meantime
         // Try fetching it again
-        const existing = await db.tag.findUnique({
+        const existing = await this.db.tag.findUnique({
           where: { name },
           select: { id: true },
         });
@@ -71,14 +75,14 @@ export class TagResolver {
     const normalizedRating = this.normalizeTagName(rating);
 
     // Ensure category exists
-    let category = await db.tagCategory.findUnique({
+    let category = await this.db.tagCategory.findUnique({
       where: { name: this.ageRatingCategoryName },
     });
 
     if (!category) {
       // Create 'age_rating' category if not exists
       try {
-          category = await db.tagCategory.create({
+          category = await this.db.tagCategory.create({
               data: {
                   name: this.ageRatingCategoryName,
                   color: '#FF0000', // Default red for age ratings
@@ -86,7 +90,7 @@ export class TagResolver {
           });
       } catch (e) {
           // Race condition check
-          category = await db.tagCategory.findUnique({
+          category = await this.db.tagCategory.findUnique({
              where: { name: this.ageRatingCategoryName },
           });
       }
@@ -95,13 +99,13 @@ export class TagResolver {
     if (!category) throw new Error('Failed to ensure age_rating category');
 
     // Find or Create Tag linked to this category
-    let tag = await db.tag.findUnique({
+    let tag = await this.db.tag.findUnique({
       where: { name: normalizedRating },
     });
 
     if (!tag) {
        try {
-        tag = await db.tag.create({
+        tag = await this.db.tag.create({
             data: {
                 name: normalizedRating,
                 language: 'ja', // Age ratings are now standardized Japanese tags like 'R-18'
@@ -109,13 +113,13 @@ export class TagResolver {
             }
         });
        } catch(e) {
-           tag = await db.tag.findUnique({ where: { name: normalizedRating }});
+           tag = await this.db.tag.findUnique({ where: { name: normalizedRating }});
        }
     } else {
         // If tag exists but not linked to category, link it?
         // Use requirement implies we should ensure link.
         if (tag.tagCategoryId !== category.id) {
-            await db.tag.update({
+            await this.db.tag.update({
                 where: { id: tag.id },
                 data: { tagCategoryId: category.id }
             });

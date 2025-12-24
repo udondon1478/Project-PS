@@ -49,120 +49,126 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
     publishedAt
   } = data;
 
-  const tagResolver = new TagResolver();
-
-  // 1. Resolve Tags
-  const tagIds = await tagResolver.resolveTags(tags);
-
-  // 2. Resolve Age Rating
-  if (ageRating) {
-    const ageTagId = await tagResolver.resolveAgeRating(ageRating);
-    if (ageTagId) {
-       // Avoid duplicates if 'adult' was also in tags list (unlikely but possible)
-       if (!tagIds.includes(ageTagId)) {
-         tagIds.push(ageTagId);
-       }
-    }
-  }
-
-  // 3. Resolve 'other' category for generic tags if implementation details require it
-  // (Note: TagResolver in phase 1 implementation handles creation but didn't strictly link to 'other' category 
-  // unless modified. Keeping consistenty with provided TagResolver.)
-
-  // 4. Seller Upsert
-  let seller = null;
-  if (sellerUrl) {
-    seller = await prisma.seller.upsert({
-      where: { sellerUrl },
-      update: {
-        name: sellerName,
-        iconUrl: sellerIconUrl || undefined, // Only update if provided
-      },
-      create: {
-        name: sellerName,
-        sellerUrl,
-        iconUrl: sellerIconUrl,
-      },
-    });
-  }
-
-  // 5. Product Creation
-  // Defaulting publishedAt to now if not provided
-  const publishedDate = publishedAt ? new Date(publishedAt) : new Date();
-  
-  // Default variation (assuming single price for now)
-  const variations = [{
-    name: 'Standard',
-    price: price,
-    type: 'download', // Default assumption
-    order: 0,
-    isMain: true
-  }];
-
+  /* 
+    Transaction Wrapper: 
+    Entire process is wrapped in a transaction to ensure atomicity.
+    Tag creation, Seller upserts, and Product creation must all succeed or fail together.
+  */
   try {
-    const newProduct = await prisma.product.create({
-      data: {
-        boothJpUrl,
-        boothEnUrl: boothEnUrl || boothJpUrl, // Fallback
-        title,
-        description,
-        lowPrice: price,
-        highPrice: price,
-        publishedAt: publishedDate,
-        user: {
-          connect: { id: systemUserId }
-        },
-        ...(seller && {
-          seller: {
-            connect: { id: seller.id }
+    const newProduct = await prisma.$transaction(async (tx) => {
+      // Initialize TagResolver with transaction client
+      const tagResolver = new TagResolver(tx);
+
+      // 1. Resolve Tags
+      const tagIds = await tagResolver.resolveTags(tags);
+
+      // 2. Resolve Age Rating
+      if (ageRating) {
+        const ageTagId = await tagResolver.resolveAgeRating(ageRating);
+        if (ageTagId) {
+          // Avoid duplicates if 'adult' was also in tags list (unlikely but possible)
+          if (!tagIds.includes(ageTagId)) {
+            tagIds.push(ageTagId);
           }
-        }),
-        images: {
-          create: images.map((url, index) => ({
-            imageUrl: url,
-            isMain: index === 0,
-            order: index,
-          })),
-        },
-        productTags: {
-          create: tagIds.map(tagId => ({
-            tagId,
-            userId: systemUserId,
-          })),
-        },
-        variations: {
-          create: variations.map(v => ({
-            name: v.name,
-            price: v.price,
-            type: v.type,
-            order: v.order,
-            isMain: v.isMain,
-          })),
-        },
-        tagEditHistory: {
+        }
+      }
+
+      // 3. Resolve 'other' category (Skipped as per original logic)
+
+      // 4. Seller Upsert
+      let seller = null;
+      if (sellerUrl) {
+        seller = await tx.seller.upsert({
+          where: { sellerUrl },
+          update: {
+            name: sellerName,
+            iconUrl: sellerIconUrl || undefined, // Only update if provided
+          },
           create: {
-            editorId: systemUserId,
-            version: 1,
-            addedTags: tagIds,
-            removedTags: [],
-            keptTags: [],
-            comment: 'Scraper Auto-Import',
+            name: sellerName,
+            sellerUrl,
+            iconUrl: sellerIconUrl,
+          },
+        });
+      }
+
+      // 5. Product Creation
+      // Defaulting publishedAt to now if not provided
+      const publishedDate = publishedAt ? new Date(publishedAt) : new Date();
+      
+      // Default variation (assuming single price for now)
+      const variations = [{
+        name: 'Standard',
+        price: price,
+        type: 'download', // Default assumption
+        order: 0,
+        isMain: true
+      }];
+
+      return tx.product.create({
+        data: {
+          boothJpUrl,
+          boothEnUrl: boothEnUrl || boothJpUrl, // Fallback
+          title,
+          description,
+          lowPrice: price,
+          highPrice: price,
+          publishedAt: publishedDate,
+          user: {
+            connect: { id: systemUserId }
+          },
+          ...(seller && {
+            seller: {
+              connect: { id: seller.id }
+            }
+          }),
+          images: {
+            create: images.map((url, index) => ({
+              imageUrl: url,
+              isMain: index === 0,
+              order: index,
+            })),
+          },
+          productTags: {
+            create: tagIds.map(tagId => ({
+              tagId,
+              userId: systemUserId,
+            })),
+          },
+          variations: {
+            create: variations.map(v => ({
+              name: v.name,
+              price: v.price,
+              type: v.type,
+              order: v.order,
+              isMain: v.isMain,
+            })),
+          },
+          tagEditHistory: {
+            create: {
+              editorId: systemUserId,
+              version: 1,
+              addedTags: tagIds,
+              removedTags: [],
+              keptTags: [],
+              comment: 'Scraper Auto-Import',
+            },
           },
         },
-      },
-      include: {
-        images: true,
-        productTags: {
-          include: {
-            tag: true,
-          }
-        },
-        variations: true,
-        seller: true,
-      }
+        include: {
+          images: true,
+          productTags: {
+            include: {
+              tag: true,
+            }
+          },
+          variations: true,
+          seller: true,
+        }
+      });
     });
 
-    // Send Discord Notification (Fire-and-forget)
+    // Send Discord Notification (Fire-and-forget) - Outside Transaction
     sendDiscordNotification(newProduct).catch(err => {
         console.error('Failed to fire Discord notification async:', err);
     });

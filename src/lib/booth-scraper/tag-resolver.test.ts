@@ -39,7 +39,7 @@ describe('TagResolver', () => {
       
       // Mock existing tag finding
       mockFindMany.mockResolvedValueOnce([
-        { id: 'id-existing', name: 'existing' }
+        { id: 'id-existing', name: 'Existing' }
       ]);
       
       // Mock creation
