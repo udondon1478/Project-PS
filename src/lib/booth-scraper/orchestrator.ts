@@ -6,6 +6,14 @@ import { boothHttpClient } from './http-client';
 import { parseProductPage } from './product-parser';
 import { createProductFromScraper, ScrapedProductData } from './product-creator';
 
+
+/**
+ * Maximum number of products to process in a single backfill run.
+ * This limit prevents overwhelming the system during extensive backfill operations.
+ * Defaults to 9 products per run to keep batches small and manageable.
+ */
+const BACKFILL_PRODUCT_LIMIT = Number(process.env.BACKFILL_PRODUCT_LIMIT) || 9;
+
 export type ScraperMode = 'NEW' | 'BACKFILL';
 
 export interface ScraperOptions {
@@ -251,8 +259,8 @@ class BoothScraperOrchestrator {
          const processedCount = this.currentStatus.progress.productsCreated + this.currentStatus.progress.productsSkipped + this.currentStatus.progress.productsFailed;
          // Why 9? 9 items is very specific. 
          // "process 9 products only" (9商品のみ処理).
-         if (processedCount >= 9) {
-           this.addLog(`Backfill limit of 9 products reached. Stopping.`);
+         if (processedCount >= BACKFILL_PRODUCT_LIMIT) {
+           this.addLog(`Backfill limit of ${BACKFILL_PRODUCT_LIMIT} products reached. Stopping.`);
            this.shouldStop = true;
            return;
          }
