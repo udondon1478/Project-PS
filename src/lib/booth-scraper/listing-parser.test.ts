@@ -65,5 +65,9 @@ describe('parseListingPage', () => {
     
     expect(result.productUrls).toContain(`${BOOTH_BASE_URL}/items/111`);
     expect(result.productUrls).not.toContain(`${BOOTH_BASE_URL}/search/clothing`);
+    
+    // Explicitly verify external URL is excluded (this currently fails or passes depending on implementation, 
+    // but we want to ENFORCE it)
+    expect(result.productUrls).not.toContain('https://example.com/items/outside');
   });
 });

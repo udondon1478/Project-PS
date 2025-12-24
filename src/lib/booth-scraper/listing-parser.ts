@@ -26,6 +26,11 @@ export function parseListingPage(html: string): ListingPageResult {
       if (href.startsWith('/')) {
         href = `${BOOTH_BASE_URL}${href}`;
       }
+
+      // Strict validation: Ensure URL belongs to BOOTH
+      if (!href.startsWith(BOOTH_BASE_URL)) {
+        return;
+      }
       
       // Only include item URLs (exclude shops or other links if any)
       if (href.includes('/items/')) {
