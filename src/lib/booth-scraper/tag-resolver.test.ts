@@ -37,8 +37,9 @@ describe('TagResolver', () => {
       const inputTags = ['Existing', 'NewTag'];
       
       // Mock existing tag finding
+      // Note: normalizeTagName now lowercases input, so we search for 'existing'
       mockFindMany.mockResolvedValueOnce([
-        { id: 'id-existing', name: 'Existing' }
+        { id: 'id-existing', name: 'existing' }
       ]);
       
       // Mock creation
@@ -50,13 +51,13 @@ describe('TagResolver', () => {
 
       // Expect finding existing tags with normalized names
       expect(mockFindMany).toHaveBeenCalledWith({
-        where: { name: { in: ['Existing', 'NewTag'] } },
+        where: { name: { in: ['existing', 'newtag'] } },
         select: { id: true, name: true },
       });
 
       // Expect creation of 'newtag'
       expect(mockCreate).toHaveBeenCalledWith({
-        data: { name: 'NewTag', language: 'ja' },
+        data: { name: 'newtag', language: 'ja' },
         select: { id: true },
       });
 
@@ -67,29 +68,57 @@ describe('TagResolver', () => {
 
     it('should ignore duplicate inputs (exact match)', async () => {
         mockFindMany.mockResolvedValue([]);
-        mockCreate.mockResolvedValue({ id: 'id-dup', name: 'Dup' });
+        mockCreate.mockResolvedValue({ id: 'id-dup', name: 'dup' });
 
         await resolver.resolveTags(['Dup', 'Dup']);
 
         expect(mockFindMany).toHaveBeenCalledWith({
-             where: { name: { in: ['Dup'] } }, 
+             where: { name: { in: ['dup'] } }, 
              select: { id: true, name: true },
         });
         expect(mockCreate).toHaveBeenCalledTimes(1);
     });
 
-    it('should treat different casing as different tags', async () => {
+    it('should treat different casing as same tags after normalization', async () => {
         mockFindMany.mockResolvedValue([]);
         mockCreate.mockResolvedValue({ id: 'id-new', name: 'new' });
 
-        await resolver.resolveTags(['Dup', 'dup']);
+        await resolver.resolveTags(['NEW', 'new']);
 
         expect(mockFindMany).toHaveBeenCalledWith({
-             where: { name: { in: ['Dup', 'dup'] } },
+             where: { name: { in: ['new'] } },
              select: { id: true, name: true },
         });
-        // Both created if not found (mockCreate called twice)
-        expect(mockCreate).toHaveBeenCalledTimes(2);
+        // deduplication happens after normalization, so only 1 create called
+        expect(mockCreate).toHaveBeenCalledTimes(1);
+    });
+
+    it('should normalize full-width characters and spaces', async () => {
+        mockFindMany.mockResolvedValue([]);
+        mockCreate.mockResolvedValue({ id: 'id-tag', name: 'tag name' });
+
+        await resolver.resolveTags(['Ｔａｇ　Ｎａｍｅ']); // Full-width chars and space
+
+        expect(mockFindMany).toHaveBeenCalledWith({
+             where: { name: { in: ['tag name'] } },
+             select: { id: true, name: true },
+        });
+        expect(mockCreate).toHaveBeenCalledWith({
+             data: { name: 'tag name', language: 'ja' },
+             select: { id: true },
+        });
+    });
+
+    it('should collapse multiple spaces', async () => {
+        mockFindMany.mockResolvedValue([]);
+        mockCreate.mockResolvedValue({ id: 'id-tag', name: 'tag name' });
+
+        await resolver.resolveTags(['Tag   Name']);
+
+        expect(mockFindMany).toHaveBeenCalledWith({
+             where: { name: { in: ['tag name'] } },
+             select: { id: true, name: true },
+        });
     });
 
     it('should throw error if tag creation and fetch both fail', async () => {
@@ -99,7 +128,7 @@ describe('TagResolver', () => {
         // Fallback fetch also fails (returns null)
         mockFindUnique.mockResolvedValue(null);
 
-        await expect(resolver.resolveTags(['FailTag'])).rejects.toThrow('Failed to create or find tag FailTag: Error: DB Error');
+        await expect(resolver.resolveTags(['FailTag'])).rejects.toThrow('Failed to create or find tag failtag: Error: DB Error');
     });
   });
 
@@ -115,14 +144,14 @@ describe('TagResolver', () => {
 
           // Mock tag missing then created
           mockFindUnique.mockResolvedValueOnce(null);
-          mockCreate.mockResolvedValueOnce({ id: 'tag-r18', name: 'R-18' });
+          mockCreate.mockResolvedValueOnce({ id: 'tag-r18', name: 'r-18' });
 
           const result = await resolver.resolveAgeRating('R-18');
 
           expect(mockTagCategoryCreate).toHaveBeenCalled();
           expect(mockCreate).toHaveBeenCalledWith({
               data: {
-                  name: 'R-18',
+                  name: 'r-18',
                   language: 'ja',
                   tagCategoryId: 'cat-age'
               }

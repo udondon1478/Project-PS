@@ -138,6 +138,10 @@ export class TagResolver {
   }
 
   private normalizeTagName(name: string): string {
-    return name.trim();
+    return name
+      .normalize('NFKC')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 }
