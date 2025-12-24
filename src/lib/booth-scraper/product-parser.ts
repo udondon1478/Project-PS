@@ -36,8 +36,6 @@ export interface ProductPageResult {
   schemaOrgData?: any;
 }
 
-// ... normalizeAgeRating function remains ...
-
 export function parseProductPage(html: string, url: string): ProductPageResult | null { // Added url param for fallback
   const $ = cheerio.load(html);
   
