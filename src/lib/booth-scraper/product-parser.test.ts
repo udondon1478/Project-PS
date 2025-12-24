@@ -30,13 +30,13 @@ describe('parseProductPage', () => {
     `;
 
     const result = parseProductPage(html, 'http://mock');
-    if (!result) throw new Error('Result is null');
-    expect(result.tags).toEqual(['VRChat', 'Avatar']);
-    expect(result.ageRating).toBe('全年齢');
-    expect(result.price).toBe(1500);
-    expect(result.images).toContain('https://example.com/image1.jpg');
-    expect(result.schemaOrgData).toBeDefined();
-    expect(result.schemaOrgData.name).toBe('Test Product');
+    expect(result).not.toBeNull();
+    expect(result!.tags).toEqual(['VRChat', 'Avatar']);
+    expect(result!.ageRating).toBe('全年齢');
+    expect(result!.price).toBe(1500);
+    expect(result!.images).toContain('https://example.com/image1.jpg');
+    expect(result!.schemaOrgData).toBeDefined();
+    expect(result!.schemaOrgData.name).toBe('Test Product');
   });
 
   it('should detect R-18 rating from badge if not in description', () => {
@@ -53,9 +53,9 @@ describe('parseProductPage', () => {
       </html>
     `;
     const result = parseProductPage(html, 'http://mock');
-    if (!result) throw new Error('Result is null');
-    expect(result.ageRating).toBe('R-18');
-    expect(result.price).toBe(100);
+    expect(result).not.toBeNull();
+    expect(result!.ageRating).toBe('R-18');
+    expect(result!.price).toBe(100);
   });
 
   it('should extract age rating from description text with variations', () => {
@@ -66,8 +66,8 @@ describe('parseProductPage', () => {
       </main>
     `;
     const result = parseProductPage(html, 'http://mock');
-    if (!result) throw new Error('Result is null');
-    expect(result.ageRating).toBe('R-18');
+    expect(result).not.toBeNull();
+    expect(result!.ageRating).toBe('R-18');
   });
 
   it('should ignore duplicate tags', () => {
@@ -77,8 +77,8 @@ describe('parseProductPage', () => {
       <a href="/tags/test">Test</a>
     `;
     const result = parseProductPage(html, 'http://mock');
-    if (!result) throw new Error('Result is null');
-    expect(result.tags).toEqual(['Test']);
+    expect(result).not.toBeNull();
+    expect(result!.tags).toEqual(['Test']);
   });
 
   it('should detect R-18 from tags', () => {
