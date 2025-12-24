@@ -191,10 +191,8 @@ class BoothScraperOrchestrator {
     }
 
     const crawler = new ListingCrawler({
-      concurrency: 1, 
-    });
-     // @ts-ignore - Injecting queue
-    crawler['queue'] = this.queue; 
+      queue: this.queue!,
+    }); 
 
     this.addLog(`Starting crawl: Mode=${mode}, StartPage=${startPage}, MaxPages=${maxPages}, Interval=${interval}ms`);
 

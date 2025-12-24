@@ -14,12 +14,18 @@ export interface CrawlerOptions {
 export class ListingCrawler {
   private queue: PQueue;
 
-  constructor(queueOptions?: PQueueOptions<any, any>) {
-    this.queue = new PQueue(queueOptions || {
-      concurrency: 1,
-      interval: 2500,
-      intervalCap: 1,
-    });
+  constructor(options?: { queue?: PQueue; queueOptions?: PQueueOptions<any, any> }) {
+    if (options?.queue) {
+      this.queue = options.queue;
+    } else {
+      this.queue = new PQueue(
+        options?.queueOptions || {
+          concurrency: 1,
+          interval: 2500,
+          intervalCap: 1,
+        }
+      );
+    }
   }
 
 
