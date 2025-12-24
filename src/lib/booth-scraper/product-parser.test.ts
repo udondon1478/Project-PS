@@ -78,7 +78,47 @@ describe('parseProductPage', () => {
     `;
     const result = parseProductPage(html, 'http://mock');
     if (!result) throw new Error('Result is null');
-    expect(result.tags).toHaveLength(1);
     expect(result.tags).toEqual(['Test']);
+  });
+
+  it('should detect R-18 from tags', () => {
+    const html = `
+      <html>
+        <body>
+          <h1 class="market-item-detail-item-title">Tagged R18 Product</h1>
+          <a href="/items/123/tags/R-18">R-18</a>
+          <div class="market-item-detail-price">100円</div>
+        </body>
+      </html>
+    `;
+    const result = parseProductPage(html, 'http://mock');
+    expect(result?.ageRating).toBe('R-18');
+  });
+
+  it('should detect R-18 from new badge structure (div)', () => {
+    const html = `
+      <div class="flex gap-4 items-center">
+        <div class="bg-primary700 font-bold text-white text-12 px-8 rounded-4">R-18</div>
+      </div>
+      <h1 class="market-item-detail-item-title">Badge R18 Product</h1>
+    `;
+    const result = parseProductPage(html, 'http://mock');
+    expect(result?.ageRating).toBe('R-18');
+  });
+
+  it('should NOT detect R-18 from description text alone if no badge/tags present (False Positive Check)', () => {
+    const html = `
+      <html>
+        <body>
+          <h1 class="market-item-detail-item-title">Safe Product</h1>
+          <div class="u-text-leading-loose">
+            This item is compatible with R-18 avatars.
+            R-18対応アバター向けです。
+          </div>
+        </body>
+      </html>
+    `;
+    const result = parseProductPage(html, 'http://mock');
+    expect(result?.ageRating).toBeNull();
   });
 });

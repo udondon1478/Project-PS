@@ -125,20 +125,35 @@ export function parseProductPage(html: string, url: string): ProductPageResult |
   // Age rating extraction
   let ageRating: string | null = null;
   
-  // 1. Try extracting from description text using Regex
+  // 0. Try extracting from description text using Regex (Specific enough to be safe)
   // Matches "対象年齢 : 全年齢" or "対象年齢： R-18" etc.
   const descriptionText = description || $('main').text();
   const ageRatingRegex = /対象年齢[:：\s]*([^\n<]+)/;
   const match = descriptionText.match(ageRatingRegex);
   
   if (match && match[1]) {
-    ageRating = normalizeAgeRating(match[1]);
+    const normalized = normalizeAgeRating(match[1]);
+    if (normalized) ageRating = normalized;
   }
 
-  // 2. Fallback: Check for specific badges or meta tags if regex fails
+  // 1. Try extracting from tags
+  // R-18 or R18 often appears in tags
+  if (tags.some(tag => ['R-18', 'R18', '18禁'].includes(tag))) {
+      ageRating = 'R-18';
+  }
+
+  // 2. Fallback: Check for specific badges
   if (!ageRating) {
     // Check for R-18 badge often present in BOOTH
-    if ($('.badge--r18').length > 0 || $('body').text().includes('R-18')) {
+    // Old/Other theme badge: .badge--r18
+    // New theme/Tailwind badge: div with text 'R-18' and specific classes
+    const r18BadgeExists = $('.badge--r18').length > 0;
+    
+    // Check for "R-18" text in a badge-like container (e.g. div.bg-primary700)
+    // We check if any div contains exactly "R-18" text
+    const textR18Exists = $('div, span').filter((_, el) => $(el).text().trim() === 'R-18').length > 0;
+
+    if (r18BadgeExists || textR18Exists) {
        ageRating = 'R-18';
     }
   }
