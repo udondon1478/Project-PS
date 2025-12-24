@@ -292,10 +292,18 @@ class BoothScraperOrchestrator {
              this.addLog(`Failed to parse ${url}`);
            }
 
-         } catch (error: any) {
-           this.currentStatus!.progress.productsFailed++;
-           this.addLog(`Error processing ${url}: ${error.message}`);
-         }
+          } catch (error: unknown) {
+            let msg: string;
+            if (error instanceof Error) {
+              msg = error.message;
+            } else if (typeof error === 'object' && error !== null && 'message' in error) {
+              msg = String((error as any).message);
+            } else {
+              msg = String(error);
+            }
+            this.currentStatus!.progress.productsFailed++;
+            this.addLog(`Error processing ${url}: ${msg}`);
+          }
        });
     }
   }
