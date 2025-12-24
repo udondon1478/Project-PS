@@ -1,5 +1,5 @@
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { checkExistingProducts } from './product-checker';
 import { createProductFromScraper } from './product-creator';
 import { prisma } from '../prisma'; // Import relative to match tag-resolver likely resolution if needed, or alias
@@ -24,7 +24,8 @@ vi.mock('../prisma', () => ({
     tagCategory: {
         findUnique: vi.fn(),
         create: vi.fn(),
-    }
+    },
+    $transaction: vi.fn((callback) => callback(prisma)),
   },
 }));
 
