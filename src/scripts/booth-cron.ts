@@ -6,32 +6,27 @@ import * as Sentry from '@sentry/nextjs';
 const SYSTEM_USER_EMAIL = 'system-scraper@polyseek.com';
 
 async function getSystemUserId(): Promise<string> {
-  let user = await prisma.user.findFirst({
-    where: { email: SYSTEM_USER_EMAIL },
-  });
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email: SYSTEM_USER_EMAIL },
+    });
 
-  if (!user) {
-    console.log(`System user not found. Creating ${SYSTEM_USER_EMAIL}...`);
-    // Create a system user if not exists
-    // Note: In production, you might want to ensure this user exists via migration or seed
-    try {
-        user = await prisma.user.create({
-        data: {
-            email: SYSTEM_USER_EMAIL,
-            name: 'System Scraper',
-            role: 'ADMIN', // Or a specific role if available
-            isSafeSearchEnabled: true,
-        },
-        });
-    } catch (e) {
-        // Handle race condition or other errors
-        console.error('Failed to create system user, trying to find existing admin...', e);
-        const admin = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
-        if (admin) return admin.id;
-        throw new Error('No system user or admin user found for scraper execution.');
+    if (!user) {
+      throw new Error(
+        `System user (${SYSTEM_USER_EMAIL}) not found. ` +
+        'Please run `npx prisma db seed` or the migration that upserts the system user.'
+      );
     }
+
+    return user.id;
+  } catch (error) {
+    console.error(
+      `[getSystemUserId] Failed to retrieve system user. ` +
+      `Run \`npx prisma db seed\` to create the system user.`,
+      error
+    );
+    throw error;
   }
-  return user.id;
 }
 
 async function start() {
