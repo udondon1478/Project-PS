@@ -16,6 +16,12 @@ interface ScraperRun {
   metadata?: any;
 }
 
+interface ScraperLog {
+  id: string;
+  timestamp: string;
+  message: string;
+}
+
 interface ScraperStatus {
   runId: string;
   mode: string;
@@ -29,7 +35,7 @@ interface ScraperStatus {
     productsFailed: number;
     lastProcessedPage: number;
   };
-  logs: string[];
+  logs: ScraperLog[];
 }
 
 interface DashboardProps {
@@ -56,6 +62,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
         const res = await fetch('/api/admin/booth-scraper/scrape');
         if (res.ok) {
           const data = await res.json();
+          // Log entries from orchestrator are now objects {id, timestamp, message}
           setActiveStatus(data.status);
           if (data.status && data.status.status === 'running') {
              // Continue polling
@@ -185,8 +192,8 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
           </div>
 
           <div className="bg-black text-xs text-green-400 p-4 rounded h-48 overflow-y-auto font-mono">
-             {activeStatus.logs.map((log, i) => (
-               <div key={i}>{log}</div>
+             {activeStatus.logs.map((log) => (
+               <div key={log.id}>{log.message}</div>
              ))}
              {activeStatus.logs.length === 0 && <div>No logs yet...</div>}
           </div>

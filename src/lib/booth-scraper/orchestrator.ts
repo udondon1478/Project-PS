@@ -31,6 +31,12 @@ export interface ScraperOptions {
   onExistenceCheckFailure?: 'continue' | 'stop';
 }
 
+export interface ScraperLog {
+  id: string;
+  timestamp: string;
+  message: string;
+}
+
 export interface ScraperStatus {
   runId: string;
   mode: ScraperMode;
@@ -49,7 +55,7 @@ export interface ScraperStatus {
     endTime?: number;
     averageDelay: number;
   };
-  logs: string[];
+  logs: ScraperLog[];
 }
 
 import { waitJitter } from './utils';
@@ -161,7 +167,11 @@ class BoothScraperOrchestrator {
       console.error('Orchestrator Error:', err);
       if (this.currentStatus) {
         this.currentStatus.status = 'failed';
-        this.currentStatus.logs.push(`Error: ${err instanceof Error ? err.message : String(err)}`);
+        this.currentStatus.logs.push({
+          id: crypto.randomUUID(),
+          timestamp: new Date().toISOString(),
+          message: `Error: ${err instanceof Error ? err.message : String(err)}`
+        });
         await this.finalizeRun();
       }
     });
@@ -337,7 +347,11 @@ class BoothScraperOrchestrator {
 
   private addLog(msg: string) {
     if (this.currentStatus) {
-      this.currentStatus.logs.push(`[${new Date().toISOString()}] ${msg}`);
+      this.currentStatus.logs.push({
+        id: crypto.randomUUID(),
+        timestamp: new Date().toISOString(),
+        message: `[${new Date().toISOString()}] ${msg}`
+      });
       if (this.currentStatus.logs.length > 100) this.currentStatus.logs.shift();
     }
     console.log(`[Orchestrator] ${msg}`);
