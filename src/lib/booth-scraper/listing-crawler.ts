@@ -35,7 +35,6 @@ export class ListingCrawler {
 
     try {
       // Jitter before fetch
-      // Jitter before fetch
       await waitJitter();
       
       console.log(`[Crawler] Fetching page ${page} (Attempt ${attempt})...`);
