@@ -1,13 +1,7 @@
 
 import * as cheerio from 'cheerio';
 
-export interface ProductPageResult {
-  tags: string[];
-  ageRating: string | null;
-  images: string[];
-  price: number;
-  schemaOrgData?: any;
-}
+
 
 /**
  * 年齢制限文字列を正規化する
