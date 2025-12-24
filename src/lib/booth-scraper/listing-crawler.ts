@@ -1,4 +1,4 @@
-import PQueue from 'p-queue';
+import PQueue, { type Options as PQueueOptions } from 'p-queue';
 import { setTimeout } from 'timers/promises';
 import { getVrChatSearchUrl } from './urls';
 import { boothHttpClient } from './http-client';
@@ -13,7 +13,7 @@ export interface CrawlerOptions {
 export class ListingCrawler {
   private queue: PQueue;
 
-  constructor(queueOptions?: any) {
+  constructor(queueOptions?: PQueueOptions<any, any>) {
     this.queue = new PQueue(queueOptions || {
       concurrency: 1,
       interval: 2500,
