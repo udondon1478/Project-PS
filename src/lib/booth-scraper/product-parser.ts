@@ -135,7 +135,8 @@ export function parseProductPage(html: string, url: string): ProductPageResult |
 
   // 1. Try extracting from tags
   // R-18 or R18 often appears in tags
-  if (tags.some(tag => ['R-18', 'R18', '18禁'].includes(tag))) {
+  // Only check tags if not already set (e.g. by description) failure to check leads to overwrites
+  if (!ageRating && tags.some(tag => ['R-18', 'R18', '18禁'].includes(tag))) {
       ageRating = 'R-18';
   }
 
