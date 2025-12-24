@@ -154,5 +154,18 @@ describe('TagResolver', () => {
              data: { tagCategoryId: 'cat-age' }
          });
       });
+
+      it('should throw error if resolveAgeRating creation and fetch both fail', async () => {
+          mockTagCategoryFindUnique.mockResolvedValue({ id: 'cat-age', name: 'age_rating' });
+          mockFindUnique.mockResolvedValueOnce(null); // Initial find fails
+
+          // Create fails
+          mockCreate.mockRejectedValueOnce(new Error('DB Unique constraint violations or something'));
+          
+          // Fallback find also fails (returns null)
+          mockFindUnique.mockResolvedValueOnce(null);
+
+          await expect(resolver.resolveAgeRating('RiskTag')).rejects.toThrow();
+      });
   });
 });

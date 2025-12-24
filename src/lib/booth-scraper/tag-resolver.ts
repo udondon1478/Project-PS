@@ -113,7 +113,15 @@ export class TagResolver {
             }
         });
        } catch(e) {
-           tag = await this.db.tag.findUnique({ where: { name: normalizedRating }});
+           try {
+               tag = await this.db.tag.findUnique({ where: { name: normalizedRating }});
+           } catch (findError) {
+               // Ignore find error and check tag validity below
+           }
+           
+           if (!tag) {
+               throw new Error(`Failed to ensure age_rating tag '${normalizedRating}'. Create error: ${e}`);
+           }
        }
     } else {
         // If tag exists but not linked to category, link it?
