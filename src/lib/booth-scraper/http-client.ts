@@ -62,10 +62,13 @@ export class BoothHttpClient {
     const timeoutId = setTimeout(() => controller.abort(), 30000);
     
     // Handle external abort signal if provided
+    const onAbort = () => controller.abort();
     if (init?.signal) {
-      init.signal.addEventListener('abort', () => {
+      if (init.signal.aborted) {
         controller.abort();
-      });
+      } else {
+        init.signal.addEventListener('abort', onAbort);
+      }
     }
 
     try {
@@ -81,6 +84,7 @@ export class BoothHttpClient {
       return response;
     } finally {
       clearTimeout(timeoutId);
+      init?.signal?.removeEventListener('abort', onAbort);
     }
   }
 }
