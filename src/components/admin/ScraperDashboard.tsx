@@ -123,7 +123,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
             <select 
               id="mode-select"
               value={mode} 
-              onChange={(e) => setMode(e.target.value as any)}
+              onChange={(e) => setMode(e.target.value as 'NEW' | 'BACKFILL')}
               className="w-full p-2 border rounded dark:bg-gray-700"
             >
               <option value="NEW">New Product Scan (Default)</option>
