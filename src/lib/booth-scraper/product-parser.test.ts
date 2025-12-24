@@ -121,4 +121,37 @@ describe('parseProductPage', () => {
     const result = parseProductPage(html, 'http://mock');
     expect(result?.ageRating).toBeNull();
   });
+
+  it('should extract publishedAt from .market-item-detail-item-date', () => {
+    const html = `
+      <html>
+        <body>
+          <h1 class="market-item-detail-item-title">Dated Product</h1>
+          <div class="market-item-detail-item-date">2023年05月20日</div>
+        </body>
+      </html>
+    `;
+    const result = parseProductPage(html, 'http://mock');
+    expect(result?.publishedAt).toBe('2023-05-20T00:00:00.000Z'); // Adjust expectation based on implementation details (e.g. UTC vs JST)
+  });
+
+  it('should extract publishedAt from schema.org releaseDate', () => {
+    const html = `
+      <html>
+        <body>
+          <h1 class="market-item-detail-item-title">Schema Date Product</h1>
+          <script type="application/ld+json">
+            {
+              "@context": "http://schema.org",
+              "@type": "Product",
+              "name": "Schema Date Product",
+              "releaseDate": "2023-10-01"
+            }
+          </script>
+        </body>
+      </html>
+    `;
+    const result = parseProductPage(html, 'http://mock');
+    expect(result?.publishedAt).toBe('2023-10-01T00:00:00.000Z');
+  });
 });

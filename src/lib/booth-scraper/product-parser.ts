@@ -172,12 +172,47 @@ export function parseProductPage(html: string, url: string): ProductPageResult |
       });
   }
 
-  // Published Date - hard to find in DOM exactly often, schema usually has it
-  // But Booth schema extraction might capture it? Schema usually doesn't have publish date for Product type unless 'releaseDate'
-  // Or look for .market-item-detail-item-date?
-  // Let's rely on fallback to now() if missing, handled in creator.
-  let publishedAt = undefined;
-  // Attempt to find date
+  // Published Date
+  let publishedAt: string | undefined = undefined;
+
+  // 1. Try schema.org releaseDate (if available)
+  if (productSchema?.releaseDate) {
+    const d = new Date(productSchema.releaseDate);
+    if (!isNaN(d.getTime())) {
+      publishedAt = d.toISOString();
+    }
+  }
+
+  // 2. Try DOM .market-item-detail-item-date
+  if (!publishedAt) {
+    const rawDate = $('.market-item-detail-item-date').text().trim();
+    if (rawDate) {
+      // Handle "YYYY年MM月DD日" format common in Japan
+      // Also handle "YYYY/MM/DD" just in case
+      // "2023年05月20日" -> "2023/05/20" for easier parsing
+      const normalizedDate = rawDate.replace(/年/g, '/').replace(/月/g, '/').replace(/日/g, '');
+      const d = new Date(normalizedDate);
+      
+      // If valid date
+      if (!isNaN(d.getTime())) {
+          // If the input was just a date (no time), we might want to ensure it's treated as UTC 00:00 to avoid shifting
+          // But `new Date('YYYY/MM/DD')` is usually local. `new Date('YYYY-MM-DD')` is UTC.
+          // Let's force YYYY-MM-DD format and parse as UTC to keep the date stable matching the string.
+          // Extract struct
+          const match = normalizedDate.match(/(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
+          if (match) {
+             const year = match[1];
+             const month = match[2].padStart(2, '0');
+             const day = match[3].padStart(2, '0');
+             // Construct ISO date string (YYYY-MM-DD) which parses as UTC 00:00:00
+             publishedAt = new Date(`${year}-${month}-${day}`).toISOString();
+          } else {
+             // Fallback default parse
+             publishedAt = d.toISOString();
+          }
+      }
+    }
+  }
   
   return {
     title,
