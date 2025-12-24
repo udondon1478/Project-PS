@@ -355,15 +355,16 @@ class BoothScraperOrchestrator {
   }
 
   private addLog(msg: string) {
+    const ts = new Date().toISOString();
     if (this.currentStatus) {
       this.currentStatus.logs.push({
         id: crypto.randomUUID(),
-        timestamp: new Date().toISOString(),
-        message: `[${new Date().toISOString()}] ${msg}`
+        timestamp: ts,
+        message: msg
       });
       if (this.currentStatus.logs.length > 100) this.currentStatus.logs.shift();
     }
-    console.log(`[Orchestrator] ${msg}`);
+    console.log(`[Orchestrator] [${ts}] ${msg}`);
   }
 
   private async updateDbProgress() {
