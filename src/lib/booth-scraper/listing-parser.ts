@@ -8,7 +8,13 @@ export interface ListingPageResult {
 
 export function parseListingPage(html: string): ListingPageResult {
   const $ = cheerio.load(html);
+  /* 
+    Use a Set to track seen URLs for deduplication.
+    We want to preserve insertion order, so we push to array only when
+    the URL hasn't been seen yet.
+  */
   const productUrls: string[] = [];
+  const seenUrls = new Set<string>();
 
   // Select all product links
   // Use a more robust selector targeting anchors within the title container
@@ -20,9 +26,13 @@ export function parseListingPage(html: string): ListingPageResult {
       if (href.startsWith('/')) {
         href = `${BOOTH_BASE_URL}${href}`;
       }
+      
       // Only include item URLs (exclude shops or other links if any)
       if (href.includes('/items/')) {
-        productUrls.push(href);
+        if (!seenUrls.has(href)) {
+          seenUrls.add(href);
+          productUrls.push(href);
+        }
       }
     }
   });
