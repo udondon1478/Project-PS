@@ -3,11 +3,19 @@ import robotsParser from 'robots-parser';
 const BOOTH_ROBOTS_TXT_URL = 'https://booth.pm/robots.txt';
 const USER_AGENT = 'PolySeek-Bot/0.1.0'; // Simple UA for internal project
 
-// Singleton to cache parsed robots.txt rules
+// Cache TTL for robots.txt (1 hour in milliseconds)
+const ROBOTS_CACHE_TTL_MS = 60 * 60 * 1000;
+
+// Singleton to cache parsed robots.txt rules with TTL
 let cachedRobots: ReturnType<typeof robotsParser> | null = null;
+let cachedRobotsTimestamp: number = 0;
+
+function isRobotsCacheValid(): boolean {
+  return cachedRobots !== null && Date.now() - cachedRobotsTimestamp < ROBOTS_CACHE_TTL_MS;
+}
 
 async function getRobotsParser(): Promise<ReturnType<typeof robotsParser>> {
-  if (cachedRobots) return cachedRobots;
+  if (isRobotsCacheValid()) return cachedRobots!;
 
   try {
     const controller = new AbortController();
@@ -23,17 +31,20 @@ async function getRobotsParser(): Promise<ReturnType<typeof robotsParser>> {
     if (!res.ok) {
       console.warn(`[BoothHttpClient] Failed to fetch robots.txt (status: ${res.status}). Assuming allow all.`);
       // If robots.txt doesn't exist or errors, standard behavior is to allow crawling.
-      cachedRobots = robotsParser(BOOTH_ROBOTS_TXT_URL, ''); 
+      cachedRobots = robotsParser(BOOTH_ROBOTS_TXT_URL, '');
+      cachedRobotsTimestamp = Date.now();
       return cachedRobots;
     }
 
     const txt = await res.text();
     cachedRobots = robotsParser(BOOTH_ROBOTS_TXT_URL, txt);
+    cachedRobotsTimestamp = Date.now();
     return cachedRobots;
   } catch (error) {
     console.warn('[BoothHttpClient] Error fetching robots.txt:', error);
     // Fallback: allow all if we can't check
     cachedRobots = robotsParser(BOOTH_ROBOTS_TXT_URL, '');
+    cachedRobotsTimestamp = Date.now();
     return cachedRobots;
   }
 }
