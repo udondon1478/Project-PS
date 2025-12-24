@@ -97,7 +97,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl h-[90vh] flex flex-col">
+      <DialogContent className="max-w-[95vw] md:max-w-3xl h-[90vh] flex flex-col">
         <DialogHeader>
           <div className="flex justify-between items-start pr-8">
             <DialogTitle>タグ詳細</DialogTitle>
