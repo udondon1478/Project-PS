@@ -30,6 +30,10 @@ vi.mock('../prisma', () => ({
 }));
 
 describe('Product Checker', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
     it('should identify existing products', async () => {
         const mockFindMany = vi.mocked(prisma.product.findMany);
         mockFindMany.mockResolvedValueOnce([
@@ -45,6 +49,14 @@ describe('Product Checker', () => {
             },
             select: { boothJpUrl: true }
         });
+    });
+
+    it('should return empty set for empty array input', async () => {
+        const mockFindMany = vi.mocked(prisma.product.findMany);
+        const result = await checkExistingProducts([]);
+        
+        expect(result.size).toBe(0);
+        expect(mockFindMany).not.toHaveBeenCalled();
     });
 });
 
@@ -108,5 +120,26 @@ describe('Product Creator', () => {
                 productTags: expect.any(Object),
             })
         }));
+    });
+
+    it('should throw error when database transaction fails', async () => {
+        const mockTransaction = vi.mocked(prisma.$transaction);
+        mockTransaction.mockRejectedValueOnce(new Error('Database error'));
+
+        const input = {
+            boothJpUrl: 'https://booth.pm/ja/items/100',
+            title: 'Test Item',
+            description: 'Desc',
+            price: 500,
+            images: ['img1.jpg'],
+            tags: ['tag1'],
+            ageRating: 'all_ages',
+            sellerName: 'Seller',
+            sellerUrl: 'https://seller.booth.pm',
+        };
+
+        await expect(createProductFromScraper(input, 'sys-user-1'))
+            .rejects
+            .toThrow('Database error');
     });
 });
