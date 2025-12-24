@@ -94,12 +94,25 @@ async function start() {
     // Disconnect Prisma
     await prisma.$disconnect();
     
-    console.log('Cleanup complete. Exiting.');
-    process.exit(0);
+    console.log('Cleanup complete.');
   };
 
-  process.on('SIGTERM', () => shutdown('SIGTERM'));
-  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => {
+    shutdown('SIGTERM')
+      .then(() => process.exit(0))
+      .catch((err) => {
+        console.error('Shutdown failed', err);
+        process.exit(1);
+      });
+  });
+  process.on('SIGINT', () => {
+    shutdown('SIGINT')
+      .then(() => process.exit(0))
+      .catch((err) => {
+        console.error('Shutdown failed', err);
+        process.exit(1);
+      });
+  });
 }
 
 start().catch((e) => {
