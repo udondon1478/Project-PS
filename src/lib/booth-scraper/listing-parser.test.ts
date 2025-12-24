@@ -1,4 +1,3 @@
-
 import { describe, it, expect } from 'vitest';
 import { parseListingPage } from './listing-parser';
 import { BOOTH_BASE_URL } from './urls';
