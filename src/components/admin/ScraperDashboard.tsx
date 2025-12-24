@@ -146,8 +146,9 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
           </div>
           
           <div>
-             <label className="block text-sm font-medium mb-1">Interval (ms)</label>
+             <label htmlFor="rateLimit" className="block text-sm font-medium mb-1">Interval (ms)</label>
              <input 
+               id="rateLimit"
                type="number" 
                value={rateLimit} 
                onChange={(e) => setRateLimit(Number(e.target.value))}
