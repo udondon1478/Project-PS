@@ -91,6 +91,16 @@ describe('TagResolver', () => {
         // Both created if not found (mockCreate called twice)
         expect(mockCreate).toHaveBeenCalledTimes(2);
     });
+
+    it('should throw error if tag creation and fetch both fail', async () => {
+        mockFindMany.mockResolvedValue([]);
+        // First create fails
+        mockCreate.mockRejectedValue(new Error('DB Error'));
+        // Fallback fetch also fails (returns null)
+        mockFindUnique.mockResolvedValue(null);
+
+        await expect(resolver.resolveTags(['FailTag'])).rejects.toThrow('Failed to create or find tag FailTag: Error: DB Error');
+    });
   });
 
   describe('resolveAgeRating', () => {

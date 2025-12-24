@@ -57,7 +57,7 @@ export class TagResolver {
         if (existing) {
           newTagIds.push(existing.id);
         } else {
-          console.error(`Failed to create or find tag: ${name}`, error);
+          throw new Error(`Failed to create or find tag ${name}: ${error}`);
         }
       }
     }
