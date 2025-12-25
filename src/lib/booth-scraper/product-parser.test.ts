@@ -221,4 +221,50 @@ describe('parseProductJson', () => {
     const result = parseProductJson(mockJson, 'http://mock');
     expect(result.ageRating).toBe('R-18');
   });
+
+  it('should handle empty tags and images arrays correctly', () => {
+    const mockJson = {
+      name: "Empty Arrays Product",
+      tags: [],
+      images: []
+    };
+    const result = parseProductJson(mockJson, 'http://mock');
+    expect(result.tags).toEqual([]);
+    expect(result.images).toEqual([]);
+    expect(result.title).toBe('Empty Arrays Product');
+  });
+
+  it('should handle missing required fields with defaults', () => {
+    // Simulating partial JSON
+    const mockJson = {
+      // name missing
+      // price missing
+      description: "Just description"
+    };
+    const result = parseProductJson(mockJson, 'http://mock');
+    
+    // Check conventions: empty strings and 0 for price
+    expect(result.title).toBe('');
+    expect(result.price).toBe(0);
+    expect(result.description).toBe('Just description');
+    
+    // Ensure standard variation is still created with defaults
+    expect(result.variations).toHaveLength(1);
+    expect(result.variations[0].price).toBe(0);
+  });
+
+  it('should handle malformed price strings', () => {
+    const cases = [
+      { price: "¥ N/A", expected: 0 }, // non-numeric
+      { price: "Free", expected: 0 }, // non-numeric
+      { price: "foo 100 bar", expected: 100 }, // extraction
+      { price: undefined, expected: 0 }
+    ];
+
+    cases.forEach(({ price, expected }) => {
+      const mockJson = { price };
+      const result = parseProductJson(mockJson, 'http://mock');
+      expect(result.price).toBe(expected);
+    });
+  });
 });

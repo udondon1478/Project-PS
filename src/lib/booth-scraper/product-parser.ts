@@ -48,7 +48,7 @@ export function parseProductJson(json: any, url: string): ProductPageResult {
   
   // Price extraction "¥ 0" -> 0
   const priceStr = json.price || '0';
-  const price = parseInt(priceStr.replace(/[^0-9]/g, ''), 10);
+  const price = parseInt(priceStr.replace(/[^0-9]/g, ''), 10) || 0;
 
   // Age Rating
   let ageRating: string | null = json.is_adult ? 'R-18' : '全年齢';

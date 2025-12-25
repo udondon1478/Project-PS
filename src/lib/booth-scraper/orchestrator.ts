@@ -397,6 +397,7 @@ class BoothScraperOrchestrator {
         data: {
           productsCreated: this.currentStatus.progress.productsCreated,
           processedPages: this.currentStatus.progress.pagesProcessed,
+          productsFound: this.currentStatus.progress.productsFound,
           lastProcessedPage: this.currentStatus.progress.lastProcessedPage ?? undefined,
         }
       });

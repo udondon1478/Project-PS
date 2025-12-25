@@ -71,15 +71,12 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
 
       // 2. Resolve Age Rating
       // Default to 'all_ages' (-> '全年齢') if not specified
-      const ratingToResolve = ageRating || 'all_ages';
-      
-      if (ratingToResolve) {
-        const ageTagId = await tagResolver.resolveAgeRating(ratingToResolve);
-        if (ageTagId) {
-          // Avoid duplicates if 'adult' was also in tags list (unlikely but possible)
-          if (!tagIds.includes(ageTagId)) {
-            tagIds.push(ageTagId);
-          }
+      const ageTagId = await tagResolver.resolveAgeRating(ageRating || 'all_ages');
+
+      if (ageTagId) {
+        // Avoid duplicates if 'adult' was also in tags list (unlikely but possible)
+        if (!tagIds.includes(ageTagId)) {
+          tagIds.push(ageTagId);
         }
       }
 
@@ -179,8 +176,9 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
     });
 
     // Persistence Verification
-    // Only run in non-production environments to avoid unnecessary queries
-    if (process.env.NODE_ENV !== 'production') {
+    // Feature flag driven: defaults to false if not explicitly enabled
+    // To enable in dev: ENABLE_PERSISTENCE_VERIFY=true
+    if (process.env.ENABLE_PERSISTENCE_VERIFY === 'true') {
       try {
         const persistedProduct = await prisma.product.findUnique({
            where: { id: newProduct.id },
