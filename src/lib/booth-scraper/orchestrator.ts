@@ -7,6 +7,7 @@ import { checkExistingProducts } from './product-checker';
 import { boothHttpClient } from './http-client';
 import { parseProductPage, parseProductJson, type ProductPageResult } from './product-parser';
 import { createProductFromScraper, ScrapedProductData } from './product-creator';
+import { waitJitter } from './utils';
 
 
 /**
@@ -60,9 +61,7 @@ export interface ScraperStatus {
   logs: ScraperLog[];
 }
 
-import { waitJitter } from './utils';
 
-// Removed local waitJitter definition
 
 
 
@@ -413,7 +412,7 @@ class BoothScraperOrchestrator {
             endTime: new Date(),
             productsFound: this.currentStatus.progress.productsFound,
             productsCreated: this.currentStatus.progress.productsCreated,
-            lastProcessedPage: this.currentStatus.progress.lastProcessedPage || undefined,
+            lastProcessedPage: this.currentStatus.progress.lastProcessedPage ?? undefined,
         }
         });
     } catch (e) {

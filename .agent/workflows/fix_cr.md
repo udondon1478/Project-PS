@@ -25,7 +25,7 @@ description: CodeRabbitのレビューコメントを自動修正するワーク
    - `task_boundary` を呼び出し、個別の修正タスクを開始します。
      - TaskName: CodeRabbit指摘対応 (PR#xxx)
      - TaskStatus: コメントID xxx の修正を実施中
-   
+
    **C. 修正の実施**
    - ファイル内容を確認し (`view_file`), 指摘内容に応じた修正を行います。
    - 修正後は必要に応じてテストやLintを実行し、問題ないことを確認します。

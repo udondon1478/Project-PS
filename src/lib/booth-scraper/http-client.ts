@@ -72,9 +72,22 @@ export class BoothHttpClient {
       signals.push(init.signal);
     }
 
-    // Use AbortSignal.any to combine signals (Node.js 20+)
-    // Using cast to avoid potential TypeScript lib issues if restricted
-    const signal = (AbortSignal as any).any(signals);
+    // Use AbortSignal.any to combine signals (Node.js 20.3.0+)
+    let signal: AbortSignal;
+    if ((AbortSignal as any).any) {
+       signal = (AbortSignal as any).any(signals);
+    } else {
+       // Simple polyfill for older Node versions
+       const ctrl = new AbortController();
+       for (const s of signals) {
+         if (s.aborted) {
+           ctrl.abort(s.reason);
+           break;
+         }
+         s.addEventListener('abort', () => ctrl.abort(s.reason), { once: true });
+       }
+       signal = ctrl.signal;
+    }
 
     try {
       const response = await fetch(url, {

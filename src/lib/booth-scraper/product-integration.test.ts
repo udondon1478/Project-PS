@@ -102,6 +102,7 @@ describe('Product Creator', () => {
             ageRating: 'all_ages',
             sellerName: 'Test Seller',
             sellerUrl: 'https://test.booth.pm',
+            variations: [{ name: 'Standard', price: 500, type: 'download', order: 0, isMain: true }],
         };
 
         await createProductFromScraper(input, 'sys-user-1');
@@ -138,8 +139,10 @@ describe('Product Creator', () => {
             images: ['img1.jpg'],
             tags: ['tag1'],
             ageRating: 'all_ages',
+
             sellerName: 'Seller',
             sellerUrl: 'https://seller.booth.pm',
+            variations: [],
         };
 
         await expect(createProductFromScraper(input, 'sys-user-1'))

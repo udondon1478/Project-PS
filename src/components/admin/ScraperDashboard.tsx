@@ -111,7 +111,11 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                id="pageLimit"
                type="number" 
                value={pageLimit} 
-               onChange={(e) => setPageLimit(Number(e.target.value))}
+               onChange={(e) => {
+                 const val = parseInt(e.target.value, 10);
+                 if (!isNaN(val) && val >= 1) setPageLimit(val);
+               }}
+               min={1}
                className="w-full p-2 border rounded dark:bg-gray-700"
              />
              <div className="text-xs text-gray-500 mt-1">
@@ -125,7 +129,11 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                id="rateLimit"
                type="number" 
                value={rateLimit} 
-               onChange={(e) => setRateLimit(Number(e.target.value))}
+               onChange={(e) => {
+                 const val = parseInt(e.target.value, 10);
+                 if (!isNaN(val) && val >= 0) setRateLimit(val);
+               }}
+               min={0}
                className="w-full p-2 border rounded dark:bg-gray-700"
              />
           </div>

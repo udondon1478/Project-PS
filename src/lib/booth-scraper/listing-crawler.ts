@@ -56,7 +56,7 @@ export class ListingCrawler {
 
       const isLastAttempt = attempt >= 4; // 1 (initial) + 3 retries
       if (isLastAttempt) {
-        console.error(`[Crawler] Failed page ${page} after ${attempt} attempts. Giving up. Error: ${error}`);
+        console.error(`[Crawler] Failed page ${page} after ${attempt} attempts. Giving up. Error: ${error instanceof Error ? error.message : String(error)}`);
         return { productUrls: [], hasNextPage: false };
       }
 

@@ -33,6 +33,13 @@ export interface ProductPageResult {
   sellerIconUrl?: string | null;
   publishedAt?: string;
   schemaOrgData?: any;
+  variations: {
+    name: string;
+    price: number;
+    type: string;
+    order: number;
+    isMain: boolean;
+  }[];
 }
 
 export function parseProductJson(json: any, url: string): ProductPageResult {
@@ -63,7 +70,14 @@ export function parseProductJson(json: any, url: string): ProductPageResult {
     sellerUrl: json.shop?.url || '',
     sellerIconUrl: json.shop?.thumbnail_url,
     publishedAt: json.published_at,
-    schemaOrgData: json
+    schemaOrgData: json,
+    variations: [{
+        name: 'Standard',
+        price: price,
+        type: 'download',
+        order: 0,
+        isMain: true
+    }]
   };
 }
 
@@ -284,6 +298,35 @@ export function parseProductPage(html: string, url: string): ProductPageResult |
       }
     }
   }
+
+  // Variations extraction
+  const variations: { name: string; price: number; type: string; order: number; isMain: boolean; }[] = [];
+  
+  const variationItems = $('.variation-list .variation-item');
+  if (variationItems.length > 0) {
+      variationItems.each((index, el) => {
+          const vName = $(el).find('.variation-name').text().trim();
+          const vPriceText = $(el).find('.variation-price').text().trim(); // "¥ 1,500"
+          const vPrice = parseInt(vPriceText.replace(/[^0-9]/g, ''), 10) || price;
+          
+          variations.push({
+              name: vName || 'Standard',
+              price: vPrice,
+              type: 'download', // parsing type might be hard, default to download
+              order: index,
+              isMain: index === 0
+          });
+      });
+  } else {
+      // Fallback if no explicit variations found
+      variations.push({
+          name: 'Standard',
+          price: price,
+          type: 'download',
+          order: 0,
+          isMain: true
+      });
+  }
   
   return {
     title,
@@ -296,6 +339,7 @@ export function parseProductPage(html: string, url: string): ProductPageResult |
     sellerUrl,
     sellerIconUrl,
     publishedAt,
-    schemaOrgData
+    schemaOrgData,
+    variations
   };
 }

@@ -46,7 +46,7 @@ async function main() {
     create: {
       email: 'system-scraper@polyseek.com',
       name: 'System Bot',
-      role: Role.ADMIN, // 必要に応じて権限調整
+      role: Role.USER, // Changed to USER for security
     },
   });
   console.log(`Created/Updated system user with id: ${systemUser.id}`);

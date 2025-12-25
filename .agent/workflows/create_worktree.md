@@ -36,5 +36,5 @@ description: 新しい機能開発用のGit Worktreeを作成し、初期セッ�
    npm install
    ```
 
-5. **Antigravityの起動**
+5. **Antigravityの起動（新しいWorktreeディレクトリをルートとしてエディタを開く）**
    - 新しいディレクトリをルートとして、エディタ（VS Code等）を開き直してください。

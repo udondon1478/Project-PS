@@ -15,6 +15,13 @@ export interface ScrapedProductData {
   sellerUrl: string;
   sellerIconUrl?: string | null;
   publishedAt?: string | Date; // ISO string or Date object
+  variations: {
+    name: string;
+    price: number;
+    type: string;
+    order: number;
+    isMain: boolean;
+  }[];
 }
 
 /**
@@ -45,7 +52,8 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
     sellerName,
     sellerUrl,
     sellerIconUrl,
-    publishedAt
+    publishedAt,
+    variations
   } = data;
 
   /* 
@@ -98,11 +106,11 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
       // Defaulting publishedAt to now if not provided
       const publishedDate = publishedAt ? new Date(publishedAt) : new Date();
       
-      // Default variation (assuming single price for now)
-      const variations = [{
+      // Use parsed variations or fallback
+      const productVariations = (variations && variations.length > 0) ? variations : [{
         name: 'Standard',
         price: price,
-        type: 'download', // Default assumption
+        type: 'download',
         order: 0,
         isMain: true
       }];
@@ -138,7 +146,7 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
             })),
           },
           variations: {
-            create: variations.map(v => ({
+            create: productVariations.map(v => ({
               name: v.name,
               price: v.price,
               type: v.type,
