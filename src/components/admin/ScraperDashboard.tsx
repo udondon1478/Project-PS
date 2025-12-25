@@ -3,40 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
-// Type definitions to match Prisma/API
-interface ScraperRun {
-  runId: string;
-  status: string;
-  mode?: string;
-  startTime: Date | string;
-  endTime?: Date | string | null;
-  productsFound: number;
-  productsCreated: number;
-  lastProcessedPage?: number | null;
-  metadata?: any;
-}
-
-interface ScraperLog {
-  id: string;
-  timestamp: string;
-  message: string;
-}
-
-interface ScraperStatus {
-  runId: string;
-  mode: string;
-  status: string;
-  progress: {
-    pagesProcessed: number;
-    productsFound: number;
-    productsExisting: number;
-    productsCreated: number;
-    productsSkipped: number;
-    productsFailed: number;
-    lastProcessedPage: number;
-  };
-  logs: ScraperLog[];
-}
+import { type ScraperRun, type ScraperLog, type ScraperStatus } from '@/lib/booth-scraper/orchestrator';
 
 interface DashboardProps {
   recentRuns: ScraperRun[];

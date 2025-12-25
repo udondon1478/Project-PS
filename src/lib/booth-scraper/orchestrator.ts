@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+import { Prisma, type ScraperRun } from '@prisma/client';
+export type { ScraperRun };
 import PQueue from 'p-queue';
 import { ListingCrawler } from './listing-crawler';
 import { checkExistingProducts } from './product-checker';
