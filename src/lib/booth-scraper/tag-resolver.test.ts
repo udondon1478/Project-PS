@@ -128,8 +128,8 @@ describe('TagResolver', () => {
         // Fallback fetch also fails (returns null)
         mockFindUnique.mockResolvedValue(null);
 
-        const result = await resolver.resolveTags(['FailTag']);
-        expect(result).toEqual([]);
+        const promise = resolver.resolveTags(['FailTag']);
+        await expect(promise).rejects.toThrow('Failed to create or find tag: failtag');
     });
   });
 

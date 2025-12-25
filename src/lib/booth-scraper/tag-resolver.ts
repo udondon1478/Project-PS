@@ -59,7 +59,7 @@ export class TagResolver {
             return existing.id;
           } else {
             console.error(`Failed to create or find tag: ${name}`, error);
-            return null;
+            throw new Error(`Failed to create or find tag: ${name}`);
           }
         }
       })
