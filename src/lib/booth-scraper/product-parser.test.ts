@@ -154,4 +154,71 @@ describe('parseProductPage', () => {
     const result = parseProductPage(html, 'http://mock');
     expect(result?.publishedAt).toBe('2023-10-01T00:00:00.000Z');
   });
+
+  it('should extract official tags (Categories) from /browse/ links', () => {
+    const html = `
+      <h1 class="market-item-detail-item-title">Official Tags Product</h1>
+      <a href="/browse/Category1">Category1</a>
+      <a href="https://booth.pm/ja/browse/Category2">Category2</a>
+    `;
+    const result = parseProductPage(html, 'http://mock');
+    expect(result?.tags).toContain('Category1');
+    expect(result?.tags).toContain('Category2');
+  });
+
+  it('should extract tags from query parameters in links', () => {
+    const html = `
+      <h1 class="market-item-detail-item-title">Query Tags Product</h1>
+      <a href="/items?tags[]=Tag1">Link1</a>
+      <a href="https://booth.pm/ja/items?tags%5B%5D=Tag2">Link2</a>
+    `;
+    const result = parseProductPage(html, 'http://mock');
+    expect(result?.tags).toContain('Tag1');
+    expect(result?.tags).toContain('Tag2');
+  });
+});
+
+import { parseProductJson } from './product-parser';
+
+describe('parseProductJson', () => {
+  it('should parse product JSON correctly', () => {
+    const mockJson = {
+      id: 7798081,
+      name: "Test JSON Product",
+      description: "JSON Description",
+      price: "¥ 0",
+      is_adult: false,
+      published_at: "2025-12-25T11:31:56.000+09:00",
+      tags: [
+        { name: "Tag1", url: "..." },
+        { name: "Tag2", url: "..." }
+      ],
+      images: [
+        { original: "img1.jpg", resized: "..." }
+      ],
+      shop: {
+        name: "Test Shop",
+        url: "https://shop.booth.pm",
+        thumbnail_url: "icon.jpg"
+      }
+    };
+
+    const result = parseProductJson(mockJson, 'http://mock');
+    expect(result.tags).toEqual(['Tag1', 'Tag2']);
+    expect(result.ageRating).toBe('全年齢');
+    expect(result.price).toBe(0);
+    expect(result.title).toBe('Test JSON Product');
+    expect(result.description).toBe('JSON Description');
+    expect(result.sellerName).toBe('Test Shop');
+    expect(result.images).toEqual(['img1.jpg']);
+  });
+
+  it('should detect R-18 from is_adult', () => {
+    const mockJson = {
+      is_adult: true,
+      tags: []
+    };
+    const result = parseProductJson(mockJson, 'http://mock');
+    expect(result.ageRating).toBe('R-18');
+  });
 });

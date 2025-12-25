@@ -35,6 +35,38 @@ export interface ProductPageResult {
   schemaOrgData?: any;
 }
 
+export function parseProductJson(json: any, url: string): ProductPageResult {
+  const tags = Array.isArray(json.tags) ? json.tags.map((t: any) => t.name) : [];
+  const images = Array.isArray(json.images) ? json.images.map((img: any) => img.original) : [];
+  
+  // Price extraction "¥ 0" -> 0
+  const priceStr = json.price || '0';
+  const price = parseInt(priceStr.replace(/[^0-9]/g, ''), 10);
+
+  // Age Rating
+  let ageRating: string | null = json.is_adult ? 'R-18' : '全年齢';
+  // Refine age rating with tags if needed
+  if (tags.some((t: string) => t.toLowerCase() === 'r-18g')) {
+      ageRating = 'R-18G';
+  } else if (tags.some((t: string) => t.toLowerCase() === 'r-18')) {
+      ageRating = 'R-18';
+  }
+
+  return {
+    title: json.name || '',
+    description: json.description || '',
+    price,
+    images,
+    tags,
+    ageRating,
+    sellerName: json.shop?.name || '',
+    sellerUrl: json.shop?.url || '',
+    sellerIconUrl: json.shop?.thumbnail_url,
+    publishedAt: json.published_at,
+    schemaOrgData: json
+  };
+}
+
 export function parseProductPage(html: string, url: string): ProductPageResult | null { // Added url param for fallback
   const $ = cheerio.load(html);
   
@@ -112,11 +144,50 @@ export function parseProductPage(html: string, url: string): ProductPageResult |
 
   // Tags extraction
   const tags: string[] = [];
+  
+  // existing tag links
   $('a[href*="/tags/"]').each((_, element) => {
     const tagName = $(element).text().trim();
     if (tagName && !tags.includes(tagName)) {
       tags.push(tagName);
     }
+  });
+
+  // NEW: Extract "Official Tags" (Categories) via /browse/ links
+  // Example: https://booth.pm/ja/browse/3D%E8%A3%85%E9%A3%BE%E5%93%81 -> "3D装飾品"
+  $('a[href*="/browse/"]').each((_, element) => {
+      const tagName = $(element).text().trim();
+      // Filter out overly generic navigation items if necessary, but usually browse links are specific categories
+      if (tagName && !tags.includes(tagName)) {
+          tags.push(tagName);
+      }
+  });
+
+  // NEW: Extract tags from search query parameters (e.g. ?tags[]=VRChat)
+  // Example: https://booth.pm/ja/items?tags%5B%5D=VRChat
+  $('a[href*="tags"]').each((_, element) => {
+      const href = $(element).attr('href');
+      if (!href) return;
+      
+      try {
+          // Verify it's a link to items search
+          if (href.includes('/items?') || href.includes('?tags')) {
+              // We need to parse relative or absolute URLs. 
+              // Create a dummy base if relative.
+              const urlObj = new URL(href, 'https://booth.pm');
+              const searchParams = urlObj.searchParams;
+              
+              // tags[] parameter. It might be tags[] or tags%5B%5D
+              const tagValues = searchParams.getAll('tags[]');
+              tagValues.forEach(val => {
+                  if (val && !tags.includes(val)) {
+                      tags.push(val);
+                  }
+              });
+          }
+      } catch (e) {
+          // ignore invalid URLs
+      }
   });
 
   // Age rating extraction

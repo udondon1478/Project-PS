@@ -4,7 +4,7 @@ import PQueue from 'p-queue';
 import { ListingCrawler } from './listing-crawler';
 import { checkExistingProducts } from './product-checker';
 import { boothHttpClient } from './http-client';
-import { parseProductPage } from './product-parser';
+import { parseProductPage, parseProductJson, type ProductPageResult } from './product-parser';
 import { createProductFromScraper, ScrapedProductData } from './product-creator';
 
 
@@ -317,14 +317,32 @@ class BoothScraperOrchestrator {
          try {
            await waitJitter(); // Add random jitter
 
-           const res = await boothHttpClient.fetch(url);
-           if (!res.ok) {
-             this.currentStatus!.progress.productsFailed++;
-             this.addLog(`Failed to fetch ${url}: ${res.status}`);
-             return;
+           // Try fetching JSON first (more reliable for tags)
+           let data: ProductPageResult | null = null;
+           try {
+             const jsonRes = await boothHttpClient.fetch(url + '.json');
+             if (jsonRes.ok) {
+                const jsonData = await jsonRes.json();
+                data = parseProductJson(jsonData, url);
+                this.addLog(`Fetched JSON for ${url}`);
+             }
+           } catch (e) {
+             // Ignore JSON fetch errors, fallback to HTML
            }
-           const html = await res.text();
-           const data = parseProductPage(html, url);
+
+           if (!data) {
+                const res = await boothHttpClient.fetch(url);
+                if (!res.ok) {
+                    this.currentStatus!.progress.productsFailed++;
+                    this.addLog(`Failed to fetch ${url}: ${res.status}`);
+                    return;
+                }
+                const html = await res.text();
+                // Import here is consistent with file scope but we are inside async. 
+                // Using existing import at top level is better.
+                data = parseProductPage(html, url);
+           }
+           
            
            if (data) {
              const productData: ScrapedProductData = {
