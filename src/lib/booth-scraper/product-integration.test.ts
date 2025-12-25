@@ -9,6 +9,7 @@ vi.mock('../prisma', () => ({
     product: {
       findMany: vi.fn(),
       create: vi.fn(),
+      findUnique: vi.fn(),
     },
     seller: {
       upsert: vi.fn(),
@@ -86,9 +87,13 @@ describe('Product Creator', () => {
 
         // Mock Product create
         mockProductCreate.mockResolvedValue({ id: 'prod-1' } as any);
+        
+        // Mock Product findUnique (for verification step)
+        const mockProductFindUnique = vi.mocked(prisma.product.findUnique);
+        mockProductFindUnique.mockResolvedValue({ id: 'prod-1', boothJpUrl: 'https://booth.pm/ja/items/100' } as any);
 
         const input = {
-            boothJpUrl: 'https://booth.pm/ja/items/100',
+            boothJpUrl: 'https://booth.pm/ja/items/100', // Matches verify logic
             title: 'Test Item',
             description: 'Desc',
             price: 500,

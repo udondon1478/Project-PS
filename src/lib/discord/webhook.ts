@@ -101,6 +101,6 @@ export async function sendDiscordNotification(product: ProductWithDetails) {
       clearTimeout(timeoutId);
     }
   } catch (error) {
-    console.error('Error sending Discord notification:', error);
+    console.error(`Error sending Discord notification for product ${product.id}:`, error);
   }
 }

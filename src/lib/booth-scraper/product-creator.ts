@@ -62,8 +62,11 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
       const tagIds = await tagResolver.resolveTags(tags);
 
       // 2. Resolve Age Rating
-      if (ageRating) {
-        const ageTagId = await tagResolver.resolveAgeRating(ageRating);
+      // Default to 'all_ages' (-> '全年齢') if not specified
+      const ratingToResolve = ageRating || 'all_ages';
+      
+      if (ratingToResolve) {
+        const ageTagId = await tagResolver.resolveAgeRating(ratingToResolve);
         if (ageTagId) {
           // Avoid duplicates if 'adult' was also in tags list (unlikely but possible)
           if (!tagIds.includes(ageTagId)) {
@@ -167,7 +170,25 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
       });
     });
 
+    // Persistence Verification
+    try {
+      const persistedProduct = await prisma.product.findUnique({
+         where: { id: newProduct.id },
+         select: { id: true, boothJpUrl: true }
+      });
+      
+      if (persistedProduct) {
+         console.log(`[ProductCreator] Verified persistence for product: ${persistedProduct.id} (${persistedProduct.boothJpUrl})`);
+      } else {
+         console.error(`[ProductCreator] CRITICAL: Product returned from transaction but NOT found in DB immediately after! ID: ${newProduct.id}, URL: ${boothJpUrl}`);
+      }
+    } catch (verifyError) {
+        console.error(`[ProductCreator] Verification query failed for product ${newProduct.id}:`, verifyError);
+    }
+
     // Send Discord Notification (Fire-and-forget) - Outside Transaction
+    // Pass the object from the transaction to be safe, or fetch fresh if needed for details not returned?
+    // The transaction returns the product with includes, so newProduct is good.
     sendDiscordNotification(newProduct).catch(err => {
         console.error('Failed to fire Discord notification async:', err);
     });

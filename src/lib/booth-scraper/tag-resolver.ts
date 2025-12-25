@@ -72,7 +72,18 @@ export class TagResolver {
   async resolveAgeRating(rating: string | null): Promise<string | null> {
     if (!rating) return null;
 
-    const normalizedRating = this.normalizeTagName(rating);
+    let normalizedRating = this.normalizeTagName(rating);
+    
+    // Map internal codes to standard Japanese tags
+    const ratingMap: Record<string, string> = {
+        'all_ages': '全年齢',
+        'adult': 'R-18',
+        'r15': 'R-15',
+    };
+
+    if (normalizedRating in ratingMap) {
+        normalizedRating = ratingMap[normalizedRating];
+    }
 
     // Ensure category exists
     let category = await this.db.tagCategory.findUnique({
