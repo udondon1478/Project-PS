@@ -145,9 +145,9 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                value={rateLimit} 
                onChange={(e) => {
                  const val = parseInt(e.target.value, 10);
-                 if (!isNaN(val) && val >= 0) setRateLimit(val);
+                 if (!isNaN(val)) setRateLimit(Math.max(1000, val));
                }}
-               min={0}
+               min={1000}
                className="w-full p-2 border rounded dark:bg-gray-700"
              />
           </div>
