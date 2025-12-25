@@ -25,8 +25,8 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
   
   // Config Inputs
   const [mode, setMode] = useState<'NEW' | 'BACKFILL'>('NEW');
-  const [pageLimit, setPageLimit] = useState<number>(3);
-  const [rateLimit, setRateLimit] = useState<number>(2500);
+  const [pageLimit, setPageLimit] = useState<string>('3');
+  const [rateLimit, setRateLimit] = useState<string>('2500');
 
   // Poll status
   useEffect(() => {
@@ -63,6 +63,20 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
   }, [router]);
 
   const handleStart = async () => {
+    // Validation
+    const pLimit = parseInt(pageLimit, 10);
+    const rLimit = parseInt(rateLimit, 10);
+
+    if (isNaN(pLimit) || pLimit < 1) {
+      toast.error('Invalid Page Limit', { description: 'Please enter a valid number greater than 0' });
+      return;
+    }
+
+    if (isNaN(rLimit) || rLimit < 1000) {
+      toast.error('Invalid Rate Limit', { description: 'Rate limit must be at least 1000ms' });
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch('/api/admin/booth-scraper/scrape', {
@@ -71,8 +85,8 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
         body: JSON.stringify({
           mode,
           options: {
-            pageLimit,
-            rateLimitOverride: rateLimit
+            pageLimit: pLimit,
+            rateLimitOverride: rLimit
           }
         })
       });
@@ -123,13 +137,10 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
              <label htmlFor="pageLimit" className="block text-sm font-medium mb-1">Page Limit</label>
              <input 
                id="pageLimit"
-               type="number" 
+               type="text" 
+               inputMode="numeric"
                value={pageLimit} 
-               onChange={(e) => {
-                 const val = parseInt(e.target.value, 10);
-                 if (!isNaN(val) && val >= 1) setPageLimit(val);
-               }}
-               min={1}
+               onChange={(e) => setPageLimit(e.target.value)}
                className="w-full p-2 border rounded dark:bg-gray-700"
              />
              <div className="text-xs text-gray-500 mt-1">
@@ -141,13 +152,10 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
              <label htmlFor="rateLimit" className="block text-sm font-medium mb-1">Interval (ms)</label>
              <input 
                id="rateLimit"
-               type="number" 
+               type="text"
+               inputMode="numeric" 
                value={rateLimit} 
-               onChange={(e) => {
-                 const val = parseInt(e.target.value, 10);
-                 if (!isNaN(val)) setRateLimit(Math.max(1000, val));
-               }}
-               min={1000}
+               onChange={(e) => setRateLimit(e.target.value)}
                className="w-full p-2 border rounded dark:bg-gray-700"
              />
           </div>
