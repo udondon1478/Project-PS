@@ -20,25 +20,29 @@ export function parseListingPage(html: string): ListingPageResult {
   // Use a more robust selector targeting anchors within the title container
   // This handles variations like .item-card__title-anchor, .item-card__title-anchor--multiline, etc.
   $('.item-card__title a, .market-item-card__title a').each((_, element) => {
-    let href = $(element).attr('href');
-    if (href) {
-      // Normalize to absolute URL if relative
-      if (href.startsWith('/')) {
-        href = `${BOOTH_BASE_URL}${href}`;
-      }
+    try {
+      let href = $(element).attr('href');
+      if (href) {
+        // Normalize to absolute URL if relative
+        if (href.startsWith('/')) {
+          href = `${BOOTH_BASE_URL}${href}`;
+        }
 
-      // Strict validation: Ensure URL belongs to BOOTH
-      if (!href.startsWith(BOOTH_BASE_URL)) {
-        return;
-      }
-      
-      // Only include item URLs (exclude shops or other links if any)
-      if (href.includes('/items/')) {
-        if (!seenUrls.has(href)) {
-          seenUrls.add(href);
-          productUrls.push(href);
+        // Strict validation: Ensure URL belongs to BOOTH
+        if (!href.startsWith(BOOTH_BASE_URL)) {
+          return;
+        }
+        
+        // Only include item URLs (exclude shops or other links if any)
+        if (href.includes('/items/')) {
+          if (!seenUrls.has(href)) {
+            seenUrls.add(href);
+            productUrls.push(href);
+          }
         }
       }
+    } catch (e) {
+      console.warn('Failed to parse a listing item', e);
     }
   });
   

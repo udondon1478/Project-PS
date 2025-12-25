@@ -47,10 +47,16 @@ export class ListingCrawler {
       const html = await res.text();
       return parseListingPage(html);
 
-    } catch (error) {
+    } catch (error: unknown) {
+      // Don't retry on 404
+      if (error instanceof Error && error.message.includes('HTTP 404')) {
+        console.error(`[Crawler] Page ${page} not found (404). Stopping retries.`);
+        return { productUrls: [], hasNextPage: false };
+      }
+
       const isLastAttempt = attempt >= 4; // 1 (initial) + 3 retries
       if (isLastAttempt) {
-        console.error(`[Crawler] Failed page ${page} after ${attempt} attempts. Giving up.`);
+        console.error(`[Crawler] Failed page ${page} after ${attempt} attempts. Giving up. Error: ${error}`);
         return { productUrls: [], hasNextPage: false };
       }
 
@@ -63,7 +69,7 @@ export class ListingCrawler {
       else if (attempt === 2) delay = 5000;
       else delay = 15000;
 
-      console.warn(`[Crawler] Error on page ${page}: ${error}. Retrying in ${delay}ms...`);
+      console.warn(`[Crawler] Error on page ${page}: ${error instanceof Error ? error.message : String(error)}. Retrying in ${delay}ms...`);
       if (delay > 0) await setTimeout(delay);
       
       return this.fetchPageWithRetry(page, attempt + 1);
