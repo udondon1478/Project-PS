@@ -439,3 +439,32 @@ model Report {
   @@unique([reporterId, productTagId])
   @@unique([reporterId, productId])
 }
+
+// スクレイパー実行ステータス
+enum ScraperRunStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+// スクレイパー実行履歴
+model ScraperRun {
+  id                String   @id @default(cuid())
+  runId             String   @unique
+  startTime         DateTime @default(now())
+  endTime           DateTime?
+  status            ScraperRunStatus   @default(RUNNING)
+  productsFound     Int      @default(0)
+  productsCreated   Int      @default(0)
+  errors            String[] // エラーメッセージの配列
+  lastProcessedPage Int?     // バックフィル進捗用
+  metadata          Json?    // フィルタ設定などのメタデータ
+  processedPages    Int      @default(0)
+  failedUrls        String[] // 処理に失敗した商品URL
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([startTime])
+  @@index([status])
+}
