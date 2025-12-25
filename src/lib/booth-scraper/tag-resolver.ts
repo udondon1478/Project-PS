@@ -36,31 +36,38 @@ export class TagResolver {
     
     const newTagIds: string[] = [];
     
-    // Create tags sequentially
-    for (const name of missingTagNames) {
-      try {
-        const newTag = await this.db.tag.create({
-          data: {
-            name,
-            language: this.defaultLanguage,
-          },
-          select: { id: true },
-        });
-        newTagIds.push(newTag.id);
-      } catch (error) {
-        // Tag might have been created by another process in the meantime
-        // Try fetching it again
-        const existing = await this.db.tag.findUnique({
-          where: { name },
-          select: { id: true },
-        });
-        if (existing) {
-          newTagIds.push(existing.id);
-        } else {
-          throw new Error(`Failed to create or find tag ${name}: ${error}`);
+    // Create tags in parallel
+    const createdTags = await Promise.all(
+      missingTagNames.map(async (name) => {
+        try {
+          const newTag = await this.db.tag.create({
+            data: {
+              name,
+              language: this.defaultLanguage,
+            },
+            select: { id: true },
+          });
+          return newTag.id;
+        } catch (error) {
+          // Tag might have been created by another process in the meantime
+          // Try fetching it again
+          const existing = await this.db.tag.findUnique({
+            where: { name },
+            select: { id: true },
+          });
+          if (existing) {
+            return existing.id;
+          } else {
+            console.error(`Failed to create or find tag: ${name}`, error);
+            return null;
+          }
         }
-      }
-    }
+      })
+    );
+    
+    // Filter out nulls (failed tags)
+    const successfulNewTagIds = createdTags.filter((id): id is string => id !== null);
+    newTagIds.push(...successfulNewTagIds);
 
     return [...existingTagIds, ...newTagIds];
   }

@@ -121,14 +121,15 @@ describe('TagResolver', () => {
         });
     });
 
-    it('should throw error if tag creation and fetch both fail', async () => {
+    it('should return empty array/ignore failed tags if creation and fetch both fail', async () => {
         mockFindMany.mockResolvedValue([]);
         // First create fails
         mockCreate.mockRejectedValue(new Error('DB Error'));
         // Fallback fetch also fails (returns null)
         mockFindUnique.mockResolvedValue(null);
 
-        await expect(resolver.resolveTags(['FailTag'])).rejects.toThrow('Failed to create or find tag failtag: Error: DB Error');
+        const result = await resolver.resolveTags(['FailTag']);
+        expect(result).toEqual([]);
     });
   });
 
