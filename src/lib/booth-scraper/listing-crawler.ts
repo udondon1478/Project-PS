@@ -35,7 +35,7 @@ export class ListingCrawler {
 
     try {
       // Jitter before fetch
-      await waitJitter();
+      await waitJitter(2000, 1000);
       
       console.log(`[Crawler] Fetching page ${page} (Attempt ${attempt})...`);
       const res = await boothHttpClient.fetch(url);

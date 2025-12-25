@@ -195,12 +195,13 @@ class BoothScraperOrchestrator {
   private async runWorkflow(mode: ScraperMode, userId: string, options: ScraperOptions, resumed: boolean = false) {
     const isBackfill = mode === 'BACKFILL';
     
-    const defaultInterval = isBackfill ? 4000 : 2500;
-    const interval = options.rateLimitOverride || defaultInterval;
+    const defaultBaseInterval = 4000; // 4 seconds (human-like)
+    const targetInterval = options.rateLimitOverride || defaultBaseInterval;
     
+    // PQueue interval is set to a safe minimum (1s) to allow manual control via waitRandom
     this.queue = new PQueue({
       concurrency: 1,
-      interval,
+      interval: 1000,
       intervalCap: 1,
     });
 
@@ -239,14 +240,14 @@ class BoothScraperOrchestrator {
       queue: this.queue!,
     }); 
 
-    this.addLog(`Starting crawl: Mode=${mode}, StartPage=${startPage}, MaxPages=${maxPages}, Interval=${interval}ms`);
+    this.addLog(`Starting crawl: Mode=${mode}, StartPage=${startPage}, MaxPages=${maxPages}, BaseInterval=${targetInterval}ms`);
 
     await crawler.run({
       startPage,
       maxPages,
       onProductsFound: async (urls, page) => {
         if (this.shouldStop) return;
-        await this.processBatch(urls, page, userId, isBackfill);
+        await this.processBatch(urls, page, userId, isBackfill, targetInterval);
         await this.updateDbProgress();
       }
     });
@@ -260,7 +261,7 @@ class BoothScraperOrchestrator {
     }
   }
 
-  private async processBatch(urls: string[], page: number, userId: string, isBackfill: boolean) {
+  private async processBatch(urls: string[], page: number, userId: string, isBackfill: boolean, baseInterval: number) {
     if (!this.currentStatus) return;
     
     this.currentStatus.progress.lastProcessedPage = page;
@@ -319,7 +320,7 @@ class BoothScraperOrchestrator {
        // Add to queue
        await this.queue!.add(async () => {
          try {
-           await waitJitter(); // Add random jitter
+            await waitJitter(baseInterval, 2000); // 4s ± 2s (if base is 4000)
 
            // Try fetching JSON first (more reliable for tags)
            let data: ProductPageResult | null = null;
