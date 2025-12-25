@@ -22,8 +22,9 @@ npm install
 ### 2. Environment Variables
 Ensure `.env` file is populated with necessary variables:
 ```
-DATABASE_URL="postgresql://..."
-NEXT_PUBLIC_SENTRY_DSN="..."
+DATABASE_URL="postgresql://user:password@localhost:5432/mydb" # Start with postgresql://
+NEXT_PUBLIC_SENTRY_DSN="https://examplePublicKey@o0.ingest.sentry.io/0"
+DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..."
 # ... other vars
 ```
 

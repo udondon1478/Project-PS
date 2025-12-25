@@ -38,3 +38,23 @@ description: 新しい機能開発用のGit Worktreeを作成し、初期セッ�
 
 5. **Antigravityの起動（新しいWorktreeディレクトリをルートとしてエディタを開く）**
    - 新しいディレクトリをルートとして、エディタ（VS Code等）を開き直してください。
+
+6. **Worktreeのクリーンアップ（作業終了後）**
+   - 作業が完了し、不要になったWorktreeは以下の手順で削除します。
+
+   ```bash
+   # メインのディレクトリに戻る
+   cd ../booth-auto-scraping
+
+   # Worktreeの登録を削除
+   git worktree remove ../<ディレクトリ名>
+
+   # （必要であれば）作業用ディレクトリを完全に削除
+   rm -rf ../<ディレクトリ名>
+
+   # 作業用ブランチを削除（マージ済みの場合）
+   git branch -d <ブランチ名>
+
+   # マージされていないが強制削除する場合
+   # git branch -D <ブランチ名>
+   ```

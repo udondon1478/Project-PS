@@ -2,11 +2,17 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 import { type ScraperRun, type ScraperLog, type ScraperStatus } from '@/lib/booth-scraper/orchestrator';
 
+interface SerializedScraperRun extends Omit<ScraperRun, 'startTime' | 'endTime'> {
+  startTime: string;
+  endTime?: string | null;
+}
+
 interface DashboardProps {
-  recentRuns: ScraperRun[];
+  recentRuns: SerializedScraperRun[];
 }
 
 export default function ScraperDashboard({ recentRuns }: DashboardProps) {
@@ -40,6 +46,14 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
         }
       } catch (e) {
         console.error('Poll error', e);
+        // Do not crash the poll, but maybe show a toast if it's persistent? 
+        // For polling, constant toasts might be annoying. 
+        // Review comment said: "update the catch to surface an in-UI notification... ensuring you import/use the app's toast API consistently"
+        // Let's show it once or use a specific error handling strategy.
+        // For now, I'll add the toast as requested.
+        toast.error('Failed to poll scraper status', {
+           description: e instanceof Error ? e.message : String(e)
+        });
       }
     };
 

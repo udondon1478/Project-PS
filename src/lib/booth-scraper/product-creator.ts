@@ -179,19 +179,22 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
     });
 
     // Persistence Verification
-    try {
-      const persistedProduct = await prisma.product.findUnique({
-         where: { id: newProduct.id },
-         select: { id: true, boothJpUrl: true }
-      });
-      
-      if (persistedProduct) {
-         console.log(`[ProductCreator] Verified persistence for product: ${persistedProduct.id} (${persistedProduct.boothJpUrl})`);
-      } else {
-         console.error(`[ProductCreator] CRITICAL: Product returned from transaction but NOT found in DB immediately after! ID: ${newProduct.id}, URL: ${boothJpUrl}`);
+    // Only run in non-production environments to avoid unnecessary queries
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        const persistedProduct = await prisma.product.findUnique({
+           where: { id: newProduct.id },
+           select: { id: true, boothJpUrl: true }
+        });
+        
+        if (persistedProduct) {
+           console.log(`[ProductCreator] Verified persistence for product: ${persistedProduct.id} (${persistedProduct.boothJpUrl})`);
+        } else {
+           console.error(`[ProductCreator] CRITICAL: Product returned from transaction but NOT found in DB immediately after! ID: ${newProduct.id}, URL: ${boothJpUrl}`);
+        }
+      } catch (verifyError) {
+          console.error(`[ProductCreator] Verification query failed for product ${newProduct.id}:`, verifyError);
       }
-    } catch (verifyError) {
-        console.error(`[ProductCreator] Verification query failed for product ${newProduct.id}:`, verifyError);
     }
 
     // Send Discord Notification (Fire-and-forget) - Outside Transaction

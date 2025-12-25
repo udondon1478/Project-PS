@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { parseProductPage } from './product-parser';
+
+import { parseProductPage, parseProductJson } from './product-parser';
 
 describe('parseProductPage', () => {
   it('should extract tags, price and other metadata from a standard product page', () => {
@@ -177,7 +178,7 @@ describe('parseProductPage', () => {
   });
 });
 
-import { parseProductJson } from './product-parser';
+
 
 describe('parseProductJson', () => {
   it('should parse product JSON correctly', () => {

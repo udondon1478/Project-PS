@@ -133,7 +133,7 @@ class BoothScraperOrchestrator {
       runId = existingRun.runId;
       startTime = existingRun.startTime.getTime();
       resumed = true;
-      this.addLog(`Resuming interrupted run: ${runId}`);
+      // this.addLog waiting for currentStatus init
     } else {
       runId = `run_${Date.now()}`;
       startTime = Date.now();
@@ -159,6 +159,10 @@ class BoothScraperOrchestrator {
       },
       logs: [],
     };
+
+    if (resumed) {
+      this.addLog(`Resuming interrupted run: ${runId}`);
+    }
 
     if (!resumed) {
       // Create new DB Record only if not resuming
@@ -391,9 +395,9 @@ class BoothScraperOrchestrator {
       await prisma.scraperRun.update({
         where: { runId: this.currentStatus.runId },
         data: {
-          productsFound: this.currentStatus.progress.productsFound,
           productsCreated: this.currentStatus.progress.productsCreated,
           processedPages: this.currentStatus.progress.pagesProcessed,
+          lastProcessedPage: this.currentStatus.progress.lastProcessedPage ?? undefined,
         }
       });
     } catch (e) {
