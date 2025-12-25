@@ -38,6 +38,19 @@ async function main() {
     console.log(`Created/Updated test user with id: ${testUser.id}`);
   }
 
+  // システムユーザー (スクレイパー用) の作成
+  // cronやスクリプトで使用するため、環境に関わらず作成する
+  const systemUser = await prisma.user.upsert({
+    where: { email: 'system-scraper@polyseek.com' },
+    update: {}, // 既存の場合は更新しない
+    create: {
+      email: 'system-scraper@polyseek.com',
+      name: 'System Bot',
+      role: Role.ADMIN, // 必要に応じて権限調整
+    },
+  });
+  console.log(`Created/Updated system user with id: ${systemUser.id}`);
+
   // タグカテゴリの初期データを作成
   const ageRatingCategory = await prisma.tagCategory.upsert({
     where: { name: 'age_rating' },
