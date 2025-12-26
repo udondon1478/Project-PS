@@ -28,6 +28,11 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
   const [pageLimit, setPageLimit] = useState<string>('3');
   const [rateLimit, setRateLimit] = useState<string>('2500');
 
+  // Search Params
+  const [searchQuery, setSearchQuery] = useState<string>('VRChat');
+  const [category, setCategory] = useState<string>('');
+  const [adult, setAdult] = useState<boolean>(false);
+
   // Poll status
   useEffect(() => {
     const fetchStatus = async () => {
@@ -86,7 +91,12 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
           mode,
           options: {
             pageLimit: pLimit,
-            rateLimitOverride: rLimit
+            rateLimitOverride: rLimit,
+            searchParams: {
+              query: searchQuery,
+              category: category || undefined,
+              adult
+            }
           }
         })
       });
@@ -159,6 +169,44 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                className="w-full p-2 border rounded dark:bg-gray-700"
              />
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-4 dark:border-gray-700">
+           <div>
+              <label htmlFor="searchQuery" className="block text-sm font-medium mb-1">Search Query</label>
+              <input 
+                id="searchQuery"
+                type="text" 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full p-2 border rounded dark:bg-gray-700"
+                placeholder="VRChat"
+              />
+           </div>
+           
+           <div>
+              <label htmlFor="category" className="block text-sm font-medium mb-1">Category (Optional)</label>
+              <input 
+                id="category"
+                type="text" 
+                value={category} 
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full p-2 border rounded dark:bg-gray-700"
+                placeholder="3D models"
+              />
+           </div>
+
+           <div className="flex items-center pt-6">
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input 
+                  type="checkbox"
+                  checked={adult}
+                  onChange={(e) => setAdult(e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm font-medium">Include Adult Content</span>
+              </label>
+           </div>
         </div>
 
         <button 
