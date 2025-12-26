@@ -18,9 +18,7 @@ export function getSearchUrl(page: number = 1, params: SearchParams = {}): strin
 
   if (params.category) {
     url = new URL(`${BOOTH_BASE_URL}/ja/browse/${encodeURIComponent(params.category)}`);
-    if (query) {
-      url.searchParams.append('q', query);
-    }
+    url.searchParams.append('q', query);
   } else {
     url = new URL(`${BOOTH_BASE_URL}/ja/items`);
     url.searchParams.append('tags[]', query);

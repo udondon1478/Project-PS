@@ -204,7 +204,7 @@ class BoothScraperOrchestrator {
     const defaultBaseInterval = 4000; // 4 seconds (human-like)
     const targetInterval = options.rateLimitOverride || defaultBaseInterval;
     
-    // PQueue interval is set to a safe minimum (1s) to allow manual control via waitRandom
+    // PQueue interval is set to a safe minimum (1s) to allow manual control via waitJitter
     this.queue = new PQueue({
       concurrency: 1,
       interval: 1000,

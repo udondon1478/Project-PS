@@ -159,7 +159,11 @@ export class TagResolver {
   private normalizeTagName(name: string): string {
     return name
       .normalize('NFKC')
-      // .toLowerCase() // Removed to preserve case (e.g. VRChat, Unity)
+      // .toLowerCase() 
+      // Removed to preserve case (e.g. VRChat, Unity). 
+      // NOTE: This means 'vrchat' and 'VRChat' are treated as different tags.
+      // This is intentional to respect the platform's conventions, but may require 
+      // case-insensitive search logic in the future.
       .replace(/\s+/g, ' ')
       .trim();
   }

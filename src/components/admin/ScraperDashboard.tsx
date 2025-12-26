@@ -299,7 +299,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                       />
                       <span className={t.enabled ? '' : 'text-gray-400 line-through'}>{t.tag}</span>
                    </div>
-                   <button onClick={() => handleDeleteTag(t.id)} className="text-red-500 text-xs hover:underline">Delete</button>
+                   <button type="button" onClick={() => handleDeleteTag(t.id)} className="text-red-500 text-xs hover:underline">Delete</button>
                 </div>
               ))}
               {tags.length === 0 && <div className="text-gray-400 text-sm">No target tags defined.</div>}

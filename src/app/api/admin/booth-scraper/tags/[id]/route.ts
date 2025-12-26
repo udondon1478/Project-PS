@@ -1,12 +1,19 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from "@/auth";
+import { Role } from "@prisma/client";
 
 // PATCH: タグの有効/無効切り替え
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> } // Params is a Promise in Next.js 15+
 ) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== Role.ADMIN) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   try {
     const { id } = await params;
     const { enabled } = await req.json();
@@ -28,9 +35,14 @@ export async function PATCH(
 
 // DELETE: タグの削除
 export async function DELETE(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== Role.ADMIN) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   try {
     const { id } = await params;
     await prisma.scraperTargetTag.delete({
@@ -39,6 +51,9 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if ((error as any).code === 'P2025') {
+       return NextResponse.json({ error: 'Tag not found' }, { status: 404 });
+    }
     return NextResponse.json({ error: 'Failed to delete tag' }, { status: 500 });
   }
 }
