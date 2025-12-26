@@ -32,6 +32,61 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
   const [searchQuery, setSearchQuery] = useState<string>('VRChat');
   const [category, setCategory] = useState<string>('');
   const [adult, setAdult] = useState<boolean>(false);
+  const [useTargetTags, setUseTargetTags] = useState<boolean>(false);
+
+  // Target Tags
+  const [tags, setTags] = useState<Array<{ id: string, tag: string, enabled: boolean }>>([]);
+  const [newTagInput, setNewTagInput] = useState('');
+
+  useEffect(() => {
+    fetch('/api/admin/booth-scraper/tags')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setTags(data);
+      })
+      .catch(e => toast.error('Failed to load tags'));
+  }, []);
+
+  const handleAddTag = async () => {
+    if (!newTagInput.trim()) return;
+    try {
+      const res = await fetch('/api/admin/booth-scraper/tags', {
+        method: 'POST',
+        body: JSON.stringify({ tag: newTagInput }),
+      });
+      if (res.ok) {
+        const tag = await res.json();
+        setTags(prev => [tag, ...prev]);
+        setNewTagInput('');
+        toast.success('Tag added successfully');
+      }
+    } catch (e) {
+      toast.error('Failed to add tag');
+    }
+  };
+
+  const handleDeleteTag = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this tag?')) return;
+    try {
+      await fetch(`/api/admin/booth-scraper/tags/${id}`, { method: 'DELETE' });
+      setTags(prev => prev.filter(t => t.id !== id));
+      toast.success('Tag deleted');
+    } catch (e) {
+      toast.error('Failed to delete tag');
+    }
+  };
+
+  const handleToggleTag = async (id: string, current: boolean) => {
+    try {
+       await fetch(`/api/admin/booth-scraper/tags/${id}`, { 
+         method: 'PATCH',
+         body: JSON.stringify({ enabled: !current })
+       });
+       setTags(prev => prev.map(t => t.id === id ? { ...t, enabled: !current } : t));
+    } catch (e) {
+      toast.error('Failed to toggle tag');
+    }
+  };
 
   // Poll status
   useEffect(() => {
@@ -95,7 +150,8 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
             searchParams: {
               query: searchQuery,
               category: category || undefined,
-              adult
+              adult,
+              useTargetTags
             }
           }
         })
@@ -196,7 +252,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
               />
            </div>
 
-           <div className="flex items-center pt-6">
+           <div className="flex items-center pt-6 space-x-4">
               <label className="flex items-center space-x-2 cursor-pointer">
                 <input 
                   type="checkbox"
@@ -206,6 +262,47 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                 />
                 <span className="text-sm font-medium">Include Adult Content</span>
               </label>
+
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input 
+                  type="checkbox"
+                  checked={useTargetTags}
+                  onChange={(e) => setUseTargetTags(e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm font-medium">Use Target Tag List</span>
+              </label>
+           </div>
+        </div>
+
+        {/* Target Tag Manager */}
+        <div className="border-t pt-4 dark:border-gray-700">
+           <h3 className="text-sm font-medium mb-2">Target Tag List (Used when "Use Target Tag List" is checked)</h3>
+           <div className="flex gap-2 mb-2">
+             <input 
+               type="text" 
+               value={newTagInput}
+               onChange={(e) => setNewTagInput(e.target.value)}
+               className="border p-2 rounded dark:bg-gray-700"
+               placeholder="Add new tag (e.g. '3D Costume')"
+             />
+             <button onClick={handleAddTag} type="button" className="bg-green-600 text-white px-3 py-1 rounded">Add</button>
+           </div>
+           <div className="max-h-40 overflow-y-auto border rounded p-2 bg-gray-50 dark:bg-gray-900">
+              {tags.map(t => (
+                <div key={t.id} className="flex justify-between items-center py-1 border-b last:border-0 border-gray-200 dark:border-gray-700">
+                   <div className="flex items-center gap-2">
+                      <input 
+                        type="checkbox" 
+                        checked={t.enabled} 
+                        onChange={() => handleToggleTag(t.id, t.enabled)}
+                      />
+                      <span className={t.enabled ? '' : 'text-gray-400 line-through'}>{t.tag}</span>
+                   </div>
+                   <button onClick={() => handleDeleteTag(t.id)} className="text-red-500 text-xs hover:underline">Delete</button>
+                </div>
+              ))}
+              {tags.length === 0 && <div className="text-gray-400 text-sm">No target tags defined.</div>}
            </div>
         </div>
 

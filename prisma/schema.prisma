@@ -468,3 +468,14 @@ model ScraperRun {
   @@index([startTime])
   @@index([status])
 }
+
+// スクレイパー対象タグテーブル
+model ScraperTargetTag {
+  id        String   @id @default(cuid())
+  tag       String   @unique
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("scraper_target_tags")
+}

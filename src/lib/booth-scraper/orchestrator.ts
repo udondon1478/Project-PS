@@ -36,6 +36,7 @@ export interface ScraperOptions {
     query?: string;
     category?: string;
     adult?: boolean;
+    useTargetTags?: boolean;
   };
 }
 
@@ -241,22 +242,55 @@ class BoothScraperOrchestrator {
       }
     }
 
-    const crawler = new ListingCrawler({
-      queue: this.queue!,
-      searchParams: options.searchParams,
-    }); 
+    // Determine target queries
+    let targets: Array<{ query: string, category?: string }> = [];
 
-    this.addLog(`Starting crawl: Mode=${mode}, StartPage=${startPage}, MaxPages=${maxPages}, BaseInterval=${targetInterval}ms`);
+    if (options.searchParams?.useTargetTags) {
+       const dbTags = await prisma.scraperTargetTag.findMany({
+         where: { enabled: true }
+       });
+       if (dbTags.length === 0) {
+         this.addLog('Target Tag mode enabled but no enabled tags found.');
+       } else {
+         this.addLog(`Target Tag mode: Found ${dbTags.length} tags.`);
+         targets = dbTags.map(t => ({ query: t.tag }));
+       }
+    } else {
+       // Single target mode
+       targets.push({ 
+         query: options.searchParams?.query || 'VRChat',
+         category: options.searchParams?.category 
+       });
+    }
 
-    await crawler.run({
-      startPage,
-      maxPages,
-      onProductsFound: async (urls, page) => {
-        if (this.shouldStop) return;
-        await this.processBatch(urls, page, userId, isBackfill, targetInterval);
-        await this.updateDbProgress();
-      }
-    });
+    this.addLog(`Starting crawl: Mode=${mode}, StartPage=${startPage}, MaxPages=${maxPages}, BaseInterval=${targetInterval}ms, Targets=${targets.length}`);
+
+    for (const target of targets) {
+        if (this.shouldStop) break;
+
+        const currentParams = {
+          ...options.searchParams,
+          query: target.query,
+          category: target.category || options.searchParams?.category, // Allow category override per target if needed, but fall back to global
+        };
+
+        this.addLog(`--> Scraping target: "${currentParams.query}" (Category: ${currentParams.category || 'Any'})`);
+
+        const crawler = new ListingCrawler({
+          queue: this.queue!,
+          searchParams: currentParams,
+        });
+
+        await crawler.run({
+          startPage,
+          maxPages,
+          onProductsFound: async (urls, page) => {
+            if (this.shouldStop) return;
+            await this.processBatch(urls, page, userId, isBackfill, targetInterval);
+            await this.updateDbProgress();
+          }
+        });
+    }
 
     if (this.currentStatus?.status !== 'failed') {
       this.currentStatus!.status = 'completed';
