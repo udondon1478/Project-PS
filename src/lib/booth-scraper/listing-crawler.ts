@@ -1,6 +1,6 @@
 import PQueue, { type Options as PQueueOptions } from 'p-queue';
 import { setTimeout } from 'timers/promises';
-import { getVrChatSearchUrl } from './urls';
+import { getSearchUrl, type SearchParams } from './urls';
 import { boothHttpClient } from './http-client';
 import { parseListingPage } from './listing-parser';
 import { waitJitter } from './utils';
@@ -14,7 +14,12 @@ export interface CrawlerOptions {
 export class ListingCrawler {
   private queue: PQueue;
 
-  constructor(options?: { queue?: PQueue; queueOptions?: PQueueOptions<any, any> }) {
+  private searchParams: SearchParams = {};
+  
+  constructor(options?: { queue?: PQueue; queueOptions?: PQueueOptions<any, any>; searchParams?: SearchParams }) {
+    if (options?.searchParams) {
+      this.searchParams = options.searchParams;
+    }
     if (options?.queue) {
       this.queue = options.queue;
     } else {
@@ -31,11 +36,11 @@ export class ListingCrawler {
 
 
   private async fetchPageWithRetry(page: number, attempt = 1): Promise<{ productUrls: string[], hasNextPage: boolean }> {
-    const url = getVrChatSearchUrl(page);
+    const url = getSearchUrl(page, this.searchParams);
 
     try {
       // Jitter before fetch
-      await waitJitter();
+      await waitJitter(2000, 1000);
       
       console.log(`[Crawler] Fetching page ${page} (Attempt ${attempt})...`);
       const res = await boothHttpClient.fetch(url);

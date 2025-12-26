@@ -32,6 +32,12 @@ export interface ScraperOptions {
    *           データの整合性を優先する場合に使用してください。
    */
   onExistenceCheckFailure?: 'continue' | 'stop';
+  searchParams?: {
+    query?: string;
+    category?: string;
+    adult?: boolean;
+    useTargetTags?: boolean;
+  };
 }
 
 export interface ScraperLog {
@@ -195,12 +201,13 @@ class BoothScraperOrchestrator {
   private async runWorkflow(mode: ScraperMode, userId: string, options: ScraperOptions, resumed: boolean = false) {
     const isBackfill = mode === 'BACKFILL';
     
-    const defaultInterval = isBackfill ? 4000 : 2500;
-    const interval = options.rateLimitOverride || defaultInterval;
+    const defaultBaseInterval = 4000; // 4 seconds (human-like)
+    const targetInterval = options.rateLimitOverride || defaultBaseInterval;
     
+    // PQueue interval is set to a safe minimum (1s) to allow manual control via waitJitter
     this.queue = new PQueue({
       concurrency: 1,
-      interval,
+      interval: 1000,
       intervalCap: 1,
     });
 
@@ -235,21 +242,55 @@ class BoothScraperOrchestrator {
       }
     }
 
-    const crawler = new ListingCrawler({
-      queue: this.queue!,
-    }); 
+    // Determine target queries
+    let targets: Array<{ query: string, category?: string }> = [];
 
-    this.addLog(`Starting crawl: Mode=${mode}, StartPage=${startPage}, MaxPages=${maxPages}, Interval=${interval}ms`);
+    if (options.searchParams?.useTargetTags) {
+       const dbTags = await prisma.scraperTargetTag.findMany({
+         where: { enabled: true }
+       });
+       if (dbTags.length === 0) {
+         this.addLog('Target Tag mode enabled but no enabled tags found.');
+       } else {
+         this.addLog(`Target Tag mode: Found ${dbTags.length} tags.`);
+         targets = dbTags.map(t => ({ query: t.tag }));
+       }
+    } else {
+       // Single target mode
+       targets.push({ 
+         query: options.searchParams?.query || 'VRChat',
+         category: options.searchParams?.category 
+       });
+    }
 
-    await crawler.run({
-      startPage,
-      maxPages,
-      onProductsFound: async (urls, page) => {
-        if (this.shouldStop) return;
-        await this.processBatch(urls, page, userId, isBackfill);
-        await this.updateDbProgress();
-      }
-    });
+    this.addLog(`Starting crawl: Mode=${mode}, StartPage=${startPage}, MaxPages=${maxPages}, BaseInterval=${targetInterval}ms, Targets=${targets.length}`);
+
+    for (const target of targets) {
+        if (this.shouldStop) break;
+
+        const currentParams = {
+          ...options.searchParams,
+          query: target.query,
+          category: target.category || options.searchParams?.category, // Allow category override per target if needed, but fall back to global
+        };
+
+        this.addLog(`--> Scraping target: "${currentParams.query}" (Category: ${currentParams.category || 'Any'})`);
+
+        const crawler = new ListingCrawler({
+          queue: this.queue!,
+          searchParams: currentParams,
+        });
+
+        await crawler.run({
+          startPage,
+          maxPages,
+          onProductsFound: async (urls, page) => {
+            if (this.shouldStop) return;
+            await this.processBatch(urls, page, userId, isBackfill, targetInterval);
+            await this.updateDbProgress();
+          }
+        });
+    }
 
     if (this.currentStatus?.status !== 'failed') {
       this.currentStatus!.status = 'completed';
@@ -260,7 +301,7 @@ class BoothScraperOrchestrator {
     }
   }
 
-  private async processBatch(urls: string[], page: number, userId: string, isBackfill: boolean) {
+  private async processBatch(urls: string[], page: number, userId: string, isBackfill: boolean, baseInterval: number) {
     if (!this.currentStatus) return;
     
     this.currentStatus.progress.lastProcessedPage = page;
@@ -319,7 +360,7 @@ class BoothScraperOrchestrator {
        // Add to queue
        await this.queue!.add(async () => {
          try {
-           await waitJitter(); // Add random jitter
+            await waitJitter(baseInterval, 2000); // 4s ± 2s (if base is 4000)
 
            // Try fetching JSON first (more reliable for tags)
            let data: ProductPageResult | null = null;

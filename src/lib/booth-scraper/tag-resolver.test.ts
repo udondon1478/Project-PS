@@ -34,10 +34,10 @@ describe('TagResolver', () => {
 
   describe('resolveTags', () => {
     it('should return existing tag IDs and create new ones', async () => {
-      const inputTags = ['Existing', 'NewTag'];
+      const inputTags = ['existing', 'NewTag'];
       
       // Mock existing tag finding
-      // Note: normalizeTagName now lowercases input, so we search for 'existing'
+      // Note: normalizeTagName now preserves case, so we search for 'existing'
       mockFindMany.mockResolvedValueOnce([
         { id: 'id-existing', name: 'existing' }
       ]);
@@ -51,13 +51,13 @@ describe('TagResolver', () => {
 
       // Expect finding existing tags with normalized names
       expect(mockFindMany).toHaveBeenCalledWith({
-        where: { name: { in: ['existing', 'newtag'] } },
+        where: { name: { in: ['existing', 'NewTag'] } },
         select: { id: true, name: true },
       });
 
-      // Expect creation of 'newtag'
+      // Expect creation of 'NewTag'
       expect(mockCreate).toHaveBeenCalledWith({
-        data: { name: 'newtag', language: 'ja' },
+        data: { name: 'NewTag', language: 'ja' },
         select: { id: true },
       });
 
@@ -73,24 +73,24 @@ describe('TagResolver', () => {
         await resolver.resolveTags(['Dup', 'Dup']);
 
         expect(mockFindMany).toHaveBeenCalledWith({
-             where: { name: { in: ['dup'] } }, 
+             where: { name: { in: ['Dup'] } }, 
              select: { id: true, name: true },
         });
         expect(mockCreate).toHaveBeenCalledTimes(1);
     });
 
-    it('should treat different casing as same tags after normalization', async () => {
+    it('should treat different casing as distinct tags', async () => {
         mockFindMany.mockResolvedValue([]);
         mockCreate.mockResolvedValue({ id: 'id-new', name: 'new' });
 
         await resolver.resolveTags(['NEW', 'new']);
 
         expect(mockFindMany).toHaveBeenCalledWith({
-             where: { name: { in: ['new'] } },
+             where: { name: { in: ['NEW', 'new'] } },
              select: { id: true, name: true },
         });
-        // deduplication happens after normalization, so only 1 create called
-        expect(mockCreate).toHaveBeenCalledTimes(1);
+        // deduplication happens after normalization, so 2 creates called if case differs
+        expect(mockCreate).toHaveBeenCalledTimes(2);
     });
 
     it('should normalize full-width characters and spaces', async () => {
@@ -100,11 +100,11 @@ describe('TagResolver', () => {
         await resolver.resolveTags(['Ｔａｇ　Ｎａｍｅ']); // Full-width chars and space
 
         expect(mockFindMany).toHaveBeenCalledWith({
-             where: { name: { in: ['tag name'] } },
+             where: { name: { in: ['Tag Name'] } },
              select: { id: true, name: true },
         });
         expect(mockCreate).toHaveBeenCalledWith({
-             data: { name: 'tag name', language: 'ja' },
+             data: { name: 'Tag Name', language: 'ja' },
              select: { id: true },
         });
     });
@@ -116,7 +116,7 @@ describe('TagResolver', () => {
         await resolver.resolveTags(['Tag   Name']);
 
         expect(mockFindMany).toHaveBeenCalledWith({
-             where: { name: { in: ['tag name'] } },
+             where: { name: { in: ['Tag Name'] } },
              select: { id: true, name: true },
         });
     });
@@ -129,7 +129,7 @@ describe('TagResolver', () => {
         mockFindUnique.mockResolvedValue(null);
 
         const promise = resolver.resolveTags(['FailTag']);
-        await expect(promise).rejects.toThrow('Failed to create or find tag: failtag');
+        await expect(promise).rejects.toThrow('Failed to create or find tag: FailTag');
     });
   });
 
@@ -152,7 +152,7 @@ describe('TagResolver', () => {
           expect(mockTagCategoryCreate).toHaveBeenCalled();
           expect(mockCreate).toHaveBeenCalledWith({
               data: {
-                  name: 'r-18',
+                  name: 'R-18',
                   language: 'ja',
                   tagCategoryId: 'cat-age'
               }
