@@ -78,11 +78,19 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
 
   const handleToggleTag = async (id: string, current: boolean) => {
     try {
-       await fetch(`/api/admin/booth-scraper/tags/${id}`, { 
-         method: 'PATCH',
-         body: JSON.stringify({ enabled: !current })
-       });
-       setTags(prev => prev.map(t => t.id === id ? { ...t, enabled: !current } : t));
+      const res = await fetch(`/api/admin/booth-scraper/tags/${id}`, { 
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: !current })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Failed to toggle tag' }));
+        toast.error(err.error || 'Failed to toggle tag');
+        return;
+      }
+
+      setTags(prev => prev.map(t => t.id === id ? { ...t, enabled: !current } : t));
     } catch (e) {
       toast.error('Failed to toggle tag');
     }
