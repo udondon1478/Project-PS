@@ -25,6 +25,7 @@ export async function GET(request: Request, context: { params: Promise<{ product
               select: {
                 id: true,
                 name: true,
+                displayName: true,
                 description: true,
                 tagCategoryId: true,
                 tagCategory: {
@@ -99,7 +100,7 @@ export async function GET(request: Request, context: { params: Promise<{ product
     };
 
     // --- Fetch tag names for history ---
-    const tagIdToNameMap: { [key: string]: string } = {};
+    const tagIdToNameMap: { [key: string]: { name: string; displayName: string | null } } = {};
     if (product.tagEditHistory && product.tagEditHistory.length > 0) {
       const tagIds = new Set<string>();
       product.tagEditHistory.forEach(history => {
@@ -118,11 +119,12 @@ export async function GET(request: Request, context: { params: Promise<{ product
           select: {
             id: true,
             name: true,
+            displayName: true,
           },
         });
 
         tags.forEach(tag => {
-          tagIdToNameMap[tag.id] = tag.name;
+          tagIdToNameMap[tag.id] = { name: tag.name, displayName: tag.displayName };
         });
       }
     }

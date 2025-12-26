@@ -18,6 +18,7 @@ export async function GET(request: Request) {
       select: {
         id: true,
         name: true,
+        displayName: true,
         tagCategory: { // TagCategory モデルを関連付けて取得
           select: {
             id: true,

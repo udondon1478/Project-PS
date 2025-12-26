@@ -29,6 +29,7 @@ export async function GET(request: Request) {
       select: {
         id: true,
         name: true,
+        displayName: true, // 表示名
         language: true, // 管理画面ではlanguageも表示
         isAlias: true, // 管理画面ではisAliasも表示
         canonicalId: true, // 管理画面ではcanonicalIdも表示
