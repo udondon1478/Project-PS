@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from "@/auth";
-import { Role } from "@prisma/client";
+import { Role, Prisma } from "@prisma/client";
 
 // PATCH: タグの有効/無効切り替え
 export async function PATCH(
@@ -51,7 +51,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if ((error as any).code === 'P2025') {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
        return NextResponse.json({ error: 'Tag not found' }, { status: 404 });
     }
     return NextResponse.json({ error: 'Failed to delete tag' }, { status: 500 });

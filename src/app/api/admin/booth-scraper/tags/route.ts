@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from "@/auth";
-import { Role } from "@prisma/client";
+import { Role, Prisma } from "@prisma/client";
 
 // GET: 登録済みターゲットタグ一覧取得
 export async function GET() {
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(newTag);
   } catch (error) {
     // ユニーク制約違反などのエラーハンドリング
-    if ((error as any).code === 'P2002') {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         return NextResponse.json({ error: 'Tag already exists' }, { status: 409 });
     }
     return NextResponse.json({ error: 'Failed to create tag' }, { status: 500 });
