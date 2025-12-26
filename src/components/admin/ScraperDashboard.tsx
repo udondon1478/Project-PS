@@ -52,6 +52,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
     try {
       const res = await fetch('/api/admin/booth-scraper/tags', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tag: newTagInput }),
       });
       if (res.ok) {
@@ -59,9 +60,12 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
         setTags(prev => [tag, ...prev]);
         setNewTagInput('');
         toast.success('Tag added successfully');
+      } else {
+        const err = await res.json().catch(() => ({ error: 'Failed to add tag' }));
+        toast.error(err.error || 'Failed to add tag');
       }
     } catch (e) {
-      toast.error('Failed to add tag');
+      toast.error(e instanceof Error ? e.message : 'Failed to add tag');
     }
   };
 

@@ -250,7 +250,7 @@ class BoothScraperOrchestrator {
          where: { enabled: true }
        });
        if (dbTags.length === 0) {
-         this.addLog('Target Tag mode enabled but no enabled tags found.');
+         throw new Error('Target Tag mode enabled but no enabled tags found in database.');
        } else {
          this.addLog(`Target Tag mode: Found ${dbTags.length} tags.`);
          targets = dbTags.map(t => ({ query: t.tag }));
