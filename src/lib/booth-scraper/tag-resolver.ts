@@ -88,8 +88,9 @@ export class TagResolver {
         'r15': 'R-15',
     };
 
-    if (normalizedRating in ratingMap) {
-        normalizedRating = ratingMap[normalizedRating];
+    const lowerRating = normalizedRating.toLowerCase();
+    if (lowerRating in ratingMap) {
+        normalizedRating = ratingMap[lowerRating];
     }
 
     // Ensure category exists
@@ -158,7 +159,7 @@ export class TagResolver {
   private normalizeTagName(name: string): string {
     return name
       .normalize('NFKC')
-      .toLowerCase()
+      // .toLowerCase() // Removed to preserve case (e.g. VRChat, Unity)
       .replace(/\s+/g, ' ')
       .trim();
   }
