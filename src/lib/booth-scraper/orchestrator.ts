@@ -32,6 +32,11 @@ export interface ScraperOptions {
    *           データの整合性を優先する場合に使用してください。
    */
   onExistenceCheckFailure?: 'continue' | 'stop';
+  searchParams?: {
+    query?: string;
+    category?: string;
+    adult?: boolean;
+  };
 }
 
 export interface ScraperLog {
@@ -238,6 +243,7 @@ class BoothScraperOrchestrator {
 
     const crawler = new ListingCrawler({
       queue: this.queue!,
+      searchParams: options.searchParams,
     }); 
 
     this.addLog(`Starting crawl: Mode=${mode}, StartPage=${startPage}, MaxPages=${maxPages}, BaseInterval=${targetInterval}ms`);
