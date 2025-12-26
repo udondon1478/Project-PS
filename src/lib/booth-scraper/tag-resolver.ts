@@ -15,9 +15,19 @@ export class TagResolver {
   /**
    * タグ名の配列を受け取り、Tag IDの配列を返す。
    * 存在しないタグは新規作成される。
+   * 大文字小文字の違いは同一タグとして扱い、最初の出現形式を displayName として保持する。
    */
   async resolveTags(tagNames: string[]): Promise<string[]> {
-    const normalizedNames = [...new Set(tagNames.map(this.normalizeTagName))];
+    // Map: normalized name → original display name (first wins)
+    const deduplicatedMap = new Map<string, string>();
+    for (const name of tagNames) {
+      const normalized = this.normalizeTagName(name);
+      if (!deduplicatedMap.has(normalized)) {
+        deduplicatedMap.set(normalized, name); // 最初の出現を保持
+      }
+    }
+
+    const normalizedNames = [...deduplicatedMap.keys()];
     if (normalizedNames.length === 0) return [];
 
     // 1. Find existing tags
@@ -25,51 +35,52 @@ export class TagResolver {
       where: {
         name: { in: normalizedNames },
       },
-      select: { id: true, name: true },
+      select: { id: true, name: true, displayName: true },
     });
 
-    const existingTagNames = new Set(existingTags.map(t => t.name));
-    const existingTagIds = existingTags.map(t => t.id);
+    // Map for quick lookup: normalized name → tag id
+    const existingTagMap = new Map(existingTags.map(t => [t.name, t.id]));
 
     // 2. Create missing tags
-    const missingTagNames = normalizedNames.filter(name => !existingTagNames.has(name));
-    
-    const newTagIds: string[] = [];
-    
+    const missingEntries = [...deduplicatedMap.entries()]
+      .filter(([normalized]) => !existingTagMap.has(normalized));
+
+    const createdTagMap = new Map<string, string>();
+
     // Create tags in parallel
-    const createdTags = await Promise.all(
-      missingTagNames.map(async (name) => {
+    await Promise.all(
+      missingEntries.map(async ([normalized, displayName]) => {
         try {
           const newTag = await this.db.tag.create({
             data: {
-              name,
+              name: normalized,
+              displayName: displayName,
               language: this.defaultLanguage,
             },
             select: { id: true },
           });
-          return newTag.id;
+          createdTagMap.set(normalized, newTag.id);
         } catch (error) {
           // Tag might have been created by another process in the meantime
           // Try fetching it again
           const existing = await this.db.tag.findUnique({
-            where: { name },
-            select: { id: true },
+            where: { name: normalized },
+            select: { id: true, displayName: true },
           });
           if (existing) {
-            return existing.id;
+            createdTagMap.set(normalized, existing.id);
           } else {
-            console.error(`Failed to create or find tag: ${name}`, error);
-            throw new Error(`Failed to create or find tag: ${name}`);
+            console.error(`Failed to create or find tag: ${normalized}`, error);
+            throw new Error(`Failed to create or find tag: ${normalized}`);
           }
         }
       })
     );
-    
-    // Filter out nulls (failed tags)
-    const successfulNewTagIds = createdTags.filter((id): id is string => id !== null);
-    newTagIds.push(...successfulNewTagIds);
 
-    return [...existingTagIds, ...newTagIds];
+    // 3. Return IDs in order of deduplicatedMap entries
+    return [...deduplicatedMap.keys()].map(normalized =>
+      existingTagMap.get(normalized) ?? createdTagMap.get(normalized)!
+    );
   }
 
   /**
@@ -159,11 +170,7 @@ export class TagResolver {
   private normalizeTagName(name: string): string {
     return name
       .normalize('NFKC')
-      // .toLowerCase() 
-      // Removed to preserve case (e.g. VRChat, Unity). 
-      // NOTE: This means 'vrchat' and 'VRChat' are treated as different tags.
-      // This is intentional to respect the platform's conventions, but may require 
-      // case-insensitive search logic in the future.
+      .toLowerCase() // 小文字に統一して大文字小文字の違いを同一視
       .replace(/\s+/g, ' ')
       .trim();
   }
