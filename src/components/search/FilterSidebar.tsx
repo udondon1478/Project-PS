@@ -26,9 +26,9 @@ import { Filter, X } from 'lucide-react';
 interface FilterSidebarProps {
   isFilterSidebarOpen: boolean;
   setIsFilterSidebarOpen: (isOpen: boolean) => void;
-  ageRatingTags: { id: string; name: string; color?: string | null }[];
-  categoryTags: { id: string; name: string; color?: string | null }[];
-  featureTags: { id: string; name: string; color?: string | null }[];
+  ageRatingTags: { id: string; name: string; displayName?: string; color?: string | null }[];
+  categoryTags: { id: string; name: string; displayName?: string; color?: string | null }[];
+  featureTags: { id: string; name: string; displayName?: string; color?: string | null }[];
   selectedAgeRatingTags: string[];
   setSelectedAgeRatingTags: (tags: string[]) => void;
   detailedFilters: { category: string | null };
@@ -98,7 +98,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="w-full justify-start text-sm">
                       {selectedAgeRatingTags.length > 0
-                        ? `対象年齢: ${selectedAgeRatingTags.map(tagId => ageRatingTags.find(t => t.name === tagId)?.name || tagId).join(', ')}`
+                        ? `対象年齢: ${selectedAgeRatingTags.map(tagId => { const t = ageRatingTags.find(t => t.name === tagId); return t?.displayName || t?.name || tagId; }).join(', ')}`
                         : "対象年齢"}
                     </Button>
                   </DropdownMenuTrigger>
@@ -118,7 +118,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                             }}
                           />
                           <label htmlFor={`mobile-age-rating-${tag.id}`} className="text-sm font-medium leading-none">
-                            {tag.name}
+                            {tag.displayName || tag.name}
                           </label>
                         </div>
                       </DropdownMenuItem>
@@ -151,7 +151,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                       }}
                       className={`text-xs ${isNegativeTagSelected(tag.name) ? 'line-through' : ''}`}
                     >
-                      {tag.name}
+                      {tag.displayName || tag.name}
                     </Button>
                   ))}
                 </div>
@@ -171,8 +171,8 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
                   {categoryTags.map(tag => (
-                    <DropdownMenuItem key={tag.id} onSelect={() => handleDetailedFilterChange('category', tag.name)} className="text-sm" aria-label={tag.name}>
-                      {tag.name}
+                    <DropdownMenuItem key={tag.id} onSelect={() => handleDetailedFilterChange('category', tag.name)} className="text-sm" aria-label={tag.displayName || tag.name}>
+                      {tag.displayName || tag.name}
                     </DropdownMenuItem>
                   ))}
                   {detailedFilters.category && (

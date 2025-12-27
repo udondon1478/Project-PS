@@ -31,7 +31,7 @@ export const TagInput = ({ value: tags, onChange: setTags, disabled, id }: TagIn
           if (response.ok) {
             const data = await response.json();
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const tagNames = data.map((tag: any) => tag.name);
+            const tagNames = data.map((tag: any) => tag.displayName || tag.name);
             setSuggestions(tagNames);
           } else {
             setSuggestions([]);
