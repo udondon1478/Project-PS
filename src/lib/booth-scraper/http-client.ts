@@ -23,7 +23,8 @@ async function getRobotsParser(): Promise<ReturnType<typeof robotsParser>> {
     
     const res = await fetch(BOOTH_ROBOTS_TXT_URL, {
       headers: { 'User-Agent': USER_AGENT },
-      signal: controller.signal
+      signal: controller.signal,
+      cache: 'no-store',
     });
     
     clearTimeout(timeoutId);
@@ -97,6 +98,8 @@ export class BoothHttpClient {
           'User-Agent': USER_AGENT,
         },
         signal,
+        // Disable Next.js fetch caching for fresh scraping results
+        cache: 'no-store',
       });
 
       return response;
