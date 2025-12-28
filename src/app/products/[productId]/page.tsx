@@ -341,7 +341,7 @@ const ProductDetailPage = () => {
             <section className="mb-8">
               <h2 className="text-2xl font-bold mb-4 border-b pb-2 dark:border-gray-700">説明</h2>
               {product.description ? (
-                <div className="prose dark:prose-invert max-w-none bg-gray-50 dark:bg-gray-900/50 p-6 rounded-lg border dark:border-gray-800">
+                <div className="prose dark:prose-invert max-w-none break-words bg-gray-50 dark:bg-gray-900/50 p-6 rounded-lg border dark:border-gray-800">
                   <ReactMarkdown>{product.description}</ReactMarkdown>
                 </div>
               ) : (
