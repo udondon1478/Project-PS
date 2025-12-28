@@ -96,6 +96,7 @@ export class BoothHttpClient {
         headers: {
           ...init?.headers,
           'User-Agent': USER_AGENT,
+          'Cookie': 'adult=t',
         },
         signal,
         // Disable Next.js fetch caching for fresh scraping results
