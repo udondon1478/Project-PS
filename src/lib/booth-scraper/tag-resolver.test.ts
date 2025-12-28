@@ -134,6 +134,28 @@ describe('TagResolver', () => {
         expect(result).toEqual(['id-existing']);
     });
 
+    it('should update displayName for existing tag if it is null', async () => {
+        // Tag exists but has no displayName (e.g. created manually or by older scraper)
+        mockFindMany.mockResolvedValue([{
+            id: 'id-existing-no-display',
+            name: 'vrchat',
+            displayName: null
+        }]);
+
+        const result = await resolver.resolveTags(['VRChat']);
+
+        // Should NOT create new tag
+        expect(mockCreate).not.toHaveBeenCalled();
+        
+        // Should update the existing tag with the new display name
+        expect(mockUpdate).toHaveBeenCalledWith({
+            where: { id: 'id-existing-no-display' },
+            data: { displayName: 'VRChat' }
+        });
+
+        expect(result).toEqual(['id-existing-no-display']);
+    });
+
     it('should normalize full-width characters and spaces', async () => {
         mockFindMany.mockResolvedValue([]);
         mockCreate.mockResolvedValue({ id: 'id-tag' });

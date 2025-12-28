@@ -77,6 +77,25 @@ export class TagResolver {
       })
     );
 
+    // 2.5 Update existing tags missing displayName
+    const tagsToUpdate = existingTags.filter(t => !t.displayName);
+    await Promise.all(
+        tagsToUpdate.map(async (t) => {
+             // Find original display name from deduplicatedMap
+             const originalDisplayName = deduplicatedMap.get(t.name);
+             if (originalDisplayName) {
+                 try {
+                     await this.db.tag.update({
+                         where: { id: t.id },
+                         data: { displayName: originalDisplayName }
+                     });
+                 } catch (e) {
+                     console.warn(`Failed to backfill displayName for tag ${t.name}:`, e);
+                 }
+             }
+        })
+    );
+
     // 3. Return IDs in order of deduplicatedMap entries
     return [...deduplicatedMap.keys()].map(normalized =>
       existingTagMap.get(normalized) ?? createdTagMap.get(normalized)!
