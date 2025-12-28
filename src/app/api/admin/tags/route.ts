@@ -71,7 +71,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { name, tagCategoryId, language, description, isAlias, canonicalId: canonicalTagName } = body; // categoryとcolorを削除し、tagCategoryIdを受け取る
+    const { name, displayName, tagCategoryId, language, description, isAlias, canonicalId: canonicalTagName } = body; // categoryとcolorを削除し、tagCategoryIdを受け取る
 
     // 必須フィールドの検証
     if (!name || !tagCategoryId || !language) {
@@ -99,6 +99,7 @@ export async function POST(request: Request) {
     const newTag = await prisma.tag.create({
       data: {
         name,
+        displayName: displayName || name, // displayNameが未指定の場合はnameをデフォルトとして使用
         tagCategoryId, // tagCategoryId を保存
         language,
         description,
@@ -126,7 +127,7 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const { id, name, tagCategoryId, language, description, isAlias, canonicalId: canonicalTagName } = body; // categoryとcolorを削除し、tagCategoryIdを受け取る
+    const { id, name, displayName, tagCategoryId, language, description, isAlias, canonicalId: canonicalTagName } = body; // categoryとcolorを削除し、tagCategoryIdを受け取る
 
     // idは必須
     if (!id) {
@@ -156,6 +157,7 @@ export async function PUT(request: Request) {
       where: { id: id },
       data: {
         name,
+        displayName, // displayNameを更新
         tagCategoryId, // tagCategoryId を保存
         language,
         description,
