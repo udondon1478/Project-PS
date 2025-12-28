@@ -69,6 +69,17 @@ export async function DELETE() {
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to stop scraper';
-    return NextResponse.json({ error: message }, { status: 500 });
+    
+    let status = 500;
+    if (typeof error === 'object' && error !== null) {
+      const err = error as Record<string, unknown>;
+      if (typeof err.status === 'number') {
+        status = err.status;
+      } else if (typeof err.statusCode === 'number') {
+        status = err.statusCode;
+      }
+    }
+
+    return NextResponse.json({ error: message }, { status });
   }
 }

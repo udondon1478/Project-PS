@@ -97,9 +97,13 @@ export class TagResolver {
     );
 
     // 3. Return IDs in order of deduplicatedMap entries
-    return [...deduplicatedMap.keys()].map(normalized =>
-      existingTagMap.get(normalized) ?? createdTagMap.get(normalized)!
-    );
+    return [...deduplicatedMap.keys()].map(normalized => {
+      const tagId = existingTagMap.get(normalized) ?? createdTagMap.get(normalized);
+      if (tagId === undefined) {
+        throw new Error(`Tag ID not found for normalized key: ${normalized}`);
+      }
+      return tagId;
+    });
   }
 
   /**

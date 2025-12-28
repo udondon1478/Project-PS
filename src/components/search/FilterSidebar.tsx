@@ -98,7 +98,10 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="w-full justify-start text-sm">
                       {selectedAgeRatingTags.length > 0
-                        ? `対象年齢: ${selectedAgeRatingTags.map(tagId => { const t = ageRatingTags.find(t => t.name === tagId); return t?.displayName || t?.name || tagId; }).join(', ')}`
+                        ? (() => {
+                            const ageRatingLookup = new Map(ageRatingTags.map(t => [t.name, t]));
+                            return `対象年齢: ${selectedAgeRatingTags.map(tagId => { const t = ageRatingLookup.get(tagId); return t?.displayName || t?.name || tagId; }).join(', ')}`;
+                          })()
                         : "対象年齢"}
                     </Button>
                   </DropdownMenuTrigger>

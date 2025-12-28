@@ -167,8 +167,8 @@ describe('TagResolver', () => {
              where: { name: { in: ['tag name'] } },
              select: { id: true, name: true, displayName: true },
         });
-        // displayName preserves the original input (NFKC normalized but not lowercased here,
-        // but the original string is stored as-is before toLowerCase)
+        // displayName holds the raw input string (before NFKC normalization or lowercasing);
+        // the original casing is preserved to maintain the intended display format.
         expect(mockCreate).toHaveBeenCalledWith({
              data: { name: 'tag name', displayName: 'Ｔａｇ　Ｎａｍｅ', language: 'ja' },
              select: { id: true },

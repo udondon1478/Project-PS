@@ -40,7 +40,10 @@ export const QuickFilters: React.FC<QuickFiltersProps> = ({
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="text-sm whitespace-nowrap">
             {selectedAgeRatingTags.length > 0
-              ? `対象年齢: ${selectedAgeRatingTags.map(tagName => { const t = ageRatingTags.find(t => t.name === tagName); return t?.displayName || t?.name || tagName; }).join(', ')}`
+              ? (() => {
+                  const ageRatingLookup = new Map(ageRatingTags.map(t => [t.name, t]));
+                  return `対象年齢: ${selectedAgeRatingTags.map(tagName => { const t = ageRatingLookup.get(tagName); return t?.displayName || t?.name || tagName; }).join(', ')}`;
+                })()
               : "対象年齢"}
           </Button>
         </DropdownMenuTrigger>
