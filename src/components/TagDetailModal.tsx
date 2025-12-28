@@ -25,10 +25,13 @@ import Image from 'next/image';
 import { Flag } from 'lucide-react';
 import { ReportDialog } from './reports/ReportDialog';
 
+// Extend Tag type to include API-returned displayName
+type TagWithDisplayName = Tag & { displayName?: string };
+
 // Define the shape of the data expected from the API
 interface TagDetails extends Tag {
-  parentTags: Tag[];
-  childTags: Tag[];
+  parentTags: TagWithDisplayName[];
+  childTags: TagWithDisplayName[];
   products: {
     id: string;
     title: string;
@@ -132,7 +135,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
           {error && <p className="text-red-500">{error}</p>}
           {details && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold">{details.name}</h2>
+              <h2 className="text-2xl font-bold">{details.displayName || details.name}</h2>
 
               {/* Description Section */}
               <section>
@@ -155,7 +158,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
                     <div>
                       <h4 className="font-semibold">親タグ:</h4>
                       <div className="flex flex-wrap gap-2 mt-1">
-                        {details.parentTags.map(tag => <Link key={tag.id} href={`/search?tags=${tag.name}`} className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded-md text-sm hover:bg-gray-300">{tag.name}</Link>)}
+                        {details.parentTags.map(tag => <Link key={tag.id} href={`/search?tags=${tag.name}`} className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded-md text-sm hover:bg-gray-300">{tag.displayName || tag.name}</Link>)}
                       </div>
                     </div>
                   )}
@@ -163,7 +166,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
                     <div className="mt-2">
                       <h4 className="font-semibold">子タグ:</h4>
                       <div className="flex flex-wrap gap-2 mt-1">
-                        {details.childTags.map(tag => <Link key={tag.id} href={`/search?tags=${tag.name}`} className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded-md text-sm hover:bg-gray-300">{tag.name}</Link>)}
+                        {details.childTags.map(tag => <Link key={tag.id} href={`/search?tags=${tag.name}`} className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded-md text-sm hover:bg-gray-300">{tag.displayName || tag.name}</Link>)}
                       </div>
                     </div>
                   )}

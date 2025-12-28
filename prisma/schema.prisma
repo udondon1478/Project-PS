@@ -219,7 +219,8 @@ model Tag {
   canonicalTag Tag?             @relation("AliasToCanonical", fields: [canonicalId], references: [id])
   aliases      Tag[]            @relation("AliasToCanonical")
   language     String           // 言語コード ('ja' or 'en')
-  name         String           @unique // タグ名は一意とする
+  name         String           @unique // タグ名は一意とする (正規化済み、小文字)
+  displayName  String?          // 元の表示名（最初に登録された形式を保持）
   description  String?          // タグの解説文
   isAlias      Boolean          @default(false) // エイリアスフラグ
   createdAt    DateTime         @default(now())

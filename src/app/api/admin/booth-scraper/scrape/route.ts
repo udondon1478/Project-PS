@@ -53,3 +53,33 @@ export async function GET() {
   const status = orchestrator.getStatus();
   return NextResponse.json({ status });
 }
+
+export async function DELETE() {
+  const session = await auth();
+  if (!session?.user || session.user.role !== Role.ADMIN) {
+    return new NextResponse('Unauthorized: Admin access required', { status: 403 });
+  }
+
+  try {
+    await orchestrator.stop();
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Scraper stop requested',
+      status: orchestrator.getStatus() 
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to stop scraper';
+    
+    let status = 500;
+    if (typeof error === 'object' && error !== null) {
+      const err = error as Record<string, unknown>;
+      if (typeof err.status === 'number') {
+        status = err.status;
+      } else if (typeof err.statusCode === 'number') {
+        status = err.statusCode;
+      }
+    }
+
+    return NextResponse.json({ error: message }, { status });
+  }
+}

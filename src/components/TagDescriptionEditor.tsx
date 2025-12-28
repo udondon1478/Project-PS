@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 interface Tag {
   id: string;
   name: string;
+  displayName?: string | null;
   description: string | null;
 }
 
@@ -69,7 +70,7 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>タグ説明の編集: {tag.name}</DialogTitle>
+            <DialogTitle>タグ説明の編集: {tag.displayName || tag.name}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid w-full gap-1.5">

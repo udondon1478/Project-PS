@@ -170,7 +170,7 @@ const TagList = ({ onEditClick }: TagListProps) => { // propsとしてonEditClic
         <TableBody>
           {tags.map((tag) => (
             <TableRow key={tag.id}>
-              <TableCell className="font-medium">{tag.name}</TableCell>
+              <TableCell className="font-medium">{tag.displayName || tag.name}</TableCell>
               <TableCell>{tag.type}</TableCell>
               <TableCell>{tag.tagCategory?.name || '-'}</TableCell> {/* カテゴリ名を表示 */}
               <TableCell style={{ color: tag.tagCategory?.color || '#CCCCCC' }}>{tag.tagCategory?.color || '-'}</TableCell> {/* カテゴリの色を表示 */}

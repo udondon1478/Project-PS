@@ -17,7 +17,16 @@ export async function GET(request: Request) {
       where: {
         name: {
           contains: query, // 部分一致検索
+          mode: 'insensitive', // 大文字小文字を区別しない
         },
+      },
+      select: {
+        id: true,
+        name: true,
+        displayName: true,
+        description: true,
+        count: true,
+        tagCategoryId: true,
       },
       orderBy: {
         count: 'desc', // 登録数が多い順

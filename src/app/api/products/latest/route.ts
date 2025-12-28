@@ -69,6 +69,7 @@ export async function GET() {
             tag: {
               select: {
                 name: true,
+                displayName: true,
               },
             },
           },

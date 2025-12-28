@@ -15,18 +15,54 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
       // 1. Fetch the tag itself
       prisma.tag.findUnique({
         where: { id: tagId },
+        select: {
+          id: true,
+          name: true,
+          displayName: true,
+          description: true,
+          count: true,
+          language: true,
+          isAlias: true,
+          canonicalId: true,
+          tagCategoryId: true,
+          tagCategory: true,
+          createdAt: true,
+          updatedAt: true,
+        },
       }),
 
       // 2. Fetch parent tags
       prisma.tagHierarchy.findMany({
         where: { childId: tagId },
-        include: { parent: true },
+        include: {
+          parent: {
+            select: {
+              id: true,
+              name: true,
+              displayName: true,
+              description: true,
+              count: true,
+              tagCategoryId: true,
+            },
+          },
+        },
       }),
 
       // 3. Fetch child tags
       prisma.tagHierarchy.findMany({
         where: { parentId: tagId },
-        include: { child: true },
+        include: {
+          child: {
+            select: {
+              id: true,
+              name: true,
+              displayName: true,
+              description: true,
+              count: true,
+              tagCategoryId: true,
+            },
+          },
+        },
       }),
 
       // 4. Fetch associated products (limit to 5)

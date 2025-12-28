@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 interface Tag {
   id: string;
   name: string;
+  displayName?: string;
 }
 
 interface TagWithState extends Tag {
@@ -73,7 +74,7 @@ const TagEditor: React.FC<TagEditorProps> = ({ initialTags, onTagsChange }) => {
           if (tag.state === 'removed') {
             return (
               <div key={tag.id} className="flex items-center bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-500">
-                <span className="line-through">{tag.name}</span>
+                <span className="line-through">{tag.displayName || tag.name}</span>
                 <button
                   onClick={() => handleUndoRemove(tag.id)}
                   className="ml-2 text-gray-600 hover:text-gray-900 focus:outline-none"
@@ -85,7 +86,7 @@ const TagEditor: React.FC<TagEditorProps> = ({ initialTags, onTagsChange }) => {
           }
           return (
             <div key={tag.id} className={`flex items-center rounded-full px-3 py-1 text-sm font-semibold ${tag.state === 'added' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
-              <span>{tag.name}</span>
+              <span>{tag.displayName || tag.name}</span>
               <button
                 onClick={() => handleRemoveTag(tag.id)}
                 className="ml-2 text-red-600 hover:text-red-900 focus:outline-none"
