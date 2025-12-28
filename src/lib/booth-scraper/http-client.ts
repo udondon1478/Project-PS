@@ -172,7 +172,7 @@ export class BoothHttpClient {
 
 
       // 3. Cache successful GET responses
-      // 3. Cache successful GET responses
+
       if (isGetRequest && response.ok) {
         const clonedResponse = response.clone();
         clonedResponse.text().then(html => {
