@@ -29,6 +29,8 @@ import { TagDetailModal } from '@/components/TagDetailModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLink } from '@fortawesome/free-solid-svg-icons';
 import ProductDetailSkeleton from '@/components/ProductDetailSkeleton';
+import MobileProductActions from '@/components/MobileProductActions';
+import MobileTagSheet from '@/components/MobileTagSheet';
 
 
 interface ProductDetail {
@@ -96,6 +98,7 @@ const ProductDetailPage = () => {
   const [isOwned, setIsOwned] = useState(false);
   const [isProcessingLike, setIsProcessingLike] = useState(false);
   const [isProcessingOwn, setIsProcessingOwn] = useState(false);
+  const [isTagSheetOpen, setIsTagSheetOpen] = useState(false);
 
   const fetchProduct = useCallback(async () => {
     setLoading(true);
@@ -350,7 +353,7 @@ const ProductDetailPage = () => {
             </section>
           </main>
 
-          <aside className="lg:col-span-4">
+          <aside className="hidden lg:block lg:col-span-4">
             <div className="lg:sticky lg:top-header-desktop space-y-6">
               <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-lg border dark:border-slate-700">
                 <h2 className="text-xl font-semibold mb-4">アクション</h2>
@@ -446,6 +449,32 @@ const ProductDetailPage = () => {
         </div>
       </div>
       <TagDetailModal tagId={selectedTagId} open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen} />
+
+      {/* モバイル用フローティングアクション */}
+      <MobileProductActions
+        isLiked={isLiked}
+        isOwned={isOwned}
+        isProcessingLike={isProcessingLike}
+        isProcessingOwn={isProcessingOwn}
+        onLikeToggle={handleLikeToggle}
+        onOwnToggle={handleOwnToggle}
+        boothJpUrl={product.boothJpUrl}
+        tagCount={product.productTags?.length || 0}
+        onOpenTags={() => setIsTagSheetOpen(true)}
+      />
+
+      {/* モバイル用タグシート */}
+      <MobileTagSheet
+        open={isTagSheetOpen}
+        onOpenChange={setIsTagSheetOpen}
+        productTags={product.productTags || []}
+        tagMap={tagMap}
+        tagEditHistory={product.tagEditHistory || []}
+        onAddTagToSearch={addTagToSearch}
+        onAddNegativeTagToSearch={addNegativeTagToSearch}
+        onViewTagDetails={handleViewTagDetails}
+        onTagsUpdate={handleTagsUpdate}
+      />
     </>
   );
 };

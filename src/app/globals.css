@@ -55,6 +55,8 @@
   /* Controls header height for mobile and desktop breakpoints (rem). Use var(--header-height-mobile) for mobile and var(--header-height-desktop) for larger screens. */
   --header-height-mobile: 9.5rem;
   --header-height-desktop: 10rem;
+  /* Mobile floating action bar height */
+  --mobile-action-bar-height: 7rem;
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
