@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Heart, Check, Tag } from 'lucide-react';
+import { Heart, Archive, Tag } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLink } from '@fortawesome/free-solid-svg-icons';
 
@@ -70,7 +70,7 @@ const MobileProductActions: React.FC<MobileProductActionsProps> = ({
             className="flex-1"
             aria-label={isOwned ? '所有済みから外す' : '所有済みにする'}
           >
-            <Check className="h-4 w-4" />
+            <Archive className="h-4 w-4" />
             <span>所有</span>
           </Button>
 
