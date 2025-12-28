@@ -78,14 +78,14 @@ export class TagResolver {
     );
 
     // 2.5 Update existing tags missing displayName
-    const tagsToUpdate = existingTags.filter(t => !(t as any).displayName);
+    const tagsToUpdate = existingTags.filter(t => !t.displayName);
     await Promise.all(
 
         tagsToUpdate.map(async (t) => {
 
              // Find original display name from deduplicatedMap
              const originalDisplayName = deduplicatedMap.get(t.name);
-             if (originalDisplayName && originalDisplayName !== t.name && originalDisplayName !== (t as any).displayName) {
+             if (originalDisplayName && originalDisplayName !== t.name && originalDisplayName !== t.displayName) {
                  try {
                      await this.db.tag.update({
 
