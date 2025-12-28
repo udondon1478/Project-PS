@@ -57,8 +57,8 @@ const MobileProductActions: React.FC<MobileProductActionsProps> = ({
             className="flex-1"
             aria-label={isLiked ? '欲しいものから外す' : '欲しいものに追加'}
           >
-            <Heart className="h-4 w-4 mr-1" fill={isLiked ? "currentColor" : "none"} />
-            <span className="hidden xs:inline">{isLiked ? '欲しい' : '欲しい'}</span>
+            <Heart className="h-4 w-4" fill={isLiked ? "currentColor" : "none"} />
+            <span>欲しい</span>
           </Button>
 
           {/* 所有済みボタン */}
@@ -70,8 +70,8 @@ const MobileProductActions: React.FC<MobileProductActionsProps> = ({
             className="flex-1"
             aria-label={isOwned ? '所有済みから外す' : '所有済みにする'}
           >
-            <Check className="h-4 w-4 mr-1" />
-            <span className="hidden xs:inline">{isOwned ? '所有' : '所有'}</span>
+            <Check className="h-4 w-4" />
+            <span>所有</span>
           </Button>
 
           {/* Boothリンク */}
@@ -82,8 +82,8 @@ const MobileProductActions: React.FC<MobileProductActionsProps> = ({
             className="flex-1"
           >
             <Button variant="outline" size="sm" className="w-full">
-              <FontAwesomeIcon icon={faLink} className="h-4 w-4 mr-1" />
-              <span className="hidden xs:inline">Booth</span>
+              <FontAwesomeIcon icon={faLink} className="h-4 w-4" />
+              <span>Booth</span>
             </Button>
           </a>
         </div>
