@@ -182,9 +182,32 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
     }
   };
 
+  const handleStop = async () => {
+    if (!confirm('Are you sure you want to stop the scraper?')) return;
+    
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/booth-scraper/scrape', {
+        method: 'DELETE',
+      });
+      
+      if (!res.ok) {
+        const err = await res.json();
+        toast.error(`Failed to stop: ${err.error}`);
+      } else {
+        toast.success('Scraper stop requested');
+      }
+    } catch (e) {
+      toast.error('Error stopping scraper');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const statusColor = (s: string) => {
     switch (s) {
       case 'running': return 'text-blue-500 font-bold';
+      case 'stopping': return 'text-yellow-500 font-bold';
       case 'completed': return 'text-green-500';
       case 'failed': return 'text-red-500';
       default: return 'text-gray-500';
@@ -335,7 +358,23 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
         <div className="p-6 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-bold">Current Run: {activeStatus.runId}</h3>
-            <span className={statusColor(activeStatus.status)}>{activeStatus.status.toUpperCase()}</span>
+            <div className="flex items-center gap-4">
+              <span className={statusColor(activeStatus.status)}>{activeStatus.status.toUpperCase()}</span>
+              {(activeStatus.status === 'running' || activeStatus.status === 'stopping') && (
+                <button
+                  type="button"
+                  onClick={handleStop}
+                  disabled={loading || activeStatus.status === 'stopping'}
+                  className={`px-3 py-1 rounded text-white text-sm font-medium ${
+                    activeStatus.status === 'stopping' 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-red-600 hover:bg-red-700'
+                  }`}
+                >
+                  {activeStatus.status === 'stopping' ? 'Stopping...' : 'Stop'}
+                </button>
+              )}
+            </div>
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
