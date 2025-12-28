@@ -36,6 +36,7 @@ const MobileProductActions: React.FC<MobileProductActionsProps> = ({
       {/* タグ拡張ボタン */}
       <div className="bg-background/95 backdrop-blur-sm border-t dark:border-gray-800">
         <button
+          type="button"
           onClick={onOpenTags}
           className="w-full flex items-center justify-center gap-2 py-3 px-4 text-sm font-medium text-foreground hover:bg-accent transition-colors"
           aria-label="タグ一覧を開く"
