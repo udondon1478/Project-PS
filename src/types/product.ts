@@ -44,3 +44,33 @@ export interface SchemaOrgProduct {
   image: string | string[];
   offers: SchemaOrgOffer | SchemaOrgAggregateOffer;
 }
+
+export interface ProductTag {
+  tag: {
+    id: string;
+    name: string;
+    description: string | null;
+    tagCategoryId: string;
+    tagCategory: {
+      id: string;
+      name: string;
+    };
+  };
+}
+
+export interface TagEditHistory {
+  id: string;
+  editor: {
+    id: string;
+    name: string | null;
+    image: string | null;
+  };
+  version: number;
+  addedTags: string[];
+  removedTags: string[];
+  keptTags: string[];
+  comment: string | null;
+  score: number;
+  createdAt: string;
+  userVote: { score: number } | null;
+}

@@ -21,36 +21,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { PlusCircle, MinusCircle, Info } from 'lucide-react';
 import TagEditor from "@/components/TagEditor";
 import TagEditHistoryItem from "@/components/TagEditHistoryItem";
+import { ProductTag, TagEditHistory } from "@/types/product";
 
-interface ProductTag {
-  tag: {
-    id: string;
-    name: string;
-    description: string | null;
-    tagCategoryId: string;
-    tagCategory: {
-      id: string;
-      name: string;
-    };
-  };
-}
 
-interface TagEditHistory {
-  id: string;
-  editor: {
-    id: string;
-    name: string | null;
-    image: string | null;
-  };
-  version: number;
-  addedTags: string[];
-  removedTags: string[];
-  keptTags: string[];
-  comment: string | null;
-  score: number;
-  createdAt: string;
-  userVote: { score: number } | null;
-}
 
 interface MobileTagSheetProps {
   open: boolean;

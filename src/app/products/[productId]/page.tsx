@@ -31,6 +31,7 @@ import { faLink } from '@fortawesome/free-solid-svg-icons';
 import ProductDetailSkeleton from '@/components/ProductDetailSkeleton';
 import MobileProductActions from '@/components/MobileProductActions';
 import MobileTagSheet from '@/components/MobileTagSheet';
+import { ProductTag, TagEditHistory } from "@/types/product";
 
 
 interface ProductDetail {
@@ -52,34 +53,8 @@ interface ProductDetail {
     order: number;
     isMain: boolean;
   }[];
-  productTags: {
-    tag: {
-      id: string;
-      name: string;
-      description: string | null;
-      tagCategoryId: string;
-      tagCategory: {
-        id: string;
-        name: string;
-      };
-    };
-  }[];
-  tagEditHistory: {
-    id: string;
-    editor: {
-      id: string;
-      name: string | null;
-      image: string | null;
-    };
-    version: number;
-    addedTags: string[];
-    removedTags: string[];
-    keptTags: string[];
-    comment: string | null;
-    score: number;
-    createdAt: string;
-    userVote: { score: number } | null;
-  }[];
+  productTags: ProductTag[];
+  tagEditHistory: TagEditHistory[];
 };
 
 const ProductDetailPage = () => {
