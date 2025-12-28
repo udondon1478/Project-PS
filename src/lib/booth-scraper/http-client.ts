@@ -16,24 +16,19 @@ interface CachedResponse {
   timestamp: number;
 }
 
-// Simple LRU-like cache for HTTP responses
-const responseCache = new Map<string, CachedResponse>();
+// LRU cache for HTTP responses
+import { LRUCache } from 'lru-cache';
 
-function isResponseCacheValid(entry: CachedResponse): boolean {
-  return Date.now() - entry.timestamp < RESPONSE_CACHE_TTL_MS;
-}
+const responseCache = new LRUCache<string, CachedResponse>({
+  max: RESPONSE_CACHE_MAX_SIZE,
+  ttl: RESPONSE_CACHE_TTL_MS,
+  // prune is handled automatically by lru-cache on access/set based on max size and ttl
+});
 
-function pruneResponseCache(): void {
-  if (responseCache.size > RESPONSE_CACHE_MAX_SIZE) {
-    // Remove oldest entries (first entries in Map)
-    const entriesToRemove = responseCache.size - RESPONSE_CACHE_MAX_SIZE + 10;
-    const iterator = responseCache.keys();
-    for (let i = 0; i < entriesToRemove; i++) {
-      const key = iterator.next().value;
-      if (key) responseCache.delete(key);
-    }
-  }
-}
+
+// In-flight request tracking to dedup concurrent GETs
+const inflightRequests = new Map<string, Promise<Response>>();
+
 
 // Singleton to cache parsed robots.txt rules with TTL
 let cachedRobots: ReturnType<typeof robotsParser> | null = null;
@@ -90,14 +85,23 @@ export class BoothHttpClient {
     const isGetRequest = !init?.method || init.method.toUpperCase() === 'GET';
     if (isGetRequest) {
       const cached = responseCache.get(url);
-      if (cached && isResponseCacheValid(cached)) {
+      if (cached) {
         // Return a synthetic Response from cache
         return new Response(cached.html, {
           status: cached.status,
           headers: { 'Content-Type': 'text/html; charset=utf-8', 'X-Cache': 'HIT' }
         });
       }
+
+      // Check if there is already an in-flight request for this URL
+      const inflight = inflightRequests.get(url);
+      if (inflight) {
+        // Wait for the existing request to complete and clone the response
+        const res = await inflight;
+        return res.clone();
+      }
     }
+
 
     // 1. Check robots.txt compliance
     const robots = await getRobotsParser();
@@ -134,18 +138,40 @@ export class BoothHttpClient {
     }
 
     try {
-      const response = await fetch(url, {
-        ...init,
-        headers: {
-          ...init?.headers,
-          'User-Agent': USER_AGENT,
-          'Cookie': 'adult=t',
-        },
-        signal,
-        // Disable Next.js fetch caching for fresh scraping results
-        cache: 'no-store',
-      });
+      let fetchPromise: Promise<Response>;
+      
+      const doFetch = async () => {
+        try {
+            return await fetch(url, {
+                ...init,
+                headers: {
+                ...init?.headers,
+                'User-Agent': USER_AGENT,
+                'Cookie': 'adult=t',
+                },
+                signal,
+                // Disable Next.js fetch caching for fresh scraping results
+                cache: 'no-store',
+            });
+        } finally {
+            // Remove from inflight map when done (success or fail)
+            if (isGetRequest) {
+                inflightRequests.delete(url);
+            }
+        }
+      };
 
+      if (isGetRequest) {
+          fetchPromise = doFetch();
+          inflightRequests.set(url, fetchPromise);
+      } else {
+          fetchPromise = doFetch();
+      }
+
+      const response = await fetchPromise;
+
+
+      // 3. Cache successful GET responses
       // 3. Cache successful GET responses
       if (isGetRequest && response.ok) {
         const clonedResponse = response.clone();
@@ -155,11 +181,11 @@ export class BoothHttpClient {
             status: response.status,
             timestamp: Date.now()
           });
-          pruneResponseCache();
-        }).catch(() => {
-          // Ignore caching errors
+        }).catch((err) => {
+          console.warn(`[BoothHttpClient] Failed to cache GET response for ${url}:`, err);
         });
       }
+
 
       return response;
     } finally {

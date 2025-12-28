@@ -34,18 +34,28 @@ export const QuickFilters: React.FC<QuickFiltersProps> = ({
   handleAddTag,
   handleRemoveTag,
 }) => {
+  const ageRatingLookup = React.useMemo(() => new Map(ageRatingTags.map(t => [t.name, t])), [ageRatingTags]);
+  
+  const label = React.useMemo(() => 
+      selectedAgeRatingTags.map(tagName => { 
+          const t = ageRatingLookup.get(tagName); 
+          return t?.displayName || t?.name || tagName; 
+      }).join(', '), 
+      [selectedAgeRatingTags, ageRatingLookup]
+  );
+
   return (
     <div className="hidden md:flex items-center gap-2">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="text-sm whitespace-nowrap">
             {selectedAgeRatingTags.length > 0
-              ? (() => {
-                  const ageRatingLookup = new Map(ageRatingTags.map(t => [t.name, t]));
-                  return `対象年齢: ${selectedAgeRatingTags.map(tagName => { const t = ageRatingLookup.get(tagName); return t?.displayName || t?.name || tagName; }).join(', ')}`;
-                })()
+              ? `対象年齢: ${label}`
               : "対象年齢"}
           </Button>
+
+
+
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           <DropdownMenuLabel>対象年齢</DropdownMenuLabel>
