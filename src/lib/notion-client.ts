@@ -9,6 +9,24 @@ export interface ScrapedItem {
   thumbnailUrl?: string;
 }
 
+export interface NotionRecord {
+  pageId: string;
+  title: string;
+  url: string;
+  price: string;
+  thumbnailUrl?: string;
+  isNoise: boolean;
+}
+
+export interface DiffItem {
+  title: string;
+  url: string;
+  price: string;
+  thumbnailUrl?: string;
+  diffType: '全検索のみ' | 'プロパティのみ';
+  isNoise: boolean;
+}
+
 export async function addScrapedItemToNotion(item: ScrapedItem): Promise<void> {
   const apiKey = process.env.NOTION_API_KEY;
   const databaseId = process.env.NOTION_DATABASE_ID;
@@ -76,6 +94,164 @@ export async function addScrapedItemToNotion(item: ScrapedItem): Promise<void> {
     // but the implementation plan said "addScrapedItemToNotion", so simple logging is good.
     // However, if we want to ensure data integrity we might want to throw.
     // For now, let's throw so the caller knows it failed.
+    throw error;
+  }
+}
+
+/**
+ * 指定されたSourceQueryに一致する全レコードをNotionデータベースから取得
+ */
+export async function queryNotionDatabase(sourceQuery: string): Promise<NotionRecord[]> {
+  const apiKey = process.env.NOTION_API_KEY;
+  const databaseId = process.env.NOTION_DATABASE_ID;
+
+  if (!apiKey || !databaseId) {
+    throw new Error('Missing NOTION_API_KEY or NOTION_DATABASE_ID environment variables');
+  }
+
+  const notion = new Client({ auth: apiKey });
+  const records: NotionRecord[] = [];
+  let hasMore = true;
+  let startCursor: string | undefined = undefined;
+
+  while (hasMore) {
+    // Notion SDK v5ではdatabases.queryが削除されたため、直接fetchを使用
+    const fetchResponse = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'Notion-Version': '2022-06-28',
+      },
+      body: JSON.stringify({
+        filter: {
+          property: 'SourceQuery',
+          select: {
+            equals: sourceQuery,
+          },
+        },
+        start_cursor: startCursor,
+        page_size: 100,
+      }),
+    });
+    
+    if (!fetchResponse.ok) {
+      const errorData = await fetchResponse.json();
+      throw new Error(`Notion API error: ${errorData.message || fetchResponse.statusText}`);
+    }
+    
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response: any = await fetchResponse.json();
+
+    for (const page of response.results) {
+      if (!('properties' in page)) continue;
+
+      const properties = page.properties as Record<string, unknown>;
+      
+      // 名前（タイトル）
+      const titleProp = properties['名前'] as { title?: { plain_text: string }[] } | undefined;
+      const title = titleProp?.title?.[0]?.plain_text ?? '';
+
+      // URL
+      const urlProp = properties['URL'] as { url?: string } | undefined;
+      const url = urlProp?.url ?? '';
+
+      // 価格
+      const priceProp = properties['価格'] as { rich_text?: { plain_text: string }[] } | undefined;
+      const price = priceProp?.rich_text?.[0]?.plain_text ?? '';
+
+      // サムネイル
+      const thumbnailProp = properties['サムネイル'] as { files?: { external?: { url: string } }[] } | undefined;
+      const thumbnailUrl = thumbnailProp?.files?.[0]?.external?.url;
+
+      // IsNoise
+      const isNoiseProp = properties['IsNoise'] as { checkbox?: boolean } | undefined;
+      const isNoise = isNoiseProp?.checkbox ?? false;
+
+      records.push({
+        pageId: page.id,
+        title,
+        url,
+        price,
+        thumbnailUrl,
+        isNoise,
+      });
+    }
+
+    hasMore = response.has_more;
+    startCursor = response.next_cursor ?? undefined;
+  }
+
+  console.log(`[NotionClient] Queried ${records.length} records for SourceQuery: ${sourceQuery}`);
+  return records;
+}
+
+/**
+ * 差分データを別のNotionデータベースに書き込む
+ */
+export async function addDiffItemToNotion(item: DiffItem): Promise<void> {
+  const apiKey = process.env.NOTION_API_KEY;
+  const databaseId = process.env.NOTION_DIFF_DATABASE_ID;
+
+  if (!apiKey || !databaseId) {
+    throw new Error('Missing NOTION_API_KEY or NOTION_DIFF_DATABASE_ID environment variables');
+  }
+
+  const notion = new Client({ auth: apiKey });
+
+  try {
+    await notion.pages.create({
+      parent: {
+        database_id: databaseId,
+      },
+      properties: {
+        '名前': {
+          title: [
+            {
+              text: {
+                content: item.title,
+              },
+            },
+          ],
+        },
+        'URL': {
+          url: item.url,
+        },
+        '価格': {
+          rich_text: [
+            {
+              text: {
+                content: item.price,
+              },
+            },
+          ],
+        },
+        'DiffType': {
+          select: {
+            name: item.diffType,
+          },
+        },
+        'IsNoise': {
+          checkbox: item.isNoise,
+        },
+        ...(item.thumbnailUrl ? {
+          'サムネイル': {
+            files: [
+              {
+                type: 'external',
+                name: 'Thumbnail',
+                external: {
+                  url: item.thumbnailUrl
+                }
+              }
+            ]
+          }
+        } : {})
+      },
+    });
+    console.log(`[NotionClient] Added diff: ${item.title} (${item.diffType})`);
+  } catch (error) {
+    console.error(`[NotionClient] Failed to add diff item: ${item.title}`, error);
     throw error;
   }
 }

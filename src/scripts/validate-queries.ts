@@ -9,12 +9,12 @@ dotenv.config();
 
 // Validation URLs
 const TARGET_URLS = [
-  { name: '全検索', url: 'https://booth.pm/ja/items?sort=new&tags[]=VRChat' },
-  { name: '3Dモデル', url: 'https://booth.pm/ja/browse/3Dモデル?sort=new&tags[]=VRChat' },
-  { name: '素材データ', url: 'https://booth.pm/ja/browse/素材・データ?sort=new&tags[]=VRChat' },
+  { name: '全検索', url: 'https://booth.pm/ja/items?sort=new&tags%5B%5D=VRChat&adult=include' },
+  { name: '3Dモデル', url: 'https://booth.pm/ja/browse/3Dモデル?adult=include&sort=new&tags%5B%5D=VRChat' },
+  { name: 'イラスト', url: 'https://booth.pm/ja/browse/イラスト?adult=include&sort=new&tags%5B%5D=VRChat' },
 ];
 
-const ITEMS_PER_QUERY = 20;
+const ITEMS_PER_QUERY = 100;
 const SLEEP_MS = 10000;
 
 function sleep(ms: number) {
