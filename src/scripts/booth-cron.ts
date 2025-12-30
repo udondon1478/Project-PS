@@ -48,6 +48,9 @@ async function start() {
     try {
       const runId = await orchestrator.start('NEW', userId, {
         pageLimit: 3, // Check first 3 pages
+        searchParams: {
+          useTargetTags: true, // Use Target Tag List from database
+        },
       });
       console.log(`[Cron] New Product Scan started (RunID: ${runId})`);
     } catch (error) {
@@ -74,6 +77,9 @@ async function start() {
         // The requirement said "9 products/run". Orchestrator seems to handle this via hardcoded check or we can pass it via options if supported.
         // Current Orchestrator implementation has logic: "if (isBackfill) ... if (processedCount >= 9) ... stop"
         // So no extra options needed here for identifying the limit, but we rely on Orchestrator's internal logic.
+        searchParams: {
+          useTargetTags: true, // Use Target Tag List from database
+        },
       });
       console.log(`[Cron] Backfill started (RunID: ${runId})`);
     } catch (error) {

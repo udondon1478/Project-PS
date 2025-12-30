@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { auth } from "@/auth";
 import { Role, Prisma } from "@prisma/client";
 
-// PATCH: タグの有効/無効切り替え
+// PATCH: タグの有効/無効切り替えとカテゴリ更新
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> } // Params is a Promise in Next.js 15+
@@ -16,15 +16,27 @@ export async function PATCH(
 
   try {
     const { id } = await params;
-    const { enabled } = await req.json();
+    const body = await req.json();
+    const { enabled, category } = body;
 
-    if (typeof enabled !== 'boolean') {
-      return NextResponse.json({ error: 'enabled must be a boolean' }, { status: 400 });
+    // Build update data dynamically
+    const updateData: { enabled?: boolean; category?: string | null } = {};
+    
+    if (typeof enabled === 'boolean') {
+      updateData.enabled = enabled;
+    }
+    
+    if ('category' in body) {
+      updateData.category = category || null;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
     }
 
     const updatedTag = await prisma.scraperTargetTag.update({
       where: { id },
-      data: { enabled }
+      data: updateData
     });
 
     return NextResponse.json(updatedTag);

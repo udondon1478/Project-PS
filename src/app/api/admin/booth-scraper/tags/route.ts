@@ -29,14 +29,17 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { tag } = await req.json();
+    const { tag, category } = await req.json();
     
     if (!tag || typeof tag !== 'string') {
       return NextResponse.json({ error: 'Tag name is required' }, { status: 400 });
     }
 
     const newTag = await prisma.scraperTargetTag.create({
-      data: { tag }
+      data: { 
+        tag,
+        category: category || null,
+      }
     });
 
     return NextResponse.json(newTag);

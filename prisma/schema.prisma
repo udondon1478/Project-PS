@@ -445,6 +445,7 @@ model Report {
 enum ScraperRunStatus {
   RUNNING
   COMPLETED
+  STOPPING
   FAILED
 }
 
@@ -466,17 +467,33 @@ model ScraperRun {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
+  logs              ScraperLog[] // 実行ログ
+
   @@index([startTime])
   @@index([status])
+}
+
+// スクレイパー実行ログ
+model ScraperLog {
+  id        String     @id @default(cuid())
+  runId     String
+  run       ScraperRun @relation(fields: [runId], references: [runId], onDelete: Cascade)
+  message   String
+  createdAt DateTime   @default(now())
+  
+  @@index([runId])
+  @@index([createdAt])
 }
 
 // スクレイパー対象タグテーブル
 model ScraperTargetTag {
   id        String   @id @default(cuid())
-  tag       String   @unique
+  tag       String
+  category  String?  // BOOTHカテゴリ（例：3Dモデル）
   enabled   Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
+  @@unique([tag, category]) // 同じタグ+カテゴリの重複を防ぐ
   @@map("scraper_target_tags")
 }

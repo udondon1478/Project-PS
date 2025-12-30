@@ -3,6 +3,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 import { type ScraperRun, type ScraperLog, type ScraperStatus } from '@/lib/booth-scraper/orchestrator';
 
@@ -18,6 +27,7 @@ interface DashboardProps {
 export default function ScraperDashboard({ recentRuns }: DashboardProps) {
   const router = useRouter();
   const [activeStatus, setActiveStatus] = useState<ScraperStatus | null>(null);
+  const [runningFromDb, setRunningFromDb] = useState<SerializedScraperRun[]>([]);
   const [loading, setLoading] = useState(false);
   
   const activeStatusRef = useRef(activeStatus);
@@ -35,8 +45,43 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
   const [useTargetTags, setUseTargetTags] = useState<boolean>(false);
 
   // Target Tags
-  const [tags, setTags] = useState<Array<{ id: string, tag: string, enabled: boolean }>>([]);
+  const [tags, setTags] = useState<Array<{ id: string, tag: string, category: string | null, enabled: boolean }>>([]);
   const [newTagInput, setNewTagInput] = useState('');
+  const [newCategoryInput, setNewCategoryInput] = useState('');
+
+  // Confirmation Dialog
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({ open: false, title: '', description: '', onConfirm: () => {} });
+
+  // Log Viewer Dialog
+  const [logViewer, setLogViewer] = useState<{
+    open: boolean;
+    runId: string;
+    logs: ScraperLog[];
+    loading: boolean;
+  }>({ open: false, runId: '', logs: [], loading: false });
+
+  // Fetch logs logic
+  const fetchLogs = async (runId: string) => {
+    setLogViewer(prev => ({ ...prev, open: true, runId, loading: true }));
+    try {
+      const res = await fetch(`/api/admin/booth-scraper/logs/${runId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setLogViewer(prev => ({ ...prev, logs: data, loading: false }));
+      } else {
+        toast.error('Failed to fetch logs');
+        setLogViewer(prev => ({ ...prev, loading: false }));
+      }
+    } catch (e) {
+      toast.error('Error fetching logs');
+      setLogViewer(prev => ({ ...prev, loading: false }));
+    }
+  };
 
   useEffect(() => {
     fetch('/api/admin/booth-scraper/tags')
@@ -53,12 +98,16 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
       const res = await fetch('/api/admin/booth-scraper/tags', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tag: newTagInput }),
+        body: JSON.stringify({ 
+          tag: newTagInput,
+          category: newCategoryInput.trim() || null,
+        }),
       });
       if (res.ok) {
         const tag = await res.json();
         setTags(prev => [tag, ...prev]);
         setNewTagInput('');
+        setNewCategoryInput('');
         toast.success('Tag added successfully');
       } else {
         const err = await res.json().catch(() => ({ error: 'Failed to add tag' }));
@@ -70,14 +119,21 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
   };
 
   const handleDeleteTag = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this tag?')) return;
-    try {
-      await fetch(`/api/admin/booth-scraper/tags/${id}`, { method: 'DELETE' });
-      setTags(prev => prev.filter(t => t.id !== id));
-      toast.success('Tag deleted');
-    } catch (e) {
-      toast.error('Failed to delete tag');
-    }
+    setConfirmDialog({
+      open: true,
+      title: 'タグを削除しますか？',
+      description: 'この操作は取り消せません。',
+      onConfirm: async () => {
+        try {
+          await fetch(`/api/admin/booth-scraper/tags/${id}`, { method: 'DELETE' });
+          setTags(prev => prev.filter(t => t.id !== id));
+          toast.success('Tag deleted');
+        } catch (e) {
+          toast.error('Failed to delete tag');
+        }
+        setConfirmDialog(prev => ({ ...prev, open: false }));
+      }
+    });
   };
 
   const handleToggleTag = async (id: string, current: boolean) => {
@@ -109,6 +165,10 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
           const data = await res.json();
           // Log entries from orchestrator are now objects {id, timestamp, message}
           setActiveStatus(data.status);
+          // DBから取得したRUNNING状態のワーカー
+          if (data.runningFromDb) {
+            setRunningFromDb(data.runningFromDb);
+          }
           if (data.status && data.status.status === 'running') {
              // Continue polling
           } else if (activeStatusRef.current?.status === 'running' && data.status?.status !== 'running') {
@@ -182,26 +242,39 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
     }
   };
 
-  const handleStop = async () => {
-    if (!confirm('Are you sure you want to stop the scraper?')) return;
-    
-    setLoading(true);
-    try {
-      const res = await fetch('/api/admin/booth-scraper/scrape', {
-        method: 'DELETE',
-      });
-      
-      if (!res.ok) {
-        const err = await res.json();
-        toast.error(`Failed to stop: ${err.error}`);
-      } else {
-        toast.success('Scraper stop requested');
+  const handleStop = async (targetRunId?: string) => {
+    setConfirmDialog({
+      open: true,
+      title: targetRunId ? 'このワーカーを停止しますか？' : '全てのワーカーを停止しますか？',
+      description: targetRunId 
+        ? `Run ID: ${targetRunId} を停止します。`
+        : '実行中の全スクレイピング処理を中断します。',
+      onConfirm: async () => {
+        setLoading(true);
+        try {
+          const url = targetRunId 
+            ? `/api/admin/booth-scraper/scrape?runId=${targetRunId}`
+            : '/api/admin/booth-scraper/scrape';
+            
+          const res = await fetch(url, {
+            method: 'DELETE',
+          });
+          
+          if (!res.ok) {
+            const err = await res.json();
+            toast.error(`Failed to stop: ${err.error}`);
+          } else {
+            toast.success('Stop signal sent');
+            router.refresh();
+          }
+        } catch (e) {
+          toast.error('Error stopping scraper');
+        } finally {
+          setLoading(false);
+        }
+        setConfirmDialog(prev => ({ ...prev, open: false }));
       }
-    } catch (e) {
-      toast.error('Error stopping scraper');
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   const statusColor = (s: string) => {
@@ -313,13 +386,20 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
         {/* Target Tag Manager */}
         <div className="border-t pt-4 dark:border-gray-700">
            <h3 className="text-sm font-medium mb-2">Target Tag List (Used when "Use Target Tag List" is checked)</h3>
-           <div className="flex gap-2 mb-2">
+           <div className="flex gap-2 mb-2 flex-wrap">
              <input 
                type="text" 
                value={newTagInput}
                onChange={(e) => setNewTagInput(e.target.value)}
-               className="border p-2 rounded dark:bg-gray-700"
-               placeholder="Add new tag (e.g. '3D Costume')"
+               className="border p-2 rounded dark:bg-gray-700 flex-1 min-w-[120px]"
+               placeholder="Tag (e.g. 'VRChat')"
+             />
+             <input 
+               type="text" 
+               value={newCategoryInput}
+               onChange={(e) => setNewCategoryInput(e.target.value)}
+               className="border p-2 rounded dark:bg-gray-700 flex-1 min-w-[120px]"
+               placeholder="Category (e.g. '3Dモデル')"
              />
              <button onClick={handleAddTag} type="button" className="bg-green-600 text-white px-3 py-1 rounded">Add</button>
            </div>
@@ -332,7 +412,10 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                         checked={t.enabled} 
                         onChange={() => handleToggleTag(t.id, t.enabled)}
                       />
-                      <span className={t.enabled ? '' : 'text-gray-400 line-through'}>{t.tag}</span>
+                      <span className={t.enabled ? '' : 'text-gray-400 line-through'}>
+                        {t.tag}
+                        {t.category && <span className="text-xs text-blue-500 ml-1">({t.category})</span>}
+                      </span>
                    </div>
                    <button type="button" onClick={() => handleDeleteTag(t.id)} className="text-red-500 text-xs hover:underline">Delete</button>
                 </div>
@@ -353,6 +436,83 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
         </button>
       </div>
 
+      {/* Running Workers from DB (visible after page reload) */}
+      {!activeStatus && runningFromDb.length > 0 && (
+        <div className="p-6 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-200 dark:border-yellow-700 space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-bold">🔄 実行中のワーカー（別プロセス）</h3>
+            <span className="text-sm text-yellow-700 dark:text-yellow-300">
+              DBから検出: {runningFromDb.length}件
+            </span>
+          </div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            このプロセスでは詳細なログを見れませんが、ワーカーが実行中です。
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b dark:border-gray-700">
+                  <th className="p-2">Run ID</th>
+                  <th className="p-2">開始時間</th>
+                  <th className="p-2">進捗</th>
+                </tr>
+              </thead>
+              <tbody>
+                {runningFromDb.map(run => (
+                  <tr key={run.runId} className="border-b dark:border-gray-700">
+                    <td className="p-2 font-mono text-xs">{run.runId}</td>
+                    <td className="p-2">{new Date(run.startTime).toLocaleString()}</td>
+                    <td className="p-2">
+                      ページ: {run.processedPages || 0}, 作成: {run.productsCreated}
+                    </td>
+                    <td className="p-2 flex gap-2">
+                       <button
+                         onClick={() => fetchLogs(run.runId)}
+                         className="text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 px-2 py-1 rounded"
+                       >
+                         Logs
+                       </button>
+                       <button
+                         onClick={() => handleStop(run.runId)}
+                         className="text-xs bg-red-100 text-red-600 hover:bg-red-200 px-2 py-1 rounded"
+                       >
+                         Stop
+                       </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Log Viewer Dialog */}
+      <Dialog open={logViewer.open} onOpenChange={(open) => setLogViewer(prev => ({ ...prev, open }))}>
+        <DialogContent className="max-w-3xl h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Worker Logs: {logViewer.runId}</DialogTitle>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => fetchLogs(logViewer.runId)}>Refresh</Button>
+            </div>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto bg-black text-xs text-green-400 p-4 rounded font-mono">
+            {logViewer.loading ? (
+              <div>Loading...</div>
+            ) : logViewer.logs.length === 0 ? (
+              <div>No logs found.</div>
+            ) : (
+              logViewer.logs.map((log) => (
+                <div key={log.id} className="mb-1 border-b border-gray-900 pb-1">
+                   <span className="text-gray-500 mr-2">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
+                   {log.message}
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Live Status */}
       {activeStatus && (
         <div className="p-6 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4">
@@ -363,7 +523,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
               {(activeStatus.status === 'running' || activeStatus.status === 'stopping') && (
                 <button
                   type="button"
-                  onClick={handleStop}
+                  onClick={() => handleStop()}
                   disabled={loading || activeStatus.status === 'stopping'}
                   className={`px-3 py-1 rounded text-white text-sm font-medium ${
                     activeStatus.status === 'stopping' 
@@ -423,6 +583,32 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
            </table>
          </div>
       </div>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{confirmDialog.title}</DialogTitle>
+            <DialogDescription>{confirmDialog.description}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmDialog(prev => ({ ...prev, open: false }))}
+            >
+              キャンセル
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={confirmDialog.onConfirm}
+            >
+              確認
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -253,7 +253,10 @@ class BoothScraperOrchestrator {
          throw new Error('Target Tag mode enabled but no enabled tags found in database.');
        } else {
          this.addLog(`Target Tag mode: Found ${dbTags.length} tags.`);
-         targets = dbTags.map(t => ({ query: t.tag }));
+         targets = dbTags.map(t => ({ 
+           query: t.tag,
+           category: (t as any).category || undefined
+         }));
        }
     } else {
        // Single target mode
@@ -285,19 +288,43 @@ class BoothScraperOrchestrator {
           startPage,
           maxPages,
           onProductsFound: async (urls, page) => {
-            if (this.shouldStop) return;
             await this.processBatch(urls, page, userId, isBackfill, targetInterval);
             await this.updateDbProgress();
+            
+            // Periodically check for remote stop signal (every page or batch)
+            await this.checkRemoteStopSignal();
           }
         });
     }
 
-    if (this.currentStatus?.status !== 'failed') {
+    // Final check before completing
+    await this.checkRemoteStopSignal();
+
+    if (this.currentStatus?.status !== 'failed' && this.currentStatus?.status !== 'stopping') {
       this.currentStatus!.status = 'completed';
       if (this.currentStatus!.timings.endTime === undefined) {
           this.currentStatus!.timings.endTime = Date.now();
       }
       await this.finalizeRun();
+    }
+  }
+
+  private async checkRemoteStopSignal() {
+    if (!this.currentStatus || this.shouldStop) return;
+
+    try {
+      // Check DB status
+      const run = await prisma.scraperRun.findUnique({
+        where: { runId: this.currentStatus.runId },
+        select: { status: true }
+      });
+
+      if ((run?.status as string) === 'STOPPING') {
+        this.addLog('Received remote stop signal from database.');
+        await this.stop();
+      }
+    } catch (e) {
+      console.error('Failed to check remote stop signal:', e);
     }
   }
 
@@ -426,6 +453,18 @@ class BoothScraperOrchestrator {
         message: msg
       });
       if (this.currentStatus.logs.length > 100) this.currentStatus.logs.shift();
+
+      // Persist log to DB (fire and forget to avoid blocking)
+      // @ts-ignore: Prisma client type update lag
+      prisma.scraperLog.create({
+        data: {
+          runId: this.currentStatus.runId,
+          message: msg,
+          createdAt: new Date() // Use current time
+        }
+      }).catch((err: unknown) => {
+        console.error('Failed to persist log:', err);
+      });
     }
     console.log(`[Orchestrator] [${ts}] ${msg}`);
   }
