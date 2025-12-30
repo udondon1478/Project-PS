@@ -355,14 +355,17 @@ class BoothScraperOrchestrator {
       startPage: startPage,
       maxPages: maxPages - startPage + 1,
       onProductsFound: async (urls, page) => {
-        await this.processBatch(urls, page, userId, isBackfill, targetInterval);
+        const continued = await this.processBatch(urls, page, userId, isBackfill, targetInterval);
         await this.updateDbProgress();
         
-        if (isBackfill && tagId) {
+        // Only update progress if we completed the page (didn't stop mid-way)
+        if (continued && isBackfill && tagId) {
             await this.updateTagProgress(tagId, page);
         }
         
         await this.checkRemoteStopSignal();
+        
+        return continued; // Signal to crawler whether to continue
       }
     });
 
@@ -395,8 +398,8 @@ class BoothScraperOrchestrator {
     }
   }
 
-  private async processBatch(urls: string[], page: number, userId: string, isBackfill: boolean, baseInterval: number) {
-    if (!this.currentStatus) return;
+  private async processBatch(urls: string[], page: number, userId: string, isBackfill: boolean, baseInterval: number): Promise<boolean> {
+    if (!this.currentStatus) return false;
     
     this.currentStatus.progress.lastProcessedPage = page;
     this.currentStatus.progress.pagesProcessed++;
@@ -412,23 +415,28 @@ class BoothScraperOrchestrator {
         if (failureAction === 'stop') {
             this.addLog(`Existence check failed, stopping: ${errorMsg}`);
             this.currentStatus.progress.productsFailed += urls.length;
-            return;
+            return false;
         }
         this.addLog(`Existence check failed, continuing: ${errorMsg}`);
     }
 
     const newUrls = urls.filter(u => !existingSet.has(u));
-    this.currentStatus.progress.productsExisting += (urls.length - newUrls.length);
+    const skippedCount = urls.length - newUrls.length;
+    this.currentStatus.progress.productsExisting += skippedCount;
+
+    if (skippedCount > 0) {
+      this.addLog(`Skipped ${skippedCount} existing products.`);
+    }
     
     for (const url of newUrls) {
-       if (this.shouldStop) return;
+       if (this.shouldStop) return false;
 
        if (isBackfill) {
          const processedCount = this.currentStatus.progress.productsCreated + this.currentStatus.progress.productsSkipped + this.currentStatus.progress.productsFailed;
          if (processedCount >= BACKFILL_PRODUCT_LIMIT) {
            this.addLog(`Limit of ${BACKFILL_PRODUCT_LIMIT} reached.`);
            this.shouldStop = true;
-           return;
+           return false;
          }
        }
 
@@ -469,6 +477,8 @@ class BoothScraperOrchestrator {
           }
        });
     }
+    
+    return true;
   }
 
   private addLog(msg: string) {
