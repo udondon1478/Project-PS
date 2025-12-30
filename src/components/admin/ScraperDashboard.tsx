@@ -230,6 +230,9 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
           options: {
             // Default options, using config values roughly
             pageLimit: schedulerConfig.newScanPageLimit, 
+            requestInterval: schedulerConfig.requestIntervalMs,
+            pagesPerRun: schedulerConfig.backfillPageCount,
+            maxProducts: schedulerConfig.backfillProductLimit,
             searchParams: {
               query: tagQuery,
               useTargetTags: false // Explicit single
@@ -261,6 +264,9 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
             mode,
             options: {
               pageLimit: schedulerConfig.newScanPageLimit,
+              requestInterval: schedulerConfig.requestIntervalMs,
+              pagesPerRun: schedulerConfig.backfillPageCount,
+              maxProducts: schedulerConfig.backfillProductLimit,
               searchParams: {
                 useTargetTags: true
               }
