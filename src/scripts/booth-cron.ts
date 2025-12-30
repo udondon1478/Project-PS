@@ -134,7 +134,7 @@ async function start() {
     console.log(`Received ${signal}. Shutting down gracefully...`);
     
     // Stop orchestrator if running
-    await orchestrator.stop();
+    await orchestrator.stopAll();
     
     // Disconnect Prisma
     await prisma.$disconnect();

@@ -18,12 +18,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid mode. Must be NEW or BACKFILL' }, { status: 400 });
     }
 
+    // Now returns the IDs of enqueued items (or just the first one if single)
     const runId = await orchestrator.start(mode, session.user.id, options);
     
     return NextResponse.json({ 
       success: true, 
       runId, 
-      message: `Scraper started in ${mode} mode`,
+      message: `Scraper tasks enqueued in ${mode} mode`,
       status: orchestrator.getStatus() 
     });
   } catch (error: unknown) {
@@ -51,10 +52,12 @@ export async function GET() {
     return new NextResponse('Unauthorized', { status: 403 });
   }
   
-  // ローカルプロセスのメモリ内状態
+  // Returns status which now includes .queue and .currentTarget
   const status = orchestrator.getStatus();
   
   // DBからRUNNING状態のワーカーを取得（全プロセス共有）
+  // Note: Since we only have one process usually, this should match what the orchestrator knows,
+  // but good for checking if there are zombies or other instances.
   const runningFromDb = await prisma.scraperRun.findMany({
     where: { status: 'RUNNING' },
     orderBy: { startTime: 'desc' },
@@ -70,27 +73,45 @@ export async function DELETE(req: Request) {
   }
 
   const { searchParams } = new URL(req.url);
-  const runId = searchParams.get('runId');
+  const runId = searchParams.get('runId'); // Legacy: Stop specific running Job
+  const targetId = searchParams.get('targetId'); // New: Remove specific item from Queue
+  const skipCurrent = searchParams.get('skipCurrent'); // New: Skip the currently running task
 
   try {
-    if (!runId) {
-       // Stop ALL
-       await orchestrator.stop();
-       const updateResult = await prisma.scraperRun.updateMany({
-         where: { status: 'RUNNING' },
-         data: { status: 'STOPPING' as any }
-       });
-       return NextResponse.json({ 
-         success: true, 
-         message: `Global stop requested. Local stopped, ${updateResult.count} jobs signalled.`,
-         status: orchestrator.getStatus() 
-       });
-    } else {
-       // Stop Specific
-       if (orchestrator.getStatus()?.runId === runId) {
-         await orchestrator.stop();
+    if (skipCurrent === 'true') {
+        await orchestrator.skipCurrent();
+        return NextResponse.json({
+            success: true,
+            message: 'Skipped current task. Proceeding to next in queue.',
+            status: orchestrator.getStatus()
+        });
+    }
+
+    if (targetId) {
+        orchestrator.removeFromQueue(targetId);
+        return NextResponse.json({
+            success: true,
+            message: `Removed item ${targetId} from queue`,
+            status: orchestrator.getStatus()
+        });
+    }
+
+    if (runId) {
+       // Stop Specific Run (Legacy/Global safety)
+       // With new architecture, this mostly likely means the current run.
+       const current = orchestrator.getStatus();
+       if (current && current.runId === runId) {
+         await orchestrator.stopAll(); // Stop implies emptying queue in traditional sense?
+                                      // Or just stop this run? 
+                                      // User said "Stop this worker".
+                                      // ScraperDashboard calls this with runId for STOP button.
+                                      // Let's map "Stop" to "Skip Current" if it matches current?
+                                      // But "Stop" usually means STOP EVERYTHING.
+                                      // Let's implement stopAll() for safety here if no targetId/skipCurrent specific.
+                                      await orchestrator.skipCurrent(); 
        }
        
+       // Update DB state to be sure
        await prisma.scraperRun.update({
          where: { runId },
          data: { status: 'STOPPING' as any }
@@ -101,6 +122,22 @@ export async function DELETE(req: Request) {
          message: `Stop signal sent to run ${runId}`,
        });
     }
+
+    // No params = Stop Everything
+    await orchestrator.stopAll();
+    
+    // Also mark DB runs as stopping for safety
+    const updateResult = await prisma.scraperRun.updateMany({
+        where: { status: 'RUNNING' },
+        data: { status: 'STOPPING' as any }
+    });
+       
+    return NextResponse.json({ 
+        success: true, 
+        message: `Global stop requested. Queue cleared. ${updateResult.count} jobs signalled.`,
+        status: orchestrator.getStatus() 
+    });
+
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to stop scraper';
     
