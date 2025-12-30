@@ -258,7 +258,7 @@ class BoothScraperOrchestrator {
            category: (t as any).category || undefined
          }));
        }
-    } else {
+     } else {
        // Single target mode
        targets.push({ 
          query: options.searchParams?.query || 'VRChat',
@@ -271,13 +271,17 @@ class BoothScraperOrchestrator {
     for (const target of targets) {
         if (this.shouldStop) break;
 
+        // Split query into tags if it contains spaces (for AND search)
+        const tags = target.query.trim().split(/\s+/);
+
         const currentParams = {
           ...options.searchParams,
-          query: target.query,
-          category: target.category || options.searchParams?.category, // Allow category override per target if needed, but fall back to global
+          query: target.query, // Keep original query string just in case
+          tags: tags,          // Pass explicit tags array
+          category: target.category || options.searchParams?.category, 
         };
 
-        this.addLog(`--> Scraping target: "${currentParams.query}" (Category: ${currentParams.category || 'Any'})`);
+        this.addLog(`--> Scraping target: [${tags.join(', ')}] (Category: ${currentParams.category || 'Any'})`);
 
         const crawler = new ListingCrawler({
           queue: this.queue!,
