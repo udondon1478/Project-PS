@@ -491,6 +491,7 @@ model ScraperTargetTag {
   tag       String
   category  String?  // BOOTHカテゴリ（例：3Dモデル）
   enabled   Boolean  @default(true)
+  lastBackfillPage Int @default(0) // バックフィルの進捗ページ（タグごとに管理）
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   

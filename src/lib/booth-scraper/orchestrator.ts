@@ -243,7 +243,7 @@ class BoothScraperOrchestrator {
     }
 
     // Determine target queries
-    let targets: Array<{ query: string, category?: string }> = [];
+    let targets: Array<{ id?: string, query: string, category?: string, lastBackfillPage?: number }> = [];
 
     if (options.searchParams?.useTargetTags) {
        const dbTags = await prisma.scraperTargetTag.findMany({
@@ -253,23 +253,60 @@ class BoothScraperOrchestrator {
          throw new Error('Target Tag mode enabled but no enabled tags found in database.');
        } else {
          this.addLog(`Target Tag mode: Found ${dbTags.length} tags.`);
-         targets = dbTags.map(t => ({ 
+         targets = dbTags.map(t => ({
+           id: t.id,
            query: t.tag,
-           category: (t as any).category || undefined
+           category: (t as any).category || undefined,
+           lastBackfillPage: (t as any).lastBackfillPage || 0
          }));
        }
-     } else {
-       // Single target mode
+    } else {
+       // Single target mode (Manual run without target tags)
        targets.push({ 
          query: options.searchParams?.query || 'VRChat',
-         category: options.searchParams?.category 
+         category: options.searchParams?.category,
+         lastBackfillPage: 0 // Always start from 0/provided offset for manual single runs? 
+                             // Or we could try to find a matching tag to resume, but simple is better for manual.
        });
+       
+       if (isBackfill && resumed && this.currentStatus?.progress.lastProcessedPage) {
+           // For manual single-query backfill resume (legacy behavior)
+           targets[0].lastBackfillPage = this.currentStatus.progress.lastProcessedPage;
+       }
     }
 
-    this.addLog(`Starting crawl: Mode=${mode}, StartPage=${startPage}, MaxPages=${maxPages}, BaseInterval=${targetInterval}ms, Targets=${targets.length}`);
+    this.addLog(`Starting crawl: Mode=${mode}, BaseInterval=${targetInterval}ms, Targets=${targets.length}`);
 
     for (const target of targets) {
         if (this.shouldStop) break;
+
+        // Determine start page for this target
+        let targetStartPage = 1;
+        let targetMaxPages = 3; // Default for NEW
+
+        if (isBackfill) {
+            // For backfill, use the individual tag's cursor
+            targetStartPage = (target.lastBackfillPage || 0) + 1;
+            
+            // Limit pages per tag per run to ensure fairness/rotation?
+            // Or rely on global maxPages?
+            // "process 9 products only" prompt request might imply small batches.
+            // Let's set a small batch size per tag for backfill, e.g., 3 pages per tag per run.
+            // This prevents one huge tag from blocking others forever.
+            const PAGES_PER_TAG_PER_RUN = 3; 
+            targetMaxPages = targetStartPage + PAGES_PER_TAG_PER_RUN - 1;
+            
+            if (options.pageLimit) {
+                // If global override exists, use it (but maybe applying it per tag is too much? 
+                // Let's treat options.pageLimit as "Per Tag Limit" for simplicity in this architecture)
+                targetMaxPages = targetStartPage + options.pageLimit - 1;
+            }
+        } else {
+            // NEW mode
+            if (options.pageLimit) {
+                targetMaxPages = options.pageLimit;
+            }
+        }
 
         // Split query into tags if it contains spaces (for AND search)
         const tags = target.query.trim().split(/\s+/);
@@ -281,7 +318,7 @@ class BoothScraperOrchestrator {
           category: target.category || options.searchParams?.category, 
         };
 
-        this.addLog(`--> Scraping target: [${tags.join(', ')}] (Category: ${currentParams.category || 'Any'})`);
+        this.addLog(`--> Scraping target: [${tags.join(', ')}] (Category: ${currentParams.category || 'Any'}) for Pages ${targetStartPage}-${targetMaxPages}`);
 
         const crawler = new ListingCrawler({
           queue: this.queue!,
@@ -289,11 +326,19 @@ class BoothScraperOrchestrator {
         });
 
         await crawler.run({
-          startPage,
-          maxPages,
+          startPage: targetStartPage,
+          maxPages: targetMaxPages - targetStartPage + 1, // crawler expects 'count' or 'maxPages relative'? 
+                                                           // Wait, ListingCrawler.run logic: 
+                                                           // "maxPages = options.maxPages ? currentPage + options.maxPages - 1 : Infinity"
+                                                           // CrawlerOptions.maxPages is "Count of pages to fetch".
           onProductsFound: async (urls, page) => {
             await this.processBatch(urls, page, userId, isBackfill, targetInterval);
             await this.updateDbProgress();
+            
+            // Update individual tag progress if Backfill
+            if (isBackfill && target.id) {
+                await this.updateTagProgress(target.id, page);
+            }
             
             // Periodically check for remote stop signal (every page or batch)
             await this.checkRemoteStopSignal();
@@ -487,6 +532,17 @@ class BoothScraperOrchestrator {
       });
     } catch (e) {
       console.error('Failed to update ScraperRun:', e);
+    }
+  }
+
+  private async updateTagProgress(tagId: string, page: number) {
+    try {
+        await prisma.scraperTargetTag.update({
+            where: { id: tagId },
+            data: { lastBackfillPage: page }
+        });
+    } catch (e) {
+        console.error(`Failed to update progress for tag ${tagId}:`, e);
     }
   }
 
