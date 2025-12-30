@@ -63,13 +63,15 @@ async function validateQueries() {
           const productData = parseProductPage(productHtml, productUrl);
           
           if (productData) {
+            // Safe access to images array
+            const thumbnailUrl = productData.images?.length > 0 ? productData.images[0] : undefined;
             await addScrapedItemToNotion({
               title: productData.title,
               url: productUrl,
               price: productData.price.toString(),
               sourceQuery: target.name,
               isNoise: false,
-              thumbnailUrl: productData.images[0]
+              thumbnailUrl
             });
           } else {
             console.warn(`  Failed to parse product data for ${productUrl}`);

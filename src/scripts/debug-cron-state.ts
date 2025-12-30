@@ -38,7 +38,15 @@ async function main() {
   // 6. Check Active Runs in DB
   const activeRuns = await prisma.scraperRun.findMany({ where: { status: 'RUNNING' } });
   console.log('Active Runs in DB:', activeRuns.length);
-  activeRuns.forEach(r => console.log(` - ${r.runId} (${r.metadata}) started at ${r.startTime.toISOString()}`));
+  activeRuns.forEach(r => {
+    let metadataStr: string;
+    try {
+      metadataStr = JSON.stringify(r.metadata);
+    } catch {
+      metadataStr = '[unable to serialize metadata]';
+    }
+    console.log(` - ${r.runId} (${metadataStr}) started at ${r.startTime.toISOString()}`);
+  });
 
   // 7. Config Logic Check
   if (config) {

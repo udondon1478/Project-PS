@@ -521,7 +521,9 @@ class BoothScraperOrchestrator {
           lastProcessedPage: this.currentStatus.progress.lastProcessedPage ?? undefined,
         }
       });
-    } catch (e) {}
+    } catch (err) {
+      console.error('Failed to update DB progress in orchestrator', err);
+    }
   }
 
   private async updateTagProgress(tagId: string, page: number) {
@@ -530,7 +532,9 @@ class BoothScraperOrchestrator {
             where: { id: tagId },
             data: { lastBackfillPage: page }
         });
-    } catch (e) {}
+    } catch (err) {
+      console.error('Failed to update tag progress in orchestrator', err);
+    }
   }
 
   private async finalizeRun() {
@@ -546,7 +550,9 @@ class BoothScraperOrchestrator {
             lastProcessedPage: this.currentStatus.progress.lastProcessedPage ?? undefined,
         }
         });
-    } catch (e) {}
+    } catch (err) {
+      console.error('Failed to finalize run in orchestrator', err);
+    }
     this.addLog(`Run finalized.`);
   }
 }

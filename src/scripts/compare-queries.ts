@@ -90,15 +90,23 @@ async function compareQueries() {
     if (diffItems.length > 0) {
       console.log(`\nWriting ${diffItems.length} diff items to Notion...`);
       
+      let failedCount = 0;
       for (const item of diffItems) {
         try {
           await addDiffItemToNotion(item);
+          // Throttle requests to avoid Notion 429 rate limits
+          await new Promise(resolve => setTimeout(resolve, 400));
         } catch (error) {
+          failedCount++;
           console.error(`Failed to write diff item: ${item.url}`, error);
         }
       }
       
-      console.log('Diff items written successfully.');
+      if (failedCount === 0) {
+        console.log('Diff items written successfully.');
+      } else {
+        console.log(`Some diff items failed to write: ${failedCount} failed out of ${diffItems.length}`);
+      }
     } else {
       console.log('\nNo differences found between the two queries.');
     }

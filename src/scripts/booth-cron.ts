@@ -52,10 +52,27 @@ async function start() {
         return;
       }
 
-      // 2. Check Scraper Status
+      // 2. Check Scraper Status (both in-memory and DB state for safety across restarts/processes)
       const status = orchestrator.getStatus();
       if (status && status.status === 'running') {
-        console.log(`[Cron] Scraper is currently running (${status.mode}). Skipping trigger.`);
+        console.log(`[Cron] Scraper is currently running in-memory (${status.mode}). Skipping trigger.`);
+        return;
+      }
+
+      // Also check DB for RUNNING state (handles separate processes or restarts)
+      let dbRunning = false;
+      try {
+        const activeRun = await prisma.scraperRun.findFirst({
+          where: { status: 'RUNNING' },
+        });
+        dbRunning = !!activeRun;
+      } catch (err) {
+        console.error('[Cron] Failed to check DB running state, conservatively assuming running:', err);
+        dbRunning = true; // Conservative fallback
+      }
+
+      if (dbRunning) {
+        console.log('[Cron] Scraper is currently running (DB state). Skipping trigger.');
         return;
       }
 

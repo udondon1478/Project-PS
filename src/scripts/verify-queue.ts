@@ -5,9 +5,6 @@ import { orchestrator } from '../lib/booth-scraper/orchestrator';
 // Remove the manual instantiation since we are importing the singleton
 // const orchestrator = BoothScraperOrchestrator.getInstance();
 
-// Mock console to keep output clean(er)
-const originalLog = console.log;
-
 
 // Helper to poll for status change
 async function waitForStatus(condition: (status: any) => boolean, timeoutMs = 20000) {

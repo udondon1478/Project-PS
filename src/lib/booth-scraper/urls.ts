@@ -14,19 +14,17 @@ export interface SearchParams {
 export function getSearchUrl(page: number = 1, params: SearchParams = {}): string {
   let url: URL;
   
-  // Consolidate tags: Use explicit tags or split query by whitespace
-  const Tags = params.tags || (params.query ? params.query.trim().split(/\s+/) : ['VRChat']);
+  // Consolidate tags: Use explicit tags or split query by whitespace, falling back to 'VRChat'
+  const trimmedQuery = params.query?.trim();
+  const tags = params.tags || (trimmedQuery ? trimmedQuery.split(/\s+/) : ['VRChat']);
 
   if (params.category) {
     url = new URL(`${BOOTH_BASE_URL}/ja/browse/${encodeURIComponent(params.category)}`);
     // Append tags as tags[]
-    Tags.forEach(t => url.searchParams.append('tags[]', t));
-    
-    // If there's an explicit query separate from tags, use q= (unlikely in current usage but supported)
-    // For now we assume "query" input maps to tags unless strictly separated
+    tags.forEach(t => url.searchParams.append('tags[]', t));
   } else {
     url = new URL(`${BOOTH_BASE_URL}/ja/items`);
-    Tags.forEach(t => url.searchParams.append('tags[]', t));
+    tags.forEach(t => url.searchParams.append('tags[]', t));
   }
 
   url.searchParams.append('sort', 'new');

@@ -27,6 +27,63 @@ export interface DiffItem {
   isNoise: boolean;
 }
 
+// Type guard helpers for safe Notion property access
+function getTitleValue(properties: Record<string, unknown>, key: string): string {
+  const prop = properties[key];
+  if (prop && typeof prop === 'object' && 'title' in prop) {
+    const titleProp = prop as { title?: unknown[] };
+    if (Array.isArray(titleProp.title) && titleProp.title.length > 0) {
+      const first = titleProp.title[0] as { plain_text?: string };
+      return typeof first?.plain_text === 'string' ? first.plain_text : '';
+    }
+  }
+  return '';
+}
+
+function getUrlValue(properties: Record<string, unknown>, key: string): string {
+  const prop = properties[key];
+  if (prop && typeof prop === 'object' && 'url' in prop) {
+    const urlProp = prop as { url?: unknown };
+    return typeof urlProp.url === 'string' ? urlProp.url : '';
+  }
+  return '';
+}
+
+function getRichTextValue(properties: Record<string, unknown>, key: string): string {
+  const prop = properties[key];
+  if (prop && typeof prop === 'object' && 'rich_text' in prop) {
+    const rtProp = prop as { rich_text?: unknown[] };
+    if (Array.isArray(rtProp.rich_text) && rtProp.rich_text.length > 0) {
+      const first = rtProp.rich_text[0] as { plain_text?: string };
+      return typeof first?.plain_text === 'string' ? first.plain_text : '';
+    }
+  }
+  return '';
+}
+
+function getFilesExternalUrl(properties: Record<string, unknown>, key: string): string | undefined {
+  const prop = properties[key];
+  if (prop && typeof prop === 'object' && 'files' in prop) {
+    const filesProp = prop as { files?: unknown[] };
+    if (Array.isArray(filesProp.files) && filesProp.files.length > 0) {
+      const first = filesProp.files[0] as { external?: { url?: string } };
+      if (first?.external && typeof first.external.url === 'string') {
+        return first.external.url;
+      }
+    }
+  }
+  return undefined;
+}
+
+function getCheckboxValue(properties: Record<string, unknown>, key: string): boolean {
+  const prop = properties[key];
+  if (prop && typeof prop === 'object' && 'checkbox' in prop) {
+    const cbProp = prop as { checkbox?: unknown };
+    return typeof cbProp.checkbox === 'boolean' ? cbProp.checkbox : false;
+  }
+  return false;
+}
+
 export async function addScrapedItemToNotion(item: ScrapedItem): Promise<void> {
   const apiKey = process.env.NOTION_API_KEY;
   const databaseId = process.env.NOTION_DATABASE_ID;
@@ -148,25 +205,12 @@ export async function queryNotionDatabase(sourceQuery: string): Promise<NotionRe
 
       const properties = page.properties as Record<string, unknown>;
       
-      // 名前（タイトル）
-      const titleProp = properties['名前'] as { title?: { plain_text: string }[] } | undefined;
-      const title = titleProp?.title?.[0]?.plain_text ?? '';
-
-      // URL
-      const urlProp = properties['URL'] as { url?: string } | undefined;
-      const url = urlProp?.url ?? '';
-
-      // 価格
-      const priceProp = properties['価格'] as { rich_text?: { plain_text: string }[] } | undefined;
-      const price = priceProp?.rich_text?.[0]?.plain_text ?? '';
-
-      // サムネイル
-      const thumbnailProp = properties['サムネイル'] as { files?: { external?: { url: string } }[] } | undefined;
-      const thumbnailUrl = thumbnailProp?.files?.[0]?.external?.url;
-
-      // IsNoise
-      const isNoiseProp = properties['IsNoise'] as { checkbox?: boolean } | undefined;
-      const isNoise = isNoiseProp?.checkbox ?? false;
+      // 型ガードヘルパーを使用して安全にプロパティを取得
+      const title = getTitleValue(properties, '名前');
+      const url = getUrlValue(properties, 'URL');
+      const price = getRichTextValue(properties, '価格');
+      const thumbnailUrl = getFilesExternalUrl(properties, 'サムネイル');
+      const isNoise = getCheckboxValue(properties, 'IsNoise');
 
       records.push({
         pageId: page.id,

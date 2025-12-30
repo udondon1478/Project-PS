@@ -1,6 +1,9 @@
 import { prisma } from '@/lib/prisma';
 
-const TARGETS = [
+// Explicit type definition for target configuration
+type Target = { tag: string; category: string };
+
+const TARGETS: ReadonlyArray<Target> = [
   { tag: 'VRChat', category: '3Dモデル' },
   { tag: 'VRChat', category: '素材データ' }
 ];
@@ -29,37 +32,40 @@ async function seed() {
     console.warn('Error checking generic tag:', e);
   }
 
+  // Process each target within a transaction for atomicity
   for (const target of TARGETS) {
     try {
-      const existing = await prisma.scraperTargetTag.findUnique({
-        where: {
-          tag_category: {
-            tag: target.tag,
-            category: target.category as string // Cast as we know it's string in our defined targets
-          }
-        }
-      });
-
-      if (existing) {
-        if (!existing.enabled) {
-          console.log(`Enabling existing target: ${target.tag} (${target.category})`);
-          await prisma.scraperTargetTag.update({
-            where: { id: existing.id },
-            data: { enabled: true }
-          });
-        } else {
-            console.log(`Target already exists and enabled: ${target.tag} (${target.category})`);
-        }
-      } else {
-        console.log(`Creating new target: ${target.tag} (${target.category})`);
-        await prisma.scraperTargetTag.create({
-          data: {
-            tag: target.tag,
-            category: target.category,
-            enabled: true
+      await prisma.$transaction(async (tx) => {
+        const existing = await tx.scraperTargetTag.findUnique({
+          where: {
+            tag_category: {
+              tag: target.tag,
+              category: target.category
+            }
           }
         });
-      }
+
+        if (existing) {
+          if (!existing.enabled) {
+            console.log(`Enabling existing target: ${target.tag} (${target.category})`);
+            await tx.scraperTargetTag.update({
+              where: { id: existing.id },
+              data: { enabled: true }
+            });
+          } else {
+            console.log(`Target already exists and enabled: ${target.tag} (${target.category})`);
+          }
+        } else {
+          console.log(`Creating new target: ${target.tag} (${target.category})`);
+          await tx.scraperTargetTag.create({
+            data: {
+              tag: target.tag,
+              category: target.category,
+              enabled: true
+            }
+          });
+        }
+      });
     } catch (e) {
       console.error(`Failed to process target ${target.tag} (${target.category}):`, e);
     }
