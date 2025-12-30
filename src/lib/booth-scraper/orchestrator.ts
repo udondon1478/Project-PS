@@ -22,7 +22,10 @@ export type ScraperMode = 'NEW' | 'BACKFILL';
 
 export interface ScraperOptions {
   pageLimit?: number;
-  rateLimitOverride?: number; // interval in ms
+  pagesPerRun?: number; // BACKFILL: Number of pages to go back in one run
+  maxProducts?: number; // BACKFILL: Max products to process
+  requestInterval?: number; // Base interval between requests in ms
+  rateLimitOverride?: number; // Deprecated: alias for requestInterval
   /**
    * 既存の商品チェック（checkExistingProducts）が失敗した場合の動作を指定します。
    * 
@@ -304,7 +307,7 @@ class BoothScraperOrchestrator {
     const isBackfill = mode === 'BACKFILL';
     
     const defaultBaseInterval = 5000;
-    const targetInterval = options.rateLimitOverride || defaultBaseInterval;
+    const targetInterval = options.requestInterval ?? options.rateLimitOverride ?? defaultBaseInterval;
     
     this.queue = new PQueue({
       concurrency: 1,
@@ -314,6 +317,7 @@ class BoothScraperOrchestrator {
 
     let startPage = 1;
     let maxPages = 3;
+    const limitMaxProducts = options.maxProducts ?? BACKFILL_PRODUCT_LIMIT;
 
     // Determine Tag ID if exists to fetch resume point
     let tagId: string | undefined;
@@ -331,8 +335,8 @@ class BoothScraperOrchestrator {
              startPage = 1; 
         }
 
-        const PAGES_PER_RUN = 3; 
-        maxPages = startPage + PAGES_PER_RUN - 1;
+        const pagesPerRun = options.pagesPerRun ?? 3; 
+        maxPages = startPage + pagesPerRun - 1;
         
         if (options.pageLimit) {
              maxPages = startPage + options.pageLimit - 1;
@@ -433,8 +437,11 @@ class BoothScraperOrchestrator {
 
        if (isBackfill) {
          const processedCount = this.currentStatus.progress.productsCreated + this.currentStatus.progress.productsSkipped + this.currentStatus.progress.productsFailed;
-         if (processedCount >= BACKFILL_PRODUCT_LIMIT) {
-           this.addLog(`Limit of ${BACKFILL_PRODUCT_LIMIT} reached.`);
+         // Note: We use the limit passed via options or constant
+         const limit = this.currentStatus.currentTarget?.options.maxProducts ?? BACKFILL_PRODUCT_LIMIT;
+         
+         if (processedCount >= limit) {
+           this.addLog(`Limit of ${limit} reached.`);
            this.shouldStop = true;
            return false;
          }

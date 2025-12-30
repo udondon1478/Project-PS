@@ -39,7 +39,15 @@ export async function PATCH(req: Request) {
 
   try {
     const body = await req.json();
-    const { isSchedulerEnabled, newScanIntervalMin, newScanPageLimit, backfillIntervalMin } = body;
+    const { 
+        isSchedulerEnabled, 
+        newScanIntervalMin, 
+        newScanPageLimit, 
+        backfillIntervalMin,
+        backfillPageCount,
+        backfillProductLimit,
+        requestIntervalMs
+    } = body;
 
     // Validation
     if (newScanIntervalMin !== undefined && newScanIntervalMin < 1) {
@@ -50,6 +58,15 @@ export async function PATCH(req: Request) {
     }
     if (newScanPageLimit !== undefined && newScanPageLimit < 1) {
         return NextResponse.json({ error: 'New scan page limit must be at least 1' }, { status: 400 });
+    }
+    if (backfillPageCount !== undefined && backfillPageCount < 1) {
+        return NextResponse.json({ error: 'Backfill page count must be at least 1' }, { status: 400 });
+    }
+    if (backfillProductLimit !== undefined && backfillProductLimit < 1) {
+         return NextResponse.json({ error: 'Backfill product limit must be at least 1' }, { status: 400 });
+    }
+    if (requestIntervalMs !== undefined && requestIntervalMs < 500) {
+         return NextResponse.json({ error: 'Request interval too short (min 500ms)' }, { status: 400 });
     }
 
     let config = await prisma.scraperConfig.findFirst();
@@ -62,6 +79,9 @@ export async function PATCH(req: Request) {
                 newScanIntervalMin: newScanIntervalMin ?? 10,
                 newScanPageLimit: newScanPageLimit ?? 3,
                 backfillIntervalMin: backfillIntervalMin ?? 5,
+                backfillPageCount: backfillPageCount ?? 3,
+                backfillProductLimit: backfillProductLimit ?? 9,
+                requestIntervalMs: requestIntervalMs ?? 5000,
                 lastUpdatedBy: session.user.id,
             }
         });
@@ -74,6 +94,9 @@ export async function PATCH(req: Request) {
                 newScanIntervalMin: newScanIntervalMin !== undefined ? newScanIntervalMin : undefined,
                 newScanPageLimit: newScanPageLimit !== undefined ? newScanPageLimit : undefined,
                 backfillIntervalMin: backfillIntervalMin !== undefined ? backfillIntervalMin : undefined,
+                backfillPageCount: backfillPageCount !== undefined ? backfillPageCount : undefined,
+                backfillProductLimit: backfillProductLimit !== undefined ? backfillProductLimit : undefined,
+                requestIntervalMs: requestIntervalMs !== undefined ? requestIntervalMs : undefined,
                 lastUpdatedBy: session.user.id,
             }
         });

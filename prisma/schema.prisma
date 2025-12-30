@@ -506,6 +506,9 @@ model ScraperConfig {
   newScanIntervalMin Int  @default(10) // 新着スキャンの実行間隔（分）
   newScanPageLimit   Int  @default(3)  // 新着スキャン時のページ数上限
   backfillIntervalMin Int @default(5)  // バックフィルの実行間隔（分）
+  backfillPageCount  Int @default(3) // バックフィル時の一度の遡及ページ数
+  backfillProductLimit Int @default(9) // バックフィル時の最大処理商品数
+  requestIntervalMs  Int @default(5000) // スクレイピング時のリクエスト間隔(ms)
   lastUpdatedBy   String?
   updatedAt       DateTime @updatedAt
 }

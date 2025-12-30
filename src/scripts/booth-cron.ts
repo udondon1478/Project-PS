@@ -80,7 +80,8 @@ async function start() {
            console.log('Starting NEW product scan (Scheduled)');
            const runId = await orchestrator.start('NEW', userId, {
              pageLimit: config.newScanPageLimit, // Use configurable limit
-             rateLimitOverride: 1500, // Fixed rate limit for cron safety
+             // rateLimitOverride: 1500, // Fixed rate limit for cron safety -> Now use config
+             requestInterval: config.requestIntervalMs ?? 5000, 
              searchParams: { useTargetTags: true }
            });
            console.log(`[Cron] New Product Scan started (RunID: ${runId})`);
@@ -113,6 +114,9 @@ async function start() {
            const runId = await orchestrator.start('BACKFILL', userId, {
              // Orchestrator keeps track of pagination
              searchParams: { useTargetTags: true },
+             pagesPerRun: config.backfillPageCount ?? 3,
+             maxProducts: config.backfillProductLimit ?? 9,
+             requestInterval: config.requestIntervalMs ?? 5000,
            });
            console.log(`[Cron] Backfill started (RunID: ${runId})`);
          } catch (e) {

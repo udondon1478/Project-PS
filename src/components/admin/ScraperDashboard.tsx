@@ -62,11 +62,17 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
     newScanIntervalMin: number;
     newScanPageLimit: number;
     backfillIntervalMin: number;
+    backfillPageCount: number;
+    backfillProductLimit: number;
+    requestIntervalMs: number;
   }>({
     isSchedulerEnabled: true,
     newScanIntervalMin: 10,
     newScanPageLimit: 3,
     backfillIntervalMin: 5,
+    backfillPageCount: 3,
+    backfillProductLimit: 9,
+    requestIntervalMs: 5000,
   });
 
   // Fetch Scheduler Config
@@ -80,6 +86,9 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
              newScanIntervalMin: data.newScanIntervalMin,
              newScanPageLimit: data.newScanPageLimit ?? 3,
              backfillIntervalMin: data.backfillIntervalMin,
+             backfillPageCount: data.backfillPageCount ?? 3,
+             backfillProductLimit: data.backfillProductLimit ?? 9,
+             requestIntervalMs: data.requestIntervalMs ?? 5000,
            });
         }
       })
@@ -96,10 +105,11 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
        if (res.ok) {
          toast.success('Scheduler settings saved');
        } else {
-         toast.error('Failed to save settings');
+         const err = await res.json();
+         toast.error(`Failed to save settings: ${err.error}`);
        }
      } catch(e) {
-       toast.error('Error saving settings');
+       toast.error(`Error saving settings`);
      }
   };
 
@@ -552,6 +562,39 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                             value={schedulerConfig.backfillIntervalMin}
                             onChange={e => setSchedulerConfig(prev => ({ ...prev, backfillIntervalMin: parseInt(e.target.value) || 5 }))}
                           />
+                      </div>
+                      
+                      <div className="pt-2 border-t mt-2">
+                        <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase">Advanced Tuning</h4>
+                        <div className="space-y-3">
+                           <div>
+                              <label className="text-xs text-gray-500 block mb-1">Backfill Page Count (Depth)</label>
+                              <input 
+                                type="number" 
+                                className="w-full border rounded p-1 text-sm bg-white dark:bg-black"
+                                value={schedulerConfig.backfillPageCount}
+                                onChange={e => setSchedulerConfig(prev => ({ ...prev, backfillPageCount: parseInt(e.target.value) || 3 }))}
+                              />
+                           </div>
+                           <div>
+                              <label className="text-xs text-gray-500 block mb-1">Backfill Product Limit (Per Run)</label>
+                              <input 
+                                type="number" 
+                                className="w-full border rounded p-1 text-sm bg-white dark:bg-black"
+                                value={schedulerConfig.backfillProductLimit}
+                                onChange={e => setSchedulerConfig(prev => ({ ...prev, backfillProductLimit: parseInt(e.target.value) || 9 }))}
+                              />
+                           </div>
+                           <div>
+                              <label className="text-xs text-gray-500 block mb-1">Request Interval (ms)</label>
+                              <input 
+                                type="number" 
+                                className="w-full border rounded p-1 text-sm bg-white dark:bg-black"
+                                value={schedulerConfig.requestIntervalMs}
+                                onChange={e => setSchedulerConfig(prev => ({ ...prev, requestIntervalMs: parseInt(e.target.value) || 5000 }))}
+                              />
+                           </div>
+                        </div>
                       </div>
                   </div>
               </div>
