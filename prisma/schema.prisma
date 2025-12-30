@@ -497,3 +497,14 @@ model ScraperTargetTag {
   @@unique([tag, category]) // 同じタグ+カテゴリの重複を防ぐ
   @@map("scraper_target_tags")
 }
+
+// スクレイパー設定テーブル
+model ScraperConfig {
+  id             String   @id @default(cuid())
+  isSchedulerEnabled Boolean @default(true) // スケジューラー自体の有効/無効
+  newScanIntervalMin Int  @default(10) // 新着スキャンの実行間隔（分）
+  newScanPageLimit   Int  @default(3)  // 新着スキャン時のページ数上限
+  backfillIntervalMin Int @default(5)  // バックフィルの実行間隔（分）
+  lastUpdatedBy   String?
+  updatedAt       DateTime @updatedAt
+}

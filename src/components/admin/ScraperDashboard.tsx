@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { ClockIcon, PlayIcon } from 'lucide-react';
 
 import { type ScraperRun, type ScraperLog, type ScraperStatus } from '@/lib/booth-scraper/orchestrator';
 
@@ -57,13 +58,61 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
     onConfirm: () => void;
   }>({ open: false, title: '', description: '', onConfirm: () => {} });
 
-  // Log Viewer Dialog
+  // Logger state
   const [logViewer, setLogViewer] = useState<{
     open: boolean;
     runId: string;
     logs: ScraperLog[];
     loading: boolean;
   }>({ open: false, runId: '', logs: [], loading: false });
+
+  // Scheduler Config State
+  const [schedulerConfig, setSchedulerConfig] = useState<{
+    isSchedulerEnabled: boolean;
+    newScanIntervalMin: number;
+    newScanPageLimit: number;
+    backfillIntervalMin: number;
+  }>({
+    isSchedulerEnabled: true,
+    newScanIntervalMin: 10,
+    newScanPageLimit: 3,
+    backfillIntervalMin: 5,
+  });
+
+  // Fetch Scheduler Config
+  useEffect(() => {
+    fetch('/api/admin/scraper-config')
+      .then(res => res.json())
+      .then(data => {
+        if (data.id) {
+           setSchedulerConfig({
+             isSchedulerEnabled: data.isSchedulerEnabled,
+             newScanIntervalMin: data.newScanIntervalMin,
+             newScanPageLimit: data.newScanPageLimit ?? 3,
+             backfillIntervalMin: data.backfillIntervalMin,
+           });
+        }
+      })
+      .catch(e => console.error('Failed to load scheduler config', e));
+  }, []);
+
+  const saveSchedulerConfig = async () => {
+     try {
+       const res = await fetch('/api/admin/scraper-config', {
+         method: 'PATCH',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify(schedulerConfig)
+       });
+       if (res.ok) {
+         toast.success('Scheduler settings saved');
+       } else {
+         const err = await res.json().catch(() => ({ error: 'Unknown error' })); 
+         toast.error(`Failed to save settings: ${err.error || res.statusText}`);
+       }
+     } catch(e) {
+       toast.error(`Error saving settings: ${e instanceof Error ? e.message : String(e)}`);
+     }
+  };
 
   // Fetch logs logic
   const fetchLogs = async (runId: string) => {
@@ -289,151 +338,250 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
 
   return (
     <div className="space-y-8">
-      {/* Control Panel */}
-      <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md space-y-4">
-        <h2 className="text-xl font-semibold">Start Scraper</h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="mode-select" className="block text-sm font-medium mb-1">Mode</label>
-            <select 
-              id="mode-select"
-              value={mode} 
-              onChange={(e) => setMode(e.target.value as 'NEW' | 'BACKFILL')}
-              className="w-full p-2 border rounded dark:bg-gray-700"
-            >
-              <option value="NEW">New Product Scan (Default)</option>
-              <option value="BACKFILL">Backfill (Resume History)</option>
-            </select>
-          </div>
-          
-          <div>
-             <label htmlFor="pageLimit" className="block text-sm font-medium mb-1">Page Limit</label>
-             <input 
-               id="pageLimit"
-               type="text" 
-               inputMode="numeric"
-               value={pageLimit} 
-               onChange={(e) => setPageLimit(e.target.value)}
-               className="w-full p-2 border rounded dark:bg-gray-700"
-             />
-             <div className="text-xs text-gray-500 mt-1">
-               Default: NEW=3, BACKFILL=10
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Left Column: Scheduler Configuration (DB Persisted) */}
+        <div className="space-y-6">
+          <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md space-y-4 border-l-4 border-blue-500">
+             <div className="flex justify-between items-start">
+               <div>
+                 <h2 className="text-xl font-bold flex items-center gap-2">
+                   <ClockIcon className="w-6 h-6" />
+                   Global Scheduler Config
+                 </h2>
+                 <p className="text-sm text-gray-500 mt-1">
+                   These settings are saved to the database and control the background cron jobs.
+                 </p>
+               </div>
+               <div className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 p-2 rounded-lg">
+                  <input 
+                    type="checkbox" 
+                    id="schedulerEnabled"
+                    checked={schedulerConfig.isSchedulerEnabled} 
+                    onChange={(e) => setSchedulerConfig(prev => ({ ...prev, isSchedulerEnabled: e.target.checked }))}
+                    className="w-5 h-5 cursor-pointer accent-blue-600"
+                  />
+                  <label htmlFor="schedulerEnabled" className="font-bold cursor-pointer select-none">
+                    {schedulerConfig.isSchedulerEnabled ? 'ENABLED' : 'DISABLED'}
+                  </label>
+               </div>
+             </div>
+
+             <div className="grid grid-cols-1 gap-4 pt-4">
+                <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-900/50">
+                   <h3 className="font-semibold mb-3 text-blue-700 dark:text-blue-300">New Product Scan</h3>
+                   <div className="grid grid-cols-2 gap-4">
+                     <div>
+                       <label className="block text-sm font-medium mb-1">Interval (min)</label>
+                       <input 
+                         type="number" 
+                         min="1"
+                         value={schedulerConfig.newScanIntervalMin}
+                         onChange={(e) => setSchedulerConfig(prev => ({ ...prev, newScanIntervalMin: parseInt(e.target.value) || 10 }))}
+                         className="w-full p-2 border rounded dark:bg-gray-700"
+                       />
+                     </div>
+                     <div>
+                       <label className="block text-sm font-medium mb-1">Page Limit</label>
+                       <input 
+                         type="number" 
+                         min="1"
+                         value={schedulerConfig.newScanPageLimit}
+                         onChange={(e) => setSchedulerConfig(prev => ({ ...prev, newScanPageLimit: parseInt(e.target.value) || 3 }))}
+                         className="w-full p-2 border rounded dark:bg-gray-700"
+                       />
+                     </div>
+                   </div>
+                </div>
+
+                <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-900/50">
+                   <h3 className="font-semibold mb-3 text-purple-700 dark:text-purple-300">Backfill (Past Data)</h3>
+                   <div className="grid grid-cols-1">
+                     <div>
+                       <label className="block text-sm font-medium mb-1">Interval (min)</label>
+                       <input 
+                         type="number" 
+                         min="1"
+                         value={schedulerConfig.backfillIntervalMin}
+                         onChange={(e) => setSchedulerConfig(prev => ({ ...prev, backfillIntervalMin: parseInt(e.target.value) || 5 }))}
+                         className="w-full p-2 border rounded dark:bg-gray-700"
+                       />
+                     </div>
+                   </div>
+                </div>
+             </div>
+             
+             {/* Target Tag Manager (Moved here) */}
+             <div className="pt-4 border-t dark:border-gray-700">
+               <h3 className="font-semibold mb-2">Target Tags (Monitored by Scheduler)</h3>
+               <div className="flex gap-2 mb-2">
+                 <input 
+                   type="text" 
+                   value={newTagInput}
+                   onChange={(e) => setNewTagInput(e.target.value)}
+                   className="border p-2 rounded dark:bg-gray-700 flex-1"
+                   placeholder="Tag (e.g. 'VRChat')"
+                 />
+                 <input 
+                   type="text" 
+                   value={newCategoryInput}
+                   onChange={(e) => setNewCategoryInput(e.target.value)}
+                   className="border p-2 rounded dark:bg-gray-700 w-1/3"
+                   placeholder="Category"
+                 />
+                 <button onClick={handleAddTag} type="button" className="bg-green-600 text-white px-3 py-1 rounded">Add</button>
+               </div>
+               <div className="max-h-60 overflow-y-auto border rounded p-2 bg-gray-50 dark:bg-gray-900">
+                  {tags.map(t => (
+                    <div key={t.id} className="flex justify-between items-center py-1 border-b last:border-0 border-gray-200 dark:border-gray-700">
+                       <div className="flex items-center gap-2">
+                          <input 
+                            type="checkbox" 
+                            checked={t.enabled} 
+                            onChange={() => handleToggleTag(t.id, t.enabled)}
+                          />
+                          <span className={t.enabled ? '' : 'text-gray-400 line-through'}>
+                            {t.tag}
+                            {t.category && <span className="text-xs text-blue-500 ml-1">({t.category})</span>}
+                          </span>
+                       </div>
+                       <button type="button" onClick={() => handleDeleteTag(t.id)} className="text-red-500 text-xs hover:underline">Delete</button>
+                    </div>
+                  ))}
+                  {tags.length === 0 && <div className="text-gray-400 text-sm">No target tags defined.</div>}
+               </div>
+             </div>
+
+             <div className="flex justify-end pt-2">
+                <Button onClick={saveSchedulerConfig} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                   Save Scheduler Settings
+                </Button>
              </div>
           </div>
-          
-          <div>
-             <label htmlFor="rateLimit" className="block text-sm font-medium mb-1">Interval (ms)</label>
-             <input 
-               id="rateLimit"
-               type="text"
-               inputMode="numeric" 
-               value={rateLimit} 
-               onChange={(e) => setRateLimit(e.target.value)}
-               className="w-full p-2 border rounded dark:bg-gray-700"
-             />
+        </div>
+
+        {/* Right Column: Manual Control (One-off) */}
+        <div className="space-y-6">
+          <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md space-y-4 border-l-4 border-orange-500">
+            <div className="flex justify-between items-start">
+              <div>
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <PlayIcon className="w-6 h-6" />
+                  Manual One-off Run
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Trigger a single run immediately. These settings are NOT saved.
+                </p>
+              </div>
+              {/* Status Badge */}
+              {activeStatus && (
+                <span className={`px-3 py-1 rounded-full text-sm font-bold ${activeStatus.status === 'running' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                  {activeStatus.status.toUpperCase()}
+                </span>
+              )}
+            </div>
+            
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Mode</label>
+                <select 
+                  value={mode} 
+                  onChange={(e) => setMode(e.target.value as 'NEW' | 'BACKFILL')}
+                  className="w-full p-2 border rounded dark:bg-gray-700"
+                >
+                  <option value="NEW">New Scan (Fetch latest pages)</option>
+                  <option value="BACKFILL">Backfill (Resume past history)</option>
+                </select>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                   <label className="block text-sm font-medium mb-1">Page Limit</label>
+                   <input 
+                     type="text" 
+                     inputMode="numeric"
+                     value={pageLimit} 
+                     onChange={(e) => setPageLimit(e.target.value)}
+                     className="w-full p-2 border rounded dark:bg-gray-700"
+                   />
+                </div>
+                <div>
+                   <label className="block text-sm font-medium mb-1">Interval (ms)</label>
+                   <input 
+                     type="text"
+                     inputMode="numeric" 
+                     value={rateLimit} 
+                     onChange={(e) => setRateLimit(e.target.value)}
+                     className="w-full p-2 border rounded dark:bg-gray-700"
+                   />
+                </div>
+              </div>
+
+              <div className="border-t pt-4 dark:border-gray-700 space-y-3">
+                 <label className="flex items-center space-x-2 p-3 border rounded hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer">
+                    <input 
+                      type="checkbox"
+                      checked={useTargetTags}
+                      onChange={(e) => setUseTargetTags(e.target.checked)}
+                      className="w-5 h-5"
+                    />
+                    <div>
+                      <span className="font-medium block">Use Target Tags List</span>
+                      <span className="text-xs text-gray-500">Scrape all tags defined in the Scheduler Config (Left Panel)</span>
+                    </div>
+                  </label>
+
+                 {/* Manual Query Inputs (Only if NOT using target tags) */}
+                 {!useTargetTags && (
+                   <div className="space-y-3 p-3 bg-gray-50 dark:bg-gray-900/30 rounded border border-dashed border-gray-300">
+                     <div>
+                        <label className="block text-sm font-medium mb-1">Manual Search Query</label>
+                        <input 
+                          type="text" 
+                          value={searchQuery} 
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full p-2 border rounded dark:bg-gray-700"
+                          placeholder="e.g. VRChat"
+                        />
+                     </div>
+                     <div>
+                        <label className="block text-sm font-medium mb-1">Category (Optional)</label>
+                        <input 
+                          type="text" 
+                          value={category} 
+                          onChange={(e) => setCategory(e.target.value)}
+                          className="w-full p-2 border rounded dark:bg-gray-700"
+                          placeholder="e.g. 3D models"
+                        />
+                     </div>
+                   </div>
+                 )}
+
+                 <label className="flex items-center space-x-2 pt-2">
+                    <input 
+                      type="checkbox"
+                      checked={adult}
+                      onChange={(e) => setAdult(e.target.checked)}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm font-medium">Include Adult Content</span>
+                  </label>
+              </div>
+            </div>
+
+            <button 
+              type="button"
+              onClick={handleStart} 
+              disabled={loading || activeStatus?.status === 'running'}
+              className={`w-full py-3 rounded text-white font-bold text-lg shadow-lg ${
+                activeStatus?.status === 'running' 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-orange-600 hover:bg-orange-700'
+              }`}
+            >
+              {activeStatus?.status === 'running' ? 'Running...' : 'Run Manually Now'}
+            </button>
           </div>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-4 dark:border-gray-700">
-           <div>
-              <label htmlFor="searchQuery" className="block text-sm font-medium mb-1">Search Query</label>
-              <input 
-                id="searchQuery"
-                type="text" 
-                value={searchQuery} 
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full p-2 border rounded dark:bg-gray-700"
-                placeholder="VRChat"
-              />
-           </div>
-           
-           <div>
-              <label htmlFor="category" className="block text-sm font-medium mb-1">Category (Optional)</label>
-              <input 
-                id="category"
-                type="text" 
-                value={category} 
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full p-2 border rounded dark:bg-gray-700"
-                placeholder="3D models"
-              />
-           </div>
-
-           <div className="flex items-center pt-6 space-x-4">
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input 
-                  type="checkbox"
-                  checked={adult}
-                  onChange={(e) => setAdult(e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <span className="text-sm font-medium">Include Adult Content</span>
-              </label>
-
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input 
-                  type="checkbox"
-                  checked={useTargetTags}
-                  onChange={(e) => setUseTargetTags(e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <span className="text-sm font-medium">Use Target Tag List</span>
-              </label>
-           </div>
-        </div>
-
-        {/* Target Tag Manager */}
-        <div className="border-t pt-4 dark:border-gray-700">
-           <h3 className="text-sm font-medium mb-2">Target Tag List (Used when "Use Target Tag List" is checked)</h3>
-           <div className="flex gap-2 mb-2 flex-wrap">
-             <input 
-               type="text" 
-               value={newTagInput}
-               onChange={(e) => setNewTagInput(e.target.value)}
-               className="border p-2 rounded dark:bg-gray-700 flex-1 min-w-[120px]"
-               placeholder="Tag (e.g. 'VRChat')"
-             />
-             <input 
-               type="text" 
-               value={newCategoryInput}
-               onChange={(e) => setNewCategoryInput(e.target.value)}
-               className="border p-2 rounded dark:bg-gray-700 flex-1 min-w-[120px]"
-               placeholder="Category (e.g. '3Dモデル')"
-             />
-             <button onClick={handleAddTag} type="button" className="bg-green-600 text-white px-3 py-1 rounded">Add</button>
-           </div>
-           <div className="max-h-40 overflow-y-auto border rounded p-2 bg-gray-50 dark:bg-gray-900">
-              {tags.map(t => (
-                <div key={t.id} className="flex justify-between items-center py-1 border-b last:border-0 border-gray-200 dark:border-gray-700">
-                   <div className="flex items-center gap-2">
-                      <input 
-                        type="checkbox" 
-                        checked={t.enabled} 
-                        onChange={() => handleToggleTag(t.id, t.enabled)}
-                      />
-                      <span className={t.enabled ? '' : 'text-gray-400 line-through'}>
-                        {t.tag}
-                        {t.category && <span className="text-xs text-blue-500 ml-1">({t.category})</span>}
-                      </span>
-                   </div>
-                   <button type="button" onClick={() => handleDeleteTag(t.id)} className="text-red-500 text-xs hover:underline">Delete</button>
-                </div>
-              ))}
-              {tags.length === 0 && <div className="text-gray-400 text-sm">No target tags defined.</div>}
-           </div>
-        </div>
-
-        <button 
-          type="button"
-          onClick={handleStart} 
-          disabled={loading || activeStatus?.status === 'running'}
-          className={`px-4 py-2 rounded text-white font-medium ${
-            activeStatus?.status === 'running' ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-          }`}
-        >
-          {activeStatus?.status === 'running' ? 'Scraper Running...' : 'Start Scraper'}
-        </button>
       </div>
 
       {/* Running Workers from DB (visible after page reload) */}

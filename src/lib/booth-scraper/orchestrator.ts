@@ -201,7 +201,7 @@ class BoothScraperOrchestrator {
   private async runWorkflow(mode: ScraperMode, userId: string, options: ScraperOptions, resumed: boolean = false) {
     const isBackfill = mode === 'BACKFILL';
     
-    const defaultBaseInterval = 4000; // 4 seconds (human-like)
+    const defaultBaseInterval = 5000; // 4 seconds (human-like)
     const targetInterval = options.rateLimitOverride || defaultBaseInterval;
     
     // PQueue interval is set to a safe minimum (1s) to allow manual control via waitJitter
