@@ -96,8 +96,25 @@ export async function POST(request: Request) {
         let markdownDescription: string = '';
         let lowPrice: number = 0;
         let highPrice: number = 0;
-        const publishedAt: Date = new Date(); // デフォルトで現在時刻
+        let publishedAt: Date = new Date(); // デフォルトで現在時刻（フォールバック用）
         let sellerName: string = "Unknown";
+
+        // BOOTH JSON APIから公開日時を取得
+        try {
+          const jsonUrl = `${boothJpUrl}.json`;
+          const jsonResponse = await fetch(jsonUrl, {
+            headers: { 'Cookie': 'adult=t' }
+          });
+          if (jsonResponse.ok) {
+            const jsonData = await jsonResponse.json();
+            if (jsonData.published_at) {
+              publishedAt = new Date(jsonData.published_at);
+              console.log('Fetched publishedAt from BOOTH JSON API:', publishedAt);
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to fetch BOOTH JSON API for publishedAt:', e);
+        }
         let sellerUrl: string = "";
         let sellerIconUrl: string = "";
 
