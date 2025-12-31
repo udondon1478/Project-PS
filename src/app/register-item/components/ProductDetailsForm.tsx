@@ -26,6 +26,7 @@ interface ProductInfo {
   sellerUrl: string;
   sellerIconUrl: string;
   images: { imageUrl: string; isMain: boolean; order: number }[];
+  boothTags?: string[];
 }
 
 interface Tag {
@@ -179,6 +180,29 @@ export const ProductDetailsForm = ({
               ))}
             </div>
           </div>
+
+          {productData.boothTags && productData.boothTags.length > 0 && (
+            <div>
+              <Label>公式タグ</Label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {productData.boothTags.map((tagName) => (
+                  <Button
+                    key={tagName}
+                    type="button"
+                    variant={manualTags.includes(tagName) ? 'default' : 'secondary'}
+                    size="sm"
+                    onClick={() => handleFeatureTagToggle(tagName)}
+                    disabled={isLoading}
+                    aria-pressed={manualTags.includes(tagName)}
+                    className={manualTags.includes(tagName) ? "" : "bg-muted text-muted-foreground hover:bg-muted/80"}
+                  >
+                    {tagName}
+                  </Button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">クリックすると「その他のタグ」に自動で入力されます。</p>
+            </div>
+          )}
 
           <div>
             <Label htmlFor="otherTags">その他のタグ</Label>
