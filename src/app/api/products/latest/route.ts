@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     const parsedPage = parseInt(searchParams.get('page') || '1', 10);
     const parsedLimit = parseInt(searchParams.get('limit') || '24', 10);
 
-    const page = Number.isNaN(parsedPage) || parsedPage < 1 ? 1 : parsedPage;
+    const page = Number.isNaN(parsedPage) || parsedPage < 1 ? 1 : Math.min(parsedPage, 10000);
     const limit = Number.isNaN(parsedLimit) || parsedLimit < 1 ? 24 : Math.min(parsedLimit, 100);
     const skip = (page - 1) * limit;
 
