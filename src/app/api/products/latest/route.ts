@@ -17,16 +17,17 @@ export async function GET(request: Request) {
     let userOwnedProducts: string[] = [];
 
     if (userId) {
-      const liked = await prisma.productLike.findMany({
-        where: { userId },
-        select: { productId: true },
-      });
+      const [liked, owned] = await Promise.all([
+        prisma.productLike.findMany({
+          where: { userId },
+          select: { productId: true },
+        }),
+        prisma.productOwner.findMany({
+          where: { userId },
+          select: { productId: true },
+        }),
+      ]);
       userLikedProducts = liked.map((p) => p.productId);
-
-      const owned = await prisma.productOwner.findMany({
-        where: { userId },
-        select: { productId: true },
-      });
       userOwnedProducts = owned.map((p) => p.productId);
     }
 
