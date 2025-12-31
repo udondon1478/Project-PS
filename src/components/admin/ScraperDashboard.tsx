@@ -78,7 +78,12 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
   // Fetch Scheduler Config
   useEffect(() => {
     fetch('/api/admin/scraper-config')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP error: ${res.status}`);
+        }
+        return res.json();
+      })
       .then(data => {
         if (data.id) {
            setSchedulerConfig({
@@ -92,7 +97,10 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
            });
         }
       })
-      .catch(e => console.error('Failed to load scheduler config', e));
+      .catch(e => {
+        console.error('Failed to load scheduler config', e);
+        toast.error(`Failed to load scheduler config: ${e?.message || e}`);
+      });
   }, []);
 
   const saveSchedulerConfig = async () => {
@@ -108,8 +116,10 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
          const err = await res.json();
          toast.error(`Failed to save settings: ${err.error}`);
        }
-     } catch(e) {
-       toast.error(`Error saving settings`);
+     } catch(e: unknown) {
+       const errorMessage = e instanceof Error ? e.message : String(e);
+       console.error('Error saving scheduler settings:', e);
+       toast.error(`Error saving settings: ${errorMessage}`);
      }
   };
 
@@ -543,8 +553,9 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
 
                   <div className="border-t pt-4 space-y-3">
                       <div>
-                          <label className="text-xs text-gray-500 block mb-1">New Scan Interval (min)</label>
+                          <label htmlFor="newScanIntervalMinInput" className="text-xs text-gray-500 block mb-1">New Scan Interval (min)</label>
                           <input 
+                            id="newScanIntervalMinInput"
                             type="number" 
                             className="w-full border rounded p-1 text-sm bg-white dark:bg-black"
                             value={schedulerConfig.newScanIntervalMin}
@@ -552,8 +563,9 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                           />
                       </div>
                       <div>
-                          <label className="text-xs text-gray-500 block mb-1">Page Limit per Run</label>
+                          <label htmlFor="newScanPageLimitInput" className="text-xs text-gray-500 block mb-1">Page Limit per Run</label>
                           <input 
+                            id="newScanPageLimitInput"
                             type="number" 
                             className="w-full border rounded p-1 text-sm bg-white dark:bg-black"
                             value={schedulerConfig.newScanPageLimit}
@@ -561,8 +573,9 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                           />
                       </div>
                       <div>
-                          <label className="text-xs text-gray-500 block mb-1">Backfill Interval (min)</label>
+                          <label htmlFor="backfillIntervalMinInput" className="text-xs text-gray-500 block mb-1">Backfill Interval (min)</label>
                           <input 
+                            id="backfillIntervalMinInput"
                             type="number" 
                             className="w-full border rounded p-1 text-sm bg-white dark:bg-black"
                             value={schedulerConfig.backfillIntervalMin}
@@ -574,8 +587,9 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                         <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase">Advanced Tuning</h4>
                         <div className="space-y-3">
                            <div>
-                              <label className="text-xs text-gray-500 block mb-1">Backfill Page Count (Depth)</label>
+                              <label htmlFor="backfillPageCountInput" className="text-xs text-gray-500 block mb-1">Backfill Page Count (Depth)</label>
                               <input 
+                                id="backfillPageCountInput"
                                 type="number" 
                                 className="w-full border rounded p-1 text-sm bg-white dark:bg-black"
                                 value={schedulerConfig.backfillPageCount}
@@ -583,8 +597,9 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                               />
                            </div>
                            <div>
-                              <label className="text-xs text-gray-500 block mb-1">Backfill Product Limit (Per Run)</label>
+                              <label htmlFor="backfillProductLimitInput" className="text-xs text-gray-500 block mb-1">Backfill Product Limit (Per Run)</label>
                               <input 
+                                id="backfillProductLimitInput"
                                 type="number" 
                                 className="w-full border rounded p-1 text-sm bg-white dark:bg-black"
                                 value={schedulerConfig.backfillProductLimit}
@@ -592,8 +607,9 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                               />
                            </div>
                            <div>
-                              <label className="text-xs text-gray-500 block mb-1">Request Interval (ms)</label>
+                              <label htmlFor="requestIntervalMsInput" className="text-xs text-gray-500 block mb-1">Request Interval (ms)</label>
                               <input 
+                                id="requestIntervalMsInput"
                                 type="number" 
                                 className="w-full border rounded p-1 text-sm bg-white dark:bg-black"
                                 value={schedulerConfig.requestIntervalMs}
@@ -671,6 +687,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                     </td>
                     <td className="p-2 flex gap-2">
                        <button
+                         type="button"
                          onClick={() => fetchLogs(run.runId)}
                          className="text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 px-2 py-1 rounded"
                        >
@@ -723,7 +740,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                     {run.endTime ? new Date(run.endTime).toLocaleString() : '-'}
                   </td>
                   <td className="p-3">
-                     <button className="text-blue-500 hover:underline text-xs" onClick={() => fetchLogs(run.runId)}>
+                     <button type="button" className="text-blue-500 hover:underline text-xs" onClick={() => fetchLogs(run.runId)}>
                         View Logs
                      </button>
                   </td>

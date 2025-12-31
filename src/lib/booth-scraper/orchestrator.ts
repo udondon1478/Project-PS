@@ -18,6 +18,13 @@ import crypto from 'crypto';
  */
 const BACKFILL_PRODUCT_LIMIT = Number(process.env.BACKFILL_PRODUCT_LIMIT) || 9;
 
+/**
+ * Delay in milliseconds between processing queue items.
+ * Can be configured via TASK_WAIT_MS environment variable.
+ * Default: 2000ms
+ */
+const TASK_WAIT_MS = Number(process.env.TASK_WAIT_MS) || 2000;
+
 export type ScraperMode = 'NEW' | 'BACKFILL';
 
 export interface ScraperOptions {
@@ -180,7 +187,7 @@ class BoothScraperOrchestrator {
              searchParams: {
                ...options.searchParams,
                query: tag.tag,
-               category: (tag as any).category || undefined,
+               category: tag.category || undefined,
                useTargetTags: false // It's now a specific target
              }
            };
@@ -240,8 +247,8 @@ class BoothScraperOrchestrator {
         console.error(`[Orchestrator] Error executing task ${item.targetName}:`, e);
       }
 
-      // Small delay between tasks
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Configurable delay between tasks (default: 2000ms)
+      await new Promise(resolve => setTimeout(resolve, TASK_WAIT_MS));
     }
 
     this.isProcessingQueue = false;
@@ -329,7 +336,7 @@ class BoothScraperOrchestrator {
         
         if (tag) {
             tagId = tag.id;
-            startPage = ((tag as any).lastBackfillPage || 0) + 1;
+            startPage = (tag.lastBackfillPage || 0) + 1;
         } else {
              // Fallback to global resume if needed, or start from 1
              startPage = 1; 

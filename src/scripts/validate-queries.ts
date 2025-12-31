@@ -15,7 +15,13 @@ const TARGET_URLS = [
 ];
 
 const ITEMS_PER_QUERY = 100;
-const SLEEP_MS = 10000;
+
+/**
+ * Sleep duration between requests in milliseconds.
+ * Can be configured via SLEEP_MS environment variable.
+ * Default: 1000ms (clamped to 100-60000ms range)
+ */
+const SLEEP_MS = Math.max(100, Math.min(60000, Number(process.env.SLEEP_MS) || 1000));
 
 function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));

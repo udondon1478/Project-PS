@@ -35,6 +35,10 @@ async function start() {
   const userId = await getSystemUserId();
   console.log(`Using User ID: ${userId} for scraping operations.`);
 
+  // Throttle for scheduler disabled logs (log every 10 minutes)
+  let lastDisabledLogTime = 0;
+  const DISABLED_LOG_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+
   // Main Scheduler Loop (Runs every minute)
   cron.schedule('* * * * *', async () => {
     try {
@@ -47,8 +51,12 @@ async function start() {
       }
 
       if (!config.isSchedulerEnabled) {
-        // Log sparingly? Or just silence.
-        // console.log('[Cron] Scheduler disabled in DB.');
+        // Log disabled state every 10 minutes to avoid spam
+        const now = Date.now();
+        if (now - lastDisabledLogTime >= DISABLED_LOG_INTERVAL_MS) {
+          console.log(`[Cron] ${new Date().toISOString()} - Scheduler disabled in DB.`);
+          lastDisabledLogTime = now;
+        }
         return;
       }
 
