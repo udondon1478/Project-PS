@@ -34,6 +34,7 @@ import ProductSearch from '@/components/search/ProductSearch'; // Import Product
 import { ProductSearchSkeleton } from '@/components/search/ProductSearchSkeleton';
 import { AuthDialogNotice } from '@/components/AuthDialogNotice';
 import { HeaderNavigationSkeleton } from '@/components/HeaderNavigationSkeleton';
+import { TRIGGER_SEARCH_SPOTLIGHT } from '@/constants/events';
 
 // 認証状態のプレースホルダーは削除
 
@@ -82,9 +83,19 @@ export default function Header() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    window.addEventListener('trigger-search-spotlight', handleSpotlight);
-    return () => window.removeEventListener('trigger-search-spotlight', handleSpotlight);
-  }, []);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isSpotlightActive && e.key === 'Escape') {
+        handleSpotlightClose();
+      }
+    };
+
+    window.addEventListener(TRIGGER_SEARCH_SPOTLIGHT, handleSpotlight);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener(TRIGGER_SEARCH_SPOTLIGHT, handleSpotlight);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isSpotlightActive]);
 
   const handleSpotlightClose = () => {
     setIsSpotlightActive(false);
@@ -104,7 +115,7 @@ export default function Header() {
         ref={headerRef}
         className={`fixed top-0 left-0 w-full bg-white dark:bg-gray-900 transition-transform duration-300 ease-in-out ${
           isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
-          } ${isSpotlightActive ? 'z-50' : 'z-50'}`} 
+          } z-50`} 
         style={{ boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}
       >
         {/* Local Overlay for Header (covers Log/Nav) */}

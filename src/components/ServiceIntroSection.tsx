@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { features } from "@/constants/features";
+import { TRIGGER_SEARCH_SPOTLIGHT } from "@/constants/events";
 import {
   Dialog,
   DialogContent,
@@ -37,7 +38,7 @@ export default function ServiceIntroSection() {
     // 豊富な検索条件クリック時はヘッダーを強調表示
     if (featureId === 'advanced-search') {
       e.preventDefault();
-      window.dispatchEvent(new CustomEvent('trigger-search-spotlight'));
+      window.dispatchEvent(new CustomEvent(TRIGGER_SEARCH_SPOTLIGHT));
       return;
     }
 
