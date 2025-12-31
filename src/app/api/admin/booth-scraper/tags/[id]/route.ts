@@ -26,8 +26,20 @@ export async function PATCH(
       updateData.enabled = enabled;
     }
     
+    // Validate category if provided
     if ('category' in body) {
-      updateData.category = category || null;
+      if (category !== null && category !== undefined) {
+        if (typeof category !== 'string') {
+          return NextResponse.json({ error: 'Category must be a string or null' }, { status: 400 });
+        }
+        const trimmedCategory = category.trim();
+        if (trimmedCategory.length > 100) {
+          return NextResponse.json({ error: 'Category must be 100 characters or less' }, { status: 400 });
+        }
+        updateData.category = trimmedCategory || null;
+      } else {
+        updateData.category = null;
+      }
     }
 
     if (Object.keys(updateData).length === 0) {

@@ -187,9 +187,14 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
       description: 'この操作は取り消せません。設定から削除されます。',
       onConfirm: async () => {
         try {
-          await fetch(`/api/admin/booth-scraper/tags/${id}`, { method: 'DELETE' });
-          setTags(prev => prev.filter(t => t.id !== id));
-          toast.success('Tag deleted');
+          const res = await fetch(`/api/admin/booth-scraper/tags/${id}`, { method: 'DELETE' });
+          if (res.ok) {
+            setTags(prev => prev.filter(t => t.id !== id));
+            toast.success('Tag deleted');
+          } else {
+            const err = await res.json().catch(() => ({ error: res.statusText }));
+            toast.error(`Failed to delete tag: ${err.error || 'Server error'}`);
+          }
         } catch (e) {
           toast.error('Failed to delete tag');
         }
@@ -306,8 +311,13 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
 
   const handleSkipCurrent = async () => {
     try {
-        await fetch('/api/admin/booth-scraper/scrape?skipCurrent=true', { method: 'DELETE' });
-        toast.info('Skipping current task...');
+        const res = await fetch('/api/admin/booth-scraper/scrape?skipCurrent=true', { method: 'DELETE' });
+        if (res.ok) {
+          toast.info('Skipping current task...');
+        } else {
+          const err = await res.json().catch(() => ({ error: res.statusText }));
+          toast.error(`Failed to skip: ${err.error || 'Server error'}`);
+        }
     } catch(e) {
         toast.error('Failed to skip');
     }
@@ -315,8 +325,13 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
 
   const handleRemoveFromQueue = async (targetId: string) => {
       try {
-          await fetch(`/api/admin/booth-scraper/scrape?targetId=${targetId}`, { method: 'DELETE' });
-          toast.success('Removed from queue');
+          const res = await fetch(`/api/admin/booth-scraper/scrape?targetId=${targetId}`, { method: 'DELETE' });
+          if (res.ok) {
+            toast.success('Removed from queue');
+          } else {
+            const err = await res.json().catch(() => ({ error: res.statusText }));
+            toast.error(`Failed to remove: ${err.error || 'Server error'}`);
+          }
       } catch(e) {
           toast.error('Failed to remove');
       }

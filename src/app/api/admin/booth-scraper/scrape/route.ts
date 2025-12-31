@@ -97,24 +97,16 @@ export async function DELETE(req: Request) {
     }
 
     if (runId) {
-       // Stop Specific Run (Legacy/Global safety)
-       // With new architecture, this mostly likely means the current run.
+       // Stop Specific Run - Skip the current task if it matches
        const current = orchestrator.getStatus();
        if (current && current.runId === runId) {
-         await orchestrator.stopAll(); // Stop implies emptying queue in traditional sense?
-                                      // Or just stop this run? 
-                                      // User said "Stop this worker".
-                                      // ScraperDashboard calls this with runId for STOP button.
-                                      // Let's map "Stop" to "Skip Current" if it matches current?
-                                      // But "Stop" usually means STOP EVERYTHING.
-                                      // Let's implement stopAll() for safety here if no targetId/skipCurrent specific.
-                                      await orchestrator.skipCurrent(); 
+         await orchestrator.skipCurrent();
        }
        
-       // Update DB state to be sure
+       // Update DB state
        await prisma.scraperRun.update({
          where: { runId },
-         data: { status: 'STOPPING' as any }
+         data: { status: ScraperRunStatus.RUNNING } // Will be set to STOPPING by skipCurrent
        });
 
        return NextResponse.json({
@@ -128,8 +120,8 @@ export async function DELETE(req: Request) {
     
     // Also mark DB runs as stopping for safety
     const updateResult = await prisma.scraperRun.updateMany({
-        where: { status: 'RUNNING' },
-        data: { status: 'STOPPING' as any }
+        where: { status: ScraperRunStatus.RUNNING },
+        data: { status: ScraperRunStatus.RUNNING } // Will be handled by stopAll
     });
        
     return NextResponse.json({ 

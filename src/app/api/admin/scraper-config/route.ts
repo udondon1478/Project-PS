@@ -4,6 +4,11 @@ import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
+// Maximum allowed values for configuration
+const MAX_INTERVAL_MIN = 10080; // One week in minutes
+const MAX_PAGE_LIMIT = 1000;
+const MAX_REQUEST_INTERVAL_MS = 60000;
+
 export async function GET() {
   const session = await auth();
   if (!session?.user || session.user.role !== Role.ADMIN) {
@@ -49,7 +54,7 @@ export async function PATCH(req: Request) {
         requestIntervalMs
     } = body;
 
-    // Validation
+    // Minimum validation
     if (newScanIntervalMin !== undefined && newScanIntervalMin < 1) {
         return NextResponse.json({ error: 'New scan interval must be at least 1 minute' }, { status: 400 });
     }
@@ -69,6 +74,26 @@ export async function PATCH(req: Request) {
          return NextResponse.json({ error: 'Request interval too short (min 500ms)' }, { status: 400 });
     }
 
+    // Maximum validation
+    if (newScanIntervalMin !== undefined && newScanIntervalMin > MAX_INTERVAL_MIN) {
+        return NextResponse.json({ error: `New scan interval must be at most ${MAX_INTERVAL_MIN} minutes (1 week)` }, { status: 400 });
+    }
+    if (backfillIntervalMin !== undefined && backfillIntervalMin > MAX_INTERVAL_MIN) {
+        return NextResponse.json({ error: `Backfill interval must be at most ${MAX_INTERVAL_MIN} minutes (1 week)` }, { status: 400 });
+    }
+    if (newScanPageLimit !== undefined && newScanPageLimit > MAX_PAGE_LIMIT) {
+        return NextResponse.json({ error: `New scan page limit must be at most ${MAX_PAGE_LIMIT}` }, { status: 400 });
+    }
+    if (backfillPageCount !== undefined && backfillPageCount > MAX_PAGE_LIMIT) {
+        return NextResponse.json({ error: `Backfill page count must be at most ${MAX_PAGE_LIMIT}` }, { status: 400 });
+    }
+    if (backfillProductLimit !== undefined && backfillProductLimit > MAX_PAGE_LIMIT) {
+        return NextResponse.json({ error: `Backfill product limit must be at most ${MAX_PAGE_LIMIT}` }, { status: 400 });
+    }
+    if (requestIntervalMs !== undefined && requestIntervalMs > MAX_REQUEST_INTERVAL_MS) {
+        return NextResponse.json({ error: `Request interval must be at most ${MAX_REQUEST_INTERVAL_MS}ms` }, { status: 400 });
+    }
+
     let config = await prisma.scraperConfig.findFirst();
     
     if (!config) {
@@ -86,17 +111,17 @@ export async function PATCH(req: Request) {
             }
         });
     } else {
-        // Update
+        // Update - pass fields directly, Prisma ignores undefined values
         config = await prisma.scraperConfig.update({
             where: { id: config.id },
             data: {
-                isSchedulerEnabled: isSchedulerEnabled !== undefined ? isSchedulerEnabled : undefined,
-                newScanIntervalMin: newScanIntervalMin !== undefined ? newScanIntervalMin : undefined,
-                newScanPageLimit: newScanPageLimit !== undefined ? newScanPageLimit : undefined,
-                backfillIntervalMin: backfillIntervalMin !== undefined ? backfillIntervalMin : undefined,
-                backfillPageCount: backfillPageCount !== undefined ? backfillPageCount : undefined,
-                backfillProductLimit: backfillProductLimit !== undefined ? backfillProductLimit : undefined,
-                requestIntervalMs: requestIntervalMs !== undefined ? requestIntervalMs : undefined,
+                isSchedulerEnabled,
+                newScanIntervalMin,
+                newScanPageLimit,
+                backfillIntervalMin,
+                backfillPageCount,
+                backfillProductLimit,
+                requestIntervalMs,
                 lastUpdatedBy: session.user.id,
             }
         });

@@ -78,11 +78,22 @@ export async function POST(request: Request) {
         const subdomainRegex = /^https:\/\/[a-zA-Z0-9-]+\.booth\.pm\//;
         const fetchUrl = subdomainRegex.test(url) ? boothJpUrl : url;
 
-        const response = await fetch(fetchUrl, {
-          headers: {
-            'Cookie': 'adult=t'
-          }
-        });
+        // Add timeout for HTML fetch
+        const htmlController = new AbortController();
+        const htmlTimeout = setTimeout(() => htmlController.abort(), 30000);
+
+        let response: Response;
+        try {
+          response = await fetch(fetchUrl, {
+            headers: {
+              'Cookie': 'adult=t'
+            },
+            signal: htmlController.signal
+          });
+        } finally {
+          clearTimeout(htmlTimeout);
+        }
+
         if (!response.ok) {
           return NextResponse.json({ message: `Booth.pmからの情報取得に失敗しました。ステータスコード: ${response.status}` }, { status: response.status });
         }
@@ -99,18 +110,26 @@ export async function POST(request: Request) {
         let publishedAt: Date = new Date(); // デフォルトで現在時刻（フォールバック用）
         let sellerName: string = "Unknown";
 
-        // BOOTH JSON APIから公開日時を取得
+        // BOOTH JSON APIから公開日時を取得 (with timeout)
         try {
           const jsonUrl = `${boothJpUrl}.json`;
-          const jsonResponse = await fetch(jsonUrl, {
-            headers: { 'Cookie': 'adult=t' }
-          });
-          if (jsonResponse.ok) {
-            const jsonData = await jsonResponse.json();
-            if (jsonData.published_at) {
-              publishedAt = new Date(jsonData.published_at);
-              console.log('Fetched publishedAt from BOOTH JSON API:', publishedAt);
+          const jsonController = new AbortController();
+          const jsonTimeout = setTimeout(() => jsonController.abort(), 30000);
+
+          try {
+            const jsonResponse = await fetch(jsonUrl, {
+              headers: { 'Cookie': 'adult=t' },
+              signal: jsonController.signal
+            });
+            if (jsonResponse.ok) {
+              const jsonData = await jsonResponse.json();
+              if (jsonData.published_at) {
+                publishedAt = new Date(jsonData.published_at);
+                console.log('Fetched publishedAt from BOOTH JSON API:', publishedAt);
+              }
             }
+          } finally {
+            clearTimeout(jsonTimeout);
           }
         } catch (e) {
           console.warn('Failed to fetch BOOTH JSON API for publishedAt:', e);

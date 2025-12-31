@@ -35,10 +35,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Tag name is required' }, { status: 400 });
     }
 
+    // Validate category if provided
+    let validatedCategory: string | null = null;
+    if (category !== undefined && category !== null) {
+      if (typeof category !== 'string') {
+        return NextResponse.json({ error: 'Category must be a string or null' }, { status: 400 });
+      }
+      const trimmedCategory = category.trim();
+      if (trimmedCategory.length > 50) {
+        return NextResponse.json({ error: 'Category must be 50 characters or less' }, { status: 400 });
+      }
+      // Only allow safe characters: alphanumeric, spaces, underscores, hyphens, and unicode letters
+      if (trimmedCategory && !/^[\p{L}\p{N}\s_-]+$/u.test(trimmedCategory)) {
+        return NextResponse.json({ error: 'Category contains invalid characters' }, { status: 400 });
+      }
+      validatedCategory = trimmedCategory || null;
+    }
+
     const newTag = await prisma.scraperTargetTag.create({
       data: { 
-        tag,
-        category: category || null,
+        tag: tag.trim(),
+        category: validatedCategory,
       }
     });
 
