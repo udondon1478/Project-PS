@@ -9,6 +9,7 @@ interface ProductGridProps {
   showOwnButton?: boolean;
   isLoading?: boolean;
   skeletonCount?: number;
+  maxTags?: number;
 }
 
 const ProductGrid = ({ 
@@ -16,7 +17,8 @@ const ProductGrid = ({
   showLikeButton = false, 
   showOwnButton = false,
   isLoading = false,
-  skeletonCount = 8 
+  skeletonCount = 8,
+  maxTags
 }: ProductGridProps) => {
   if (isLoading) {
     return (
@@ -36,6 +38,7 @@ const ProductGrid = ({
           product={product}
           showLikeButton={showLikeButton}
           showOwnButton={showOwnButton}
+          maxTags={maxTags}
         />
       ))}
     </div>
