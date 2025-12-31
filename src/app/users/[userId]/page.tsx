@@ -47,7 +47,7 @@ export default async function UserProfilePage({ params }: Props) {
     lowPrice: p.lowPrice,
     highPrice: p.highPrice,
     mainImageUrl: p.images.length > 0 ? p.images[0].imageUrl : null,
-    tags: p.productTags.map(pt => pt.tag.name),
+    tags: p.productTags.map(pt => pt.tag.displayName || pt.tag.name),
     variations: p.variations,
   }));
 
