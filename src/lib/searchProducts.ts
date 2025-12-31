@@ -277,7 +277,7 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
         lowPrice: product.lowPrice,
         highPrice: product.highPrice,
         mainImageUrl: product.images.length > 0 ? product.images[0].imageUrl : null,
-        tags: product.productTags.map(pt => pt.tag.name),
+        tags: product.productTags.map(pt => pt.tag.displayName || pt.tag.name),
         variations: product.variations.map(v => ({
           id: v.id,
           name: v.name,
