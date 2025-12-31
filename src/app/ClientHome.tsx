@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import ProductGrid from "@/components/ProductGrid";
 import ServiceIntroSection from "@/components/ServiceIntroSection";
@@ -20,43 +20,52 @@ interface ProductsResponse {
 export default function ClientHome() {
   const searchParams = useSearchParams();
   const pageParam = searchParams.get('page');
-  const currentPage = pageParam ? parseInt(pageParam, 10) : 1;
+  const parsedPage = pageParam ? parseInt(pageParam, 10) : 1;
+  const currentPage = (Number.isInteger(parsedPage) && parsedPage > 0) ? parsedPage : 1;
 
   const [products, setProducts] = useState<Product[]>([]);
-  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchProducts() {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(`/api/products/latest?page=${currentPage}&limit=${PAGE_SIZE}`);
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status}`);
-        }
-        const data: ProductsResponse = await response.json();
-        setProducts(data.products);
-        setTotal(data.total);
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError('An unknown error occurred');
-        }
-      } finally {
-        setLoading(false);
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/products/latest?page=${currentPage}&limit=${PAGE_SIZE}`);
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
       }
+      const data: ProductsResponse = await response.json();
+      setProducts(data.products);
+      setTotalPages(data.totalPages);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An unknown error occurred');
+      }
+    } finally {
+      setLoading(false);
     }
-
-    fetchProducts();
   }, [currentPage]);
 
-  const totalPages = Math.ceil(total / PAGE_SIZE);
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-red-500 mb-4 text-lg">エラーが発生しました。再試行してください。</p>
+        <button 
+          onClick={fetchProducts}
+          className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+        >
+          再試行
+        </button>
+      </div>
+    );
   }
 
   return (
