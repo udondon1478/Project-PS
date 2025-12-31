@@ -4,6 +4,9 @@ import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
+// Fixed ID for singleton enforcement
+const SCRAPER_CONFIG_SINGLETON_ID = 'scraper-config-singleton';
+
 // Maximum allowed values for configuration
 const MAX_INTERVAL_MIN = 10080; // One week in minutes
 const MAX_PAGE_LIMIT = 1000;
@@ -16,18 +19,17 @@ export async function GET() {
   }
 
   try {
-    // Get the first config or create default
-    let config = await prisma.scraperConfig.findFirst();
-
-    if (!config) {
-        config = await prisma.scraperConfig.create({
-            data: {
-                isSchedulerEnabled: true,
-                newScanIntervalMin: 10,
-                backfillIntervalMin: 5,
-            }
-        });
-    }
+    // Singleton: always use fixed ID with upsert pattern
+    const config = await prisma.scraperConfig.upsert({
+      where: { id: SCRAPER_CONFIG_SINGLETON_ID },
+      update: {}, // No updates on GET, just return existing
+      create: {
+        id: SCRAPER_CONFIG_SINGLETON_ID,
+        isSchedulerEnabled: true,
+        newScanIntervalMin: 10,
+        backfillIntervalMin: 5,
+      }
+    });
 
     return NextResponse.json(config);
   } catch (error) {
@@ -94,38 +96,31 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ error: `Request interval must be at most ${MAX_REQUEST_INTERVAL_MS}ms` }, { status: 400 });
     }
 
-    let config = await prisma.scraperConfig.findFirst();
-    
-    if (!config) {
-        // Create if not exists
-        config = await prisma.scraperConfig.create({
-            data: {
-                isSchedulerEnabled: isSchedulerEnabled ?? true,
-                newScanIntervalMin: newScanIntervalMin ?? 10,
-                newScanPageLimit: newScanPageLimit ?? 3,
-                backfillIntervalMin: backfillIntervalMin ?? 5,
-                backfillPageCount: backfillPageCount ?? 3,
-                backfillProductLimit: backfillProductLimit ?? 9,
-                requestIntervalMs: requestIntervalMs ?? 5000,
-                lastUpdatedBy: session.user.id,
-            }
-        });
-    } else {
-        // Update - pass fields directly, Prisma ignores undefined values
-        config = await prisma.scraperConfig.update({
-            where: { id: config.id },
-            data: {
-                isSchedulerEnabled,
-                newScanIntervalMin,
-                newScanPageLimit,
-                backfillIntervalMin,
-                backfillPageCount,
-                backfillProductLimit,
-                requestIntervalMs,
-                lastUpdatedBy: session.user.id,
-            }
-        });
-    }
+    // Singleton: use upsert with fixed ID to ensure only one record exists
+    const config = await prisma.scraperConfig.upsert({
+      where: { id: SCRAPER_CONFIG_SINGLETON_ID },
+      update: {
+        isSchedulerEnabled,
+        newScanIntervalMin,
+        newScanPageLimit,
+        backfillIntervalMin,
+        backfillPageCount,
+        backfillProductLimit,
+        requestIntervalMs,
+        lastUpdatedBy: session.user.id,
+      },
+      create: {
+        id: SCRAPER_CONFIG_SINGLETON_ID,
+        isSchedulerEnabled: isSchedulerEnabled ?? true,
+        newScanIntervalMin: newScanIntervalMin ?? 10,
+        newScanPageLimit: newScanPageLimit ?? 3,
+        backfillIntervalMin: backfillIntervalMin ?? 5,
+        backfillPageCount: backfillPageCount ?? 3,
+        backfillProductLimit: backfillProductLimit ?? 9,
+        requestIntervalMs: requestIntervalMs ?? 5000,
+        lastUpdatedBy: session.user.id,
+      }
+    });
 
     return NextResponse.json(config);
 

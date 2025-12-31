@@ -25,6 +25,13 @@ const BACKFILL_PRODUCT_LIMIT = Number(process.env.BACKFILL_PRODUCT_LIMIT) || 9;
  */
 const TASK_WAIT_MS = Number(process.env.TASK_WAIT_MS) || 2000;
 
+/**
+ * Maximum number of items allowed in the target queue.
+ * Prevents memory issues from unbounded queue growth.
+ * Default: 100 items
+ */
+const MAX_QUEUE_SIZE = Number(process.env.MAX_QUEUE_SIZE) || 100;
+
 export type ScraperMode = 'NEW' | 'BACKFILL';
 
 export interface ScraperOptions {
@@ -233,8 +240,19 @@ class BoothScraperOrchestrator {
        });
     }
 
+    // Check queue size limit before adding
+    if (this.targetQueue.length + itemsToEnqueue.length > MAX_QUEUE_SIZE) {
+      const available = MAX_QUEUE_SIZE - this.targetQueue.length;
+      if (available <= 0) {
+        console.warn(`[Orchestrator] Queue full (${MAX_QUEUE_SIZE} items). Rejecting new tasks.`);
+        throw new Error(`Queue is full. Maximum ${MAX_QUEUE_SIZE} items allowed.`);
+      }
+      console.warn(`[Orchestrator] Queue limit reached. Only adding ${available} of ${itemsToEnqueue.length} tasks.`);
+      itemsToEnqueue.splice(available);
+    }
+
     this.targetQueue.push(...itemsToEnqueue);
-    console.log(`[Orchestrator] Enqueued ${itemsToEnqueue.length} tasks.`);
+    console.log(`[Orchestrator] Enqueued ${itemsToEnqueue.length} tasks. Queue size: ${this.targetQueue.length}/${MAX_QUEUE_SIZE}`);
     
     // Trigger processing if not active
     if (!this.isProcessingQueue) {

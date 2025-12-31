@@ -172,33 +172,18 @@ export async function queryNotionDatabase(sourceQuery: string): Promise<NotionRe
   let startCursor: string | undefined = undefined;
 
   while (hasMore) {
-    // Notion SDK v5ではdatabases.queryが削除されたため、直接fetchを使用
-    const fetchResponse = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'Notion-Version': '2022-06-28',
-      },
-      body: JSON.stringify({
-        filter: {
-          property: 'SourceQuery',
-          select: {
-            equals: sourceQuery,
-          },
+    // Use Notion SDK consistently (databases.query is available in SDK v2+)
+    const response = await notion.databases.query({
+      database_id: databaseId,
+      filter: {
+        property: 'SourceQuery',
+        select: {
+          equals: sourceQuery,
         },
-        start_cursor: startCursor,
-        page_size: 100,
-      }),
+      },
+      start_cursor: startCursor,
+      page_size: 100,
     });
-    
-    if (!fetchResponse.ok) {
-      const errorData = await fetchResponse.json();
-      throw new Error(`Notion API error: ${errorData.message || fetchResponse.statusText}`);
-    }
-    
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response: any = await fetchResponse.json();
 
     for (const page of response.results) {
       if (!('properties' in page)) continue;
