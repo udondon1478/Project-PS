@@ -279,6 +279,42 @@ export async function POST(request: Request) {
 
         description = markdownDescription.trim();
 
+        // Tags extraction
+        const boothTags: string[] = [];
+        // existing tag links
+        $('a[href*="/tags/"]').each((_, element) => {
+          const tagName = $(element).text().trim();
+          if (tagName && !boothTags.includes(tagName)) {
+            boothTags.push(tagName);
+          }
+        });
+        // Official Tags (Categories) via /browse/ links
+        $('a[href*="/browse/"]').each((_, element) => {
+          const tagName = $(element).text().trim();
+          if (tagName && !boothTags.includes(tagName)) {
+            boothTags.push(tagName);
+          }
+        });
+        // Tags from query parameters
+        $('a[href*="tags"]').each((_, element) => {
+          const href = $(element).attr('href');
+          if (!href) return;
+          try {
+             if (href.includes('/items?') || href.includes('?tags')) {
+               const urlObj = new URL(href, 'https://booth.pm');
+               const searchParams = urlObj.searchParams;
+               const tagValues = searchParams.getAll('tags[]');
+               tagValues.forEach(val => {
+                 if (val && !boothTags.includes(val)) {
+                   boothTags.push(val);
+                 }
+               });
+             }
+          } catch(e) {
+             // ignore
+          }
+        });
+
         console.log('ProductInfo to be returned to frontend:', {
           boothJpUrl,
           boothEnUrl,
@@ -316,7 +352,8 @@ export async function POST(request: Request) {
               isMain: index === 0,
               order: index,
             })),
-            variations: variations
+            variations: variations,
+            boothTags: boothTags
           },
           message: '新しい商品が見つかりました。タグを入力して登録してください。'
         }, { status: 200 });

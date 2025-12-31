@@ -27,6 +27,7 @@ interface ProductInfo {
   ageRatingId?: string;
   categoryId?: string;
   productTags?: { tag: { id: string; name: string } }[];
+  boothTags?: string[];
 }
 
 // 画面の状態を示す型
