@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { features } from "@/constants/features";
+import { features, FEATURE_IDS } from "@/constants/features";
+import { TRIGGER_SEARCH_SPOTLIGHT } from "@/constants/events";
 import {
   Dialog,
   DialogContent,
@@ -33,7 +34,14 @@ export default function ServiceIntroSection() {
   const [activeDialog, setActiveDialog] = useState<'register' | 'login' | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+  const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, href: string, featureId?: string) => {
+    // 豊富な検索条件クリック時はヘッダーを強調表示
+    if (featureId === FEATURE_IDS.ADVANCED_SEARCH) {
+      e.preventDefault();
+      window.dispatchEvent(new CustomEvent(TRIGGER_SEARCH_SPOTLIGHT));
+      return;
+    }
+
     if (status !== "authenticated") {
       if (href === "/register-item") {
         e.preventDefault();
@@ -79,10 +87,7 @@ export default function ServiceIntroSection() {
             <Link 
               key={feature.id} 
               href={feature.href}
-              {...(status !== "authenticated" && (feature.href === "/register-item" || feature.href === "/profile") 
-                ? { onClick: (e) => handleNavigation(e, feature.href) }
-                : {}
-              )}
+              onClick={(e) => handleNavigation(e, feature.href, feature.id)}
               className="block h-full group"
             >
               <Card className="text-center h-full transition-colors hover:bg-muted/50">

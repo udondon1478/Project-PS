@@ -19,6 +19,8 @@ export default function ProductSearch({
   onSelectedTagsChange,
   onSelectedNegativeTagsChange,
   isSafeSearchEnabled = true, // Default to true
+  isSpotlightActive = false,
+  onSpotlightDismiss,
 }: {
   initialSearchQuery?: string;
   initialSelectedTags?: string[];
@@ -27,6 +29,8 @@ export default function ProductSearch({
   onSelectedTagsChange?: (tags: string[]) => void;
   onSelectedNegativeTagsChange?: (tags: string[]) => void;
   isSafeSearchEnabled?: boolean;
+  isSpotlightActive?: boolean;
+  onSpotlightDismiss?: () => void;
 }) {
   const {
     searchQuery,
@@ -77,8 +81,19 @@ export default function ProductSearch({
     isSafeSearchEnabled,
   });
 
+
+
   return (
-    <div className="p-4 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+    <div 
+      className={`p-4 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-all duration-500 ease-in-out ${
+        isSpotlightActive ? 'ring-4 ring-primary/50 shadow-2xl relative z-50 bg-white dark:bg-gray-700' : ''
+      }`}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && isSpotlightActive && onSpotlightDismiss) {
+          onSpotlightDismiss();
+        }
+      }}
+    >
       <OnboardingTour />
       <div className="container mx-auto flex items-center gap-2 md:gap-4">
         <TagSearchBar
