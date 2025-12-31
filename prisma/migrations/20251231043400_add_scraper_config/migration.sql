@@ -25,7 +25,7 @@ CREATE TABLE "ScraperConfig" (
     "backfillProductLimit" INTEGER NOT NULL DEFAULT 9,
     "requestIntervalMs" INTEGER NOT NULL DEFAULT 5000,
     "lastUpdatedBy" TEXT,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "ScraperConfig_pkey" PRIMARY KEY ("id")
 );
