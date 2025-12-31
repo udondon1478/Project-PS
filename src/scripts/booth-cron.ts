@@ -5,6 +5,11 @@ import * as Sentry from '@sentry/nextjs';
 
 const SYSTEM_USER_EMAIL = 'system-scraper@polyseek.com';
 
+// Default configuration constants for scraper operations
+const DEFAULT_BACKFILL_PAGES_PER_RUN = 3;
+const DEFAULT_BACKFILL_MAX_PRODUCTS = 9;
+const DEFAULT_REQUEST_INTERVAL_MS = 5000;
+
 async function getSystemUserId(): Promise<string> {
   try {
     const user = await prisma.user.findUnique({
@@ -106,7 +111,7 @@ async function start() {
            const runId = await orchestrator.start('NEW', userId, {
              pageLimit: config.newScanPageLimit, // Use configurable limit
              // rateLimitOverride: 1500, // Fixed rate limit for cron safety -> Now use config
-             requestInterval: config.requestIntervalMs ?? 5000, 
+             requestInterval: config.requestIntervalMs ?? DEFAULT_REQUEST_INTERVAL_MS, 
              searchParams: { useTargetTags: true }
            });
            console.log(`[Cron] New Product Scan started (RunID: ${runId})`);
@@ -139,9 +144,9 @@ async function start() {
            const runId = await orchestrator.start('BACKFILL', userId, {
              // Orchestrator keeps track of pagination
              searchParams: { useTargetTags: true },
-             pagesPerRun: config.backfillPageCount ?? 3,
-             maxProducts: config.backfillProductLimit ?? 9,
-             requestInterval: config.requestIntervalMs ?? 5000,
+             pagesPerRun: config.backfillPageCount ?? DEFAULT_BACKFILL_PAGES_PER_RUN,
+             maxProducts: config.backfillProductLimit ?? DEFAULT_BACKFILL_MAX_PRODUCTS,
+             requestInterval: config.requestIntervalMs ?? DEFAULT_REQUEST_INTERVAL_MS,
            });
            console.log(`[Cron] Backfill started (RunID: ${runId})`);
          } catch (e) {

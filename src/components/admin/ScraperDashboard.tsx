@@ -17,9 +17,14 @@ import { Badge } from '@/components/ui/badge';
 
 import { type ScraperRun, type ScraperLog, type ScraperStatus } from '@/lib/booth-scraper/orchestrator';
 
-interface SerializedScraperRun extends Omit<ScraperRun, 'startTime' | 'endTime'> {
+interface SerializedScraperRun extends Omit<ScraperRun, 'startTime' | 'endTime' | 'metadata'> {
   startTime: string;
   endTime?: string | null;
+  metadata: {
+    target?: string;
+    mode?: string;
+    [key: string]: unknown;
+  } | null;
 }
 
 interface DashboardProps {
@@ -286,9 +291,14 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
         
         if (res.ok) {
             toast.success('All enabled tags enqueued');
+        } else {
+            const err = await res.json().catch(() => ({ error: res.statusText || 'Unknown error' }));
+            toast.error(`Failed: ${err.error || 'Server error'}`);
         }
-      } catch (e) {
-        toast.error('Error starting all');
+      } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        console.error('Error starting all:', e);
+        toast.error(`Error starting all: ${errorMessage}`);
       } finally {
         setLoading(false);
       }
@@ -383,12 +393,22 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
 
                       {/* Live Log Snippet */}
                       <div className="bg-black text-xs text-green-400 p-4 rounded h-32 overflow-y-auto font-mono custom-scrollbar">
-                           {activeStatus.logs.slice(-5).map((log) => (
-                             <div key={log.id} className="truncate">
-                               <span className="opacity-50 mr-2">[{log.timestamp.split('T')[1].split('.')[0]}]</span>
-                               {log.message}
-                             </div>
-                           ))}
+                           {activeStatus.logs.slice(-5).map((log) => {
+                             // Safe timestamp formatting with fallback
+                             let timeStr = '';
+                             try {
+                               const date = new Date(log.timestamp);
+                               timeStr = isNaN(date.getTime()) ? log.timestamp : date.toLocaleTimeString();
+                             } catch {
+                               timeStr = log.timestamp;
+                             }
+                             return (
+                               <div key={log.id} className="truncate">
+                                 <span className="opacity-50 mr-2">[{timeStr}]</span>
+                                 {log.message}
+                               </div>
+                             );
+                           })}
                            {activeStatus.logs.length === 0 && <div className="opacity-50">Waiting for logs...</div>}
                       </div>
                   </div>
@@ -440,9 +460,11 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                   {/* Quick Queue Actions */}
                   <div className="p-3 border-t bg-gray-50 dark:bg-gray-900/50">
                       <select 
+                        id="scanModeSelect"
+                        aria-label="Scan mode"
                         className="w-full mb-2 p-2 rounded border text-sm"
                         value={mode}
-                        onChange={e => setMode(e.target.value as any)}
+                        onChange={e => setMode(e.target.value as 'NEW' | 'BACKFILL')}
                       >
                           <option value="NEW">Mode: New Scan</option>
                           <option value="BACKFILL">Mode: Backfill</option>
@@ -472,12 +494,16 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
               <div className="lg:col-span-2 space-y-4">
                   <div className="flex gap-2">
                      <input 
+                       id="newTagNameInput"
+                       aria-label="New Tag Name"
                        className="flex-1 border rounded p-2" 
                        placeholder="New Tag Name" 
                        value={newTagInput}
                        onChange={e => setNewTagInput(e.target.value)}
                      />
                      <input 
+                       id="newCategoryInput"
+                       aria-label="Category"
                        className="w-32 border rounded p-2" 
                        placeholder="Category" 
                        value={newCategoryInput}
@@ -502,6 +528,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                                       <td className="p-3">
                                           <input 
                                             type="checkbox" 
+                                            aria-label={`Enable tag ${tag.tag}`}
                                             checked={tag.enabled} 
                                             onChange={() => handleToggleTag(tag.id, tag.enabled)}
                                           />
@@ -542,8 +569,9 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                   <h3 className="font-bold text-sm uppercase text-gray-500">Auto-Scheduler Settings</h3>
                   
                   <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Scheduler Enabled</span>
+                      <label htmlFor="schedulerEnabledCheckbox" className="text-sm font-medium">Scheduler Enabled</label>
                       <input 
+                        id="schedulerEnabledCheckbox"
                         type="checkbox" 
                         checked={schedulerConfig.isSchedulerEnabled}
                         onChange={e => setSchedulerConfig(prev => ({ ...prev, isSchedulerEnabled: e.target.checked }))}
@@ -726,8 +754,8 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                     {run.status}
                   </td>
                   <td className="p-3">
-                     <div className="font-medium">{(run.metadata as any)?.target || 'Unknown'}</div>
-                     <div className="text-xs text-gray-500">{(run.metadata as any)?.mode || '-'}</div>
+                     <div className="font-medium">{run.metadata?.target ?? 'Unknown'}</div>
+                     <div className="text-xs text-gray-500">{run.metadata?.mode ?? '-'}</div>
                   </td>
                   <td className="p-3 text-right">{run.productsFound}</td>
                   <td className="p-3 text-right text-green-600 font-bold">+{run.productsCreated}</td>

@@ -99,6 +99,26 @@ const STATUS_MAP = {
   stopping: 'FAILED',
 } as const;
 
+/**
+ * Default scraper status used when no active run exists.
+ */
+const DEFAULT_SCRAPER_STATUS: Omit<ScraperStatus, 'queue' | 'currentTarget'> = {
+  runId: '',
+  mode: 'NEW',
+  status: 'completed',
+  progress: {
+    pagesProcessed: 0,
+    productsFound: 0,
+    productsExisting: 0,
+    productsCreated: 0,
+    productsSkipped: 0,
+    productsFailed: 0,
+    lastProcessedPage: 0,
+  },
+  timings: { startTime: 0, averageDelay: 0 },
+  logs: [],
+};
+
 class BoothScraperOrchestrator {
   private static instance: BoothScraperOrchestrator;
   
@@ -124,15 +144,7 @@ class BoothScraperOrchestrator {
     // Return current status enriched with queue info
     const baseStatus = this.currentStatus ? { ...this.currentStatus } : null;
     return {
-      ...(baseStatus || {
-        runId: '',
-        mode: 'NEW',
-        status: 'completed',
-        progress: { pagesProcessed:0, productsFound:0, productsExisting:0, productsCreated:0, productsSkipped:0, productsFailed:0, lastProcessedPage:0 },
-        timings: { startTime: 0, averageDelay: 0 },
-        logs: [],
-        currentTarget: null,
-      }),
+      ...(baseStatus || DEFAULT_SCRAPER_STATUS),
       queue: [...this.targetQueue],
       currentTarget: this.currentStatus?.currentTarget || null,
     };
@@ -329,9 +341,12 @@ class BoothScraperOrchestrator {
     // Determine Tag ID if exists to fetch resume point
     let tagId: string | undefined;
     if (isBackfill) {
-        // Try to find the tag in DB to resume
+        // Try to find the tag in DB to resume (include category for composite key)
         const tag = await prisma.scraperTargetTag.findFirst({
-            where: { tag: options.searchParams?.query }
+            where: {
+              tag: options.searchParams?.query,
+              category: options.searchParams?.category,
+            }
         });
         
         if (tag) {
