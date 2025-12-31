@@ -62,7 +62,7 @@ const ProductDetailPage = () => {
   const productId = params.productId as string;
 
   const [product, setProduct] = useState<ProductDetail | null>(null);
-  const [tagMap, setTagMap] = useState<{ [key: string]: string }>({});
+  const [tagMap, setTagMap] = useState<{ [key: string]: { name: string; displayName: string | null } }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [api, setApi] = useState<CarouselApi>();

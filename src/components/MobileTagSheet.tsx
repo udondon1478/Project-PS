@@ -29,7 +29,7 @@ interface MobileTagSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   productTags: ProductTag[];
-  tagMap: { [key: string]: string };
+  tagMap: { [key: string]: { name: string; displayName: string | null } };
   tagEditHistory: TagEditHistory[];
   onAddTagToSearch: (tagName: string) => void;
   onAddNegativeTagToSearch: (tagName: string) => void;

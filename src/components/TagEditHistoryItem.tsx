@@ -31,7 +31,7 @@ interface TagEditHistory {
 
 interface TagEditHistoryItemProps {
   history: TagEditHistory;
-  tagMap: { [key: string]: string };
+  tagMap: { [key: string]: { name: string; displayName: string | null } };
 }
 
 const TAG_DISPLAY_LIMIT = 5;
@@ -39,7 +39,7 @@ const TAG_DISPLAY_LIMIT = 5;
 const TagList: React.FC<{
   tagIds: string[],
   colorClass: string,
-  tagMap: { [key: string]: string }
+  tagMap: { [key: string]: { name: string; displayName: string | null } }
 }> = ({ tagIds, colorClass, tagMap }) => {
   const [showAll, setShowAll] = useState(false);
 
@@ -47,7 +47,10 @@ const TagList: React.FC<{
     return null;
   }
 
-  const tagNames = tagIds.map(id => tagMap[id] || id); // Fallback to ID if name not found
+  const tagNames = tagIds.map(id => {
+    const tagInfo = tagMap[id];
+    return tagInfo ? (tagInfo.displayName || tagInfo.name) : id;
+  }); // Fallback to ID if name not found
   const displayedTags = showAll ? tagNames : tagNames.slice(0, TAG_DISPLAY_LIMIT);
 
   return (
