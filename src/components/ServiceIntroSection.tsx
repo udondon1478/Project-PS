@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { features } from "@/constants/features";
+import { features, FEATURE_IDS } from "@/constants/features";
 import { TRIGGER_SEARCH_SPOTLIGHT } from "@/constants/events";
 import {
   Dialog,
@@ -36,7 +36,7 @@ export default function ServiceIntroSection() {
 
   const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, href: string, featureId?: string) => {
     // 豊富な検索条件クリック時はヘッダーを強調表示
-    if (featureId === 'advanced-search') {
+    if (featureId === FEATURE_IDS.ADVANCED_SEARCH) {
       e.preventDefault();
       window.dispatchEvent(new CustomEvent(TRIGGER_SEARCH_SPOTLIGHT));
       return;

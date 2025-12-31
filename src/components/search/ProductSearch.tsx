@@ -81,29 +81,18 @@ export default function ProductSearch({
     isSafeSearchEnabled,
   });
 
-  const handleContainerKeyDown = (e: React.KeyboardEvent) => {
-    if (!isSpotlightActive || !onSpotlightDismiss) return;
-    
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onSpotlightDismiss();
-    }
-  };
+
 
   return (
     <div 
       className={`p-4 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-all duration-500 ease-in-out ${
         isSpotlightActive ? 'ring-4 ring-primary/50 shadow-2xl relative z-50 bg-white dark:bg-gray-700' : ''
       }`}
-      onClick={() => {
-        if (isSpotlightActive && onSpotlightDismiss) {
+      onClick={(e) => {
+        if (e.target === e.currentTarget && isSpotlightActive && onSpotlightDismiss) {
           onSpotlightDismiss();
         }
       }}
-      role={isSpotlightActive ? "button" : undefined}
-      tabIndex={isSpotlightActive ? 0 : undefined}
-      aria-label={isSpotlightActive ? "検索モードを終了" : undefined}
-      onKeyDown={handleContainerKeyDown}
     >
       <OnboardingTour />
       <div className="container mx-auto flex items-center gap-2 md:gap-4">
