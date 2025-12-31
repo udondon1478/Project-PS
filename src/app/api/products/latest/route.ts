@@ -3,8 +3,13 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '24', 10);
+    const skip = (page - 1) * limit;
+
     const session = await auth();
     const userId = session?.user?.id;
 
@@ -49,40 +54,47 @@ export async function GET() {
       });
     }
 
-    const products = await prisma.product.findMany({
-      where: whereConditions.length > 0 ? { AND: whereConditions } : {},
-      orderBy: {
-        createdAt: 'desc',
-      },
-      include: {
-        images: {
-          where: {
-            isMain: true,
-          },
-          select: {
-            imageUrl: true,
-          },
-          take: 1,
+    const where = whereConditions.length > 0 ? { AND: whereConditions } : {};
+
+    const [total, products] = await Promise.all([
+      prisma.product.count({ where }),
+      prisma.product.findMany({
+        where,
+        orderBy: {
+          createdAt: 'desc',
         },
-        productTags: {
-          include: {
-            tag: {
-              select: {
-                name: true,
-                displayName: true,
+        skip,
+        take: limit,
+        include: {
+          images: {
+            where: {
+              isMain: true,
+            },
+            select: {
+              imageUrl: true,
+            },
+            take: 1,
+          },
+          productTags: {
+            include: {
+              tag: {
+                select: {
+                  name: true,
+                  displayName: true,
+                },
               },
             },
+            take: 7,
           },
-          take: 7,
-        },
-        variations: {
-          orderBy: {
-            order: 'asc',
+          variations: {
+            orderBy: {
+              order: 'asc',
+            },
           },
+          seller: true,
         },
-        seller: true,
-      },
-    });
+      }),
+    ]);
 
     const formattedProducts = products.map((product) => ({
       id: product.id,
@@ -107,7 +119,13 @@ export async function GET() {
         : null,
     }));
 
-    return NextResponse.json(formattedProducts);
+    return NextResponse.json({
+      products: formattedProducts,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    });
   } catch (error) {
     console.error('Error fetching latest products:', error);
     return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
