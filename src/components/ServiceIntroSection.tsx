@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useSession, signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { features } from "@/constants/features";
 import {
@@ -15,13 +14,26 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AuthDialogNotice } from "@/components/AuthDialogNotice";
+import { toast } from "sonner";
+
+// Define dialog configuration for better maintainability and to avoid duplication
+const DIALOG_CONFIG = {
+  register: {
+    title: "商品登録にはログインが必要です",
+    description: "商品登録を行うには、以下のいずれかの方法でログインしてください。",
+  },
+  login: {
+    title: "ログイン",
+    description: "以下のいずれかの方法でログインしてください。",
+  },
+} as const;
 
 export default function ServiceIntroSection() {
   const { status } = useSession();
-  const router = useRouter();
   const [activeDialog, setActiveDialog] = useState<'register' | 'login' | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  const handleClick = (e: React.MouseEvent, href: string) => {
+  const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (status === "unauthenticated") {
       if (href === "/register-item") {
         e.preventDefault();
@@ -32,6 +44,20 @@ export default function ServiceIntroSection() {
       }
     }
   };
+
+  const handleSignIn = async (provider: 'google' | 'discord') => {
+    try {
+      setIsLoggingIn(true);
+      await signIn(provider);
+    } catch (error) {
+      console.error("Login failed:", error);
+      toast.error("ログインに失敗しました。もう一度お試しください。");
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const activeConfig = activeDialog ? DIALOG_CONFIG[activeDialog] : null;
 
   return (
     <>
@@ -53,7 +79,10 @@ export default function ServiceIntroSection() {
             <Link 
               key={feature.id} 
               href={feature.href}
-              onClick={(e) => handleClick(e, feature.href)}
+              {...(status === "unauthenticated" && (feature.href === "/register-item" || feature.href === "/profile") 
+                ? { onClick: (e) => handleNavigation(e, feature.href) }
+                : {}
+              )}
               className="block h-full group"
             >
               <Card className="text-center h-full transition-colors hover:bg-muted/50">
@@ -72,32 +101,27 @@ export default function ServiceIntroSection() {
 
       <Dialog open={!!activeDialog} onOpenChange={(open) => !open && setActiveDialog(null)}>
         <DialogContent>
-          {activeDialog === 'register' && (
-             <>
+          {activeConfig && (
+            <>
               <DialogHeader>
-                <DialogTitle>商品登録にはログインが必要です</DialogTitle>
+                <DialogTitle>{activeConfig.title}</DialogTitle>
                 <DialogDescription>
-                  商品登録を行うには、以下のいずれかの方法でログインしてください。
+                  {activeConfig.description}
                 </DialogDescription>
               </DialogHeader>
               <div className="flex flex-col space-y-4">
-                <Button onClick={() => signIn('google')}>Googleでログイン</Button>
-                <Button onClick={() => signIn('discord')}>Discordでログイン</Button>
-              </div>
-              <AuthDialogNotice onClose={() => setActiveDialog(null)} />
-            </>
-          )}
-          {activeDialog === 'login' && (
-             <>
-              <DialogHeader>
-                <DialogTitle>ログイン</DialogTitle>
-                <DialogDescription>
-                  以下のいずれかの方法でログインしてください。
-                </DialogDescription>
-              </DialogHeader>
-              <div className="flex flex-col space-y-4">
-                <Button onClick={() => signIn('google')}>Googleでログイン</Button>
-                <Button onClick={() => signIn('discord')}>Discordでログイン</Button>
+                <Button 
+                  onClick={() => handleSignIn('google')} 
+                  disabled={isLoggingIn}
+                >
+                  Googleでログイン
+                </Button>
+                <Button 
+                  onClick={() => handleSignIn('discord')}
+                  disabled={isLoggingIn}
+                >
+                  Discordでログイン
+                </Button>
               </div>
               <AuthDialogNotice onClose={() => setActiveDialog(null)} />
             </>
