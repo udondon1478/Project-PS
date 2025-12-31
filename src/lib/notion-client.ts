@@ -173,7 +173,8 @@ export async function queryNotionDatabase(sourceQuery: string): Promise<NotionRe
 
   while (hasMore) {
     // Use Notion SDK consistently (databases.query is available in SDK v2+)
-    const response = await notion.databases.query({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response: any = await (notion.databases as any).query({
       database_id: databaseId,
       filter: {
         property: 'SourceQuery',

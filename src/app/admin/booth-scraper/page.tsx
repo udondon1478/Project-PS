@@ -13,11 +13,12 @@ export default async function BoothScraperAdminPage() {
     orderBy: { startTime: 'desc' },
   });
 
-  // Explicitly serialize Date fields to strings for passing to Client Component
+  // Explicitly serialize Date fields and metadata for passing to Client Component
   const recentRuns = runs.map(r => ({
     ...r,
     startTime: r.startTime.toISOString(),
-    endTime: r.endTime?.toISOString()
+    endTime: r.endTime?.toISOString(),
+    metadata: r.metadata as { target?: string; mode?: string; [key: string]: unknown } | null,
   }));
 
   return (
