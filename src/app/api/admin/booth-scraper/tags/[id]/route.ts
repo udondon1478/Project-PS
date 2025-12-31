@@ -4,6 +4,10 @@ import { prisma } from '@/lib/prisma';
 import { auth } from "@/auth";
 import { Role, Prisma } from "@prisma/client";
 
+// Validation constants (same as POST endpoint)
+const MAX_CATEGORY_LENGTH = 50;
+const CATEGORY_PATTERN = /^[\p{L}\p{N}\s_-]+$/u;
+
 // PATCH: タグの有効/無効切り替えとカテゴリ更新
 export async function PATCH(
   req: NextRequest,
@@ -26,15 +30,19 @@ export async function PATCH(
       updateData.enabled = enabled;
     }
     
-    // Validate category if provided
+    // Validate category if provided (same rules as POST)
     if ('category' in body) {
       if (category !== null && category !== undefined) {
         if (typeof category !== 'string') {
           return NextResponse.json({ error: 'Category must be a string or null' }, { status: 400 });
         }
         const trimmedCategory = category.trim();
-        if (trimmedCategory.length > 100) {
-          return NextResponse.json({ error: 'Category must be 100 characters or less' }, { status: 400 });
+        if (trimmedCategory.length > MAX_CATEGORY_LENGTH) {
+          return NextResponse.json({ error: `Category must be ${MAX_CATEGORY_LENGTH} characters or less` }, { status: 400 });
+        }
+        // Only allow safe characters: alphanumeric, spaces, underscores, hyphens, and unicode letters
+        if (trimmedCategory && !CATEGORY_PATTERN.test(trimmedCategory)) {
+          return NextResponse.json({ error: 'Category contains invalid characters' }, { status: 400 });
         }
         updateData.category = trimmedCategory || null;
       } else {

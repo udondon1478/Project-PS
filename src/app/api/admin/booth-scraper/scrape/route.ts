@@ -59,7 +59,7 @@ export async function GET() {
   // Note: Since we only have one process usually, this should match what the orchestrator knows,
   // but good for checking if there are zombies or other instances.
   const runningFromDb = await prisma.scraperRun.findMany({
-    where: { status: 'RUNNING' },
+    where: { status: ScraperRunStatus.RUNNING },
     orderBy: { startTime: 'desc' },
   });
   
@@ -103,10 +103,10 @@ export async function DELETE(req: Request) {
          await orchestrator.skipCurrent();
        }
        
-       // Update DB state
+       // Update DB state to stopping
        await prisma.scraperRun.update({
          where: { runId },
-         data: { status: ScraperRunStatus.RUNNING } // Will be set to STOPPING by skipCurrent
+         data: { status: ScraperRunStatus.STOPPING }
        });
 
        return NextResponse.json({
@@ -121,7 +121,7 @@ export async function DELETE(req: Request) {
     // Also mark DB runs as stopping for safety
     const updateResult = await prisma.scraperRun.updateMany({
         where: { status: ScraperRunStatus.RUNNING },
-        data: { status: ScraperRunStatus.RUNNING } // Will be handled by stopAll
+        data: { status: ScraperRunStatus.STOPPING }
     });
        
     return NextResponse.json({ 
