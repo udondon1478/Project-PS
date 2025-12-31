@@ -110,7 +110,9 @@ export async function POST(request: Request) {
         let publishedAt: Date = new Date(); // デフォルトで現在時刻（フォールバック用）
         let sellerName: string = "Unknown";
 
-        // BOOTH JSON APIから公開日時を取得 (with timeout)
+        // BOOTH JSON APIから公開日時とタグを取得 (with timeout)
+        // product-parser.ts と同じアプローチ: JSON API優先でタグを取得
+        let boothTagsFromJson: string[] = [];
         try {
           const jsonUrl = `${boothJpUrl}.json`;
           const jsonController = new AbortController();
@@ -127,12 +129,17 @@ export async function POST(request: Request) {
                 publishedAt = new Date(jsonData.published_at);
                 console.log('Fetched publishedAt from BOOTH JSON API:', publishedAt);
               }
+              // JSON APIからタグを取得 (product-parser.ts の parseProductJson と同じ)
+              if (Array.isArray(jsonData.tags)) {
+                boothTagsFromJson = jsonData.tags.map((t: { name: string }) => t.name);
+                console.log('Fetched tags from BOOTH JSON API:', boothTagsFromJson);
+              }
             }
           } finally {
             clearTimeout(jsonTimeout);
           }
         } catch (e) {
-          console.warn('Failed to fetch BOOTH JSON API for publishedAt:', e);
+          console.warn('Failed to fetch BOOTH JSON API:', e);
         }
         let sellerUrl: string = "";
         let sellerIconUrl: string = "";
@@ -280,40 +287,51 @@ export async function POST(request: Request) {
         description = markdownDescription.trim();
 
         // Tags extraction
-        const boothTags: string[] = [];
-        // existing tag links
-        $('a[href*="/tags/"]').each((_, element) => {
-          const tagName = $(element).text().trim();
-          if (tagName && !boothTags.includes(tagName)) {
-            boothTags.push(tagName);
-          }
-        });
-        // Official Tags (Categories) via /browse/ links
-        $('a[href*="/browse/"]').each((_, element) => {
-          const tagName = $(element).text().trim();
-          if (tagName && !boothTags.includes(tagName)) {
-            boothTags.push(tagName);
-          }
-        });
-        // Tags from query parameters
-        $('a[href*="tags"]').each((_, element) => {
-          const href = $(element).attr('href');
-          if (!href) return;
-          try {
-             if (href.includes('/items?') || href.includes('?tags')) {
-               const urlObj = new URL(href, 'https://booth.pm');
-               const searchParams = urlObj.searchParams;
-               const tagValues = searchParams.getAll('tags[]');
-               tagValues.forEach(val => {
-                 if (val && !boothTags.includes(val)) {
-                   boothTags.push(val);
-                 }
-               });
-             }
-          } catch(e) {
-             // ignore
-          }
-        });
+        // JSON APIからタグが取得できた場合は優先使用、できなかった場合はHTMLから抽出
+        let boothTags: string[] = [];
+        
+        if (boothTagsFromJson.length > 0) {
+          // JSON APIからのタグを使用（より信頼性が高い）
+          boothTags = boothTagsFromJson;
+          console.log('Using tags from JSON API:', boothTags);
+        } else {
+          // フォールバック: HTMLからタグを抽出
+          console.log('JSON API tags not available, falling back to HTML extraction');
+          
+          // existing tag links
+          $('a[href*="/tags/"]').each((_, element) => {
+            const tagName = $(element).text().trim();
+            if (tagName && !boothTags.includes(tagName)) {
+              boothTags.push(tagName);
+            }
+          });
+          // Official Tags (Categories) via /browse/ links
+          $('a[href*="/browse/"]').each((_, element) => {
+            const tagName = $(element).text().trim();
+            if (tagName && !boothTags.includes(tagName)) {
+              boothTags.push(tagName);
+            }
+          });
+          // Tags from query parameters
+          $('a[href*="tags"]').each((_, element) => {
+            const href = $(element).attr('href');
+            if (!href) return;
+            try {
+               if (href.includes('/items?') || href.includes('?tags')) {
+                 const urlObj = new URL(href, 'https://booth.pm');
+                 const searchParams = urlObj.searchParams;
+                 const tagValues = searchParams.getAll('tags[]');
+                 tagValues.forEach(val => {
+                   if (val && !boothTags.includes(val)) {
+                     boothTags.push(val);
+                   }
+                 });
+               }
+            } catch(e) {
+               // ignore
+            }
+          });
+        }
 
         console.log('ProductInfo to be returned to frontend:', {
           boothJpUrl,
