@@ -91,7 +91,8 @@ const ProductCard = ({ product, showLikeButton = false, showOwnButton = false, m
     }
   };
 
-  const displayedTags = maxTags ? product.tags.slice(0, maxTags) : product.tags;
+  const isValidMaxTags = typeof maxTags === 'number' && Number.isFinite(maxTags) && maxTags >= 0;
+  const displayedTags = isValidMaxTags ? product.tags.slice(0, maxTags) : product.tags;
 
   return (
     <div className="border rounded-lg overflow-hidden shadow-lg" data-testid="product-card">
