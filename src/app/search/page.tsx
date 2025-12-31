@@ -12,6 +12,9 @@ import { PlusCircle, SearchX } from "lucide-react";
 /** 1ページあたりの商品件数 */
 const PAGE_SIZE = 24;
 
+/** 検索結果でのタグ表示上限 */
+const MAX_TAGS_IN_SEARCH = 7;
+
 type SearchPageProps = {
   params: Promise<Record<string, string>>;
   searchParams: Promise<SearchParams & { page?: string }>;
@@ -163,7 +166,7 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
       {q && <p>Search query: {q}</p>}
       {category && <p>Category: {category}</p>}
 
-      <ProductGrid products={products} showLikeButton={true} showOwnButton={true} maxTags={7} />
+      <ProductGrid products={products} showLikeButton={true} showOwnButton={true} maxTags={MAX_TAGS_IN_SEARCH} />
 
       {totalPages > 1 && (
         <div className="mt-8 flex justify-center">
