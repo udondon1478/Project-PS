@@ -5,6 +5,11 @@ import * as Sentry from '@sentry/nextjs';
 
 const SYSTEM_USER_EMAIL = 'system-scraper@polyseek.com';
 
+// Default configuration constants for scraper operations
+const DEFAULT_BACKFILL_PAGES_PER_RUN = 3;
+const DEFAULT_BACKFILL_MAX_PRODUCTS = 9;
+const DEFAULT_REQUEST_INTERVAL_MS = 5000;
+
 async function getSystemUserId(): Promise<string> {
   try {
     const user = await prisma.user.findUnique({
@@ -35,61 +40,135 @@ async function start() {
   const userId = await getSystemUserId();
   console.log(`Using User ID: ${userId} for scraping operations.`);
 
-  // Job 1: New Scans (Every 10 minutes)
-  // "Novelty Scan": Check initial pages for new items
-  cron.schedule('*/10 * * * *', async () => {
-    console.log('[Cron] Triggering New Product Scan...');
-    const status = orchestrator.getStatus();
-    if (status && status.status === 'running') {
-      console.log('[Cron] Scraper is already running. Skipping New Scan.');
-      return;
-    }
+  // Throttle for scheduler disabled logs (log every 10 minutes)
+  let lastDisabledLogTime = 0;
+  const DISABLED_LOG_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
 
+  // Main Scheduler Loop (Runs every minute)
+  cron.schedule('* * * * *', async () => {
     try {
-      const runId = await orchestrator.start('NEW', userId, {
-        pageLimit: 3, // Check first 3 pages
+      // 1. Get Configuration
+      const config = await prisma.scraperConfig.findFirst();
+      
+      if (!config) {
+        console.log('[Cron] No ScraperConfig found. Skipping.');
+        return;
+      }
+
+      if (!config.isSchedulerEnabled) {
+        // Log disabled state every 10 minutes to avoid spam
+        const now = Date.now();
+        if (now - lastDisabledLogTime >= DISABLED_LOG_INTERVAL_MS) {
+          console.log(`[Cron] ${new Date().toISOString()} - Scheduler disabled in DB.`);
+          lastDisabledLogTime = now;
+        }
+        return;
+      }
+
+      // 2. Check Scraper Status (both in-memory and DB state for safety across restarts/processes)
+      const status = orchestrator.getStatus();
+      if (status && status.status === 'running') {
+        console.log(`[Cron] Scraper is currently running in-memory (${status.mode}). Skipping trigger.`);
+        return;
+      }
+
+      // Also check DB for RUNNING state (handles separate processes or restarts)
+      let dbRunning = false;
+      try {
+        const activeRun = await prisma.scraperRun.findFirst({
+          where: { status: 'RUNNING' },
+        });
+        dbRunning = !!activeRun;
+      } catch (err) {
+        console.error('[Cron] Failed to check DB running state, conservatively assuming running:', err);
+        dbRunning = true; // Conservative fallback
+      }
+
+      if (dbRunning) {
+        console.log('[Cron] Scraper is currently running (DB state). Skipping trigger.');
+        return;
+      }
+
+      // 3. Check Last Run for NEW Mode
+      const lastNewRun = await prisma.scraperRun.findFirst({
+        where: {
+          metadata: {
+            path: ['mode'],
+            equals: 'NEW',
+          },
+        },
+        orderBy: { startTime: 'desc' },
       });
-      console.log(`[Cron] New Product Scan started (RunID: ${runId})`);
+
+      const now = new Date();
+      const newRunIntervalMs = config.newScanIntervalMin * 60 * 1000;
+      const timeSinceLastNewRun = lastNewRun ? now.getTime() - lastNewRun.startTime.getTime() : Infinity;
+
+      if (timeSinceLastNewRun >= newRunIntervalMs) {
+         console.log(`[Cron] Triggering New Product Scan (Last run: ${lastNewRun?.startTime.toISOString() ?? 'Never'}, Interval: ${config.newScanIntervalMin}m)`);
+         try {
+           console.log('Starting NEW product scan (Scheduled)');
+           const runId = await orchestrator.start('NEW', userId, {
+             pageLimit: config.newScanPageLimit, // Use configurable limit
+             // rateLimitOverride: 1500, // Fixed rate limit for cron safety -> Now use config
+             requestInterval: config.requestIntervalMs ?? DEFAULT_REQUEST_INTERVAL_MS, 
+             searchParams: { useTargetTags: true }
+           });
+           console.log(`[Cron] New Product Scan started (RunID: ${runId})`);
+           return; // Only start one task at a time
+         } catch (e) {
+           console.error('[Cron] Failed to start New Product Scan:', e);
+           Sentry.captureException(e);
+         }
+      }
+
+      // 4. Check Last Run for BACKFILL Mode
+      // Only runs if NEW scan didn't just start
+      
+      const lastBackfillRun = await prisma.scraperRun.findFirst({
+        where: {
+          metadata: {
+            path: ['mode'],
+            equals: 'BACKFILL',
+          },
+        },
+        orderBy: { startTime: 'desc' },
+      });
+
+      const backfillIntervalMs = config.backfillIntervalMin * 60 * 1000;
+      const timeSinceLastBackfill = lastBackfillRun ? now.getTime() - lastBackfillRun.startTime.getTime() : Infinity;
+
+      if (timeSinceLastBackfill >= backfillIntervalMs) {
+         console.log(`[Cron] Triggering Backfill (Last run: ${lastBackfillRun?.startTime.toISOString() ?? 'Never'}, Interval: ${config.backfillIntervalMin}m)`);
+         try {
+           const runId = await orchestrator.start('BACKFILL', userId, {
+             // Orchestrator keeps track of pagination
+             searchParams: { useTargetTags: true },
+             pagesPerRun: config.backfillPageCount ?? DEFAULT_BACKFILL_PAGES_PER_RUN,
+             maxProducts: config.backfillProductLimit ?? DEFAULT_BACKFILL_MAX_PRODUCTS,
+             requestInterval: config.requestIntervalMs ?? DEFAULT_REQUEST_INTERVAL_MS,
+           });
+           console.log(`[Cron] Backfill started (RunID: ${runId})`);
+         } catch (e) {
+           console.error('[Cron] Failed to start Backfill:', e);
+           Sentry.captureException(e);
+         }
+      }
+
     } catch (error) {
-      console.error('[Cron] Failed to start New Product Scan:', error);
+      console.error('[Cron] Error in scheduler loop:', error);
       Sentry.captureException(error);
     }
   });
 
-  // Job 2: Backfill (Every 5 minutes)
-  // "Backfill": Go deeper or update older items
-  cron.schedule('*/5 * * * *', async () => {
-    console.log('[Cron] Triggering Backfill...');
-    const status = orchestrator.getStatus();
-    if (status && status.status === 'running') {
-      console.log('[Cron] Scraper is already running. Skipping Backfill.');
-      return;
-    }
-
-    try {
-      const runId = await orchestrator.start('BACKFILL', userId, {
-        // Orchestrator handles resume logic based on DB
-        // Orchestrator handles rate limiting (e.g. 9 items or similar limits) internally if implemented,
-        // or we pass options here.
-        // The requirement said "9 products/run". Orchestrator seems to handle this via hardcoded check or we can pass it via options if supported.
-        // Current Orchestrator implementation has logic: "if (isBackfill) ... if (processedCount >= 9) ... stop"
-        // So no extra options needed here for identifying the limit, but we rely on Orchestrator's internal logic.
-      });
-      console.log(`[Cron] Backfill started (RunID: ${runId})`);
-    } catch (error) {
-      console.error('[Cron] Failed to start Backfill:', error);
-      Sentry.captureException(error);
-    }
-  });
-
-  console.log('BOOTH Cron Scheduler is now running.');
+  console.log('BOOTH Cron Scheduler is now running (DB-Driven Mode).');
   
   // Graceful Shutdown
   const shutdown = async (signal: string) => {
     console.log(`Received ${signal}. Shutting down gracefully...`);
     
     // Stop orchestrator if running
-    await orchestrator.stop();
+    await orchestrator.stopAll();
     
     // Disconnect Prisma
     await prisma.$disconnect();

@@ -445,6 +445,7 @@ model Report {
 enum ScraperRunStatus {
   RUNNING
   COMPLETED
+  STOPPING
   FAILED
 }
 
@@ -466,17 +467,48 @@ model ScraperRun {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
+  logs              ScraperLog[] // 実行ログ
+
   @@index([startTime])
   @@index([status])
+}
+
+// スクレイパー実行ログ
+model ScraperLog {
+  id        String     @id @default(cuid())
+  runId     String
+  run       ScraperRun @relation(fields: [runId], references: [runId], onDelete: Cascade)
+  message   String
+  createdAt DateTime   @default(now())
+  
+  @@index([runId])
+  @@index([createdAt])
 }
 
 // スクレイパー対象タグテーブル
 model ScraperTargetTag {
   id        String   @id @default(cuid())
-  tag       String   @unique
+  tag       String
+  category  String?  // BOOTHカテゴリ（例：3Dモデル）
   enabled   Boolean  @default(true)
+  lastBackfillPage Int @default(0) // バックフィルの進捗ページ（タグごとに管理）
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
+  @@unique([tag, category]) // 同じタグ+カテゴリの重複を防ぐ
   @@map("scraper_target_tags")
+}
+
+// スクレイパー設定テーブル
+model ScraperConfig {
+  id             String   @id @default(cuid())
+  isSchedulerEnabled Boolean @default(true) // スケジューラー自体の有効/無効
+  newScanIntervalMin Int  @default(10) // 新着スキャンの実行間隔（分）
+  newScanPageLimit   Int  @default(3)  // 新着スキャン時のページ数上限
+  backfillIntervalMin Int @default(5)  // バックフィルの実行間隔（分）
+  backfillPageCount  Int @default(3) // バックフィル時の一度の遡及ページ数
+  backfillProductLimit Int @default(9) // バックフィル時の最大処理商品数
+  requestIntervalMs  Int @default(5000) // スクレイピング時のリクエスト間隔(ms)
+  lastUpdatedBy   String?
+  updatedAt       DateTime @updatedAt
 }

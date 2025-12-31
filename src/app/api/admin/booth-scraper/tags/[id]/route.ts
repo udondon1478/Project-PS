@@ -4,7 +4,11 @@ import { prisma } from '@/lib/prisma';
 import { auth } from "@/auth";
 import { Role, Prisma } from "@prisma/client";
 
-// PATCH: タグの有効/無効切り替え
+// Validation constants (same as POST endpoint)
+const MAX_CATEGORY_LENGTH = 50;
+const CATEGORY_PATTERN = /^[\p{L}\p{N}\s_-]+$/u;
+
+// PATCH: タグの有効/無効切り替えとカテゴリ更新
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> } // Params is a Promise in Next.js 15+
@@ -16,15 +20,43 @@ export async function PATCH(
 
   try {
     const { id } = await params;
-    const { enabled } = await req.json();
+    const body = await req.json();
+    const { enabled, category } = body;
 
-    if (typeof enabled !== 'boolean') {
-      return NextResponse.json({ error: 'enabled must be a boolean' }, { status: 400 });
+    // Build update data dynamically
+    const updateData: { enabled?: boolean; category?: string | null } = {};
+    
+    if (typeof enabled === 'boolean') {
+      updateData.enabled = enabled;
+    }
+    
+    // Validate category if provided (same rules as POST)
+    if ('category' in body) {
+      if (category !== null && category !== undefined) {
+        if (typeof category !== 'string') {
+          return NextResponse.json({ error: 'Category must be a string or null' }, { status: 400 });
+        }
+        const trimmedCategory = category.trim();
+        if (trimmedCategory.length > MAX_CATEGORY_LENGTH) {
+          return NextResponse.json({ error: `Category must be ${MAX_CATEGORY_LENGTH} characters or less` }, { status: 400 });
+        }
+        // Only allow safe characters: alphanumeric, spaces, underscores, hyphens, and unicode letters
+        if (trimmedCategory && !CATEGORY_PATTERN.test(trimmedCategory)) {
+          return NextResponse.json({ error: 'Category contains invalid characters' }, { status: 400 });
+        }
+        updateData.category = trimmedCategory || null;
+      } else {
+        updateData.category = null;
+      }
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
     }
 
     const updatedTag = await prisma.scraperTargetTag.update({
       where: { id },
-      data: { enabled }
+      data: updateData
     });
 
     return NextResponse.json(updatedTag);

@@ -8,7 +8,7 @@ import { waitJitter } from './utils';
 export interface CrawlerOptions {
   maxPages?: number;
   startPage?: number;
-  onProductsFound?: (urls: string[], page: number) => Promise<void> | void;
+  onProductsFound?: (urls: string[], page: number) => Promise<boolean | void> | boolean | void;
 }
 
 export class ListingCrawler {
@@ -103,7 +103,11 @@ export class ListingCrawler {
       if (productUrls.length > 0) {
         console.log(`[Crawler] Page ${currentPage}: Found ${productUrls.length} products.`);
         if (options.onProductsFound) {
-          await options.onProductsFound(productUrls, currentPage);
+          const shouldContinue = await options.onProductsFound(productUrls, currentPage);
+          if (shouldContinue === false) {
+             console.log('[Crawler] Stop signal received from callback.');
+             break;
+          }
         }
       } else {
         console.log(`[Crawler] Page ${currentPage}: No products found.`);

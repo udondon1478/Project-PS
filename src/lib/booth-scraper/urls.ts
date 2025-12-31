@@ -1,27 +1,30 @@
 export const BOOTH_BASE_URL = 'https://booth.pm';
 
 export interface SearchParams {
-  query?: string;
+  query?: string; // Generic query string (might contain multiple tags)
+  tags?: string[]; // Explicit list of tags
   category?: string; // e.g. "3D models"
   adult?: boolean;
 }
 
 /**
  * Generates the search URL based on parameters.
- * 
- * If category is present: /ja/browse/{category}?q={query}
- * If no category: /ja/items?tags[]={query ?? 'VRChat'}
+ * Supports multiple tags (AND condition) and category browsing.
  */
 export function getSearchUrl(page: number = 1, params: SearchParams = {}): string {
   let url: URL;
-  const query = params.query || 'VRChat';
+  
+  // Consolidate tags: Use explicit tags or split query by whitespace, falling back to 'VRChat'
+  const trimmedQuery = params.query?.trim();
+  const tags = params.tags || (trimmedQuery ? trimmedQuery.split(/\s+/) : ['VRChat']);
 
   if (params.category) {
     url = new URL(`${BOOTH_BASE_URL}/ja/browse/${encodeURIComponent(params.category)}`);
-    url.searchParams.append('q', query);
+    // Append tags as tags[]
+    tags.forEach(t => url.searchParams.append('tags[]', t));
   } else {
     url = new URL(`${BOOTH_BASE_URL}/ja/items`);
-    url.searchParams.append('tags[]', query);
+    tags.forEach(t => url.searchParams.append('tags[]', t));
   }
 
   url.searchParams.append('sort', 'new');

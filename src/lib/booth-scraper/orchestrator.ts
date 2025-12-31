@@ -8,6 +8,7 @@ import { boothHttpClient } from './http-client';
 import { parseProductPage, parseProductJson, type ProductPageResult } from './product-parser';
 import { createProductFromScraper, ScrapedProductData } from './product-creator';
 import { waitJitter } from './utils';
+import crypto from 'crypto';
 
 
 /**
@@ -17,11 +18,28 @@ import { waitJitter } from './utils';
  */
 const BACKFILL_PRODUCT_LIMIT = Number(process.env.BACKFILL_PRODUCT_LIMIT) || 9;
 
+/**
+ * Delay in milliseconds between processing queue items.
+ * Can be configured via TASK_WAIT_MS environment variable.
+ * Default: 2000ms
+ */
+const TASK_WAIT_MS = Number(process.env.TASK_WAIT_MS) || 2000;
+
+/**
+ * Maximum number of items allowed in the target queue.
+ * Prevents memory issues from unbounded queue growth.
+ * Default: 100 items
+ */
+const MAX_QUEUE_SIZE = Number(process.env.MAX_QUEUE_SIZE) || 100;
+
 export type ScraperMode = 'NEW' | 'BACKFILL';
 
 export interface ScraperOptions {
   pageLimit?: number;
-  rateLimitOverride?: number; // interval in ms
+  pagesPerRun?: number; // BACKFILL: Number of pages to go back in one run
+  maxProducts?: number; // BACKFILL: Max products to process
+  requestInterval?: number; // Base interval between requests in ms
+  rateLimitOverride?: number; // Deprecated: alias for requestInterval
   /**
    * 既存の商品チェック（checkExistingProducts）が失敗した場合の動作を指定します。
    * 
@@ -65,10 +83,20 @@ export interface ScraperStatus {
     averageDelay: number;
   };
   logs: ScraperLog[];
+  // Added for queue visibility
+  queue: QueueItem[];
+  currentTarget: QueueItem | null;
 }
 
-
-
+export interface QueueItem {
+  id: string; // Internal Queue ID
+  mode: ScraperMode;
+  userId: string;
+  options: ScraperOptions;
+  // Metadata for display
+  targetName: string; // e.g. "VRChat" or "Global Scan"
+  addedAt: Date;
+}
 
 
 const STATUS_MAP = {
@@ -78,11 +106,37 @@ const STATUS_MAP = {
   stopping: 'FAILED',
 } as const;
 
+/**
+ * Default scraper status used when no active run exists.
+ */
+const DEFAULT_SCRAPER_STATUS: Omit<ScraperStatus, 'queue' | 'currentTarget'> = {
+  runId: '',
+  mode: 'NEW',
+  status: 'completed',
+  progress: {
+    pagesProcessed: 0,
+    productsFound: 0,
+    productsExisting: 0,
+    productsCreated: 0,
+    productsSkipped: 0,
+    productsFailed: 0,
+    lastProcessedPage: 0,
+  },
+  timings: { startTime: 0, averageDelay: 0 },
+  logs: [],
+};
+
 class BoothScraperOrchestrator {
   private static instance: BoothScraperOrchestrator;
+  
+  // Current Active Run State
   private currentStatus: ScraperStatus | null = null;
-  private queue: PQueue | null = null;
+  private queue: PQueue | null = null; // Internal crawler queue for ONE run
   private shouldStop = false;
+
+  // Global Queue State
+  private targetQueue: QueueItem[] = [];
+  private isProcessingQueue = false;
 
   private constructor() {}
 
@@ -94,11 +148,22 @@ class BoothScraperOrchestrator {
   }
 
   public getStatus(): ScraperStatus | null {
-    return this.currentStatus;
+    // Return current status enriched with queue info
+    const baseStatus = this.currentStatus ? { ...this.currentStatus } : null;
+    return {
+      ...(baseStatus || DEFAULT_SCRAPER_STATUS),
+      queue: [...this.targetQueue],
+      currentTarget: this.currentStatus?.currentTarget || null,
+    };
   }
 
-  public async stop() {
+  /**
+   * Skips the currently running item if any.
+   * Unlike stop(), this keeps the queue alive and proceeds to next item.
+   */
+  public async skipCurrent() {
     if (this.currentStatus && this.currentStatus.status === 'running') {
+      this.addLog('Skipping current task requested...');
       this.shouldStop = true;
       this.currentStatus.status = 'stopping';
       if (this.queue) {
@@ -108,103 +173,179 @@ class BoothScraperOrchestrator {
     }
   }
 
-  private options: ScraperOptions = {};
+  /**
+   * Legacy stop - Stops everything including queue processing?
+   * For backward compatibility, let's make it clear queue as well.
+   */
+  public async stopAll() {
+    this.targetQueue = []; // Clear pending
+    await this.skipCurrent(); // Stop current
+  }
 
+  public removeFromQueue(queueId: string) {
+    this.targetQueue = this.targetQueue.filter(item => item.id !== queueId);
+  }
+
+  /**
+   * Enqueues tasks. Returns number of tasks enqueued.
+   */
   public async start(mode: ScraperMode, userId: string, options: ScraperOptions = {}): Promise<string> {
-    if (this.currentStatus?.status === 'running') {
-      throw new Error('Scraper is already running');
-    }
-    
-    this.options = options;
+    const itemsToEnqueue: QueueItem[] = [];
 
+    // Expand "Global" run into individual tag tasks
+    if (options.searchParams?.useTargetTags) {
+       const dbTags = await prisma.scraperTargetTag.findMany({
+         where: { enabled: true }
+       });
+       
+       if (dbTags.length > 0) {
+         for (const tag of dbTags) {
+           // Clone options for this specific tag
+           const tagOptions: ScraperOptions = {
+             ...options,
+             searchParams: {
+               ...options.searchParams,
+               query: tag.tag,
+               category: tag.category || undefined,
+               useTargetTags: false // It's now a specific target
+             }
+           };
+
+           // Backfill specific offset
+           if (mode === 'BACKFILL') {
+             // We'll read the latest offset inside processQueue -> runWorkflow
+             // but we can pass tag metadata here if needed.
+             // Actually runWorkflow handles fetching the offset based on query match.
+           }
+
+           itemsToEnqueue.push({
+             id: crypto.randomUUID(),
+             mode,
+             userId,
+             options: tagOptions,
+             targetName: tag.tag,
+             addedAt: new Date()
+           });
+         }
+       }
+    } else {
+       // Single Manual Run
+       itemsToEnqueue.push({
+         id: crypto.randomUUID(),
+         mode,
+         userId,
+         options,
+         targetName: options.searchParams?.query || 'Manual Run',
+         addedAt: new Date()
+       });
+    }
+
+    // Check queue size limit before adding
+    if (this.targetQueue.length + itemsToEnqueue.length > MAX_QUEUE_SIZE) {
+      const available = MAX_QUEUE_SIZE - this.targetQueue.length;
+      if (available <= 0) {
+        console.warn(`[Orchestrator] Queue full (${MAX_QUEUE_SIZE} items). Rejecting new tasks.`);
+        throw new Error(`Queue is full. Maximum ${MAX_QUEUE_SIZE} items allowed.`);
+      }
+      console.warn(`[Orchestrator] Queue limit reached. Only adding ${available} of ${itemsToEnqueue.length} tasks.`);
+      itemsToEnqueue.splice(available);
+    }
+
+    this.targetQueue.push(...itemsToEnqueue);
+    console.log(`[Orchestrator] Enqueued ${itemsToEnqueue.length} tasks. Queue size: ${this.targetQueue.length}/${MAX_QUEUE_SIZE}`);
+    
+    // Trigger processing if not active
+    if (!this.isProcessingQueue) {
+      this.processQueue();
+    }
+
+    return itemsToEnqueue.length > 0 ? itemsToEnqueue[0].id : '';
+  }
+
+  private async processQueue() {
+    if (this.isProcessingQueue) return;
+    this.isProcessingQueue = true;
+
+    while (this.targetQueue.length > 0) {
+      const item = this.targetQueue.shift();
+      if (!item) break;
+
+      try {
+        console.log(`[Orchestrator] Starting task: ${item.targetName} (${item.mode})`);
+        await this.runItem(item);
+      } catch (e) {
+        console.error(`[Orchestrator] Error executing task ${item.targetName}:`, e);
+      }
+
+      // Configurable delay between tasks (default: 2000ms)
+      await new Promise(resolve => setTimeout(resolve, TASK_WAIT_MS));
+    }
+
+    this.isProcessingQueue = false;
+    console.log('[Orchestrator] Queue drained.');
+  }
+
+  private async runItem(item: QueueItem): Promise<void> {
+    // Reset state for new run
     this.shouldStop = false;
     
-    // Check for interrupted run to resume
-    const existingRun = await prisma.scraperRun.findFirst({
-      where: {
-        status: 'RUNNING',
-        metadata: {
-          path: ['mode'],
-          equals: mode,
-        },
-      },
-      orderBy: { startTime: 'desc' },
-    });
-
-    let runId: string;
-    let startTime: number;
-    let resumed = false;
-
-    if (existingRun) {
-      runId = existingRun.runId;
-      startTime = existingRun.startTime.getTime();
-      resumed = true;
-      // this.addLog waiting for currentStatus init
-    } else {
-      runId = `run_${Date.now()}`;
-      startTime = Date.now();
-    }
+    // Generate RunID for DB
+    const runId = `run_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+    const startTime = Date.now();
 
     // Initialize Status
     this.currentStatus = {
       runId,
-      mode,
+      mode: item.mode,
       status: 'running',
       progress: {
-        pagesProcessed: existingRun ? existingRun.processedPages : 0,
-        productsFound: existingRun ? existingRun.productsFound : 0,
+        pagesProcessed: 0,
+        productsFound: 0,
         productsExisting: 0,
-        productsCreated: existingRun ? existingRun.productsCreated : 0,
+        productsCreated: 0,
         productsSkipped: 0,
-        productsFailed: existingRun ? (existingRun.failedUrls?.length || 0) : 0,
-        lastProcessedPage: existingRun?.lastProcessedPage || 0,
+        productsFailed: 0,
+        lastProcessedPage: 0,
       },
       timings: {
         startTime,
         averageDelay: 0,
       },
       logs: [],
+      queue: this.targetQueue, // Reference
+      currentTarget: item,
     };
 
-    if (resumed) {
-      this.addLog(`Resuming interrupted run: ${runId}`);
-    }
-
-    if (!resumed) {
-      // Create new DB Record only if not resuming
-      await prisma.scraperRun.create({
-        data: {
-          runId,
-          status: 'RUNNING',
-          startTime: new Date(startTime),
-          metadata: { mode, options } as unknown as Prisma.JsonObject,
-        },
-      });
-    }
-
-    this.runWorkflow(mode, userId, options, resumed).catch(async (err) => {
-      console.error('Orchestrator Error:', err);
-      if (this.currentStatus) {
-        this.currentStatus.status = 'failed';
-        this.currentStatus.logs.push({
-          id: crypto.randomUUID(),
-          timestamp: new Date().toISOString(),
-          message: `Error: ${err instanceof Error ? err.message : String(err)}`
-        });
-        await this.finalizeRun();
-      }
+    // Create DB Record
+    await prisma.scraperRun.create({
+      data: {
+        runId,
+        status: 'RUNNING',
+        startTime: new Date(startTime),
+        metadata: { mode: item.mode, target: item.targetName } as unknown as Prisma.JsonObject,
+      },
     });
 
-    return runId;
+    this.addLog(`Starting task for: ${item.targetName} (Mode: ${item.mode})`);
+
+    try {
+      await this.runWorkflow(item.mode, item.userId, item.options, item.targetName);
+    } catch (err) {
+      console.error('Workflow Error:', err);
+      this.addLog(`Error: ${err instanceof Error ? err.message : String(err)}`);
+      if (this.currentStatus) this.currentStatus.status = 'failed';
+    } finally {
+      await this.finalizeRun();
+      this.currentStatus = null; // Clear status after run
+    }
   }
 
-  private async runWorkflow(mode: ScraperMode, userId: string, options: ScraperOptions, resumed: boolean = false) {
+  private async runWorkflow(mode: ScraperMode, userId: string, options: ScraperOptions, targetName: string) {
     const isBackfill = mode === 'BACKFILL';
     
-    const defaultBaseInterval = 4000; // 4 seconds (human-like)
-    const targetInterval = options.rateLimitOverride || defaultBaseInterval;
+    const defaultBaseInterval = 5000;
+    const targetInterval = options.requestInterval ?? options.rateLimitOverride ?? defaultBaseInterval;
     
-    // PQueue interval is set to a safe minimum (1s) to allow manual control via waitJitter
     this.queue = new PQueue({
       concurrency: 1,
       interval: 1000,
@@ -212,209 +353,179 @@ class BoothScraperOrchestrator {
     });
 
     let startPage = 1;
-    let maxPages = isBackfill ? 10 : 3;
-    
-    if (options.pageLimit) {
-      maxPages = options.pageLimit;
-    }
+    let maxPages = 3;
+    const limitMaxProducts = options.maxProducts ?? BACKFILL_PRODUCT_LIMIT;
 
-    if (resumed && this.currentStatus?.progress.lastProcessedPage) {
-        startPage = this.currentStatus.progress.lastProcessedPage + 1;
-        this.addLog(`Run resumed from page ${startPage} (RunID: ${this.currentStatus.runId})`);
-    } else if (isBackfill) {
-      const lastBackfill = await prisma.scraperRun.findFirst({
-        where: {
-          status: 'COMPLETED',
-          metadata: {
-            path: ['mode'],
-            equals: 'BACKFILL',
-          },
-        },
-        orderBy: { endTime: 'desc' },
-      });
+    // Determine Tag ID if exists to fetch resume point
+    let tagId: string | undefined;
+    if (isBackfill) {
+        // Try to find the tag in DB to resume (include category for composite key)
+        const tag = await prisma.scraperTargetTag.findFirst({
+            where: {
+              tag: options.searchParams?.query,
+              category: options.searchParams?.category,
+            }
+        });
+        
+        if (tag) {
+            tagId = tag.id;
+            startPage = (tag.lastBackfillPage || 0) + 1;
+        } else {
+             // Fallback to global resume if needed, or start from 1
+             startPage = 1; 
+        }
 
-      if (lastBackfill && lastBackfill.lastProcessedPage) {
-        startPage = lastBackfill.lastProcessedPage + 1;
-        this.addLog(`Resuming backfill from page ${startPage} (Last run: ${lastBackfill.runId})`);
-      } else {
-        this.addLog(`No previous backfill found, starting from page 1`);
-        startPage = 1;
-      }
-    }
-
-    // Determine target queries
-    let targets: Array<{ query: string, category?: string }> = [];
-
-    if (options.searchParams?.useTargetTags) {
-       const dbTags = await prisma.scraperTargetTag.findMany({
-         where: { enabled: true }
-       });
-       if (dbTags.length === 0) {
-         throw new Error('Target Tag mode enabled but no enabled tags found in database.');
-       } else {
-         this.addLog(`Target Tag mode: Found ${dbTags.length} tags.`);
-         targets = dbTags.map(t => ({ query: t.tag }));
-       }
+        const pagesPerRun = options.pagesPerRun ?? 3; 
+        maxPages = startPage + pagesPerRun - 1;
+        
+        if (options.pageLimit) {
+             maxPages = startPage + options.pageLimit - 1;
+        }
     } else {
-       // Single target mode
-       targets.push({ 
-         query: options.searchParams?.query || 'VRChat',
-         category: options.searchParams?.category 
-       });
+         // NEW Mode
+         if (options.pageLimit) {
+             maxPages = options.pageLimit;
+         }
     }
 
-    this.addLog(`Starting crawl: Mode=${mode}, StartPage=${startPage}, MaxPages=${maxPages}, BaseInterval=${targetInterval}ms, Targets=${targets.length}`);
+    this.addLog(`Target: ${targetName}, Pages: ${startPage}-${maxPages}`);
 
-    for (const target of targets) {
-        if (this.shouldStop) break;
+    const crawler = new ListingCrawler({
+      queue: this.queue!,
+      searchParams: options.searchParams,
+    });
 
-        const currentParams = {
-          ...options.searchParams,
-          query: target.query,
-          category: target.category || options.searchParams?.category, // Allow category override per target if needed, but fall back to global
-        };
-
-        this.addLog(`--> Scraping target: "${currentParams.query}" (Category: ${currentParams.category || 'Any'})`);
-
-        const crawler = new ListingCrawler({
-          queue: this.queue!,
-          searchParams: currentParams,
-        });
-
-        await crawler.run({
-          startPage,
-          maxPages,
-          onProductsFound: async (urls, page) => {
-            if (this.shouldStop) return;
-            await this.processBatch(urls, page, userId, isBackfill, targetInterval);
-            await this.updateDbProgress();
-          }
-        });
-    }
-
-    if (this.currentStatus?.status !== 'failed') {
-      this.currentStatus!.status = 'completed';
-      if (this.currentStatus!.timings.endTime === undefined) {
-          this.currentStatus!.timings.endTime = Date.now();
+    await crawler.run({
+      startPage: startPage,
+      maxPages: maxPages - startPage + 1,
+      onProductsFound: async (urls, page) => {
+        const continued = await this.processBatch(urls, page, userId, isBackfill, targetInterval);
+        await this.updateDbProgress();
+        
+        // Only update progress if we completed the page (didn't stop mid-way)
+        if (continued && isBackfill && tagId) {
+            await this.updateTagProgress(tagId, page);
+        }
+        
+        await this.checkRemoteStopSignal();
+        
+        return continued; // Signal to crawler whether to continue
       }
-      await this.finalizeRun();
+    });
+
+    if (this.currentStatus?.status !== 'failed' && this.currentStatus?.status !== 'stopping') {
+      this.currentStatus!.status = 'completed';
     }
   }
 
-  private async processBatch(urls: string[], page: number, userId: string, isBackfill: boolean, baseInterval: number) {
-    if (!this.currentStatus) return;
+  // --- Helpers same as before ---
+
+  private async checkRemoteStopSignal() {
+    if (!this.currentStatus || this.shouldStop) return;
+
+    try {
+      const run = await prisma.scraperRun.findUnique({
+        where: { runId: this.currentStatus.runId },
+        select: { status: true }
+      });
+
+      if ((run?.status as string) === 'STOPPING') {
+        this.addLog('Received remote stop signal.');
+        this.shouldStop = true; // Use local flag
+        this.currentStatus.status = 'stopping';
+        if (this.queue) {
+            this.queue.clear();
+        }
+      }
+    } catch (e) {
+      console.error('Failed to check remote stop signal:', e);
+    }
+  }
+
+  private async processBatch(urls: string[], page: number, userId: string, isBackfill: boolean, baseInterval: number): Promise<boolean> {
+    if (!this.currentStatus) return false;
     
     this.currentStatus.progress.lastProcessedPage = page;
     this.currentStatus.progress.pagesProcessed++;
-    this.addLog(`Processing page ${page}: ${urls.length} products found`);
+    this.addLog(`Page ${page}: ${urls.length} products found`);
     this.currentStatus.progress.productsFound += urls.length;
 
-    // Batch check existence
     let existingSet = new Set<string>();
     try {
         existingSet = await checkExistingProducts(urls);
     } catch (e) {
         const errorMsg = e instanceof Error ? e.message : String(e);
-        console.error('Failed to check existence:', errorMsg);
-        
-        const failureAction = this.options.onExistenceCheckFailure ?? 'continue';
-        
+        const failureAction = this.currentStatus?.currentTarget?.options.onExistenceCheckFailure ?? 'continue';
         if (failureAction === 'stop') {
-            // 整合性優先: バッチ処理を停止
-            this.addLog(`Existence check failed, stopping batch as configured: ${errorMsg}`);
+            this.addLog(`Existence check failed, stopping: ${errorMsg}`);
             this.currentStatus.progress.productsFailed += urls.length;
-            return; // このバッチをスキップ
-        } else {
-            // 継続モード（デフォルト）: 空のセットで続行
-            // 注意: すべての商品が新規として扱われ、DBのユニーク制約により
-            // 既存商品の重複登録試行は失敗しますが、処理は継続されます
-            this.addLog(`Existence check failed, continuing with empty set (may cause duplicate insert attempts): ${errorMsg}`);
+            return false;
         }
+        this.addLog(`Existence check failed, continuing: ${errorMsg}`);
     }
 
-    // Filter out existing
-    // For backfill, existing means "already scanned".
-    // For new scan, existing means "already scanned".
     const newUrls = urls.filter(u => !existingSet.has(u));
-    this.currentStatus.progress.productsExisting += (urls.length - newUrls.length);
+    const skippedCount = urls.length - newUrls.length;
+    this.currentStatus.progress.productsExisting += skippedCount;
 
-    // Prompt: "process 9 products only" in backfill mode.
-    // Assuming this means "Limit the NUMBER OF PRODUCTS SCRAPED per run".
-    // If we skip existing, we are not "processing" them in the scraping sense.
-    // So we count creates + fails?
+    if (skippedCount > 0) {
+      this.addLog(`Skipped ${skippedCount} existing products.`);
+    }
     
     for (const url of newUrls) {
-       if (this.shouldStop) return;
+       if (this.shouldStop) return false;
 
        if (isBackfill) {
          const processedCount = this.currentStatus.progress.productsCreated + this.currentStatus.progress.productsSkipped + this.currentStatus.progress.productsFailed;
-         // Why 9? 9 items is very specific. 
-         // "process 9 products only" (9商品のみ処理).
-         if (processedCount >= BACKFILL_PRODUCT_LIMIT) {
-           this.addLog(`Backfill limit of ${BACKFILL_PRODUCT_LIMIT} products reached. Stopping.`);
+         // Note: We use the limit passed via options or constant
+         const limit = this.currentStatus.currentTarget?.options.maxProducts ?? BACKFILL_PRODUCT_LIMIT;
+         
+         if (processedCount >= limit) {
+           this.addLog(`Limit of ${limit} reached.`);
            this.shouldStop = true;
-           return;
+           return false;
          }
        }
 
-       // Add to queue
        await this.queue!.add(async () => {
          try {
-            await waitJitter(baseInterval, 2000); // 4s ± 2s (if base is 4000)
+            await waitJitter(baseInterval, 2000);
 
-           // Try fetching JSON first (more reliable for tags)
            let data: ProductPageResult | null = null;
            try {
              const jsonRes = await boothHttpClient.fetch(url + '.json');
              if (jsonRes.ok) {
                 const jsonData = await jsonRes.json();
                 data = parseProductJson(jsonData, url);
-                this.addLog(`Fetched JSON for ${url}`);
              }
-           } catch (e) {
-             // Ignore JSON fetch errors, fallback to HTML
-           }
+           } catch (e) {}
 
            if (!data) {
                 const res = await boothHttpClient.fetch(url);
                 if (!res.ok) {
                     this.currentStatus!.progress.productsFailed++;
-                    this.addLog(`Failed to fetch ${url}: ${res.status}`);
                     return;
                 }
                 const html = await res.text();
-                // Import here is consistent with file scope but we are inside async. 
-                // Using existing import at top level is better.
                 data = parseProductPage(html, url);
            }
            
-           
            if (data) {
-             const productData: ScrapedProductData = {
-                ...data,
-                boothJpUrl: url
-             };
+             const productData: ScrapedProductData = { ...data, boothJpUrl: url };
              await createProductFromScraper(productData, userId);
              this.currentStatus!.progress.productsCreated++;
            } else {
              this.currentStatus!.progress.productsFailed++;
-             this.addLog(`Failed to parse ${url}`);
            }
 
           } catch (error: unknown) {
-            let msg: string;
-            if (error instanceof Error) {
-              msg = error.message;
-            } else if (typeof error === 'object' && error !== null && 'message' in error) {
-              msg = String((error as any).message);
-            } else {
-              msg = String(error);
-            }
             this.currentStatus!.progress.productsFailed++;
-            this.addLog(`Error processing ${url}: ${msg}`);
+            // Simplify log
           }
        });
     }
+    
+    return true;
   }
 
   private addLog(msg: string) {
@@ -426,6 +537,14 @@ class BoothScraperOrchestrator {
         message: msg
       });
       if (this.currentStatus.logs.length > 100) this.currentStatus.logs.shift();
+
+      prisma.scraperLog.create({
+        data: {
+          runId: this.currentStatus.runId,
+          message: msg,
+          createdAt: new Date()
+        }
+      }).catch(() => {});
     }
     console.log(`[Orchestrator] [${ts}] ${msg}`);
   }
@@ -442,14 +561,24 @@ class BoothScraperOrchestrator {
           lastProcessedPage: this.currentStatus.progress.lastProcessedPage ?? undefined,
         }
       });
-    } catch (e) {
-      console.error('Failed to update ScraperRun:', e);
+    } catch (err) {
+      console.error('Failed to update DB progress in orchestrator', err);
+    }
+  }
+
+  private async updateTagProgress(tagId: string, page: number) {
+    try {
+        await prisma.scraperTargetTag.update({
+            where: { id: tagId },
+            data: { lastBackfillPage: page }
+        });
+    } catch (err) {
+      console.error('Failed to update tag progress in orchestrator', err);
     }
   }
 
   private async finalizeRun() {
     if (!this.currentStatus) return;
-    
     try {
         await prisma.scraperRun.update({
         where: { runId: this.currentStatus.runId },
@@ -461,11 +590,10 @@ class BoothScraperOrchestrator {
             lastProcessedPage: this.currentStatus.progress.lastProcessedPage ?? undefined,
         }
         });
-    } catch (e) {
-        console.error('Failed to finalize ScraperRun:', e);
+    } catch (err) {
+      console.error('Failed to finalize run in orchestrator', err);
     }
-    
-    this.addLog(`Run finalized. Status: ${this.currentStatus.status}`);
+    this.addLog(`Run finalized.`);
   }
 }
 
