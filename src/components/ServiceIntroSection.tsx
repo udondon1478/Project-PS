@@ -34,7 +34,7 @@ export default function ServiceIntroSection() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    if (status === "unauthenticated") {
+    if (status !== "authenticated") {
       if (href === "/register-item") {
         e.preventDefault();
         setActiveDialog('register');
@@ -79,7 +79,7 @@ export default function ServiceIntroSection() {
             <Link 
               key={feature.id} 
               href={feature.href}
-              {...(status === "unauthenticated" && (feature.href === "/register-item" || feature.href === "/profile") 
+              {...(status !== "authenticated" && (feature.href === "/register-item" || feature.href === "/profile") 
                 ? { onClick: (e) => handleNavigation(e, feature.href) }
                 : {}
               )}
