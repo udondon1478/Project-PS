@@ -163,7 +163,7 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
       {q && <p>Search query: {q}</p>}
       {category && <p>Category: {category}</p>}
 
-      <ProductGrid products={products} showLikeButton={true} showOwnButton={true} />
+      <ProductGrid products={products} showLikeButton={true} showOwnButton={true} maxTags={7} />
 
       {totalPages > 1 && (
         <div className="mt-8 flex justify-center">
