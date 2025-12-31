@@ -33,7 +33,14 @@ export default function ServiceIntroSection() {
   const [activeDialog, setActiveDialog] = useState<'register' | 'login' | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+  const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, href: string, featureId?: string) => {
+    // 豊富な検索条件クリック時はヘッダーを強調表示
+    if (featureId === 'advanced-search') {
+      e.preventDefault();
+      window.dispatchEvent(new CustomEvent('trigger-search-spotlight'));
+      return;
+    }
+
     if (status !== "authenticated") {
       if (href === "/register-item") {
         e.preventDefault();
@@ -79,10 +86,7 @@ export default function ServiceIntroSection() {
             <Link 
               key={feature.id} 
               href={feature.href}
-              {...(status !== "authenticated" && (feature.href === "/register-item" || feature.href === "/profile") 
-                ? { onClick: (e) => handleNavigation(e, feature.href) }
-                : {}
-              )}
+              onClick={(e) => handleNavigation(e, feature.href, feature.id)}
               className="block h-full group"
             >
               <Card className="text-center h-full transition-colors hover:bg-muted/50">
