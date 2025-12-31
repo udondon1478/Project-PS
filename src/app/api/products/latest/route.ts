@@ -6,8 +6,11 @@ import { auth } from '@/auth';
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '24', 10);
+    const parsedPage = parseInt(searchParams.get('page') || '1', 10);
+    const parsedLimit = parseInt(searchParams.get('limit') || '24', 10);
+
+    const page = Number.isNaN(parsedPage) || parsedPage < 1 ? 1 : parsedPage;
+    const limit = Number.isNaN(parsedLimit) || parsedLimit < 1 ? 24 : Math.min(parsedLimit, 100);
     const skip = (page - 1) * limit;
 
     const session = await auth();
