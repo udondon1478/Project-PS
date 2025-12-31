@@ -10,9 +10,10 @@ interface ProductCardProps {
   product: Product;
   showLikeButton?: boolean;
   showOwnButton?: boolean;
+  maxTags?: number;
 }
 
-const ProductCard = ({ product, showLikeButton = false, showOwnButton = false }: ProductCardProps) => {
+const ProductCard = ({ product, showLikeButton = false, showOwnButton = false, maxTags }: ProductCardProps) => {
   const [isLiked, setIsLiked] = useState(product.isLiked || false);
   const [isOwned, setIsOwned] = useState(product.isOwned || false);
   const [isProcessingLike, setIsProcessingLike] = useState(false);
@@ -90,6 +91,9 @@ const ProductCard = ({ product, showLikeButton = false, showOwnButton = false }:
     }
   };
 
+  const isValidMaxTags = typeof maxTags === 'number' && Number.isFinite(maxTags) && maxTags >= 0;
+  const displayedTags = isValidMaxTags ? product.tags.slice(0, maxTags) : product.tags;
+
   return (
     <div className="border rounded-lg overflow-hidden shadow-lg" data-testid="product-card">
       <a href={`/products/${product.id}`} className="block relative w-full h-89">
@@ -164,7 +168,7 @@ const ProductCard = ({ product, showLikeButton = false, showOwnButton = false }:
           </a>
         )}
         <div className="flex flex-wrap gap-1 mb-2">
-          {product.tags.map((tag, index) => (
+          {displayedTags.map((tag, index) => (
             <span key={index} className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
               {tag}
             </span>
