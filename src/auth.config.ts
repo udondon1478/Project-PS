@@ -33,7 +33,6 @@ export const authConfig = {
                 ? `__Secure-authjs.callback-url`
                 : `authjs.callback-url`,
             options: {
-                httpOnly: true,
                 sameSite: 'lax',
                 path: '/',
                 secure: process.env.NODE_ENV === 'production',
