@@ -3,6 +3,11 @@ import Google from "next-auth/providers/google"
 import Discord from "next-auth/providers/discord"
 import { Role, UserStatus } from "@prisma/client"
 
+// Cookie secure settings: use __Secure-/__Host- prefix only when explicitly enabled
+// In production, USE_SECURE_COOKIES defaults to true; in tests (.env.test), set to false
+const useSecureCookies = process.env.USE_SECURE_COOKIES === 'true' || 
+    (process.env.NODE_ENV === 'production' && process.env.USE_SECURE_COOKIES !== 'false');
+
 export const authConfig = {
     providers: [
         Google({
@@ -18,35 +23,35 @@ export const authConfig = {
     session: { strategy: "jwt" },
     cookies: {
         sessionToken: {
-            name: process.env.NODE_ENV === 'production'
+            name: useSecureCookies
                 ? `__Secure-authjs.session-token`
                 : `authjs.session-token`,
             options: {
                 httpOnly: true,
                 sameSite: 'lax',
                 path: '/',
-                secure: process.env.NODE_ENV === 'production',
+                secure: useSecureCookies,
             },
         },
         callbackUrl: {
-            name: process.env.NODE_ENV === 'production'
+            name: useSecureCookies
                 ? `__Secure-authjs.callback-url`
                 : `authjs.callback-url`,
             options: {
                 sameSite: 'lax',
                 path: '/',
-                secure: process.env.NODE_ENV === 'production',
+                secure: useSecureCookies,
             },
         },
         csrfToken: {
-            name: process.env.NODE_ENV === 'production'
+            name: useSecureCookies
                 ? `__Host-authjs.csrf-token`
                 : `authjs.csrf-token`,
             options: {
                 httpOnly: true,
                 sameSite: 'lax',
                 path: '/',
-                secure: process.env.NODE_ENV === 'production',
+                secure: useSecureCookies,
             },
         },
     },
