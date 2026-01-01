@@ -18,7 +18,9 @@ export const authConfig = {
     session: { strategy: "jwt" },
     cookies: {
         sessionToken: {
-            name: `__Secure-authjs.session-token`,
+            name: process.env.NODE_ENV === 'production'
+                ? `__Secure-authjs.session-token`
+                : `authjs.session-token`,
             options: {
                 httpOnly: true,
                 sameSite: 'lax',
@@ -27,7 +29,9 @@ export const authConfig = {
             },
         },
         callbackUrl: {
-            name: `__Secure-authjs.callback-url`,
+            name: process.env.NODE_ENV === 'production'
+                ? `__Secure-authjs.callback-url`
+                : `authjs.callback-url`,
             options: {
                 httpOnly: true,
                 sameSite: 'lax',
@@ -36,7 +40,9 @@ export const authConfig = {
             },
         },
         csrfToken: {
-            name: `__Host-authjs.csrf-token`,
+            name: process.env.NODE_ENV === 'production'
+                ? `__Host-authjs.csrf-token`
+                : `authjs.csrf-token`,
             options: {
                 httpOnly: true,
                 sameSite: 'lax',
