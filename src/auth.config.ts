@@ -18,29 +18,30 @@ export const authConfig = {
     session: { strategy: "jwt" },
     cookies: {
         sessionToken: {
-            name: `__Secure-next-auth.session-token`,
+            name: `__Secure-authjs.session-token`,
             options: {
                 httpOnly: true,
                 sameSite: 'lax',
                 path: '/',
-                secure: true,
+                secure: process.env.NODE_ENV === 'production',
             },
         },
         callbackUrl: {
-            name: `__Secure-next-auth.callback-url`,
-            options: {
-                sameSite: 'lax',
-                path: '/',
-                secure: true,
-            },
-        },
-        csrfToken: {
-            name: `__Host-next-auth.csrf-token`,
+            name: `__Secure-authjs.callback-url`,
             options: {
                 httpOnly: true,
                 sameSite: 'lax',
                 path: '/',
-                secure: true,
+                secure: process.env.NODE_ENV === 'production',
+            },
+        },
+        csrfToken: {
+            name: `__Host-authjs.csrf-token`,
+            options: {
+                httpOnly: true,
+                sameSite: 'lax',
+                path: '/',
+                secure: process.env.NODE_ENV === 'production',
             },
         },
     },
