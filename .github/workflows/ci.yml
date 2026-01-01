@@ -68,6 +68,7 @@ jobs:
           GOOGLE_CLIENT_SECRET: "dummy_client_secret"
           DISCORD_CLIENT_ID: "dummy_discord_id"
           DISCORD_CLIENT_SECRET: "dummy_discord_secret"
+          USE_SECURE_COOKIES: "false"
         run: npm run build
 
       # 4. E2Eテストの実行
@@ -82,6 +83,7 @@ jobs:
           DISCORD_CLIENT_ID: "dummy_discord_id"
           DISCORD_CLIENT_SECRET: "dummy_discord_secret"
           NEXT_PUBLIC_BASE_URL: "http://localhost:3000"
+          USE_SECURE_COOKIES: "false"
           CI: true
         run: npx playwright test
 
