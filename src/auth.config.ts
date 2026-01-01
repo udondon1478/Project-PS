@@ -54,6 +54,42 @@ export const authConfig = {
                 secure: useSecureCookies,
             },
         },
+        // OAuth state/PKCE cookies - required for Safari ITP compatibility
+        state: {
+            name: useSecureCookies
+                ? `__Secure-authjs.state`
+                : `authjs.state`,
+            options: {
+                httpOnly: true,
+                sameSite: 'lax',
+                path: '/',
+                secure: useSecureCookies,
+                maxAge: 900, // 15 minutes
+            },
+        },
+        nonce: {
+            name: useSecureCookies
+                ? `__Secure-authjs.nonce`
+                : `authjs.nonce`,
+            options: {
+                httpOnly: true,
+                sameSite: 'lax',
+                path: '/',
+                secure: useSecureCookies,
+            },
+        },
+        pkceCodeVerifier: {
+            name: useSecureCookies
+                ? `__Secure-authjs.pkce.code_verifier`
+                : `authjs.pkce.code_verifier`,
+            options: {
+                httpOnly: true,
+                sameSite: 'lax',
+                path: '/',
+                secure: useSecureCookies,
+                maxAge: 900, // 15 minutes
+            },
+        },
     },
     callbacks: {
         async jwt({ token, user, trigger, session }) {
