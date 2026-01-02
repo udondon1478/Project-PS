@@ -4,6 +4,12 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { SortOption, SORT_VALUES, isSortOption } from '@/constants/sort';
 
+// タグサジェストの型定義
+export interface TagSuggestion {
+  name: string;
+  displayName: string | null;
+}
+
 // Helper to build search query parameters
 const buildSearchQueryParams = ({
   selectedTags,
@@ -70,7 +76,7 @@ export const useProductSearch = ({
   const [selectedNegativeTags, setSelectedNegativeTags] = useState<string[]>(initialSelectedNegativeTags);
 
   const searchParams = useSearchParams();
-  const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
+  const [tagSuggestions, setTagSuggestions] = useState<TagSuggestion[]>([]);
 
   const [isSuggestionsVisible, setIsSuggestionsVisible] = useState(false);
   const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
@@ -233,12 +239,15 @@ export const useProductSearch = ({
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         const filteredSuggestions = data
-          .map((tag: { name: string }) => tag.name)
-          .filter((tagName: string) => !selectedTags.includes(tagName) && !selectedNegativeTags.includes(tagName));
-        
+          .map((tag: { name: string; displayName: string | null }) => ({
+            name: tag.name,
+            displayName: tag.displayName
+          }))
+          .filter((tag: TagSuggestion) => !selectedTags.includes(tag.name) && !selectedNegativeTags.includes(tag.name));
+
         // セーフサーチ有効時はR-18をサジェストから除外
-        const finalSuggestions = isSafeSearchEnabled 
-          ? filteredSuggestions.filter((tag: string) => tag !== 'R-18')
+        const finalSuggestions = isSafeSearchEnabled
+          ? filteredSuggestions.filter((tag: TagSuggestion) => tag.name !== 'R-18')
           : filteredSuggestions;
 
         setTagSuggestions(finalSuggestions);
