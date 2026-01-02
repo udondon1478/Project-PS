@@ -129,7 +129,7 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
           role="combobox"
           aria-controls="tag-suggestions-list"
           aria-expanded={isSuggestionsVisible && tagSuggestions.length > 0}
-          aria-activedescendant={activeIndex >= 0 ? `tag-suggestion-${tagSuggestions[activeIndex]}` : undefined}
+          aria-activedescendant={activeIndex >= 0 ? `tag-suggestion-${tagSuggestions[activeIndex].name}` : undefined}
         />
       </div>
       {isSuggestionsVisible && tagSuggestions.length > 0 && (

@@ -382,7 +382,7 @@ export const useProductSearch = ({
       if (tagName === '') return;
 
       if (event.key === 'Enter' && isSuggestionsVisible && tagSuggestions.length > 0) {
-        const tagToAdd = isNegative ? `-${tagSuggestions[0]}` : tagSuggestions[0];
+        const tagToAdd = isNegative ? `-${tagSuggestions[0].name}` : tagSuggestions[0].name;
         handleAddTag(tagToAdd);
       } else {
         handleAddTag(trimmedQuery);
