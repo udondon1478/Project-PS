@@ -21,10 +21,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   ];
 
   const isActive = (href: string, exact?: boolean) => {
+    if (!pathname) return false;
     if (exact) {
       return pathname === href;
     }
-    return pathname?.startsWith(href);
+    // Prevent false matches for similar routes (e.g., /admin/reports vs /admin/reports-archive)
+    // Only match if pathname is exactly href or if pathname starts with href followed by '/'
+    return pathname === href || pathname.startsWith(href.endsWith('/') ? href : href + '/');
   };
 
   return (
