@@ -238,7 +238,20 @@ export const useProductSearch = ({
         const response = await fetch(`/api/tags/search?query=${encodeURIComponent(actualQuery)}`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
+        if (!Array.isArray(data)) {
+          console.warn("API response is not an array");
+          setTagSuggestions([]);
+          setIsSuggestionsVisible(false);
+          return;
+        }
+
         const filteredSuggestions = data
+          .filter((item: any) => 
+            item && 
+            typeof item === 'object' && 
+            typeof item.name === 'string' && 
+            (item.displayName === null || typeof item.displayName === 'string')
+          )
           .map((tag: { name: string; displayName: string | null }) => ({
             name: tag.name,
             displayName: tag.displayName
