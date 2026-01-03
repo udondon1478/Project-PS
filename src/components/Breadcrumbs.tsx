@@ -68,6 +68,12 @@ class LRUCache {
 
 const dynamicSegmentCache = new LRUCache(100);
 
+// Product型定義
+type Product = {
+  name?: string | null;
+  [key: string]: unknown;
+};
+
 // 動的セグメントの表示名を解決する関数
 async function resolveDynamicSegment(
   segment: string,
@@ -126,8 +132,8 @@ async function resolveDynamicSegment(
       clearTimeout(timeoutId);
 
       if (response.ok) {
-        const product = await response.json();
-        const displayName = product.name || decodeURIComponent(segment);
+        const product = await response.json() as Product;
+        const displayName = product?.name || decodeURIComponent(segment);
         dynamicSegmentCache.set(cacheKey, displayName);
         return displayName;
       }
