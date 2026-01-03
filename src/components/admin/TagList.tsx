@@ -172,18 +172,22 @@ const TagList = ({ onEditClick }: TagListProps) => { // propsとしてonEditClic
             <TableRow key={tag.id}>
               <TableCell className="font-medium">{tag.displayName || tag.name}</TableCell>
               <TableCell>{tag.type}</TableCell>
-              <TableCell>{tag.tagCategory?.name || '-'}</TableCell> {/* カテゴリ名を表示 */}
-              <TableCell style={{ color: tag.tagCategory?.color || '#CCCCCC' }}>{tag.tagCategory?.color || '-'}</TableCell> {/* カテゴリの色を表示 */}
+              {/* カテゴリ名を表示 */}
+              <TableCell>{tag.tagCategory?.name || '-'}</TableCell>
+              {/* カテゴリの色を表示 */}
+              <TableCell style={{ color: tag.tagCategory?.color || '#CCCCCC' }}>{tag.tagCategory?.color || '-'}</TableCell>
               <TableCell>{tag.language}</TableCell>
               <TableCell>{tag.isAlias ? 'はい' : 'いいえ'}</TableCell>
               <TableCell>{tag.canonicalId || '-'}</TableCell>
               <TableCell>{tag.description || '-'}</TableCell>
               <TableCell>{tag.count}</TableCell>
-              <TableCell className="flex space-x-2"> {/* ボタンを横並びにするためにflexを追加 */}
-                <Button variant="outline" size="sm" onClick={() => onEditClick(tag)}> {/* 編集ボタン */}
+              <TableCell>
+                <div className="flex space-x-2">
+                  <Button variant="outline" size="sm" onClick={() => onEditClick(tag)}>
                     <PencilIcon className="h-4 w-4" />
-                </Button>
-                <Button variant="destructive" size="sm" onClick={() => handleDelete(tag.id)}>削除</Button>
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={() => handleDelete(tag.id)}>削除</Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}
