@@ -64,7 +64,11 @@ class LRUCache {
 const dynamicSegmentCache = new LRUCache(100);
 
 // 動的セグメントの表示名を解決する関数
-async function resolveDynamicSegment(segment: string, previousSegment?: string): Promise<string> {
+async function resolveDynamicSegment(
+  segment: string,
+  previousSegment?: string,
+  signal?: AbortSignal
+): Promise<string> {
   // キャッシュをチェック
   const cacheKey = `${previousSegment || ''}:${segment}`;
   const cached = dynamicSegmentCache.get(cacheKey);
@@ -74,8 +78,22 @@ async function resolveDynamicSegment(segment: string, previousSegment?: string):
 
   // 前のセグメントに基づいてAPIエンドポイントを決定
   if (previousSegment === 'products') {
+    // タイムアウト用のAbortController（5秒）
+    const timeoutController = new AbortController();
+    const timeoutId = setTimeout(() => timeoutController.abort(), 5000);
+
     try {
-      const response = await fetch(`/api/products/${segment}`);
+      // 外部シグナルとタイムアウトシグナルを結合
+      const combinedSignal = signal && 'any' in AbortSignal
+        ? (AbortSignal as any).any([signal, timeoutController.signal])
+        : signal || timeoutController.signal;
+
+      const response = await fetch(`/api/products/${segment}`, {
+        signal: combinedSignal,
+      });
+
+      clearTimeout(timeoutId);
+
       if (response.ok) {
         const product = await response.json();
         const displayName = product.name || decodeURIComponent(segment);
@@ -83,7 +101,16 @@ async function resolveDynamicSegment(segment: string, previousSegment?: string):
         return displayName;
       }
     } catch (error) {
-      // フォールバック: デコードされたセグメントを返す
+      clearTimeout(timeoutId);
+
+      // AbortErrorは静かに処理（キャンセルまたはタイムアウト）
+      if (error instanceof Error && error.name === 'AbortError') {
+        // キャンセルされた場合はデコードされたセグメントを返す
+        const fallback = decodeURIComponent(segment);
+        return fallback;
+      }
+
+      // その他のエラーはログに記録
       console.error('Failed to resolve dynamic segment:', error);
     }
   }
@@ -97,22 +124,27 @@ async function resolveDynamicSegment(segment: string, previousSegment?: string):
 export default function Breadcrumbs() {
   const pathname = usePathname();
   const [breadcrumbItems, setBreadcrumbItems] = useState<Array<{ href: string; label: string; isLast: boolean }>>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     // ホームページではパンくずを表示しない
     if (!pathname || pathname === '/') {
       setBreadcrumbItems([]);
+      setIsLoading(false);
       return;
     }
 
     // キャンセルガード: パスが変わったら古い非同期処理を無効化
     let isCancelled = false;
+    const abortController = new AbortController();
 
     // パスを分割してセグメントを作成
     const segments = pathname.split('/').filter(Boolean);
 
     // パンくずリストのアイテムを非同期で生成
     const generateBreadcrumbs = async () => {
+      setIsLoading(true);
+
       const items = await Promise.all(
         segments.map(async (segment, index) => {
           const href = '/' + segments.slice(0, index + 1).join('/');
@@ -124,7 +156,7 @@ export default function Breadcrumbs() {
           if (segmentDisplayNames[segment]) {
             displayName = segmentDisplayNames[segment];
           } else {
-            displayName = await resolveDynamicSegment(segment, previousSegment);
+            displayName = await resolveDynamicSegment(segment, previousSegment, abortController.signal);
           }
 
           return {
@@ -138,6 +170,7 @@ export default function Breadcrumbs() {
       // キャンセルされていなければ状態を更新
       if (!isCancelled) {
         setBreadcrumbItems(items);
+        setIsLoading(false);
       }
     };
 
@@ -146,6 +179,7 @@ export default function Breadcrumbs() {
     // クリーンアップ関数: エフェクトが再実行されるときにキャンセルフラグを立てる
     return () => {
       isCancelled = true;
+      abortController.abort();
     };
   }, [pathname]);
 
@@ -168,8 +202,20 @@ export default function Breadcrumbs() {
           </Link>
         </li>
 
+        {/* ローディング中のスケルトン表示 */}
+        {isLoading && breadcrumbItems.length === 0 && (
+          <>
+            <li aria-hidden="true">
+              <ChevronRight className="w-4 h-4 text-gray-400" />
+            </li>
+            <li>
+              <span className="inline-block h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+            </li>
+          </>
+        )}
+
         {/* セグメント */}
-        {breadcrumbItems.map((item, index) => (
+        {breadcrumbItems.map((item) => (
           <Fragment key={item.href}>
             <li aria-hidden="true">
               <ChevronRight className="w-4 h-4 text-gray-400" />
