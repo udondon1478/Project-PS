@@ -1,5 +1,6 @@
 ---
-trigger: always_on
+name: GitWorkflow
+description: Gitを使用した開発ワークフローのルールです。ブランチの変更、Worktreeの作成、Pull Requestの作成時に必ず確認し遵守してください。
 ---
 
 # Role
