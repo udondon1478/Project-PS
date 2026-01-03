@@ -104,11 +104,23 @@ test.describe('Report Feature', () => {
       }
     });
 
-    await page.goto(`/products/${product.id}`);
-    
+    await page.goto(`/products/${product.id}`, { waitUntil: 'networkidle' });
+
+    // Wait for the tag to be visible
+    await page.getByText('TestTag').waitFor({ state: 'visible' });
+
     // Click the info button to open modal
     await page.getByTestId('tag-info-button-TestTag').click();
-    
+
+    // Wait for modal to open
+    await page.getByRole('dialog').waitFor({ state: 'visible' });
+
+    // Wait for the modal content to load (tag details API call)
+    await page.getByText('TestTag').first().waitFor({ state: 'visible' });
+
+    // Wait for report button to be visible
+    await page.getByTestId('report-tag-button').waitFor({ state: 'visible', timeout: 10000 });
+
     // 3. Report the tag
     await page.getByTestId('report-tag-button').click();
     await page.getByTestId('report-reason-input').fill('This is a test report');
