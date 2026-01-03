@@ -134,9 +134,8 @@ const handleFilterChange = (filterType: string, value: string) => {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">User Management</h1>
+    <>
+      <div className="flex justify-end mb-4">
         <Button onClick={handleDetectSuspiciousUsers} disabled={isDetecting}>
           {isDetecting ? 'Detecting...' : 'Detect Suspicious Users'}
         </Button>
@@ -264,6 +263,6 @@ const handleFilterChange = (filterType: string, value: string) => {
          <span>Page {currentPage} of {totalPages}</span>
          <Button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</Button>
        </div>
-    </div>
+    </>
   );
 }
