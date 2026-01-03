@@ -252,7 +252,7 @@ test.describe('Anonymous User Core Features', () => {
     const searchInput = page.locator('input[data-slot="input"][placeholder="タグで検索 (-でマイナス検索)"]');
     await searchInput.fill(query);
 
-    await page.waitForSelector(`li:has-text("${query}")`);
+    await page.waitForSelector(`[role="option"]:has-text("${query}")`);
 
     await expect(page.getByRole('option', { name: query, exact: true })).toBeVisible();
     await searchInput.press('ArrowDown');
@@ -276,7 +276,7 @@ test.describe('Anonymous User Core Features', () => {
     const searchInput = page.locator('input[data-slot="input"][placeholder="タグで検索 (-でマイナス検索)"]');
 
     await searchInput.fill(query);
-    await page.waitForSelector(`li:has-text("${query}")`);
+    await page.waitForSelector(`[role="option"]:has-text("${query}")`);
     await expect(page.getByRole('option', { name: query, exact: true })).toBeVisible();
     await searchInput.press('ArrowDown');
     await searchInput.press('Enter');
@@ -284,7 +284,7 @@ test.describe('Anonymous User Core Features', () => {
     await expect(page.locator('span', { hasText: query }).filter({ has: page.locator('button') })).toBeVisible();
 
     await searchInput.fill(negativeQuery);
-    await page.waitForSelector(`li:has-text("${negativeTag}")`);
+    await page.waitForSelector(`[role="option"]:has-text("${negativeTag}")`);
     await expect(page.getByRole('option', { name: negativeTag, exact: true })).toBeVisible();
     await searchInput.press('ArrowDown');
     await searchInput.press('Enter');
