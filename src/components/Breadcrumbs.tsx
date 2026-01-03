@@ -20,15 +20,56 @@ const segmentDisplayNames: Record<string, string> = {
   'edit': '編集',
 };
 
-// 動的セグメント解決用のキャッシュ
-const dynamicSegmentCache: Record<string, string> = {};
+// 動的セグメント解決用のキャッシュ（LRU実装）
+class LRUCache {
+  private cache: Map<string, string>;
+  private maxEntries: number;
+
+  constructor(maxEntries = 100) {
+    this.cache = new Map();
+    this.maxEntries = maxEntries;
+  }
+
+  get(key: string): string | undefined {
+    if (!this.cache.has(key)) {
+      return undefined;
+    }
+    // LRU: アクセスされたアイテムを最後に移動
+    const value = this.cache.get(key)!;
+    this.cache.delete(key);
+    this.cache.set(key, value);
+    return value;
+  }
+
+  set(key: string, value: string): void {
+    // 既存のキーがあれば削除（最後に再追加するため）
+    if (this.cache.has(key)) {
+      this.cache.delete(key);
+    }
+    // 容量超過時は最も古いエントリを削除
+    else if (this.cache.size >= this.maxEntries) {
+      const firstKey = this.cache.keys().next().value;
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey);
+      }
+    }
+    this.cache.set(key, value);
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+}
+
+const dynamicSegmentCache = new LRUCache(100);
 
 // 動的セグメントの表示名を解決する関数
 async function resolveDynamicSegment(segment: string, previousSegment?: string): Promise<string> {
   // キャッシュをチェック
   const cacheKey = `${previousSegment || ''}:${segment}`;
-  if (dynamicSegmentCache[cacheKey]) {
-    return dynamicSegmentCache[cacheKey];
+  const cached = dynamicSegmentCache.get(cacheKey);
+  if (cached) {
+    return cached;
   }
 
   // 前のセグメントに基づいてAPIエンドポイントを決定
@@ -38,7 +79,7 @@ async function resolveDynamicSegment(segment: string, previousSegment?: string):
       if (response.ok) {
         const product = await response.json();
         const displayName = product.name || decodeURIComponent(segment);
-        dynamicSegmentCache[cacheKey] = displayName;
+        dynamicSegmentCache.set(cacheKey, displayName);
         return displayName;
       }
     } catch (error) {
@@ -49,7 +90,7 @@ async function resolveDynamicSegment(segment: string, previousSegment?: string):
 
   // その他の場合はデコードされたセグメントを返す
   const fallback = decodeURIComponent(segment);
-  dynamicSegmentCache[cacheKey] = fallback;
+  dynamicSegmentCache.set(cacheKey, fallback);
   return fallback;
 }
 
@@ -63,6 +104,9 @@ export default function Breadcrumbs() {
       setBreadcrumbItems([]);
       return;
     }
+
+    // キャンセルガード: パスが変わったら古い非同期処理を無効化
+    let isCancelled = false;
 
     // パスを分割してセグメントを作成
     const segments = pathname.split('/').filter(Boolean);
@@ -91,10 +135,18 @@ export default function Breadcrumbs() {
         })
       );
 
-      setBreadcrumbItems(items);
+      // キャンセルされていなければ状態を更新
+      if (!isCancelled) {
+        setBreadcrumbItems(items);
+      }
     };
 
     generateBreadcrumbs();
+
+    // クリーンアップ関数: エフェクトが再実行されるときにキャンセルフラグを立てる
+    return () => {
+      isCancelled = true;
+    };
   }, [pathname]);
 
   // ホームページではパンくずを表示しない
