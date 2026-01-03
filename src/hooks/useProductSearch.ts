@@ -10,6 +10,15 @@ export interface TagSuggestion {
   displayName: string | null;
 }
 
+function isValidTagSuggestion(item: any): item is { name: string; displayName: string | null } {
+  return (
+    item &&
+    typeof item === 'object' &&
+    typeof item.name === 'string' &&
+    (item.displayName === null || typeof item.displayName === 'string')
+  );
+}
+
 // Helper to build search query parameters
 const buildSearchQueryParams = ({
   selectedTags,
@@ -95,7 +104,7 @@ export const useProductSearch = ({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const pathname = usePathname();
-  const suggestionsRef = useRef<HTMLUListElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
 
   const [ageRatingTags, setAgeRatingTags] = useState<{ id: string; name: string; color?: string | null }[]>([]);
   const [categoryTags, setCategoryTags] = useState<{ id: string; name: string; color?: string | null }[]>([]);
@@ -246,13 +255,8 @@ export const useProductSearch = ({
         }
 
         const filteredSuggestions = data
-          .filter((item: any) => 
-            item && 
-            typeof item === 'object' && 
-            typeof item.name === 'string' && 
-            (item.displayName === null || typeof item.displayName === 'string')
-          )
-          .map((tag: { name: string; displayName: string | null }) => ({
+          .filter(isValidTagSuggestion)
+          .map((tag) => ({
             name: tag.name,
             displayName: tag.displayName
           }))

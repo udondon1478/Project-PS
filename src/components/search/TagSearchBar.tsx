@@ -15,7 +15,7 @@ interface TagSearchBarProps {
   isSuggestionsVisible: boolean;
   searchContainerRef: React.Ref<HTMLDivElement>;
   searchInputRef: React.Ref<HTMLInputElement>;
-  suggestionsRef: React.Ref<HTMLUListElement>;
+  suggestionsRef: React.Ref<HTMLDivElement>;
   handleInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
   handleCompositionStart: () => void;
@@ -129,18 +129,19 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
           role="combobox"
           aria-controls="tag-suggestions-list"
           aria-expanded={isSuggestionsVisible && tagSuggestions.length > 0}
-          aria-activedescendant={activeIndex >= 0 ? `tag-suggestion-${tagSuggestions[activeIndex].name}` : undefined}
+          aria-activedescendant={activeIndex >= 0 && activeIndex < tagSuggestions.length ? `tag-suggestion-${tagSuggestions[activeIndex].name}` : undefined}
         />
       </div>
       {isSuggestionsVisible && tagSuggestions.length > 0 && (
-        <ul
+        <div
           ref={suggestionsRef}
           id="tag-suggestions-list"
           role="listbox"
+          tabIndex={-1} // Ensure it's focusable if needed, or stick to aria-activedescendant
           className="absolute z-20 w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg"
         >
           {tagSuggestions.map((tag, index) => (
-            <li
+            <div
               key={tag.name}
               id={`tag-suggestion-${tag.name}`}
               role="option"
@@ -151,10 +152,10 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
               className={`px-3 py-2 text-sm cursor-pointer ${index === activeIndex ? 'bg-gray-100 dark:bg-gray-800' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
                 }`}
             >
-              {tag.displayName || tag.name}
-            </li>
+              {tag.displayName ?? tag.name}
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );
