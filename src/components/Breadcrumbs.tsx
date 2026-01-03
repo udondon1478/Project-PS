@@ -26,8 +26,13 @@ class LRUCache {
   private maxEntries: number;
 
   constructor(maxEntries = 100) {
+    // maxEntriesのバリデーション: 正の整数であることを確認
+    if (!Number.isFinite(maxEntries) || maxEntries <= 0 || !Number.isInteger(maxEntries)) {
+      this.maxEntries = 100; // 不正な値の場合はデフォルト値を使用
+    } else {
+      this.maxEntries = maxEntries;
+    }
     this.cache = new Map();
-    this.maxEntries = maxEntries;
   }
 
   get(key: string): string | undefined {
@@ -84,9 +89,35 @@ async function resolveDynamicSegment(
 
     try {
       // 外部シグナルとタイムアウトシグナルを結合
-      const combinedSignal = signal && 'any' in AbortSignal
-        ? (AbortSignal as any).any([signal, timeoutController.signal])
-        : signal || timeoutController.signal;
+      let combinedSignal: AbortSignal;
+
+      if ('any' in AbortSignal && typeof (AbortSignal as any).any === 'function') {
+        // AbortSignal.anyが利用可能な場合
+        combinedSignal = (AbortSignal as any).any([signal, timeoutController.signal].filter(Boolean));
+      } else {
+        // 古いブラウザ向けのカスタムコンバイナー
+        const combinedController = new AbortController();
+        combinedSignal = combinedController.signal;
+
+        const abortHandler = () => combinedController.abort();
+
+        // 外部シグナルとタイムアウトシグナルの両方にリスナーを追加
+        if (signal) {
+          signal.addEventListener('abort', abortHandler, { once: true });
+        }
+        timeoutController.signal.addEventListener('abort', abortHandler, { once: true });
+
+        // クリーンアップ用のリスナー削除関数を保存
+        const cleanup = () => {
+          if (signal) {
+            signal.removeEventListener('abort', abortHandler);
+          }
+          timeoutController.signal.removeEventListener('abort', abortHandler);
+        };
+
+        // フェッチ完了時にリスナーをクリーンアップ
+        combinedSignal.addEventListener('abort', cleanup, { once: true });
+      }
 
       const response = await fetch(`/api/products/${segment}`, {
         signal: combinedSignal,
@@ -133,6 +164,9 @@ export default function Breadcrumbs() {
       setIsLoading(false);
       return;
     }
+
+    // ナビゲーション開始時にbreadcrumbItemsをリセットしてスケルトンを表示
+    setBreadcrumbItems([]);
 
     // キャンセルガード: パスが変わったら古い非同期処理を無効化
     let isCancelled = false;
