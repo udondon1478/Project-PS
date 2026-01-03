@@ -115,39 +115,39 @@ export const useProductSearch = ({
     const fetchTagsByType = async () => {
       try {
         const ageRatingsResponse = await fetch('/api/tags/by-type?categoryNames=age_rating');
-        const ageRatingData = await ageRatingsResponse.json();
         if (ageRatingsResponse.ok) {
+          const ageRatingData = await ageRatingsResponse.json();
           setAgeRatingTags(ageRatingData.map((tag: { id: string; name: string; tagCategory?: { id: string; name: string; color: string } | null }) => ({
             id: tag.id,
             name: tag.name,
             color: tag.tagCategory?.color || null,
           })));
         } else {
-          console.error('Failed to fetch age rating tags:', ageRatingData.message);
+          console.warn('Age rating tags API not available (404), skipping...');
         }
 
         const categoriesResponse = await fetch('/api/tags/by-type?categoryNames=product_category');
-        const categoryData = await categoriesResponse.json();
         if (categoriesResponse.ok) {
+          const categoryData = await categoriesResponse.json();
           setCategoryTags(categoryData.map((tag: { id: string; name: string; tagCategory?: { id: string; name: string; color: string } | null }) => ({
             id: tag.id,
             name: tag.name,
             color: tag.tagCategory?.color || null,
           })));
         } else {
-          console.error('Failed to fetch category tags:', categoryData.message);
+          console.warn('Category tags API not available (404), skipping...');
         }
 
         const featuresResponse = await fetch('/api/tags/by-type?categoryNames=feature');
-        const featureData = await featuresResponse.json();
         if (featuresResponse.ok) {
+          const featureData = await featuresResponse.json();
           setFeatureTags(featureData.map((tag: { id: string; name: string; tagCategory?: { id: string; name: string; color: string } | null }) => ({
             id: tag.id,
             name: tag.name,
             color: tag.tagCategory?.color || null,
           })));
         } else {
-          console.error('Failed to fetch feature tags:', featureData.message);
+          console.warn('Feature tags API not available (404), skipping...');
         }
 
       } catch (error) {

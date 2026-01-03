@@ -58,11 +58,11 @@ const TagForm = ({ initialData, onSuccess }: TagFormProps) => {
 
         // カテゴリを取得 (product_category タイプに限定)
         const categoriesResponse = await fetch('/api/tags/by-type?type=product_category');
-        const categoriesData = await categoriesResponse.json();
         if (categoriesResponse.ok) {
+          const categoriesData = await categoriesResponse.json();
           setTagCategories(categoriesData);
         } else {
-          console.error('Failed to fetch categories:', categoriesData.message);
+          console.warn('Category tags API not available (404), skipping...');
         }
       } catch (error) {
         console.error('Error fetching tag options:', error);
