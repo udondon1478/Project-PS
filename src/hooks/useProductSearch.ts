@@ -248,7 +248,17 @@ export const useProductSearch = ({
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         if (!Array.isArray(data)) {
-          console.warn("API response is not an array");
+          let preview = '';
+          try {
+            preview = JSON.stringify(data);
+          } catch (e) {
+            preview = String(data);
+          }
+          if (preview.length > 200) {
+            preview = preview.substring(0, 200) + '...';
+          }
+          const constructorName = data?.constructor?.name ?? 'undefined';
+          console.warn(`API response is not an array: type=${typeof data}, constructor=${constructorName}, value=${preview}`);
           setTagSuggestions([]);
           setIsSuggestionsVisible(false);
           return;
