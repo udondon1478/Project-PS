@@ -5,16 +5,17 @@ import { Input } from '@/components/ui/input';
 import { X } from 'lucide-react';
 
 import { useTypewriter } from '@/hooks/useTypewriter';
+import { TagSuggestion } from '@/hooks/useProductSearch';
 
 interface TagSearchBarProps {
   searchQuery: string;
   selectedTags: string[];
   selectedNegativeTags: string[];
-  tagSuggestions: string[];
+  tagSuggestions: TagSuggestion[];
   isSuggestionsVisible: boolean;
   searchContainerRef: React.Ref<HTMLDivElement>;
   searchInputRef: React.Ref<HTMLInputElement>;
-  suggestionsRef: React.Ref<HTMLUListElement>;
+  suggestionsRef: React.Ref<HTMLDivElement>;
   handleInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
   handleCompositionStart: () => void;
@@ -76,7 +77,7 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
       if (activeIndex >= 0 && activeIndex < tagSuggestions.length) {
         e.preventDefault();
         const tag = tagSuggestions[activeIndex];
-        handleAddTag(searchQuery.startsWith('-') ? `-${tag}` : tag);
+        handleAddTag(searchQuery.startsWith('-') ? `-${tag.name}` : tag.name);
       } else {
         handleKeyDown(e);
       }
@@ -96,7 +97,7 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
   }, [activeIndex, suggestionsRef]);
 
   return (
-    <div className="relative flex-grow max-w-full overflow-x-hidden" ref={searchContainerRef} id="tour-search-bar">
+    <div className="relative flex-grow max-w-full" ref={searchContainerRef} id="tour-search-bar">
       <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 p-1 flex-wrap gap-1 min-h-[40px]">
         {selectedTags.map(tag => (
           <span key={tag} className="flex items-center bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded whitespace-nowrap">
@@ -128,32 +129,33 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
           role="combobox"
           aria-controls="tag-suggestions-list"
           aria-expanded={isSuggestionsVisible && tagSuggestions.length > 0}
-          aria-activedescendant={activeIndex >= 0 ? `tag-suggestion-${tagSuggestions[activeIndex]}` : undefined}
+          aria-activedescendant={activeIndex >= 0 && activeIndex < tagSuggestions.length ? `tag-suggestion-${tagSuggestions[activeIndex].name}` : undefined}
         />
       </div>
       {isSuggestionsVisible && tagSuggestions.length > 0 && (
-        <ul
+        <div
           ref={suggestionsRef}
           id="tag-suggestions-list"
           role="listbox"
+          tabIndex={-1} // Ensure it's focusable if needed, or stick to aria-activedescendant
           className="absolute z-20 w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg"
         >
           {tagSuggestions.map((tag, index) => (
-            <li
-              key={tag}
-              id={`tag-suggestion-${tag}`}
+            <div
+              key={tag.name}
+              id={`tag-suggestion-${tag.name}`}
               role="option"
               aria-selected={index === activeIndex}
-              data-testid={`tag-suggestion-${tag}`}
-              onClick={() => handleAddTag(searchQuery.startsWith('-') ? `-${tag}` : tag)}
+              data-testid={`tag-suggestion-${tag.name}`}
+              onClick={() => handleAddTag(searchQuery.startsWith('-') ? `-${tag.name}` : tag.name)}
               onMouseEnter={() => setActiveIndex(index)}
               className={`px-3 py-2 text-sm cursor-pointer ${index === activeIndex ? 'bg-gray-100 dark:bg-gray-800' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
                 }`}
             >
-              {tag}
-            </li>
+              {tag.displayName ?? tag.name}
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );

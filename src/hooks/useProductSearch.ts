@@ -4,6 +4,21 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { SortOption, SORT_VALUES, isSortOption } from '@/constants/sort';
 
+// タグサジェストの型定義
+export interface TagSuggestion {
+  name: string;
+  displayName: string | null;
+}
+
+function isValidTagSuggestion(item: any): item is { name: string; displayName: string | null } {
+  return (
+    item &&
+    typeof item === 'object' &&
+    typeof item.name === 'string' &&
+    (item.displayName === null || typeof item.displayName === 'string')
+  );
+}
+
 // Helper to build search query parameters
 const buildSearchQueryParams = ({
   selectedTags,
@@ -70,7 +85,7 @@ export const useProductSearch = ({
   const [selectedNegativeTags, setSelectedNegativeTags] = useState<string[]>(initialSelectedNegativeTags);
 
   const searchParams = useSearchParams();
-  const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
+  const [tagSuggestions, setTagSuggestions] = useState<TagSuggestion[]>([]);
 
   const [isSuggestionsVisible, setIsSuggestionsVisible] = useState(false);
   const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
@@ -89,7 +104,7 @@ export const useProductSearch = ({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const pathname = usePathname();
-  const suggestionsRef = useRef<HTMLUListElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
 
   const [ageRatingTags, setAgeRatingTags] = useState<{ id: string; name: string; color?: string | null }[]>([]);
   const [categoryTags, setCategoryTags] = useState<{ id: string; name: string; color?: string | null }[]>([]);
@@ -232,13 +247,34 @@ export const useProductSearch = ({
         const response = await fetch(`/api/tags/search?query=${encodeURIComponent(actualQuery)}`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
+        if (!Array.isArray(data)) {
+          let preview = '';
+          try {
+            preview = JSON.stringify(data);
+          } catch (e) {
+            preview = String(data);
+          }
+          if (preview.length > 200) {
+            preview = preview.substring(0, 200) + '...';
+          }
+          const constructorName = data?.constructor?.name ?? 'undefined';
+          console.warn(`API response is not an array: type=${typeof data}, constructor=${constructorName}, value=${preview}`);
+          setTagSuggestions([]);
+          setIsSuggestionsVisible(false);
+          return;
+        }
+
         const filteredSuggestions = data
-          .map((tag: { name: string }) => tag.name)
-          .filter((tagName: string) => !selectedTags.includes(tagName) && !selectedNegativeTags.includes(tagName));
-        
+          .filter(isValidTagSuggestion)
+          .map((tag) => ({
+            name: tag.name,
+            displayName: tag.displayName
+          }))
+          .filter((tag: TagSuggestion) => !selectedTags.includes(tag.name) && !selectedNegativeTags.includes(tag.name));
+
         // セーフサーチ有効時はR-18をサジェストから除外
-        const finalSuggestions = isSafeSearchEnabled 
-          ? filteredSuggestions.filter((tag: string) => tag !== 'R-18')
+        const finalSuggestions = isSafeSearchEnabled
+          ? filteredSuggestions.filter((tag: TagSuggestion) => tag.name !== 'R-18')
           : filteredSuggestions;
 
         setTagSuggestions(finalSuggestions);
@@ -373,7 +409,7 @@ export const useProductSearch = ({
       if (tagName === '') return;
 
       if (event.key === 'Enter' && isSuggestionsVisible && tagSuggestions.length > 0) {
-        const tagToAdd = isNegative ? `-${tagSuggestions[0]}` : tagSuggestions[0];
+        const tagToAdd = isNegative ? `-${tagSuggestions[0].name}` : tagSuggestions[0].name;
         handleAddTag(tagToAdd);
       } else {
         handleAddTag(trimmedQuery);
