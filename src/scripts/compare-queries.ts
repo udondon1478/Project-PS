@@ -5,8 +5,8 @@ import { queryNotionDatabase, addDiffItemToNotion, type NotionRecord, type DiffI
 dotenvConfig();
 
 // 設定値: 比較するSourceQuery
-const BASE_QUERY = '全検索';        // 比較基準（全文検索）
-const TARGET_QUERY = '3Dモデル';     // 比較対象（任意のプロパティ）- 変更可能
+const BASE_QUERY = 'キーワード検索';
+const TARGET_QUERY = 'タグ検索';
 
 async function compareQueries() {
   console.log('Starting URL diff comparison process...');
@@ -34,17 +34,27 @@ async function compareQueries() {
     const targetRecords = await queryNotionDatabase(TARGET_QUERY);
 
     // 3. URLをキーとしたMapを作成
+    // クエリパラメータを除外して正規化するヘルパー関数
+    const normalizeUrl = (url: string) => {
+      try {
+        const u = new URL(url);
+        return `${u.origin}${u.pathname}`;
+      } catch {
+        return url;
+      }
+    };
+
     const baseUrlMap = new Map<string, NotionRecord>();
     for (const record of baseRecords) {
       if (record.url) {
-        baseUrlMap.set(record.url, record);
+        baseUrlMap.set(normalizeUrl(record.url), record);
       }
     }
 
     const targetUrlMap = new Map<string, NotionRecord>();
     for (const record of targetRecords) {
       if (record.url) {
-        targetUrlMap.set(record.url, record);
+        targetUrlMap.set(normalizeUrl(record.url), record);
       }
     }
 
@@ -52,8 +62,8 @@ async function compareQueries() {
     const diffItems: DiffItem[] = [];
 
     // BASE_QUERYにのみ存在するURL
-    for (const [url, record] of baseUrlMap) {
-      if (!targetUrlMap.has(url)) {
+    for (const [key, record] of baseUrlMap) {
+      if (!targetUrlMap.has(key)) {
         diffItems.push({
           title: record.title,
           url: record.url,
@@ -66,8 +76,8 @@ async function compareQueries() {
     }
 
     // TARGET_QUERYにのみ存在するURL
-    for (const [url, record] of targetUrlMap) {
-      if (!baseUrlMap.has(url)) {
+    for (const [key, record] of targetUrlMap) {
+      if (!baseUrlMap.has(key)) {
         diffItems.push({
           title: record.title,
           url: record.url,

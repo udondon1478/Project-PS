@@ -166,24 +166,45 @@ export async function queryNotionDatabase(sourceQuery: string): Promise<NotionRe
     throw new Error('Missing NOTION_API_KEY or NOTION_DATABASE_ID environment variables');
   }
 
-  const notion = new Client({ auth: apiKey });
+  const notion = new Client({ auth: apiKey, notionVersion: '2022-06-28' });
   const records: NotionRecord[] = [];
   let hasMore = true;
   let startCursor: string | undefined = undefined;
 
+  // Helper to ensure UUID format (with dashes)
+  const formatUuid = (id: string) => {
+    if (id.includes('-') || id.length !== 32) return id;
+    return `${id.slice(0, 8)}-${id.slice(8, 12)}-${id.slice(12, 16)}-${id.slice(16, 20)}-${id.slice(20)}`;
+  };
+  const formattedDatabaseId = formatUuid(databaseId);
+
+  try {
+    // Verify access
+    await notion.databases.retrieve({ database_id: formattedDatabaseId });
+  } catch (e) {
+    console.error(`[NotionClient] Database check failed for ${formattedDatabaseId}`, e);
+    // Proceeding anyway as retrieve might fail for permissions but query might work? No, unlikely.
+  }
+
   while (hasMore) {
-    // Use Notion SDK consistently (databases.query is available in SDK v2+)
+    /*
+     * Note: notion.databases.query appears to be missing in the installed version of @notionhq/client (v5.6.0).
+     * Using notion.request directly as a robust workaround.
+     */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response: any = await (notion.databases as any).query({
-      database_id: databaseId,
-      filter: {
-        property: 'SourceQuery',
-        select: {
-          equals: sourceQuery,
+    const response: any = await notion.request({
+      path: `databases/${formattedDatabaseId}/query`,
+      method: 'post',
+      body: {
+        filter: {
+          property: 'SourceQuery',
+          select: {
+            equals: sourceQuery,
+          },
         },
+        start_cursor: startCursor,
+        page_size: 100,
       },
-      start_cursor: startCursor,
-      page_size: 100,
     });
 
     for (const page of response.results) {

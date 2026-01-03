@@ -9,9 +9,9 @@ dotenv.config();
 
 // Validation URLs
 const TARGET_URLS = [
-  { name: '全検索', url: 'https://booth.pm/ja/items?sort=new&tags%5B%5D=VRChat&adult=include' },
-  { name: '3Dモデル+VRChat', url: 'https://booth.pm/ja/browse/3Dモデル?adult=include&sort=new&tags%5B%5D=VRChat' },
-  { name: '3Dモデル+VRChat+マヌカ', url: 'https://booth.pm/ja/browse/3Dモデル?adult=include&sort=new&tags%5B%5D=VRChat&tags%5B%5D=%E3%83%9E%E3%83%8C%E3%82%AB' },
+  //{ name: '全検索', url: 'https://booth.pm/ja/items?sort=new&tags%5B%5D=VRChat&adult=include' },
+  { name: 'キーワード検索', url: 'https://booth.pm/ja/search/VRChat?sort=new&adult=include' },
+  { name: 'タグ検索', url: 'https://booth.pm/ja/items?adult=include&sort=new&tags%5B%5D=VRChat' },
 ];
 
 const ITEMS_PER_QUERY = 100;
