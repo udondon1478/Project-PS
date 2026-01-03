@@ -1,6 +1,7 @@
 import { isAdmin } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import ScraperDashboard from "@/components/admin/ScraperDashboard";
+import AdminLayout from "@/components/admin/AdminLayout";
 import { prisma } from "@/lib/prisma";
 
 export default async function BoothScraperAdminPage() {
@@ -22,9 +23,8 @@ export default async function BoothScraperAdminPage() {
   }));
 
   return (
-    <div className="container mx-auto p-4 pt-20">
-      <h1 className="text-2xl font-bold mb-4">BOOTH Scraper Control</h1>
+    <AdminLayout>
       <ScraperDashboard recentRuns={recentRuns} />
-    </div>
+    </AdminLayout>
   );
 }

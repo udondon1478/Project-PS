@@ -18,6 +18,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
@@ -176,6 +177,18 @@ export default function Header() {
                              <Button variant="ghost" className="w-full justify-start">所有済み商品</Button>
                           </Link>
                         </SheetClose>
+                        {session?.user?.role === 'ADMIN' && (
+                          <>
+                            <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
+                            <SheetClose asChild>
+                              <Link href="/admin">
+                                <Button variant="ghost" className="w-full justify-start">
+                                  🛡️ 管理者画面
+                                </Button>
+                              </Link>
+                            </SheetClose>
+                          </>
+                        )}
                         <SheetClose asChild>
                           <Button variant="ghost" className="w-full justify-start" onClick={() => signOut()}>ログアウト</Button>
                         </SheetClose>
@@ -220,6 +233,17 @@ export default function Header() {
                     <DropdownMenuItem>
                       <Link href="/profile/owned">所有済み商品</Link>
                     </DropdownMenuItem>
+                    {session?.user?.role === 'ADMIN' && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>
+                          <Link href="/admin" className="flex items-center gap-2">
+                            <span>🛡️</span>
+                            <span>管理者画面</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
                 <Button variant="ghost" size="sm" onClick={() => signOut()}>
