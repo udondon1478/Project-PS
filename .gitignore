@@ -57,3 +57,4 @@ repomix-*.xml
 
 # Claude Code
 .claude/settings.local.json
+.mcp.json

@@ -1,0 +1,36 @@
+{
+  "mcpServers": {
+    "prisma-mcp-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "prisma",
+        "mcp"
+      ],
+      "env": {}
+    },
+    "github-mcp-server": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "ghcr.io/github/github-mcp-server"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "PUT_YOUR_TOKEN_HERE"
+      }
+    },
+    "coderabbit": {
+      "command": "node",
+      "args": [
+        "/path/to/your/coderabbitai-mcp"
+      ],
+      "env": {
+        "GITHUB_PAT": "PUT_YOUR_TOKEN_HERE"
+      }
+    }
+  }
+}
