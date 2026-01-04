@@ -11,22 +11,20 @@ test.describe('Report Feature', () => {
     await prisma.productTag.deleteMany({
       where: {
         user: {
-          email: { in: ['test@example.com', 'admin@example.com'] }
+          email: 'test@example.com'
         }
       }
     });
     await prisma.product.deleteMany({
       where: {
         user: {
-          email: { in: ['test@example.com', 'admin@example.com'] }
+          email: 'test@example.com'
         }
       }
     });
     await prisma.user.deleteMany({
       where: {
-        email: {
-          in: ['test@example.com', 'admin@example.com']
-        }
+        email: 'test@example.com'
       }
     });
   });
@@ -40,46 +38,31 @@ test.describe('Report Feature', () => {
     await prisma.productTag.deleteMany({
       where: {
         user: {
-          email: { in: ['test@example.com', 'admin@example.com'] }
+          email: 'test@example.com'
         }
       }
     });
     await prisma.product.deleteMany({
       where: {
         user: {
-          email: { in: ['test@example.com', 'admin@example.com'] }
+          email: 'test@example.com'
         }
       }
     });
     await prisma.user.deleteMany({
       where: {
-        email: {
-          in: ['test@example.com', 'admin@example.com']
-        }
+        email: 'test@example.com'
       }
     });
   });
 
   test('should allow admin to view and resolve reports', async () => {
-    test.setTimeout(60000);
-
-    // 1. Create test user and admin
+    // 1. Create test user
     const user = await prisma.user.create({
       data: {
-        id: 'user-1',
         name: 'Test User',
         email: 'test@example.com',
         role: 'USER',
-        termsAgreedAt: new Date(),
-      },
-    });
-
-    const admin = await prisma.user.create({
-      data: {
-        id: 'admin-1',
-        name: 'Admin User',
-        email: 'admin@example.com',
-        role: 'ADMIN',
         termsAgreedAt: new Date(),
       },
     });
@@ -127,8 +110,11 @@ test.describe('Report Feature', () => {
     });
 
     expect(reportWithRelations).toBeTruthy();
-    expect(reportWithRelations?.reporter.id).toBe(user.id);
-    expect(reportWithRelations?.tag?.id).toBe(tag.id);
-    expect(reportWithRelations?.tag?.name).toBe('TestTag');
+    if (!reportWithRelations) throw new Error('Report not found');
+    expect(reportWithRelations.reporter).toBeTruthy();
+    expect(reportWithRelations.reporter?.id).toBe(user.id);
+    expect(reportWithRelations.tag).toBeTruthy();
+    expect(reportWithRelations.tag?.id).toBe(tag.id);
+    expect(reportWithRelations.tag?.name).toBe('TestTag');
   });
 });
