@@ -199,12 +199,7 @@ describe('Report Feature Integration Tests', () => {
 
     expect(resolvedReport.status).toBe('RESOLVED');
 
-    // Transition back to PENDING (if allowed by business logic)
-    const pendingAgainReport = await prisma.report.update({
-      where: { id: report.id },
-      data: { status: 'PENDING' },
-    });
-
-    expect(pendingAgainReport.status).toBe('PENDING');
-  }, 15000)
+    // Note: RESOLVED→PENDING transition is not allowed by business rules (showActions: false in STATUS_CONFIG)
+    // The UI prevents status changes for RESOLVED reports, so we don't test reverse transitions here
+  }, 15000);
 });
