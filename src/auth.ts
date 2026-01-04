@@ -80,14 +80,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         user.name = existingUser.name;
         user.image = existingUser.image;
         // JWTコールバックで必要な追加フィールドをコピー
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (user as any).role = existingUser.role;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (user as any).status = existingUser.status;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (user as any).termsAgreedAt = existingUser.termsAgreedAt;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (user as any).isSafeSearchEnabled = existingUser.isSafeSearchEnabled;
+        user.role = existingUser.role;
+        user.status = existingUser.status;
+        user.termsAgreedAt = existingUser.termsAgreedAt;
+        user.isSafeSearchEnabled = existingUser.isSafeSearchEnabled;
 
         return true;
       } catch (error) {
