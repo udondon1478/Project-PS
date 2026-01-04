@@ -239,19 +239,19 @@ export default function RegisterItemPage() {
 
         if (ageRatingsResponse.ok) {
           setAgeRatingTags(await ageRatingsResponse.json());
-        } else {
+        } else if (ageRatingsResponse.status !== 404) {
           errorMessages.push(`年齢レーティングの取得に失敗しました: ${ageRatingsResponse.statusText}`);
         }
 
         if (categoriesResponse.ok) {
           setCategoryTags(await categoriesResponse.json());
-        } else {
+        } else if (categoriesResponse.status !== 404) {
           errorMessages.push(`カテゴリーの取得に失敗しました: ${categoriesResponse.statusText}`);
         }
 
         if (featuresResponse.ok) {
           setFeatureTags(await featuresResponse.json());
-        } else {
+        } else if (featuresResponse.status !== 404) {
           errorMessages.push(`主要機能の取得に失敗しました: ${featuresResponse.statusText}`);
         }
 

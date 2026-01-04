@@ -26,7 +26,7 @@
     "coderabbit": {
       "command": "node",
       "args": [
-        "/Users/x22004xx/.nvm/versions/node/v24.11.1/bin/coderabbitai-mcp"
+        "/path/to/your/coderabbitai-mcp"
       ],
       "env": {
         "GITHUB_PAT": "PUT_YOUR_TOKEN_HERE"

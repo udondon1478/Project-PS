@@ -54,3 +54,7 @@ repomix-*.xml
 # Sentry Config File
 .env.sentry-build-plugin
 
+
+# Claude Code
+.claude/settings.local.json
+.mcp.json
