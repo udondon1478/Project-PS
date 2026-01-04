@@ -56,7 +56,7 @@ test.describe('Report Feature', () => {
     });
   });
 
-  test('should allow admin to view and resolve reports', async () => {
+  test('should create and resolve reports in the database', async () => {
     // 1. Create test user
     const user = await prisma.user.create({
       data: {
@@ -112,7 +112,8 @@ test.describe('Report Feature', () => {
     expect(reportWithRelations).toBeTruthy();
     if (!reportWithRelations) throw new Error('Report not found');
     expect(reportWithRelations.reporter).toBeTruthy();
-    expect(reportWithRelations.reporter?.id).toBe(user.id);
+    if (!reportWithRelations.reporter) throw new Error('Reporter not found');
+    expect(reportWithRelations.reporter.id).toBe(user.id);
     expect(reportWithRelations.tag).toBeTruthy();
     expect(reportWithRelations.tag?.id).toBe(tag.id);
     expect(reportWithRelations.tag?.name).toBe('TestTag');
