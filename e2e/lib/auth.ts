@@ -1,6 +1,6 @@
 // e2e/lib/auth.ts
 import { BrowserContext } from '@playwright/test';
-import { Role } from '@prisma/client';
+import { Role, UserStatus } from '@prisma/client';
 // E2Eテストから本番のPrisma Clientをインポートします
 // (テストがテスト用DBを指すように DATABASE_URL 環境変数を設定してください)
 import { prisma } from '../../src/lib/prisma';
@@ -22,10 +22,16 @@ export async function mockSession(
   }
 
   await prisma?.user.create({
-    data: user,
+    data: {
+      ...user,
+      status: user.status || UserStatus.ACTIVE,
+      isSafeSearchEnabled: user.isSafeSearchEnabled ?? true,
+    },
   });
 
   // Generate JWT
+  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'secret';
+
   const token = await encode({
     token: {
       name: user.name,
@@ -36,18 +42,24 @@ export async function mockSession(
       role: user.role,
       termsAgreedAt: user.termsAgreedAt ?? null,
     },
-    secret: process.env.AUTH_SECRET || 'secret',
+    secret,
     salt: 'authjs.session-token',
   });
 
+  // Determine cookie name based on USE_SECURE_COOKIES setting
+  const useSecureCookies = process.env.USE_SECURE_COOKIES === 'true' ||
+      (process.env.NODE_ENV === 'production' && process.env.USE_SECURE_COOKIES !== 'false');
+  const cookieName = useSecureCookies ? '__Secure-authjs.session-token' : 'authjs.session-token';
+
   await context.addCookies([
     {
-      name: 'authjs.session-token',
+      name: cookieName,
       value: token,
       domain: 'localhost',
       path: '/',
       httpOnly: true,
       sameSite: 'Lax',
+      secure: useSecureCookies,
     }
   ]);
 }
@@ -57,7 +69,9 @@ export interface MockSessionUser {
   name: string | null;
   email: string;
   role: Role;
+  status?: UserStatus;
   termsAgreedAt?: Date | null;
+  isSafeSearchEnabled?: boolean;
 }
 
 export const MOCK_USER: MockSessionUser = {
