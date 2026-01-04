@@ -7,7 +7,11 @@ describe('Report Feature Integration Tests', () => {
 
   const cleanup = async () => {
     // Clean up in correct order due to foreign key constraints
-    await prisma.report.deleteMany();
+    await prisma.report.deleteMany({
+      where: {
+        reporter: { email: testEmail }
+      }
+    });
     await prisma.tag.deleteMany({
       where: { name: testTagName }
     });
@@ -73,13 +77,11 @@ describe('Report Feature Integration Tests', () => {
       },
     });
 
-    expect(reportWithRelations).toBeTruthy();
-    if (!reportWithRelations) throw new Error('Report not found');
-    expect(reportWithRelations.reporter).toBeTruthy();
-    if (!reportWithRelations.reporter) throw new Error('Reporter not found');
-    expect(reportWithRelations.reporter.id).toBe(user.id);
-    expect(reportWithRelations.tag).toBeTruthy();
-    expect(reportWithRelations.tag?.id).toBe(tag.id);
-    expect(reportWithRelations.tag?.name).toBe(testTagName);
+    expect(reportWithRelations).toBeDefined();
+    expect(reportWithRelations?.reporter).toBeDefined();
+    expect(reportWithRelations?.reporter.id).toBe(user.id);
+    expect(reportWithRelations?.tag).toBeDefined();
+    expect(reportWithRelations?.tag?.id).toBe(tag.id);
+    expect(reportWithRelations?.tag?.name).toBe(testTagName);
   }, 15000); // 15 seconds timeout for database operations
 });
