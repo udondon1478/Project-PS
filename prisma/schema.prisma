@@ -289,16 +289,19 @@ model ProductTag {
   tagId      String
   userId     String    // タグを付けたユーザー
   isImplied  Boolean   @default(false) // 含意により自動付与されたタグかどうか
+  isOfficial Boolean   @default(false) // BOOTH由来の公式タグかどうか
   createdAt  DateTime  @default(now())
 
   product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
   tag        Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
   user       User      @relation(fields: [userId], references: [id])
 
-  @@unique([productId, tagId])
+  // 同じ商品・同じタグであっても、公式・独自それぞれの区分で登録可能
+  @@unique([productId, tagId, isOfficial])
   @@index([productId])
   @@index([tagId])
   @@index([userId])
+  @@index([isOfficial])
 
   reports    Report[]      // この商品タグに対する通報
 }

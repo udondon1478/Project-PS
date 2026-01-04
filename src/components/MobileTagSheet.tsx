@@ -63,7 +63,7 @@ const MobileTagSheet: React.FC<MobileTagSheetProps> = ({
               <DialogHeader><DialogTitle>タグを編集</DialogTitle></DialogHeader>
               {productTags && (
                 <TagEditor
-                  initialTags={productTags.map(pt => pt.tag)}
+                  initialTags={productTags.filter(pt => !pt.isOfficial).map(pt => pt.tag)}
                   onTagsChange={async (data) => {
                     await onTagsUpdate(data);
                     setIsTagEditorOpen(false);
@@ -79,52 +79,114 @@ const MobileTagSheet: React.FC<MobileTagSheetProps> = ({
             {productTags && productTags.length > 0 ? (
               <ScrollArea className="h-full">
                 <div className="pr-4 space-y-1">
-                  {productTags.map(({ tag }) => (
-                    <div
-                      key={tag.id}
-                      className="flex items-center justify-between p-3 rounded-md hover:bg-accent dark:hover:bg-gray-700/50 transition-colors"
-                    >
-                      <span className="text-sm font-medium pr-2 flex-1 min-w-0 truncate">
-                        {tag.name}
-                      </span>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-9 w-9 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/50"
-                          onClick={() => onAddNegativeTagToSearch(tag.name)}
-                          aria-label={`${tag.name}を検索から除外`}
+                  {/* PolySeekタグ（独自タグ）を上部に表示 */}
+                  {productTags.filter(pt => !pt.isOfficial).length > 0 && (
+                    <>
+                      <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 py-1 px-2 mb-1">
+                        PolySeekタグ
+                      </div>
+                      {productTags.filter(pt => !pt.isOfficial).map(({ tag }) => (
+                        <div
+                          key={`manual-${tag.id}`}
+                          className="flex items-center justify-between p-3 rounded-md hover:bg-accent dark:hover:bg-gray-700/50 transition-colors bg-blue-50/50 dark:bg-blue-900/20"
                         >
-                          <MinusCircle size={18} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-9 w-9 text-green-500 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/50"
-                          onClick={() => onAddTagToSearch(tag.name)}
-                          aria-label={`${tag.name}を検索に追加`}
-                        >
-                          <PlusCircle size={18} />
-                        </Button>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
+                          <span className="text-sm font-medium pr-2 flex-1 min-w-0 truncate">
+                            {tag.name}
+                          </span>
+                          <div className="flex items-center gap-1 flex-shrink-0">
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-9 w-9 text-blue-500 hover:text-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/50"
-                              onClick={() => onViewTagDetails(tag.id)}
-                              aria-label={`${tag.name}の詳細を見る`}
+                              className="h-9 w-9 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/50"
+                              onClick={() => onAddNegativeTagToSearch(tag.name)}
+                              aria-label={`${tag.name}を検索から除外`}
                             >
-                              <Info size={18} />
+                              <MinusCircle size={18} />
                             </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{tag.description || '説明文はありません。'}</p>
-                          </TooltipContent>
-                        </Tooltip>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-9 w-9 text-green-500 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/50"
+                              onClick={() => onAddTagToSearch(tag.name)}
+                              aria-label={`${tag.name}を検索に追加`}
+                            >
+                              <PlusCircle size={18} />
+                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9 text-blue-500 hover:text-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/50"
+                                  onClick={() => onViewTagDetails(tag.id)}
+                                  aria-label={`${tag.name}の詳細を見る`}
+                                >
+                                  <Info size={18} />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{tag.description || '説明文はありません。'}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  {/* 公式タグを下部に表示 */}
+                  {productTags.filter(pt => pt.isOfficial).length > 0 && (
+                    <>
+                      <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 py-1 px-2 mt-3 mb-1">
+                        公式タグ（BOOTH由来）
                       </div>
-                    </div>
-                  ))}
+                      {productTags.filter(pt => pt.isOfficial).map(({ tag }) => (
+                        <div
+                          key={`official-${tag.id}`}
+                          className="flex items-center justify-between p-3 rounded-md hover:bg-accent dark:hover:bg-gray-700/50 transition-colors"
+                        >
+                          <span className="text-sm font-medium pr-2 flex-1 min-w-0 truncate text-gray-600 dark:text-gray-400">
+                            {tag.name}
+                          </span>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-9 w-9 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/50"
+                              onClick={() => onAddNegativeTagToSearch(tag.name)}
+                              aria-label={`${tag.name}を検索から除外`}
+                            >
+                              <MinusCircle size={18} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-9 w-9 text-green-500 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/50"
+                              onClick={() => onAddTagToSearch(tag.name)}
+                              aria-label={`${tag.name}を検索に追加`}
+                            >
+                              <PlusCircle size={18} />
+                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9 text-blue-500 hover:text-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/50"
+                                  onClick={() => onViewTagDetails(tag.id)}
+                                  aria-label={`${tag.name}の詳細を見る`}
+                                >
+                                  <Info size={18} />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{tag.description || '説明文はありません。'}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
                 </div>
               </ScrollArea>
             ) : (

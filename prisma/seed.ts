@@ -167,9 +167,10 @@ async function main() {
     if (avatarTag) {
       await prisma.productTag.upsert({
         where: {
-          productId_tagId: {
+          productId_tagId_isOfficial: {
             productId: product1.id,
             tagId: avatarTag.id,
+            isOfficial: false,
           }
         },
         // update: {} のため、既存レコードがある場合は更新されません。
@@ -178,6 +179,7 @@ async function main() {
           productId: product1.id,
           tagId: avatarTag.id,
           userId: testUser.id,
+          isOfficial: false,
         }
       });
     }
@@ -206,9 +208,10 @@ async function main() {
     if (costumeTag) {
       await prisma.productTag.upsert({
         where: {
-          productId_tagId: {
+          productId_tagId_isOfficial: {
             productId: product2.id,
             tagId: costumeTag.id,
+            isOfficial: false,
           }
         },
         // update: {} のため、既存レコードがある場合は更新されません。
@@ -217,6 +220,7 @@ async function main() {
           productId: product2.id,
           tagId: costumeTag.id,
           userId: testUser.id,
+          isOfficial: false,
         }
       });
     }

@@ -34,14 +34,26 @@ export async function PUT(
       }
     });
 
+    // ユーザーのロールを取得（公式タグ編集権限の確認用）
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true },
+    });
+    const isAdmin = user?.role === 'ADMIN';
+
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      // 現在の商品のタグを取得
+      // 現在の商品のタグを取得（公式/独自の区分を含む）
       const currentProductTags = await tx.productTag.findMany({
         where: { productId: productId },
         include: { tag: true },
       });
-      const currentTagNames = new Set(
-        currentProductTags.map((pt: { tag: { name: string } }) => pt.tag.name)
+
+      // 公式タグと独自タグを分離
+      const officialProductTags = currentProductTags.filter(pt => pt.isOfficial);
+      const manualProductTags = currentProductTags.filter(pt => !pt.isOfficial);
+
+      const currentManualTagNames = new Set(
+        manualProductTags.map((pt: { tag: { name: string } }) => pt.tag.name)
       );
 
       const newTagNames = new Set(sanitizedTags.map((t: { name: string }) => t.name));
@@ -50,8 +62,8 @@ export async function PUT(
       const removedTags: string[] = [];
       const keptTags: string[] = [];
 
-      // 削除されたタグを特定
-      for (const currentTag of currentProductTags) {
+      // 削除された独自タグを特定
+      for (const currentTag of manualProductTags) {
         if (!newTagNames.has(currentTag.tag.name)) {
           removedTags.push(currentTag.tag.id);
         } else {
@@ -61,7 +73,7 @@ export async function PUT(
 
       // 追加されたタグを特定
       for (const newTagData of sanitizedTags) {
-        if (!currentTagNames.has(newTagData.name)) {
+        if (!currentManualTagNames.has(newTagData.name)) {
           // 新規タグの場合は、まずTagモデルに存在するか確認し、なければ作成
           let tag = await tx.tag.findUnique({
             where: { name: newTagData.name },
@@ -79,21 +91,33 @@ export async function PUT(
         }
       }
 
-      // 既存のProductTagを削除
-      await tx.productTag.deleteMany({
-        where: {
-          productId: productId,
-        },
-      });
+      // 独自タグ（isOfficial: false）のみを削除
+      // 公式タグはADMIN以外は削除できない
+      if (isAdmin) {
+        // ADMINは全てのタグを削除可能
+        await tx.productTag.deleteMany({
+          where: {
+            productId: productId,
+          },
+        });
+      } else {
+        // 一般ユーザーは独自タグのみ削除可能
+        await tx.productTag.deleteMany({
+          where: {
+            productId: productId,
+            isOfficial: false,
+          },
+        });
+      }
 
-      // 新しいタグを作成または既存のタグと関連付け
+      // 新しい独自タグを作成または既存のタグと関連付け
       for (const tagData of sanitizedTags) {
         let tag = await tx.tag.findUnique({
           where: { name: tagData.name },
         });
 
         if (!tag) {
-          // タグが存在しない場合は新規作成 (addedTagsの計算で既に作成されている可能性もあるが、念のため)
+          // タグが存在しない場合は新規作成
           tag = await tx.tag.create({
             data: {
               name: tagData.name,
@@ -102,14 +126,29 @@ export async function PUT(
           });
         }
 
-        // ProductTagを作成
+        // ProductTagを作成（独自タグとして: isOfficial: false）
         await tx.productTag.create({
           data: {
             productId: productId,
             tagId: tag.id,
             userId: session.user.id!,
+            isOfficial: false,
           },
         });
+      }
+
+      // ADMINでない場合は公式タグを再作成（保持）
+      if (!isAdmin) {
+        for (const officialTag of officialProductTags) {
+          await tx.productTag.create({
+            data: {
+              productId: productId,
+              tagId: officialTag.tagId,
+              userId: officialTag.userId,
+              isOfficial: true,
+            },
+          });
+        }
       }
 
       // 最新のバージョン番号を取得
@@ -119,7 +158,7 @@ export async function PUT(
       });
       const newVersion = (latestHistory?.version || 0) + 1;
 
-      // TagEditHistoryを作成
+      // TagEditHistoryを作成（独自タグの変更のみを記録）
       await tx.tagEditHistory.create({
         data: {
           productId: productId,

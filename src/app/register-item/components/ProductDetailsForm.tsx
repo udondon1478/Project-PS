@@ -1,6 +1,7 @@
 'use client';
 
 import type { Dispatch, SetStateAction } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +12,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
 import { TagInput } from './TagInput';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // 商品情報の型定義 (page.tsxから移動・再利用)
 interface ProductInfo {
@@ -51,6 +62,9 @@ interface ProductDetailsFormProps {
   isError?: boolean;
 }
 
+// LocalStorage key for tracking if the user has seen the official tag warning
+const OFFICIAL_TAG_WARNING_SHOWN_KEY = 'polyseek_official_tag_warning_shown';
+
 export const ProductDetailsForm = ({
   productData,
   ageRatingTags,
@@ -67,12 +81,54 @@ export const ProductDetailsForm = ({
   message,
   isError = false,
 }: ProductDetailsFormProps) => {
+  // 公式タグ警告ダイアログの状態
+  const [isOfficialTagWarningOpen, setIsOfficialTagWarningOpen] = useState(false);
+  const [pendingOfficialTagName, setPendingOfficialTagName] = useState<string | null>(null);
+
   const handleFeatureTagToggle = (tagName: string) => {
     setManualTags((prevTags) =>
       prevTags.includes(tagName)
         ? prevTags.filter((t) => t !== tagName)
         : [...prevTags, tagName]
     );
+  };
+
+  // 公式タグクリック時のハンドラ
+  const handleOfficialTagClick = (tagName: string) => {
+    // 既に選択されている場合は解除のみ（警告不要）
+    if (manualTags.includes(tagName)) {
+      handleFeatureTagToggle(tagName);
+      return;
+    }
+
+    // 初回クリック時に警告を表示するかどうかを確認
+    const warningShown = typeof window !== 'undefined' && localStorage.getItem(OFFICIAL_TAG_WARNING_SHOWN_KEY);
+    if (!warningShown) {
+      // 警告ダイアログを表示
+      setPendingOfficialTagName(tagName);
+      setIsOfficialTagWarningOpen(true);
+    } else {
+      // 警告済みの場合は直接追加
+      handleFeatureTagToggle(tagName);
+    }
+  };
+
+  // 警告ダイアログで「追加」を選択した場合
+  const handleConfirmOfficialTag = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(OFFICIAL_TAG_WARNING_SHOWN_KEY, 'true');
+    }
+    if (pendingOfficialTagName) {
+      handleFeatureTagToggle(pendingOfficialTagName);
+    }
+    setIsOfficialTagWarningOpen(false);
+    setPendingOfficialTagName(null);
+  };
+
+  // 警告ダイアログで「キャンセル」を選択した場合
+  const handleCancelOfficialTag = () => {
+    setIsOfficialTagWarningOpen(false);
+    setPendingOfficialTagName(null);
   };
 
   return (
@@ -183,7 +239,7 @@ export const ProductDetailsForm = ({
 
           {productData.boothTags && productData.boothTags.length > 0 && (
             <div>
-              <Label>公式タグ</Label>
+              <Label>公式タグ（BOOTH由来）</Label>
               <div className="flex flex-wrap gap-2 mt-2">
                 {productData.boothTags.map((tagName) => (
                   <Button
@@ -191,7 +247,7 @@ export const ProductDetailsForm = ({
                     type="button"
                     variant={manualTags.includes(tagName) ? 'default' : 'secondary'}
                     size="sm"
-                    onClick={() => handleFeatureTagToggle(tagName)}
+                    onClick={() => handleOfficialTagClick(tagName)}
                     disabled={isLoading}
                     aria-pressed={manualTags.includes(tagName)}
                     className={manualTags.includes(tagName) ? "" : "bg-muted text-muted-foreground hover:bg-muted/80"}
@@ -200,7 +256,9 @@ export const ProductDetailsForm = ({
                   </Button>
                 ))}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">クリックすると「その他のタグ」に自動で入力されます。</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                公式タグは自動的に登録されます。クリックすると「その他のタグ（独自タグ）」にもコピーされます。
+              </p>
             </div>
           )}
 
@@ -232,6 +290,30 @@ export const ProductDetailsForm = ({
           )}
         </Button>
       </CardFooter>
+
+      {/* 公式タグコピー時の警告ダイアログ */}
+      <AlertDialog open={isOfficialTagWarningOpen} onOpenChange={setIsOfficialTagWarningOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>公式タグのコピーについて</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">
+                公式タグは自動的に登録されます。<strong>この操作を行わなくても登録されます。</strong>
+              </span>
+              <span className="block">
+                コピー機能は商品の特徴に適したタグのみ使用して下さい。
+              </span>
+              <span className="block text-muted-foreground text-xs mt-2">
+                ※ この警告は初回のみ表示されます。
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelOfficialTag}>キャンセル</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmOfficialTag}>追加する</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };

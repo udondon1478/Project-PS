@@ -16,36 +16,39 @@ export async function POST(request: Request) {
   try {
     const { productInfo, tags, ageRatingTagId, categoryTagId } = await request.json(); // 商品情報、タグ情報、対象年齢タグID、カテゴリータグIDを受け取る
     //console.log('Received productInfo:', productInfo); // ここにログを追加
-    const { boothJpUrl, boothEnUrl, title, description, lowPrice, highPrice, publishedAt, sellerName, sellerUrl, sellerIconUrl, images, variations } = productInfo;
+    const { boothJpUrl, boothEnUrl, title, description, lowPrice, highPrice, publishedAt, sellerName, sellerUrl, sellerIconUrl, images, variations, boothTags } = productInfo;
     console.log('Received productInfo in create API:', productInfo); // 追加
     console.log('Validation check values:', { boothJpUrl, title, sellerUrl, tags, variations }); // 追加
- 
+
     console.log('Received publishedAt:', publishedAt); // publishedAtの形式を確認するためのログ
-    
+
         // 必須フィールドのバリデーション
         if (!productInfo || !boothJpUrl || !title || !sellerUrl || !tags || !variations) {
           console.error("必須情報が不足しています。", { productInfo, boothJpUrl, title, sellerUrl, tags, variations });
           return NextResponse.json({ message: "必須情報が不足しています。（販売者情報、バリエーション情報を含む）" }, { status: 400 });
         }
-    
-        // 受け取ったタグ名リストに、対象年齢タグIDとカテゴリータグIDに対応するタグ名を追加
-        const allTagNames = [...tags];
+
+        // 独自タグ（manualTags）のリストを作成: ユーザーが選択したタグ + 対象年齢タグ + カテゴリータグ
+        const manualTagNames = [...tags];
         if (ageRatingTagId) {
           const ageRatingTag = await prisma.tag.findUnique({ where: { id: ageRatingTagId }, select: { name: true } });
           if (ageRatingTag) {
-            allTagNames.push(ageRatingTag.name);
+            manualTagNames.push(ageRatingTag.name);
           }
         }
         if (categoryTagId) {
           const categoryTag = await prisma.tag.findUnique({ where: { id: categoryTagId }, select: { name: true } });
           if (categoryTag) {
-            allTagNames.push(categoryTag.name);
+            manualTagNames.push(categoryTag.name);
           }
         }
- 
-        // 重複するタグ名を削除
-        const uniqueTagNames = Array.from(new Set(allTagNames));
- 
+
+        // 独自タグ名の重複を削除
+        const uniqueManualTagNames = Array.from(new Set(manualTagNames));
+
+        // 公式タグ（boothTags）のリストを作成
+        const officialTagNames: string[] = boothTags && Array.isArray(boothTags) ? boothTags : [];
+
         // タグカテゴリ 'other' を検索
         const otherTagCategory = await prisma.tagCategory.findUnique({
           where: { name: 'other' },
@@ -59,9 +62,9 @@ export async function POST(request: Request) {
           });
         }
 
-        // タグが存在するか確認し、存在しない場合は作成
-        const tagIds: string[] = [];
-        for (const tagName of uniqueTagNames) {
+        // 独自タグのIDを取得・作成
+        const manualTagIds: string[] = [];
+        for (const tagName of uniqueManualTagNames) {
           const tag = await prisma.tag.upsert({
             where: { name: tagName },
             update: {}, // 存在する場合は何もしない
@@ -73,8 +76,28 @@ export async function POST(request: Request) {
               },
             },
           });
-          tagIds.push(tag.id);
+          manualTagIds.push(tag.id);
         }
+
+        // 公式タグのIDを取得・作成
+        const officialTagIds: string[] = [];
+        for (const tagName of officialTagNames) {
+          const tag = await prisma.tag.upsert({
+            where: { name: tagName },
+            update: {}, // 存在する場合は何もしない
+            create: {
+              name: tagName,
+              language: 'ja',
+              tagCategory: {
+                connect: { id: otherTagCategory.id },
+              },
+            },
+          });
+          officialTagIds.push(tag.id);
+        }
+
+        // 履歴用に全タグIDを結合（独自タグのみを履歴に記録）
+        const allTagIds = [...manualTagIds];
     
         // 販売者が存在するか確認し、存在しない場合は作成
         let seller = null; // seller変数をifブロックの外で宣言
@@ -126,10 +149,20 @@ export async function POST(request: Request) {
               })),
             },
             productTags: {
-              create: tagIds.map(tagId => ({
-                tagId: tagId,
-                userId: userId, // タグを付けたユーザーとして登録ユーザーIDを使用
-              })),
+              create: [
+                // 独自タグ (isOfficial: false)
+                ...manualTagIds.map(tagId => ({
+                  tagId: tagId,
+                  userId: userId, // タグを付けたユーザーとして登録ユーザーIDを使用
+                  isOfficial: false,
+                })),
+                // 公式タグ (isOfficial: true)
+                ...officialTagIds.map(tagId => ({
+                  tagId: tagId,
+                  userId: userId,
+                  isOfficial: true,
+                })),
+              ],
             },
             variations: { // バリエーション情報を保存
               create: variations.map((variation: { name: string; price: number; type: string; order: number; isMain: boolean }) => ({
@@ -144,7 +177,7 @@ export async function POST(request: Request) {
               create: {
                 editorId: userId,
                 version: 1,
-                addedTags: tagIds,
+                addedTags: allTagIds, // 独自タグのみを履歴に記録
                 removedTags: [],
                 keptTags: [],
                 comment: '初期登録',
