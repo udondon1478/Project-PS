@@ -41,22 +41,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # 1. 単体テストの実行 (Unit Tests)
-      - name: Run Unit Tests
-        run: npm test
-
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
-
-      # 2. データベースのセットアップ (Migrate & Seed)
+      # 1. データベースのセットアップ (Migrate & Seed)
       - name: Setup Database
         env:
-          # ポート5433を指定 (servicesでマッピングしたポート)
           DATABASE_URL: "postgresql://testuser:testpass@localhost:5433/testdb"
           SEED_ENV: "test"
         run: |
           npx prisma migrate deploy
           npx prisma db seed
+
+      # 2. 単体テスト・統合テストの実行
+      - name: Run Unit Tests
+        env:
+          DATABASE_URL: "postgresql://testuser:testpass@localhost:5433/testdb"
+        run: npm test
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
 
       # 3. ビルド確認
       - name: Build Next.js App
