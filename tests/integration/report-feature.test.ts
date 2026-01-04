@@ -1,77 +1,41 @@
-import { test, expect } from '@playwright/test';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { prisma } from '@/lib/prisma';
 
-test.describe('Report Feature', () => {
-  test.beforeEach(async () => {
-    // Clean up any existing reports and users
+describe('Report Feature Integration Tests', () => {
+  const testEmail = 'test-report@example.com';
+  const testTagName = 'TestIntegrationTag';
+
+  const cleanup = async () => {
+    // Clean up in correct order due to foreign key constraints
     await prisma.report.deleteMany();
     await prisma.tag.deleteMany({
-      where: { name: 'TestTag' }
-    });
-    await prisma.productTag.deleteMany({
-      where: {
-        user: {
-          email: 'test@example.com'
-        }
-      }
-    });
-    await prisma.product.deleteMany({
-      where: {
-        user: {
-          email: 'test@example.com'
-        }
-      }
+      where: { name: testTagName }
     });
     await prisma.user.deleteMany({
-      where: {
-        email: 'test@example.com'
-      }
+      where: { email: testEmail }
     });
-  });
+  };
 
-  test.afterEach(async () => {
-    // Clean up any existing reports and users
-    await prisma.report.deleteMany();
-    await prisma.tag.deleteMany({
-      where: { name: 'TestTag' }
-    });
-    await prisma.productTag.deleteMany({
-      where: {
-        user: {
-          email: 'test@example.com'
-        }
-      }
-    });
-    await prisma.product.deleteMany({
-      where: {
-        user: {
-          email: 'test@example.com'
-        }
-      }
-    });
-    await prisma.user.deleteMany({
-      where: {
-        email: 'test@example.com'
-      }
-    });
-  });
+  beforeEach(cleanup);
+  afterEach(cleanup);
 
-  test('should create and resolve reports in the database', async () => {
+  it('should create and resolve reports in the database', async () => {
     // 1. Create test user
     const user = await prisma.user.create({
       data: {
         name: 'Test User',
-        email: 'test@example.com',
+        email: testEmail,
         role: 'USER',
         termsAgreedAt: new Date(),
       },
     });
 
-    // 2. Create test data
-    const tag = await prisma.tag.upsert({
-      where: { name: 'TestTag' },
-      update: {},
-      create: { name: 'TestTag', language: 'ja' },
+    // 2. Create test tag
+    const tag = await prisma.tag.create({
+      data: {
+        name: testTagName,
+        language: 'ja'
+      },
     });
 
     // 3. Create a report directly in the database
@@ -92,7 +56,7 @@ test.describe('Report Feature', () => {
     expect(report.tagId).toBe(tag.id);
     expect(report.reporterId).toBe(user.id);
 
-    // 5. Test resolving the report programmatically
+    // 5. Test resolving the report
     const resolvedReport = await prisma.report.update({
       where: { id: report.id },
       data: { status: 'RESOLVED' },
@@ -116,6 +80,6 @@ test.describe('Report Feature', () => {
     expect(reportWithRelations.reporter.id).toBe(user.id);
     expect(reportWithRelations.tag).toBeTruthy();
     expect(reportWithRelations.tag?.id).toBe(tag.id);
-    expect(reportWithRelations.tag?.name).toBe('TestTag');
-  });
+    expect(reportWithRelations.tag?.name).toBe(testTagName);
+  }, 15000); // 15 seconds timeout for database operations
 });
