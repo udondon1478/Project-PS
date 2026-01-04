@@ -17,17 +17,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return true;
       }
 
-      // OAuthプロバイダーからのメールアドレス検証状態をチェック
-      // 検証済み（emailVerified === true）の場合のみサインインを許可
-      // 未検証（false）または不明（undefined）の場合は拒否（セキュリティ対策）
-      // Note: account.email_verified と user.emailVerified は型定義にないため any でアクセス
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const emailVerified = (account as any).email_verified ?? (user as any).emailVerified;
-      if (emailVerified !== true) {
-        console.warn(`OAuth sign-in denied: email not verified or verification status unknown for provider ${account.provider}`);
-        return false;
-      }
-
       try {
         // 同じメールアドレスを持つ既存ユーザーを検索
         const existingUser = await prisma.user.findUnique({
