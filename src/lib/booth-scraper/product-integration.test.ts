@@ -71,6 +71,9 @@ describe('Product Checker', () => {
 describe('Product Creator', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // Mock user.findUnique to return a test user for validation
+        const mockUserFindUnique = vi.mocked(prisma.user.findUnique);
+        mockUserFindUnique.mockResolvedValue({ id: 'sys-user-1' } as any);
     });
 
     it('should create product with related entities', async () => {
