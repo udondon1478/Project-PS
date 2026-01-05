@@ -31,6 +31,7 @@ import { faLink } from '@fortawesome/free-solid-svg-icons';
 import ProductDetailSkeleton from '@/components/ProductDetailSkeleton';
 import MobileProductActions from '@/components/MobileProductActions';
 import MobileTagSheet from '@/components/MobileTagSheet';
+import { TagList } from "@/components/TagList";
 import { ProductTag, TagEditHistory } from "@/types/product";
 
 
@@ -270,6 +271,10 @@ const ProductDetailPage = () => {
   if (error) return <div className="container mx-auto px-4 py-8 text-center text-red-500">Error: {error}</div>;
   if (!product) return <div className="container mx-auto px-4 py-8 text-center">商品が見つかりませんでした。</div>;
 
+  const polyseekTags = product.productTags?.filter(pt => !pt.isOfficial) || [];
+  const officialTags = product.productTags?.filter(pt => pt.isOfficial) || [];
+
+
   return (
     <>
       <div className="container mx-auto px-4 py-8">
@@ -360,30 +365,20 @@ const ProductDetailPage = () => {
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-[425px]">
                       <DialogHeader><DialogTitle>タグを編集</DialogTitle></DialogHeader>
-                      {product.productTags && <TagEditor initialTags={product.productTags.filter(pt => !pt.isOfficial).map(pt => pt.tag)} onTagsChange={handleTagsUpdate} />}
+                      <TagEditor initialTags={polyseekTags.map(pt => pt.tag)} onTagsChange={handleTagsUpdate} />
                     </DialogContent>
                   </Dialog>
                 </div>
                 <TooltipProvider>
-                  {product.productTags && product.productTags.filter(pt => !pt.isOfficial).length > 0 ? (
+                  {polyseekTags.length > 0 ? (
                     <ScrollArea className="h-48">
-                      <div className="pr-2 space-y-1">
-                        {product.productTags.filter(pt => !pt.isOfficial).map(({ tag }) => (
-                          <div key={`manual-${tag.id}`} className="flex items-center justify-between p-2 rounded-md hover:bg-blue-100 dark:hover:bg-blue-800/50 transition-colors">
-                            <span className="text-sm font-medium pr-2">{tag.name}</span>
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/50" onClick={() => addNegativeTagToSearch(tag.name)}><MinusCircle size={16} /></Button>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-green-500 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/50" onClick={() => addTagToSearch(tag.name)}><PlusCircle size={16} /></Button>
-                              <Tooltip>
-                                <TooltipTrigger asChild data-testid={`tag-info-button-${tag.name}`}>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-500 hover:text-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/50" onClick={() => handleViewTagDetails(tag.id)} aria-label={`${tag.name}の詳細を見る`}><Info size={16} /></Button>
-                                </TooltipTrigger>
-                                <TooltipContent><p>{tag.description || '説明文はありません。'}</p></TooltipContent>
-                              </Tooltip>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                       <TagList
+                          tags={polyseekTags.map(pt => pt.tag)}
+                          onAddTagToSearch={addTagToSearch}
+                          onAddNegativeTagToSearch={addNegativeTagToSearch}
+                          onViewTagDetails={handleViewTagDetails}
+                          variant="manual"
+                        />
                     </ScrollArea>
                   ) : (
                     <div className="text-center py-6 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-lg text-sm text-blue-600 dark:text-blue-400">
@@ -420,28 +415,18 @@ const ProductDetailPage = () => {
               </div>
 
               {/* 公式タグ（BOOTH由来）ブロック */}
-              {product.productTags && product.productTags.filter(pt => pt.isOfficial).length > 0 && (
+              {officialTags.length > 0 && (
                 <div className="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
                   <h2 className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-4">公式タグ（BOOTH由来）</h2>
                   <TooltipProvider>
                     <ScrollArea className="h-32">
-                      <div className="pr-2 space-y-1">
-                        {product.productTags.filter(pt => pt.isOfficial).map(({ tag }) => (
-                          <div key={`official-${tag.id}`} className="flex items-center justify-between p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
-                            <span className="text-sm pr-2 text-gray-600 dark:text-gray-400">{tag.name}</span>
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/50" onClick={() => addNegativeTagToSearch(tag.name)}><MinusCircle size={16} /></Button>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-green-400 hover:text-green-600 hover:bg-green-100 dark:hover:bg-green-900/50" onClick={() => addTagToSearch(tag.name)}><PlusCircle size={16} /></Button>
-                              <Tooltip>
-                                <TooltipTrigger asChild data-testid={`tag-info-button-${tag.name}`}>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700/50" onClick={() => handleViewTagDetails(tag.id)} aria-label={`${tag.name}の詳細を見る`}><Info size={16} /></Button>
-                                </TooltipTrigger>
-                                <TooltipContent><p>{tag.description || '説明文はありません。'}</p></TooltipContent>
-                              </Tooltip>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                        <TagList
+                          tags={officialTags.map(pt => pt.tag)}
+                          onAddTagToSearch={addTagToSearch}
+                          onAddNegativeTagToSearch={addNegativeTagToSearch}
+                          onViewTagDetails={handleViewTagDetails}
+                          variant="official"
+                        />
                     </ScrollArea>
                   </TooltipProvider>
                 </div>

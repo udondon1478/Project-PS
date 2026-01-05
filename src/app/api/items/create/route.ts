@@ -22,11 +22,11 @@ export async function POST(request: Request) {
 
     console.log('Received publishedAt:', publishedAt); // publishedAtの形式を確認するためのログ
 
-        // 必須フィールドのバリデーション
-        if (!productInfo || !boothJpUrl || !title || !sellerUrl || !tags || !variations) {
-          console.error("必須情報が不足しています。", { productInfo, boothJpUrl, title, sellerUrl, tags, variations });
-          return NextResponse.json({ message: "必須情報が不足しています。（販売者情報、バリエーション情報を含む）" }, { status: 400 });
-        }
+    // 必須フィールドのバリデーション
+    if (!productInfo || !boothJpUrl || !title || !sellerUrl || !tags || !variations) {
+      console.error("必須情報が不足しています。", { productInfo, boothJpUrl, title, sellerUrl, tags, variations });
+      return NextResponse.json({ message: "必須情報が不足しています。（販売者情報、バリエーション情報を含む）" }, { status: 400 });
+    }
 
         // 独自タグ（manualTags）のリストを作成: ユーザーが選択したタグ + 対象年齢タグ + カテゴリータグ
         const manualTagNames = [...tags];

@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-import { PlusCircle, MinusCircle, Info } from 'lucide-react';
+import { TagList } from "@/components/TagList";
 import TagEditor from "@/components/TagEditor";
 import TagEditHistoryItem from "@/components/TagEditHistoryItem";
 import { ProductTag, TagEditHistory } from "@/types/product";
@@ -75,69 +75,27 @@ const MobileTagSheet: React.FC<MobileTagSheetProps> = ({
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader><DialogTitle>タグを編集</DialogTitle></DialogHeader>
-                    {productTags && (
-                      <TagEditor
+                    {/* productTags && を削除 */}
+                    <TagEditor
                         initialTags={polyseekTags.map(pt => pt.tag)}
                         onTagsChange={async (data) => {
                           await onTagsUpdate(data);
                           setIsTagEditorOpen(false);
                         }}
                       />
-                    )}
                   </DialogContent>
                 </Dialog>
               </div>
 
               {polyseekTags.length > 0 ? (
                 <ScrollArea className="h-40">
-                  <div className="pr-2 space-y-1">
-                    {polyseekTags.map(({ tag }) => (
-                      <div
-                        key={`manual-${tag.id}`}
-                        className="flex items-center justify-between p-3 rounded-md hover:bg-blue-100 dark:hover:bg-blue-800/50 transition-colors"
-                      >
-                        <span className="text-sm font-medium pr-2 flex-1 min-w-0 truncate">
-                          {tag.name}
-                        </span>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-9 w-9 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/50"
-                            onClick={() => onAddNegativeTagToSearch(tag.name)}
-                            aria-label={`${tag.name}を検索から除外`}
-                          >
-                            <MinusCircle size={18} />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-9 w-9 text-green-500 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/50"
-                            onClick={() => onAddTagToSearch(tag.name)}
-                            aria-label={`${tag.name}を検索に追加`}
-                          >
-                            <PlusCircle size={18} />
-                          </Button>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-9 w-9 text-blue-500 hover:text-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/50"
-                                onClick={() => onViewTagDetails(tag.id)}
-                                aria-label={`${tag.name}の詳細を見る`}
-                              >
-                                <Info size={18} />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{tag.description || '説明文はありません。'}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <TagList
+                    tags={polyseekTags.map(pt => pt.tag)}
+                    onAddTagToSearch={onAddTagToSearch}
+                    onAddNegativeTagToSearch={onAddNegativeTagToSearch}
+                    onViewTagDetails={onViewTagDetails}
+                    variant="manual"
+                  />
                 </ScrollArea>
               ) : (
                 <div className="text-center py-4 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-lg text-sm text-blue-600 dark:text-blue-400">
@@ -193,54 +151,13 @@ const MobileTagSheet: React.FC<MobileTagSheetProps> = ({
                   公式タグ（BOOTH由来） ({officialTags.length})
                 </h3>
                 <ScrollArea className="h-32">
-                  <div className="pr-2 space-y-1">
-                    {officialTags.map(({ tag }) => (
-                      <div
-                        key={`official-${tag.id}`}
-                        className="flex items-center justify-between p-3 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
-                      >
-                        <span className="text-sm pr-2 flex-1 min-w-0 truncate text-gray-600 dark:text-gray-400">
-                          {tag.name}
-                        </span>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-9 w-9 text-red-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/50"
-                            onClick={() => onAddNegativeTagToSearch(tag.name)}
-                            aria-label={`${tag.name}を検索から除外`}
-                          >
-                            <MinusCircle size={18} />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-9 w-9 text-green-400 hover:text-green-600 hover:bg-green-100 dark:hover:bg-green-900/50"
-                            onClick={() => onAddTagToSearch(tag.name)}
-                            aria-label={`${tag.name}を検索に追加`}
-                          >
-                            <PlusCircle size={18} />
-                          </Button>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-9 w-9 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700/50"
-                                onClick={() => onViewTagDetails(tag.id)}
-                                aria-label={`${tag.name}の詳細を見る`}
-                              >
-                                <Info size={18} />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{tag.description || '説明文はありません。'}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <TagList
+                    tags={officialTags.map(pt => pt.tag)}
+                    onAddTagToSearch={onAddTagToSearch}
+                    onAddNegativeTagToSearch={onAddNegativeTagToSearch}
+                    onViewTagDetails={onViewTagDetails}
+                    variant="official"
+                  />
                 </ScrollArea>
               </div>
             )}
