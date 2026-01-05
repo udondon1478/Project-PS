@@ -51,9 +51,7 @@ export const TagList: React.FC<TagListProps> = ({
   const isMobile = viewMode === 'mobile';
   const buttonClass = isMobile ? "h-9 w-9" : "h-7 w-7";
   const iconSize = isMobile ? 18 : 16;
-  // Info icon size might be consistent or follow the requested change logic. 
-  // CodeRabbit mentioned "icon size 18 when variant==='mobile', otherwise... icon size 16 for desktop".
-  // Let's stick to consistent sizes for all icons within the same viewMode.
+
 
   return (
     <div className="pr-2 space-y-1">

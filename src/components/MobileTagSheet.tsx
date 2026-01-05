@@ -51,8 +51,8 @@ const MobileTagSheet: React.FC<MobileTagSheetProps> = ({
 }) => {
   const [isTagEditorOpen, setIsTagEditorOpen] = useState(false);
 
-  const polyseekTags = productTags?.filter(pt => !pt.isOfficial) || [];
-  const officialTags = productTags?.filter(pt => pt.isOfficial) || [];
+  const polyseekTags = productTags.filter(pt => !pt.isOfficial);
+  const officialTags = productTags.filter(pt => pt.isOfficial);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -114,7 +114,7 @@ const MobileTagSheet: React.FC<MobileTagSheetProps> = ({
                       variant="outline"
                       size="sm"
                       className="w-full"
-                      disabled={!tagEditHistory || tagEditHistory.length === 0}
+                      disabled={tagEditHistory.length === 0}
                     >
                       タグ編集履歴を閲覧
                     </Button>
