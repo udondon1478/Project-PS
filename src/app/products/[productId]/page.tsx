@@ -378,6 +378,7 @@ const ProductDetailPage = () => {
                           onAddNegativeTagToSearch={addNegativeTagToSearch}
                           onViewTagDetails={handleViewTagDetails}
                           variant="manual"
+                          viewMode="desktop"
                         />
                     </ScrollArea>
                   ) : (
@@ -426,6 +427,7 @@ const ProductDetailPage = () => {
                           onAddNegativeTagToSearch={addNegativeTagToSearch}
                           onViewTagDetails={handleViewTagDetails}
                           variant="official"
+                          viewMode="desktop"
                         />
                     </ScrollArea>
                   </TooltipProvider>

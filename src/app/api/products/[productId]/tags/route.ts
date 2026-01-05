@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Prisma, Role } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth'; // authをインポート
 import { sanitizeAndValidate } from '@/lib/sanitize';
@@ -34,12 +34,6 @@ export async function PUT(
       }
     });
 
-    // ユーザーのロールを取得（公式タグ編集権限の確認用）
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { role: true },
-    });
-    const isAdmin = user?.role === Role.ADMIN;
 
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // 現在の商品のタグを取得（公式/独自の区分を含む）
@@ -49,7 +43,7 @@ export async function PUT(
       });
 
       // 公式タグと独自タグを分離
-      const officialProductTags = currentProductTags.filter(pt => pt.isOfficial);
+      // const officialProductTags = currentProductTags.filter(pt => pt.isOfficial); // Unused
       const manualProductTags = currentProductTags.filter(pt => !pt.isOfficial);
 
       const currentManualTagNames = new Set(
@@ -127,40 +121,7 @@ export async function PUT(
         });
       }
 
-      // 公式タグは削除していないので再作成は不要 (ADMIN分岐削除に伴い修正)
-      // ただし、以前のロジックでADMINが全削除していた場合は再作成が必要だったが、
-      // 今回の変更で公式タグはタッチしなくなったため、ここの処理は不要になる可能性がある。
-      // しかし念のため、現状のロジック構造を大きく変えすぎないように、
-      // 独自タグの作成ループ（上記）とは別に、もし公式タグが消えている場合の復旧ロジックがあれば良いが、
-      // ここでは「ADMINでない場合は公式タグを再作成（保持）」という元のロジックが、
-      // 「ADMINでなく、かつdeleteManyでisOfficial:falseのみを消した」なら
-      // 公式タグはDBに残っているはずなので、createで重複エラーになる可能性がある。
-      // 既存コードの if (!isAdmin) ブロックは、以前は「ADMIN以外は公式タグを消せないので（そもそも消してない想定？いや、deleteManyはisOfficial:falseのみだった）」
-      // いや、元のコードを確認すると:
-      // if (isAdmin) { deleteMany(all) } else { deleteMany(false) }
-      // その後: if (!isAdmin) { create official tags }
-      // つまり、「ADMIN以外はdeleteManyで公式タグを消していないので、createすると重複する」はずだが...
-      // Prismaのcreateは重複するとエラーになるのでは？
-      // 元のコードの update: {} がない create なので、重複エラーになるはず。
-      // ...あ、なるほど。 transaction内だからか？
-      // いや、deleteManyの後にcreateしている。
-      // 元のコードの if (!isAdmin) ブロックは、実はバグだった可能性があるか、
-      // あるいは productTags.create のように親からのネスト作成ではなく直接 create なので
-      // 重複エラーが出るはず。
-      // 今回、deleteManyを isOfficial:false に限定したので、公式タグは残る。
-      // したがって、公式タグを再登録する必要はない。
-      // なので、このブロックは削除するのが正しい。
-
-      // 元のコード:
-      // if (!isAdmin) {
-      //   for (const officialTag of officialProductTags) {
-      //     await tx.productTag.create(...)
-      //   }
-      // }
-      
-      // 今回の変更で全員 isOfficial: false のみを消すようになったので、
-      // 公式タグはDBに残存している。再作成しようとするとUnique制約違反になる。
-      // したがって削除する。
+      // 独自タグ（isOfficial: false）のみを削除したので、公式タグはそのまま残ります。再作成は不要です。
 
       // 最新のバージョン番号を取得
       const latestHistory = await tx.tagEditHistory.findFirst({

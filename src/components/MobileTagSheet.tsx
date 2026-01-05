@@ -95,6 +95,7 @@ const MobileTagSheet: React.FC<MobileTagSheetProps> = ({
                     onAddNegativeTagToSearch={onAddNegativeTagToSearch}
                     onViewTagDetails={onViewTagDetails}
                     variant="manual"
+                    viewMode="mobile"
                   />
                 </ScrollArea>
               ) : (
@@ -157,6 +158,7 @@ const MobileTagSheet: React.FC<MobileTagSheetProps> = ({
                     onAddNegativeTagToSearch={onAddNegativeTagToSearch}
                     onViewTagDetails={onViewTagDetails}
                     variant="official"
+                    viewMode="mobile"
                   />
                 </ScrollArea>
               </div>

@@ -12,6 +12,7 @@ interface TagListProps {
   onAddNegativeTagToSearch: (tagName: string) => void;
   onViewTagDetails: (tagId: string) => void;
   variant: 'manual' | 'official';
+  viewMode?: 'mobile' | 'desktop';
 }
 
 export const TagList: React.FC<TagListProps> = ({
@@ -19,7 +20,8 @@ export const TagList: React.FC<TagListProps> = ({
   onAddTagToSearch,
   onAddNegativeTagToSearch,
   onViewTagDetails,
-  variant
+  variant,
+  viewMode = 'desktop'
 }) => {
   const isManual = variant === 'manual';
 
@@ -45,6 +47,14 @@ export const TagList: React.FC<TagListProps> = ({
     ? "text-blue-500 hover:text-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/50"
     : "text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700/50";
 
+  // サイズ設定
+  const isMobile = viewMode === 'mobile';
+  const buttonClass = isMobile ? "h-9 w-9" : "h-7 w-7";
+  const iconSize = isMobile ? 18 : 16;
+  // Info icon size might be consistent or follow the requested change logic. 
+  // CodeRabbit mentioned "icon size 18 when variant==='mobile', otherwise... icon size 16 for desktop".
+  // Let's stick to consistent sizes for all icons within the same viewMode.
+
   return (
     <div className="pr-2 space-y-1">
       {tags.map((tag) => (
@@ -59,38 +69,31 @@ export const TagList: React.FC<TagListProps> = ({
             <Button
               variant="ghost"
               size="icon"
-              className={`h-7 w-7 ${minusClass}`} // モバイル版はh-9 w-9だったが、デスクトップはh-7 w-7。共通化でどうするか？
-              // モバイル版のボタンサイズが大きい方がタップしやすい。
-              // propsでサイズを受け取るか、あるいは全て大きくするか。
-              // デスクトップ版のTagSearchBar等でも使われるならサイズ感は大事。
-              // 今回は page.tsx (デスクトップ主体だがモバイルも含む) と MobileTagSheet (モバイル) の共通化。
-              // MobileTagSheetでは h-9 w-9 (36px), page.tsxでは h-7 w-7 (28px).
-              // Reviewer comment: "extract a reusable TagList component ... parametrize classes/icon sizes by variant"
-              // なので、variant または size prop で制御する。
+              className={`${buttonClass} ${minusClass}`}
               onClick={() => onAddNegativeTagToSearch(tag.name)}
               aria-label={`${tag.name}を検索から除外`}
             >
-              <MinusCircle size={18} /> {/* sizeも違う？ page.tsxは16, Mobileは18 */}
+              <MinusCircle size={iconSize} />
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className={`h-7 w-7 ${plusClass}`}
+              className={`${buttonClass} ${plusClass}`}
               onClick={() => onAddTagToSearch(tag.name)}
               aria-label={`${tag.name}を検索に追加`}
             >
-              <PlusCircle size={18} />
+              <PlusCircle size={iconSize} />
             </Button>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={`h-7 w-7 ${infoClass}`}
+                  className={`${buttonClass} ${infoClass}`}
                   onClick={() => onViewTagDetails(tag.id)}
                   aria-label={`${tag.name}の詳細を見る`}
                 >
-                  <Info size={18} />
+                  <Info size={iconSize} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
