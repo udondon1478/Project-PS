@@ -126,7 +126,7 @@ const MobileTagSheet: React.FC<MobileTagSheetProps> = ({
                     <div className="flex-grow min-h-0">
                       <ScrollArea className="h-full">
                         <div className="space-y-4 pr-6">
-                          {tagEditHistory?.length > 0 ? (
+                          {tagEditHistory.length > 0 ? (
                             tagEditHistory.map((history) => (
                               <TagEditHistoryItem
                                 key={history.id}

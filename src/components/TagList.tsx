@@ -4,7 +4,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { PlusCircle, MinusCircle, Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Tag } from "@prisma/client"; // あるいは types/product から
+
 
 interface TagListProps {
   tags: { id: string; name: string; description?: string | null }[];
