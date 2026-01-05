@@ -366,8 +366,8 @@ const ProductDetailPage = () => {
                 </div>
                 <TooltipProvider>
                   {product.productTags && product.productTags.filter(pt => !pt.isOfficial).length > 0 ? (
-                    <ScrollArea className="max-h-48 w-full">
-                      <div className="pr-4 space-y-1">
+                    <ScrollArea className="h-48">
+                      <div className="pr-2 space-y-1">
                         {product.productTags.filter(pt => !pt.isOfficial).map(({ tag }) => (
                           <div key={`manual-${tag.id}`} className="flex items-center justify-between p-2 rounded-md hover:bg-blue-100 dark:hover:bg-blue-800/50 transition-colors">
                             <span className="text-sm font-medium pr-2">{tag.name}</span>
@@ -424,8 +424,8 @@ const ProductDetailPage = () => {
                 <div className="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
                   <h2 className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-4">公式タグ（BOOTH由来）</h2>
                   <TooltipProvider>
-                    <ScrollArea className="max-h-32 w-full">
-                      <div className="pr-4 space-y-1">
+                    <ScrollArea className="h-32">
+                      <div className="pr-2 space-y-1">
                         {product.productTags.filter(pt => pt.isOfficial).map(({ tag }) => (
                           <div key={`official-${tag.id}`} className="flex items-center justify-between p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
                             <span className="text-sm pr-2 text-gray-600 dark:text-gray-400">{tag.name}</span>

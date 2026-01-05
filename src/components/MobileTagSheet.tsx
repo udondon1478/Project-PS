@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 import { PlusCircle, MinusCircle, Info } from 'lucide-react';
 import TagEditor from "@/components/TagEditor";
 import TagEditHistoryItem from "@/components/TagEditHistoryItem";
@@ -88,8 +89,8 @@ const MobileTagSheet: React.FC<MobileTagSheetProps> = ({
               </div>
 
               {polyseekTags.length > 0 ? (
-                <ScrollArea className="max-h-40">
-                  <div className="pr-4 space-y-1">
+                <ScrollArea className="h-40">
+                  <div className="pr-2 space-y-1">
                     {polyseekTags.map(({ tag }) => (
                       <div
                         key={`manual-${tag.id}`}
@@ -191,8 +192,8 @@ const MobileTagSheet: React.FC<MobileTagSheetProps> = ({
                 <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3">
                   公式タグ（BOOTH由来） ({officialTags.length})
                 </h3>
-                <ScrollArea className="max-h-32">
-                  <div className="pr-4 space-y-1">
+                <ScrollArea className="h-32">
+                  <div className="pr-2 space-y-1">
                     {officialTags.map(({ tag }) => (
                       <div
                         key={`official-${tag.id}`}
