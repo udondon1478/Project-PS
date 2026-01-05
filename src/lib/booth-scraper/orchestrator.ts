@@ -51,7 +51,8 @@ export interface ScraperOptions {
    */
   onExistenceCheckFailure?: 'continue' | 'stop';
   searchParams?: {
-    query?: string;
+    query?: string; // Keyword search (maps to q= parameter)
+    tags?: string[]; // Tag filter (maps to tags[]= parameter)
     category?: string;
     adult?: boolean;
     useTargetTags?: boolean;
@@ -205,7 +206,7 @@ class BoothScraperOrchestrator {
              ...options,
              searchParams: {
                ...options.searchParams,
-               query: tag.tag,
+               tags: [tag.tag], // Use tags[] parameter for exact tag matching
                category: tag.category || undefined,
                useTargetTags: false // It's now a specific target
              }
@@ -360,9 +361,11 @@ class BoothScraperOrchestrator {
     let tagId: string | undefined;
     if (isBackfill) {
         // Try to find the tag in DB to resume (include category for composite key)
+        // Use first tag from tags array (set by useTargetTags expansion)
+        const searchTag = options.searchParams?.tags?.[0];
         const tag = await prisma.scraperTargetTag.findFirst({
             where: {
-              tag: options.searchParams?.query,
+              tag: searchTag,
               category: options.searchParams?.category,
             }
         });
