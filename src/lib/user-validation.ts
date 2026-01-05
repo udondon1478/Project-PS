@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
  * @returns True if the user exists, false otherwise
  */
 export async function validateUserExists(userId: string): Promise<boolean> {
+  // Check for empty or whitespace-only userId
   if (!userId || userId.trim() === '') {
     return false;
   }
