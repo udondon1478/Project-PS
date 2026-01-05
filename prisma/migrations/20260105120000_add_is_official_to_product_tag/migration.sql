@@ -10,4 +10,7 @@ DROP INDEX "ProductTag_productId_tagId_key";
 CREATE UNIQUE INDEX "ProductTag_productId_tagId_isOfficial_key" ON "ProductTag"("productId", "tagId", "isOfficial");
 
 -- CreateIndex: Add index for isOfficial column for query performance
+-- Recommendation: Verify the performance impact of this index in production.
+-- Use EXPLAIN ANALYZE to compare query plans and execution times for queries filtering on 'isOfficial',
+-- both with and without the index, to ensure it provides the expected benefits.
 CREATE INDEX "ProductTag_isOfficial_idx" ON "ProductTag"("isOfficial");

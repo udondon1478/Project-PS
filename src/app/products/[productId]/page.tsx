@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import TagEditor from "@/components/TagEditor";
 import TagEditHistoryItem from "@/components/TagEditHistoryItem";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { PlusCircle, MinusCircle, Info, Heart, Check } from 'lucide-react';
+import { Heart, Check } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { TagDetailModal } from '@/components/TagDetailModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
