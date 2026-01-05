@@ -350,9 +350,10 @@ const ProductDetailPage = () => {
                 </div>
               </div>
 
-              <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-lg border dark:border-slate-700">
+              {/* PolySeekタグ（独自タグ）ブロック */}
+              <div className="p-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold">タグ</h2>
+                  <h2 className="text-xl font-semibold text-blue-700 dark:text-blue-300">PolySeekタグ</h2>
                   <Dialog open={isTagEditorOpen} onOpenChange={setIsTagEditorOpen}>
                     <DialogTrigger asChild>
                       <Button variant="outline" size="sm">編集</Button>
@@ -364,92 +365,87 @@ const ProductDetailPage = () => {
                   </Dialog>
                 </div>
                 <TooltipProvider>
-                  {product.productTags && product.productTags.length > 0 ? (
-                    <div className="flex flex-col">
-                      <ScrollArea className="h-64 w-full">
-                        <div className="pr-4 space-y-1">
-                          {/* PolySeekタグ（独自タグ）を上部に表示 */}
-                          {product.productTags.filter(pt => !pt.isOfficial).length > 0 && (
-                            <>
-                              <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 py-1 px-2 mb-1">
-                                PolySeekタグ
-                              </div>
-                              {product.productTags.filter(pt => !pt.isOfficial).map(({ tag, isOfficial }) => (
-                                <div key={`manual-${tag.id}`} className="flex items-center justify-between p-2 rounded-md hover:bg-accent dark:hover:bg-gray-700/50 transition-colors bg-blue-50/50 dark:bg-blue-900/20">
-                                  <span className="text-sm font-medium pr-2">{tag.name}</span>
-                                  <div className="flex items-center gap-1 flex-shrink-0">
-                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/50" onClick={() => addNegativeTagToSearch(tag.name)}><MinusCircle size={16} /></Button>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-green-500 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/50" onClick={() => addTagToSearch(tag.name)}><PlusCircle size={16} /></Button>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild data-testid={`tag-info-button-${tag.name}`}>
-                                          <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-500 hover:text-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/50" onClick={() => handleViewTagDetails(tag.id)} aria-label={`${tag.name}の詳細を見る`}><Info size={16} /></Button>
-                                        </TooltipTrigger>
-                                      <TooltipContent><p>{tag.description || '説明文はありません。'}</p></TooltipContent>
-                                    </Tooltip>
-                                  </div>
-                                </div>
-                              ))}
-                            </>
-                          )}
-                          {/* 公式タグを下部に表示 */}
-                          {product.productTags.filter(pt => pt.isOfficial).length > 0 && (
-                            <>
-                              <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 py-1 px-2 mt-3 mb-1">
-                                公式タグ（BOOTH由来）
-                              </div>
-                              {product.productTags.filter(pt => pt.isOfficial).map(({ tag, isOfficial }) => (
-                                <div key={`official-${tag.id}`} className="flex items-center justify-between p-2 rounded-md hover:bg-accent dark:hover:bg-gray-700/50 transition-colors">
-                                  <span className="text-sm font-medium pr-2 text-gray-600 dark:text-gray-400">{tag.name}</span>
-                                  <div className="flex items-center gap-1 flex-shrink-0">
-                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/50" onClick={() => addNegativeTagToSearch(tag.name)}><MinusCircle size={16} /></Button>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-green-500 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/50" onClick={() => addTagToSearch(tag.name)}><PlusCircle size={16} /></Button>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild data-testid={`tag-info-button-${tag.name}`}>
-                                          <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-500 hover:text-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/50" onClick={() => handleViewTagDetails(tag.id)} aria-label={`${tag.name}の詳細を見る`}><Info size={16} /></Button>
-                                        </TooltipTrigger>
-                                      <TooltipContent><p>{tag.description || '説明文はありません。'}</p></TooltipContent>
-                                    </Tooltip>
-                                  </div>
-                                </div>
-                              ))}
-                            </>
-                          )}
-                        </div>
-                      </ScrollArea>
-                      <div className="mt-4 flex-shrink-0">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" className="w-full" disabled={!product.tagEditHistory || product.tagEditHistory.length === 0}>
-                              タグ編集履歴を閲覧
-                            </Button>
-                          </DialogTrigger>
-                           <DialogContent className="max-w-[95vw] sm:max-w-xl lg:max-w-3xl h-[90vh] flex flex-col">
-                            <DialogHeader className="flex-shrink-0"><DialogTitle>タグ編集履歴</DialogTitle></DialogHeader>
-                            <div className="flex-grow min-h-0">
-                              <ScrollArea className="h-full">
-                                <div className="space-y-4 pr-6">
-                                  {product.tagEditHistory?.length > 0 ? (
-                                    product.tagEditHistory.map((history) => (
-                                      <TagEditHistoryItem key={history.id} history={history} tagMap={tagMap} />
-                                    ))
-                                  ) : (
-                                    <p>編集履歴はありません。</p>
-                                  )}
-                                </div>
-                              </ScrollArea>
+                  {product.productTags && product.productTags.filter(pt => !pt.isOfficial).length > 0 ? (
+                    <ScrollArea className="max-h-48 w-full">
+                      <div className="pr-4 space-y-1">
+                        {product.productTags.filter(pt => !pt.isOfficial).map(({ tag }) => (
+                          <div key={`manual-${tag.id}`} className="flex items-center justify-between p-2 rounded-md hover:bg-blue-100 dark:hover:bg-blue-800/50 transition-colors">
+                            <span className="text-sm font-medium pr-2">{tag.name}</span>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/50" onClick={() => addNegativeTagToSearch(tag.name)}><MinusCircle size={16} /></Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-green-500 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/50" onClick={() => addTagToSearch(tag.name)}><PlusCircle size={16} /></Button>
+                              <Tooltip>
+                                <TooltipTrigger asChild data-testid={`tag-info-button-${tag.name}`}>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-500 hover:text-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/50" onClick={() => handleViewTagDetails(tag.id)} aria-label={`${tag.name}の詳細を見る`}><Info size={16} /></Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>{tag.description || '説明文はありません。'}</p></TooltipContent>
+                              </Tooltip>
                             </div>
-                          </DialogContent>
-                        </Dialog>
+                          </div>
+                        ))}
                       </div>
-                    </div>
+                    </ScrollArea>
                   ) : (
-                    <div className="text-center py-10 border-2 border-dashed rounded-lg text-sm text-gray-500 dark:text-gray-400">
-                      <p>この商品にはまだタグがありません。</p>
-                      <Button variant="link" onClick={() => setIsTagEditorOpen(true)}>最初のタグを追加する</Button>
+                    <div className="text-center py-6 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-lg text-sm text-blue-600 dark:text-blue-400">
+                      <p>PolySeekタグはまだありません。</p>
+                      <Button variant="link" className="text-blue-600 dark:text-blue-400" onClick={() => setIsTagEditorOpen(true)}>タグを追加する</Button>
                     </div>
                   )}
                 </TooltipProvider>
+                <div className="mt-4">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="w-full" disabled={!product.tagEditHistory || product.tagEditHistory.length === 0}>
+                        タグ編集履歴を閲覧
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-[95vw] sm:max-w-xl lg:max-w-3xl h-[90vh] flex flex-col">
+                      <DialogHeader className="flex-shrink-0"><DialogTitle>タグ編集履歴</DialogTitle></DialogHeader>
+                      <div className="flex-grow min-h-0">
+                        <ScrollArea className="h-full">
+                          <div className="space-y-4 pr-6">
+                            {product.tagEditHistory?.length > 0 ? (
+                              product.tagEditHistory.map((history) => (
+                                <TagEditHistoryItem key={history.id} history={history} tagMap={tagMap} />
+                              ))
+                            ) : (
+                              <p>編集履歴はありません。</p>
+                            )}
+                          </div>
+                        </ScrollArea>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
+
+              {/* 公式タグ（BOOTH由来）ブロック */}
+              {product.productTags && product.productTags.filter(pt => pt.isOfficial).length > 0 && (
+                <div className="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <h2 className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-4">公式タグ（BOOTH由来）</h2>
+                  <TooltipProvider>
+                    <ScrollArea className="max-h-32 w-full">
+                      <div className="pr-4 space-y-1">
+                        {product.productTags.filter(pt => pt.isOfficial).map(({ tag }) => (
+                          <div key={`official-${tag.id}`} className="flex items-center justify-between p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
+                            <span className="text-sm pr-2 text-gray-600 dark:text-gray-400">{tag.name}</span>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/50" onClick={() => addNegativeTagToSearch(tag.name)}><MinusCircle size={16} /></Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-green-400 hover:text-green-600 hover:bg-green-100 dark:hover:bg-green-900/50" onClick={() => addTagToSearch(tag.name)}><PlusCircle size={16} /></Button>
+                              <Tooltip>
+                                <TooltipTrigger asChild data-testid={`tag-info-button-${tag.name}`}>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700/50" onClick={() => handleViewTagDetails(tag.id)} aria-label={`${tag.name}の詳細を見る`}><Info size={16} /></Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>{tag.description || '説明文はありません。'}</p></TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </TooltipProvider>
+                </div>
+              )}
             </div>
           </aside>
         </div>
