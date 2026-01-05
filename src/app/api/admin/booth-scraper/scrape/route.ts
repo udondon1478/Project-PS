@@ -11,6 +11,20 @@ export async function POST(req: Request) {
   }
 
   try {
+    // Validate that the session user exists in the database
+    const dbUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { id: true },
+    });
+
+    if (!dbUser) {
+      console.error(`[Scraper API] User ID '${session.user.id}' from session not found in database`);
+      return NextResponse.json(
+        { error: 'User session is invalid. Please sign out and sign in again.' },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const { mode, options } = body; // mode: 'NEW' | 'BACKFILL'
 
@@ -19,7 +33,7 @@ export async function POST(req: Request) {
     }
 
     // Now returns the IDs of enqueued items (or just the first one if single)
-    const runId = await orchestrator.start(mode, session.user.id, options);
+    const runId = await orchestrator.start(mode, dbUser.id, options);
     
     return NextResponse.json({ 
       success: true, 

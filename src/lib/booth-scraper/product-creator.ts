@@ -31,13 +31,23 @@ export interface ScrapedProductData {
  * - Tag resolution (including Age Rating)
  * - Product creation
  * - Image & Variation creation
- * 
+ *
  * @param data Scraped product data
  * @param systemUserId ID of the system user acting as the creator
  */
 export async function createProductFromScraper(data: ScrapedProductData, systemUserId: string) {
   if (!systemUserId) {
     throw new Error('systemUserId is required for creating products via scraper');
+  }
+
+  // Validate that the user exists in the database
+  const user = await prisma.user.findUnique({
+    where: { id: systemUserId },
+    select: { id: true },
+  });
+
+  if (!user) {
+    throw new Error(`User with ID '${systemUserId}' not found in database. Please re-authenticate.`);
   }
 
   const {
