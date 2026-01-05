@@ -20,7 +20,8 @@ export async function GET(request: Request, context: { params: Promise<{ product
           },
         },
         productTags: { // 商品に紐づくタグ情報も取得
-          include: {
+          select: {
+            isOfficial: true, // 公式タグかどうかのフラグ
             tag: {
               select: {
                 id: true,

@@ -56,6 +56,7 @@ export interface ProductTag {
       name: string;
     };
   };
+  isOfficial: boolean; // BOOTH由来の公式タグかどうか
 }
 
 export interface TagEditHistory {
