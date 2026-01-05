@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { TagResolver } from './tag-resolver';
 import { sendDiscordNotification } from '../discord/webhook';
+import { validateUserExists } from '@/lib/user-validation';
 
 export interface ScrapedProductData {
   boothJpUrl: string;
@@ -41,12 +42,9 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
   }
 
   // Validate that the user exists in the database
-  const user = await prisma.user.findUnique({
-    where: { id: systemUserId },
-    select: { id: true },
-  });
+  const userExists = await validateUserExists(systemUserId);
 
-  if (!user) {
+  if (!userExists) {
     throw new Error(`User with ID '${systemUserId}' not found in database. Please re-authenticate.`);
   }
 

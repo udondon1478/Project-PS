@@ -3,6 +3,11 @@ import { checkExistingProducts } from './product-checker';
 import { createProductFromScraper } from './product-creator';
 import { prisma } from '../prisma'; // Import relative to match tag-resolver likely resolution if needed, or alias
 
+// Mock user-validation module
+vi.mock('../user-validation', () => ({
+  validateUserExists: vi.fn().mockResolvedValue(true),
+}));
+
 // Mock prisma module
 vi.mock('../prisma', () => ({
   prisma: {
@@ -24,6 +29,9 @@ vi.mock('../prisma', () => ({
     tagCategory: {
         findUnique: vi.fn(),
         create: vi.fn(),
+    },
+    user: {
+        findUnique: vi.fn(),
     },
     $transaction: vi.fn((callback) => callback(prisma)),
   },
