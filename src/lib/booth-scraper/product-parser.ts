@@ -51,16 +51,16 @@ export function parseProductJson(json: any, url: string): ProductPageResult {
   // JSON構造: category: { name: "サブカテゴリ", parent: { name: "親カテゴリ" } }
   if (json.category) {
     // 親カテゴリ（例："3Dモデル"、"素材データ"）
-    if (json.category.parent?.name && json.category.parent.name.trim().length > 0) {
-      const parentCategory = json.category.parent.name;
-      if (!tags.includes(parentCategory)) {
+    if (json.category.parent?.name) {
+      const parentCategory = json.category.parent.name.trim();
+      if (parentCategory.length > 0 && !tags.includes(parentCategory)) {
         tags.push(parentCategory);
       }
     }
     // サブカテゴリ（例："3D装飾品"、"イラスト3D素材"）
-    if (json.category.name && json.category.name.trim().length > 0) {
-      const subCategory = json.category.name;
-      if (!tags.includes(subCategory)) {
+    if (json.category.name) {
+      const subCategory = json.category.name.trim();
+      if (subCategory.length > 0 && !tags.includes(subCategory)) {
         tags.push(subCategory);
       }
     }
