@@ -248,12 +248,21 @@ export function parseProductPage(html: string, url: string): ProductPageResult |
                 const childToParent = new Map<string, string>();
 
                 catMap.forEach((pItem: any) => {
-                    const parentName = pItem.pc;
-                    if (parentName && Array.isArray(pItem.children)) {
-                        pItem.children.forEach((cItem: any) => {
-                            if (cItem.label) childToParent.set(cItem.label, parentName);
-                            if (cItem.value) childToParent.set(cItem.value, parentName);
-                        });
+                    const parentNameRaw = pItem.pc;
+                    if (typeof parentNameRaw === 'string' && Array.isArray(pItem.children)) {
+                        const parentName = parentNameRaw.trim();
+                        if (parentName.length > 0) {
+                            pItem.children.forEach((cItem: any) => {
+                                if (typeof cItem.label === 'string') {
+                                    const label = cItem.label.trim();
+                                    if (label && label.length > 0) childToParent.set(label, parentName);
+                                }
+                                if (typeof cItem.value === 'string') {
+                                    const val = cItem.value.trim();
+                                    if (val && val.length > 0) childToParent.set(val, parentName);
+                                }
+                            });
+                        }
                     }
                 });
 
