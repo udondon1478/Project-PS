@@ -1,4 +1,5 @@
 import * as cheerio from 'cheerio';
+import he from 'he';
 
 
 
@@ -45,7 +46,26 @@ export interface ProductPageResult {
 export function parseProductJson(json: any, url: string): ProductPageResult {
   const tags = Array.isArray(json.tags) ? json.tags.map((t: any) => t.name) : [];
   const images = Array.isArray(json.images) ? json.images.map((img: any) => img.original) : [];
-  
+
+  // カテゴリ・サブカテゴリを公式タグとして追加
+  // JSON構造: category: { name: "サブカテゴリ", parent: { name: "親カテゴリ" } }
+  if (json.category) {
+    // 親カテゴリ（例："3Dモデル"、"素材データ"）
+    if (json.category.parent?.name) {
+      const parentCategory = json.category.parent.name.trim();
+      if (parentCategory.length > 0 && !tags.includes(parentCategory)) {
+        tags.push(parentCategory);
+      }
+    }
+    // サブカテゴリ（例："3D装飾品"、"イラスト3D素材"）
+    if (json.category.name) {
+      const subCategory = json.category.name.trim();
+      if (subCategory.length > 0 && !tags.includes(subCategory)) {
+        tags.push(subCategory);
+      }
+    }
+  }
+
   // Price extraction "¥ 0" -> 0
   const priceStr = json.price || '0';
   const price = parseInt(priceStr.replace(/[^0-9]/g, ''), 10) || 0;
@@ -182,15 +202,15 @@ export function parseProductPage(html: string, url: string): ProductPageResult |
   $('a[href*="tags"]').each((_, element) => {
       const href = $(element).attr('href');
       if (!href) return;
-      
+
       try {
           // Verify it's a link to items search
           if (href.includes('/items?') || href.includes('?tags')) {
-              // We need to parse relative or absolute URLs. 
+              // We need to parse relative or absolute URLs.
               // Create a dummy base if relative.
               const urlObj = new URL(href, 'https://booth.pm');
               const searchParams = urlObj.searchParams;
-              
+
               // tags[] parameter. It might be tags[] or tags%5B%5D
               const tagValues = searchParams.getAll('tags[]');
               tagValues.forEach(val => {
@@ -203,6 +223,63 @@ export function parseProductPage(html: string, url: string): ProductPageResult |
           // ignore invalid URLs
       }
   });
+
+  // カテゴリ・サブカテゴリをbreadcrumbsから抽出
+  // セレクタ: #js-item-category-breadcrumbs nav a
+  const breadcrumbLinks = $('#js-item-category-breadcrumbs nav a');
+  if (breadcrumbLinks.length > 0) {
+      breadcrumbLinks.each((_, el) => {
+          const catName = $(el).text().trim();
+          if (catName && !tags.includes(catName)) {
+              tags.push(catName);
+          }
+      });
+  } else {
+    // フォールバック: data-sub-category-options から親子関係を構築
+    // 構造: [{"pc":"3Dモデル","children":[{"label":"3D装飾品","value":"3D装飾品"},...]},...]
+    const subCatOptionsRaw = $('div[data-sub-category-options]').first().attr('data-sub-category-options');
+    if (subCatOptionsRaw) {
+        try {
+            const jsonStr = he.decode(subCatOptionsRaw);
+            const catMap = JSON.parse(jsonStr);
+
+            if (Array.isArray(catMap)) {
+                // 子カテゴリ -> 親カテゴリのマップを構築
+                const childToParent = new Map<string, string>();
+
+                catMap.forEach((pItem: any) => {
+                    const parentNameRaw = pItem.pc;
+                    if (typeof parentNameRaw === 'string' && Array.isArray(pItem.children)) {
+                        const parentName = parentNameRaw.trim();
+                        if (parentName.length > 0) {
+                            pItem.children.forEach((cItem: any) => {
+                                if (typeof cItem.label === 'string') {
+                                    const label = cItem.label.trim();
+                                    if (label && label.length > 0) childToParent.set(label, parentName);
+                                }
+                                if (typeof cItem.value === 'string') {
+                                    const val = cItem.value.trim();
+                                    if (val && val.length > 0) childToParent.set(val, parentName);
+                                }
+                            });
+                        }
+                    }
+                });
+
+                // 既存タグに含まれる子カテゴリに対して、親カテゴリを追加
+                const currentTags = [...tags];
+                currentTags.forEach(tag => {
+                    const parent = childToParent.get(tag);
+                    if (parent && !tags.includes(parent)) {
+                        tags.push(parent);
+                    }
+                });
+            }
+        } catch (e) {
+            console.warn('Failed to parse sub-category options', e);
+        }
+    }
+  }
 
   // Age rating extraction
   let ageRating: string | null = null;

@@ -176,6 +176,32 @@ describe('parseProductPage', () => {
     expect(result?.tags).toContain('Tag1');
     expect(result?.tags).toContain('Tag2');
   });
+
+  it('should extract category and subcategory from breadcrumbs', () => {
+    const html = `
+      <h1 class="market-item-detail-item-title">Category Product</h1>
+      <div id="js-item-category-breadcrumbs">
+        <nav>
+          <a href="/ja/browse/3D%E3%83%A2%E3%83%87%E3%83%AB">3Dモデル</a>
+          <a href="/ja/browse/3D%E8%A3%85%E9%A3%BE%E5%93%81">3D装飾品</a>
+        </nav>
+      </div>
+    `;
+    const result = parseProductPage(html, 'http://mock');
+    expect(result?.tags).toContain('3Dモデル');
+    expect(result?.tags).toContain('3D装飾品');
+  });
+
+  it('should extract parent category from data-sub-category-options when breadcrumbs are not present', () => {
+    const html = `
+      <h1 class="market-item-detail-item-title">SubCategory Product</h1>
+      <a href="/browse/3D装飾品">3D装飾品</a>
+      <div data-sub-category-options='[{"pc":"3Dモデル","children":[{"label":"3D装飾品","value":"3D装飾品"}]}]'></div>
+    `;
+    const result = parseProductPage(html, 'http://mock');
+    expect(result?.tags).toContain('3D装飾品');
+    expect(result?.tags).toContain('3Dモデル');
+  });
 });
 
 
@@ -266,5 +292,57 @@ describe('parseProductJson', () => {
       const result = parseProductJson(mockJson, 'http://mock');
       expect(result.price).toBe(expected);
     });
+  });
+
+  it('should extract category and subcategory from JSON', () => {
+    const mockJson = {
+      name: "Category Test Product",
+      tags: [{ name: "VRChat" }],
+      category: {
+        id: 217,
+        name: "3D装飾品",
+        parent: {
+          name: "3Dモデル",
+          url: "https://booth.pm/ja/browse/3D%E3%83%A2%E3%83%87%E3%83%AB"
+        }
+      }
+    };
+    const result = parseProductJson(mockJson, 'http://mock');
+    expect(result.tags).toContain('VRChat');
+    expect(result.tags).toContain('3Dモデル');
+    expect(result.tags).toContain('3D装飾品');
+  });
+
+  it('should extract category when parent is missing', () => {
+    const mockJson = {
+      name: "Category Only Product",
+      tags: [],
+      category: {
+        id: 100,
+        name: "音楽"
+      }
+    };
+    const result = parseProductJson(mockJson, 'http://mock');
+    expect(result.tags).toContain('音楽');
+    expect(result.tags).toHaveLength(1);
+  });
+
+  it('should not duplicate category if already in tags', () => {
+    const mockJson = {
+      name: "Duplicate Category Product",
+      tags: [{ name: "3Dモデル" }],
+      category: {
+        id: 217,
+        name: "3D装飾品",
+        parent: {
+          name: "3Dモデル"
+        }
+      }
+    };
+    const result = parseProductJson(mockJson, 'http://mock');
+    // 3Dモデル should appear only once
+    const count3DModel = result.tags.filter(t => t === '3Dモデル').length;
+    expect(count3DModel).toBe(1);
+    expect(result.tags).toContain('3D装飾品');
   });
 });
