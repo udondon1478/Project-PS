@@ -81,13 +81,6 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
       // Default to 'all_ages' (-> '全年齢') if not specified
       const ageTagId = await tagResolver.resolveAgeRating(ageRating || 'all_ages');
 
-      if (ageTagId) {
-        // Avoid duplicates if 'adult' was also in tags list (unlikely but possible)
-        if (!tagIds.includes(ageTagId)) {
-          tagIds.push(ageTagId);
-        }
-      }
-
       // 3. Resolve 'other' category (Skipped as per original logic)
 
       // 4. Seller Upsert
@@ -145,10 +138,30 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
             })),
           },
           productTags: {
-            create: tagIds.map(tagId => ({
-              tagId,
-              userId: systemUserId,
-            })),
+            create: [
+              // 1. Normal Scraped Tags -> Official
+              // Filter out ageTagId to prevent duplicate official registration if it was also in tags
+              ...tagIds
+                .filter(id => id !== ageTagId)
+                .map(tagId => ({
+                  tagId,
+                  userId: systemUserId,
+                  isOfficial: true,
+                })),
+              // 2. Age Rating -> Both Official AND Proprietary
+              ...(ageTagId ? [
+                {
+                    tagId: ageTagId,
+                    userId: systemUserId,
+                    isOfficial: true, // Official Age Rating
+                },
+                {
+                    tagId: ageTagId,
+                    userId: systemUserId,
+                    isOfficial: false, // Proprietary Age Rating (for initial state)
+                }
+              ] : [])
+            ],
           },
           variations: {
             create: productVariations.map(v => ({
@@ -163,7 +176,7 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
             create: {
               editorId: systemUserId,
               version: 1,
-              addedTags: tagIds,
+              addedTags: ageTagId && !tagIds.includes(ageTagId) ? [...tagIds, ageTagId] : tagIds,
               removedTags: [],
               keptTags: [],
               comment: 'Scraper Auto-Import',

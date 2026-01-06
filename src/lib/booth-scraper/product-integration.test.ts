@@ -134,7 +134,28 @@ describe('Product Creator', () => {
                 // Check nested creates
                 images: expect.any(Object),
                 variations: expect.any(Object),
-                productTags: expect.any(Object),
+                productTags: {
+                    create: expect.arrayContaining([
+                        // Normal tag -> Official
+                        expect.objectContaining({
+                            tagId: expect.stringMatching(/^tag-/),
+                            userId: 'sys-user-1',
+                            isOfficial: true
+                        }),
+                        // Age rating -> Official
+                        expect.objectContaining({
+                            tagId: 'tag-全年齢', // resolved via mockTagCreate using '全年齢'
+                            userId: 'sys-user-1',
+                            isOfficial: true
+                        }),
+                        // Age rating -> Proprietary
+                        expect.objectContaining({
+                            tagId: 'tag-全年齢',
+                            userId: 'sys-user-1',
+                            isOfficial: false
+                        })
+                    ])
+                },
             })
         }));
     });

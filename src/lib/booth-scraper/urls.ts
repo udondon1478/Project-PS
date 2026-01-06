@@ -29,7 +29,9 @@ export function getSearchUrl(page: number = 1, params: SearchParams = {}): strin
 
   // Add tags[] parameters for tag-based filtering
   if (params.tags && params.tags.length > 0) {
-    params.tags.forEach(t => url.searchParams.append('tags[]', t));
+    params.tags.forEach(t => {
+      t.split(/[\s\u3000]+/).filter(Boolean).forEach(tag => url.searchParams.append('tags[]', tag));
+    });
   }
 
   // Add q= parameter for keyword search (separate from tag filtering)
@@ -39,7 +41,10 @@ export function getSearchUrl(page: number = 1, params: SearchParams = {}): strin
 
   url.searchParams.append('sort', 'new');
 
-  if (params.adult) {
+  // Default adult to true if not specified
+  const includeAdult = params.adult ?? true;
+
+  if (includeAdult) {
     url.searchParams.append('adult', 'include');
   }
 
