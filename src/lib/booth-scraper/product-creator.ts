@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { TagResolver } from './tag-resolver';
 import { sendDiscordNotification } from '../discord/webhook';
+import { validateUserExists } from '@/lib/user-validation';
 
 export interface ScrapedProductData {
   boothJpUrl: string;
@@ -31,13 +32,20 @@ export interface ScrapedProductData {
  * - Tag resolution (including Age Rating)
  * - Product creation
  * - Image & Variation creation
- * 
+ *
  * @param data Scraped product data
  * @param systemUserId ID of the system user acting as the creator
  */
 export async function createProductFromScraper(data: ScrapedProductData, systemUserId: string) {
   if (!systemUserId) {
     throw new Error('systemUserId is required for creating products via scraper');
+  }
+
+  // Validate that the user exists in the database
+  const userExists = await validateUserExists(systemUserId);
+
+  if (!userExists) {
+    throw new Error(`User with ID '${systemUserId}' not found in database. Please re-authenticate.`);
   }
 
   const {

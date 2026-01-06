@@ -3,6 +3,7 @@ import { orchestrator } from "@/lib/booth-scraper/orchestrator";
 import { NextResponse } from "next/server";
 import { Role, ScraperRunStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { validateUserExists } from "@/lib/user-validation";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -11,6 +12,17 @@ export async function POST(req: Request) {
   }
 
   try {
+    // Validate that the session user exists in the database
+    const userExists = await validateUserExists(session.user.id);
+
+    if (!userExists) {
+      console.error(`[Scraper API] User ID '${session.user.id}' from session not found in database`);
+      return NextResponse.json(
+        { error: 'User session is invalid. Please sign out and sign in again.' },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const { mode, options } = body; // mode: 'NEW' | 'BACKFILL'
 

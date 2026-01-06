@@ -3,6 +3,11 @@ import { checkExistingProducts } from './product-checker';
 import { createProductFromScraper } from './product-creator';
 import { prisma } from '../prisma'; // Import relative to match tag-resolver likely resolution if needed, or alias
 
+// Mock user-validation module
+vi.mock('../user-validation', () => ({
+  validateUserExists: vi.fn().mockResolvedValue(true),
+}));
+
 // Mock prisma module
 vi.mock('../prisma', () => ({
   prisma: {
@@ -24,6 +29,9 @@ vi.mock('../prisma', () => ({
     tagCategory: {
         findUnique: vi.fn(),
         create: vi.fn(),
+    },
+    user: {
+        findUnique: vi.fn(),
     },
     $transaction: vi.fn((callback) => callback(prisma)),
   },
@@ -63,6 +71,9 @@ describe('Product Checker', () => {
 describe('Product Creator', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // Mock user.findUnique to return a test user for validation
+        const mockUserFindUnique = vi.mocked(prisma.user.findUnique);
+        mockUserFindUnique.mockResolvedValue({ id: 'sys-user-1' } as any);
     });
 
     it('should create product with related entities', async () => {

@@ -51,7 +51,8 @@ export interface ScraperOptions {
    */
   onExistenceCheckFailure?: 'continue' | 'stop';
   searchParams?: {
-    query?: string;
+    query?: string; // Keyword search (maps to q= parameter)
+    tags?: string[]; // Tag filter (maps to tags[]= parameter)
     category?: string;
     adult?: boolean;
     useTargetTags?: boolean;
@@ -205,7 +206,7 @@ class BoothScraperOrchestrator {
              ...options,
              searchParams: {
                ...options.searchParams,
-               query: tag.tag,
+               tags: [tag.tag], // Use tags[] parameter for exact tag matching
                category: tag.category || undefined,
                useTargetTags: false // It's now a specific target
              }
@@ -359,20 +360,34 @@ class BoothScraperOrchestrator {
     // Determine Tag ID if exists to fetch resume point
     let tagId: string | undefined;
     if (isBackfill) {
-        // Try to find the tag in DB to resume (include category for composite key)
-        const tag = await prisma.scraperTargetTag.findFirst({
-            where: {
-              tag: options.searchParams?.query,
-              category: options.searchParams?.category,
-            }
-        });
-        
-        if (tag) {
-            tagId = tag.id;
-            startPage = (tag.lastBackfillPage || 0) + 1;
+        // BACKFILL mode requires tags to resume from last position.
+        // Tags are typically set by useTargetTags expansion, but direct API calls
+        // may not provide tags. Without tags, we cannot track resume position
+        // per-tag, so we start from page 1 (no resume capability).
+        const searchTag = options.searchParams?.tags?.[0];
+
+        if (!searchTag) {
+            // No tag provided - BACKFILL will start from page 1 without resume capability.
+            // This is valid for manual/test runs but resume tracking won't work.
+            this.addLog('BACKFILL: No tag provided, starting from page 1 (resume disabled)');
+            startPage = 1;
         } else {
-             // Fallback to global resume if needed, or start from 1
-             startPage = 1; 
+            // Try to find the tag in DB to resume (include category for composite key)
+            const tag = await prisma.scraperTargetTag.findFirst({
+                where: {
+                  tag: searchTag,
+                  category: options.searchParams?.category,
+                }
+            });
+
+            if (tag) {
+                tagId = tag.id;
+                startPage = (tag.lastBackfillPage || 0) + 1;
+            } else {
+                // Tag provided but not found in DB - start from page 1
+                // This happens when scraping a new tag not yet registered
+                startPage = 1;
+            }
         }
 
         const pagesPerRun = options.pagesPerRun ?? 3; 

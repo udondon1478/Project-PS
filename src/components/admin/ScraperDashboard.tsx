@@ -239,7 +239,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
     return () => clearInterval(interval);
   }, [router]);
 
-  const handleEnqueue = async (tagQuery: string) => {
+  const handleEnqueue = async (tagName: string, category: string | null) => {
     setLoading(true);
     try {
       const res = await fetch('/api/admin/booth-scraper/scrape', {
@@ -249,23 +249,24 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
           mode,
           options: {
             // Default options, using config values roughly
-            pageLimit: schedulerConfig.newScanPageLimit, 
+            pageLimit: schedulerConfig.newScanPageLimit,
             requestInterval: schedulerConfig.requestIntervalMs,
             pagesPerRun: schedulerConfig.backfillPageCount,
             maxProducts: schedulerConfig.backfillProductLimit,
             searchParams: {
-              query: tagQuery,
+              tags: [tagName], // Use tags[] parameter for exact tag matching
+              category: category || undefined, // Include category if set
               useTargetTags: false // Explicit single
             }
           }
         })
       });
-      
+
       if (!res.ok) {
         const err = await res.json();
         toast.error(`Failed: ${err.error}`);
       } else {
-        toast.success(`Enqueued: ${tagQuery}`);
+        toast.success(`Enqueued: ${tagName}${category ? ` (${category})` : ''}`);
       }
     } catch (e) {
       toast.error('Error starting scraper');
@@ -551,11 +552,11 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                                       <td className={`p-3 font-medium ${!tag.enabled && 'text-gray-400 line-through'}`}>{tag.tag}</td>
                                       <td className="p-3 text-gray-500">{tag.category || '-'}</td>
                                       <td className="p-3 text-right flex justify-end gap-2">
-                                          <Button 
-                                            size="sm" 
-                                            variant="outline" 
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
                                             className="h-7 text-xs"
-                                            onClick={() => handleEnqueue(tag.tag)}
+                                            onClick={() => handleEnqueue(tag.tag, tag.category)}
                                           >
                                               <PlayIcon className="w-3 h-3 mr-1" />
                                               Enqueue
