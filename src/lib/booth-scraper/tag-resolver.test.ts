@@ -218,10 +218,10 @@ describe('TagResolver', () => {
           const result = await resolver.resolveAgeRating('R-18');
 
           expect(mockTagCategoryCreate).toHaveBeenCalled();
-          // normalizeTagName applies toLowerCase, so 'r-18' is expected
+          // normalizeTagName keeps 'R-18' as uppercase
           expect(mockCreate).toHaveBeenCalledWith({
               data: {
-                  name: 'r-18',
+                  name: 'R-18',
                   language: 'ja',
                   tagCategoryId: 'cat-age'
               }
