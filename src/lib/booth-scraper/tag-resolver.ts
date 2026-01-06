@@ -194,10 +194,15 @@ export class TagResolver {
   }
 
   private normalizeTagName(name: string): string {
-    return name
+    const normalized = name
       .normalize('NFKC')
-      .toLowerCase() // 小文字に統一して大文字小文字の違いを同一視
       .replace(/\s+/g, ' ')
       .trim();
+
+    const lower = normalized.toLowerCase();
+    if (lower === 'r-18') return 'R-18';
+    if (lower === 'r-18g') return 'R-18G';
+
+    return lower; // 小文字に統一して大文字小文字の違いを同一視
   }
 }

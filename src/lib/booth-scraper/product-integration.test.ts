@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { checkExistingProducts } from './product-checker';
 import { createProductFromScraper } from './product-creator';
+import { validateUserExists } from '../user-validation';
 import { prisma } from '../prisma'; // Import relative to match tag-resolver likely resolution if needed, or alias
 
 // Mock user-validation module
@@ -133,7 +134,28 @@ describe('Product Creator', () => {
                 // Check nested creates
                 images: expect.any(Object),
                 variations: expect.any(Object),
-                productTags: expect.any(Object),
+                productTags: {
+                    create: expect.arrayContaining([
+                        // Normal tag -> Official
+                        expect.objectContaining({
+                            tagId: expect.stringMatching(/^tag-/),
+                            userId: 'sys-user-1',
+                            isOfficial: true
+                        }),
+                        // Age rating -> Official
+                        expect.objectContaining({
+                            tagId: 'tag-全年齢', // resolved via mockTagCreate using '全年齢'
+                            userId: 'sys-user-1',
+                            isOfficial: true
+                        }),
+                        // Age rating -> Proprietary
+                        expect.objectContaining({
+                            tagId: 'tag-全年齢',
+                            userId: 'sys-user-1',
+                            isOfficial: false
+                        })
+                    ])
+                },
             })
         }));
     });
@@ -159,5 +181,27 @@ describe('Product Creator', () => {
         await expect(createProductFromScraper(input, 'sys-user-1'))
             .rejects
             .toThrow('Database error');
+    });
+
+    it('should throw error when user validation fails', async () => {
+        // Mock validateUserExists to return false for this specific test
+        vi.mocked(validateUserExists).mockResolvedValueOnce(false);
+
+        const input = {
+            boothJpUrl: 'https://booth.pm/ja/items/999',
+            title: 'Invalid User Item',
+            description: 'Desc',
+            price: 500,
+            images: [], // Simplified for this check
+            tags: [],
+            ageRating: 'all_ages',
+            sellerName: 'Seller',
+            sellerUrl: 'https://seller.booth.pm',
+            variations: [],
+        };
+
+        await expect(createProductFromScraper(input, 'non-existent-user'))
+            .rejects
+            .toThrow("User with ID 'non-existent-user' not found in database. Please re-authenticate.");
     });
 });
