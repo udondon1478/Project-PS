@@ -1,4 +1,5 @@
 import * as cheerio from 'cheerio';
+import he from 'he';
 
 
 
@@ -50,14 +51,14 @@ export function parseProductJson(json: any, url: string): ProductPageResult {
   // JSON構造: category: { name: "サブカテゴリ", parent: { name: "親カテゴリ" } }
   if (json.category) {
     // 親カテゴリ（例："3Dモデル"、"素材データ"）
-    if (json.category.parent?.name) {
+    if (json.category.parent?.name && json.category.parent.name.trim().length > 0) {
       const parentCategory = json.category.parent.name;
       if (!tags.includes(parentCategory)) {
         tags.push(parentCategory);
       }
     }
     // サブカテゴリ（例："3D装飾品"、"イラスト3D素材"）
-    if (json.category.name) {
+    if (json.category.name && json.category.name.trim().length > 0) {
       const subCategory = json.category.name;
       if (!tags.includes(subCategory)) {
         tags.push(subCategory);
@@ -239,7 +240,7 @@ export function parseProductPage(html: string, url: string): ProductPageResult |
     const subCatOptionsRaw = $('div[data-sub-category-options]').first().attr('data-sub-category-options');
     if (subCatOptionsRaw) {
         try {
-            const jsonStr = subCatOptionsRaw.replace(/&quot;/g, '"');
+            const jsonStr = he.decode(subCatOptionsRaw);
             const catMap = JSON.parse(jsonStr);
 
             if (Array.isArray(catMap)) {
