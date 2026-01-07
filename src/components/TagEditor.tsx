@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { GuidelineButton } from "@/components/guidelines/GuidelineButton";
+import { GuidelineContainer } from "@/components/guidelines/GuidelineContainer";
 
 interface Tag {
   id: string;
@@ -25,6 +27,7 @@ const TagEditor: React.FC<TagEditorProps> = ({ initialTags, onTagsChange }) => {
   const [tags, setTags] = useState<TagWithState[]>([]);
   const [newTagName, setNewTagName] = useState('');
   const [comment, setComment] = useState('');
+  const [showGuideline, setShowGuideline] = useState(false);
 
   useEffect(() => {
     setTags(initialTags.map(tag => ({ ...tag, state: 'kept' })));
@@ -69,6 +72,13 @@ const TagEditor: React.FC<TagEditorProps> = ({ initialTags, onTagsChange }) => {
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold">タグ編集</h3>
+        <GuidelineButton
+          tooltip="タグ付けガイドラインを見る"
+          onClick={() => setShowGuideline(true)}
+        />
+      </div>
       <div className="flex flex-wrap gap-2">
         {tags.map((tag) => {
           if (tag.state === 'removed') {
@@ -123,6 +133,14 @@ const TagEditor: React.FC<TagEditorProps> = ({ initialTags, onTagsChange }) => {
       <div className="flex justify-end">
         <Button onClick={handleConfirm}>確定</Button>
       </div>
+
+      {/* ガイドラインダイアログ/シート */}
+      <GuidelineContainer
+        open={showGuideline}
+        onOpenChange={setShowGuideline}
+        initialTab="categories"
+        initialRatingFlow={false}
+      />
     </div>
   );
 };
