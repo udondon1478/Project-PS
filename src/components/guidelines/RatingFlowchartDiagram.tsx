@@ -3,14 +3,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
+import { AlertCircle, ZoomIn, ZoomOut, Maximize2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ratingFlowchart } from '@/data/guidelines';
 
 export function RatingFlowchartDiagram() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1.5);
+  const fullscreenContainerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(3.5);
+  const [fullscreenScale, setFullscreenScale] = useState(2.5);
   const [error, setError] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -85,6 +89,70 @@ export function RatingFlowchartDiagram() {
     };
   }, []);
 
+  // フルスクリーンモード用のレンダリング
+  useEffect(() => {
+    if (!isFullscreen) return;
+
+    let mounted = true;
+
+    async function renderFullscreenDiagram() {
+      try {
+        const mermaid = (await import('mermaid')).default;
+
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: 'neutral',
+          themeVariables: {
+            primaryColor: '#3498DB',
+            primaryTextColor: '#fff',
+            primaryBorderColor: '#2980B9',
+            lineColor: '#95A5A6',
+            secondaryColor: '#44ff88',
+            tertiaryColor: '#ffdd44',
+            fontSize: '18px',
+            fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+          },
+          flowchart: {
+            htmlLabels: true,
+            curve: 'basis',
+            padding: 20,
+            nodeSpacing: 60,
+            rankSpacing: 80,
+          },
+          securityLevel: 'loose',
+        });
+
+        const mermaidSyntax = generateMermaidSyntax();
+
+        if (!mounted || !fullscreenContainerRef.current) return;
+
+        const uniqueId = `flowchart-fullscreen-${Date.now()}`;
+        const { svg } = await mermaid.render(uniqueId, mermaidSyntax);
+
+        if (!mounted || !fullscreenContainerRef.current) return;
+
+        fullscreenContainerRef.current.innerHTML = svg;
+
+        const svgElement = fullscreenContainerRef.current.querySelector('svg');
+        if (svgElement) {
+          svgElement.style.maxWidth = '100%';
+          svgElement.style.height = 'auto';
+        }
+      } catch (err) {
+        console.error('Mermaid fullscreen rendering error:', err);
+      }
+    }
+
+    const timer = setTimeout(() => {
+      renderFullscreenDiagram();
+    }, 100);
+
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+    };
+  }, [isFullscreen]);
+
   const generateMermaidSyntax = (): string => {
     let syntax = 'graph TD\n';
     syntax += '    Start([開始]):::startClass\n';
@@ -133,9 +201,13 @@ export function RatingFlowchartDiagram() {
     return labels[rating] || rating;
   };
 
-  const handleZoomIn = () => setScale((prev) => Math.min(prev + 0.3, 4));
+  const handleZoomIn = () => setScale((prev) => Math.min(prev + 0.3, 10));
   const handleZoomOut = () => setScale((prev) => Math.max(prev - 0.3, 0.5));
-  const handleResetZoom = () => setScale(1.5);
+  const handleResetZoom = () => setScale(2.5);
+
+  const handleFullscreenZoomIn = () => setFullscreenScale((prev) => Math.min(prev + 0.3, 10));
+  const handleFullscreenZoomOut = () => setFullscreenScale((prev) => Math.max(prev - 0.3, 0.5));
+  const handleFullscreenResetZoom = () => setFullscreenScale(2.5);
 
   if (error) {
     return (
@@ -147,26 +219,27 @@ export function RatingFlowchartDiagram() {
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-base sm:text-lg">レーティング判定フローチャート</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">全体の分岐を一目で確認できます</CardDescription>
+    <>
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-base sm:text-lg">レーティング判定フローチャート</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">全体の分岐を一目で確認できます</CardDescription>
+            </div>
+            <div className="flex gap-1 shrink-0">
+              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={handleZoomOut} title="縮小">
+                <ZoomOut className="h-3 w-3 sm:h-4 sm:w-4" />
+              </Button>
+              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={handleResetZoom} title="リセット">
+                <Maximize2 className="h-3 w-3 sm:h-4 sm:w-4" />
+              </Button>
+              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={handleZoomIn} title="拡大">
+                <ZoomIn className="h-3 w-3 sm:h-4 sm:w-4" />
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-1 shrink-0">
-            <Button variant="outline" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={handleZoomOut} title="縮小">
-              <ZoomOut className="h-3 w-3 sm:h-4 sm:w-4" />
-            </Button>
-            <Button variant="outline" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={handleResetZoom} title="リセット">
-              <Maximize2 className="h-3 w-3 sm:h-4 sm:w-4" />
-            </Button>
-            <Button variant="outline" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={handleZoomIn} title="拡大">
-              <ZoomIn className="h-3 w-3 sm:h-4 sm:w-4" />
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
+        </CardHeader>
       <CardContent>
         <div className="overflow-auto max-h-[500px] sm:max-h-[700px] rounded-lg border bg-background p-2 sm:p-4">
           <div
@@ -185,7 +258,59 @@ export function RatingFlowchartDiagram() {
             倍率: {Math.round(scale * 100)}%
           </p>
         </div>
+        <Button
+          variant="outline"
+          className="w-full mt-3"
+          onClick={() => setIsFullscreen(true)}
+        >
+          <Maximize2 className="mr-2 h-4 w-4" />
+          大画面で表示
+        </Button>
       </CardContent>
     </Card>
+
+    {/* フルスクリーンダイアログ */}
+    <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
+      <DialogContent className="max-w-[98vw] w-[98vw] h-[98vh] p-0 gap-0">
+        <div className="flex flex-col h-full">
+          {/* ヘッダー */}
+          <div className="flex items-center justify-between p-4 border-b shrink-0">
+            <div>
+              <h2 className="text-lg font-semibold">レーティング判定フローチャート</h2>
+              <p className="text-sm text-muted-foreground">全体図を大画面で確認</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="icon" onClick={handleFullscreenZoomOut} title="縮小">
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={handleFullscreenResetZoom} title="リセット">
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={handleFullscreenZoomIn} title="拡大">
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+              <div className="text-sm text-muted-foreground px-2">
+                {Math.round(fullscreenScale * 100)}%
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setIsFullscreen(false)} title="閉じる">
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* フローチャートコンテンツ */}
+          <div className="flex-1 overflow-auto p-4">
+            <div
+              ref={fullscreenContainerRef}
+              style={{ transform: `scale(${fullscreenScale})`, transformOrigin: 'top left', transition: 'transform 0.2s' }}
+              className="min-h-[500px] flex items-center justify-center"
+            >
+              {/* Mermaidがここにレンダリングされます */}
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

@@ -7,8 +7,8 @@ export const ratingFlowchart: RatingFlowchart = {
       id: 'q1',
       text: '露骨な性器の露出がありますか?',
       description: '性器(陰部、ペニス、肛門など)が露出している、または明確に見える描写はありますか?(検閲の有無を問わず)',
-      yesNext: 'q1-a',
-      noNext: 'q2',
+      yesNext: 'explicit',
+      noNext: 'q1-a',
       order: 1
     },
     {
@@ -16,7 +16,7 @@ export const ratingFlowchart: RatingFlowchart = {
       text: '体液の描写がありますか?',
       description: '精液、体液、または性行為に関連する液体の描写がありますか?',
       yesNext: 'explicit',
-      noNext: 'explicit',
+      noNext: 'q2',
       order: 2
     },
     {
@@ -48,7 +48,7 @@ export const ratingFlowchart: RatingFlowchart = {
       text: '性的な文脈での露出ですか?',
       description: 'その露出は性的な文脈や示唆的なポーズを伴っていますか?',
       yesNext: 'questionable',
-      noNext: 'questionable',
+      noNext: 'sensitive',
       order: 6
     },
     {
