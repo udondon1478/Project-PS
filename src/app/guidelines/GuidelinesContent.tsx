@@ -70,41 +70,41 @@ export function GuidelinesContent() {
                   <Card className="border-2 border-green-500">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base flex items-center gap-2">
-                        ✅ General（全年齢）
+                        ✅ 全年齢 (General)
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="text-sm">
-                      <p>誰にでも安全なコンテンツ。裸体や性的暗示を含まない。</p>
+                      <p>全年齢対象。一般的なアバター、普段着、性的な意図のない小物など。</p>
                     </CardContent>
                   </Card>
                   <Card className="border-2 border-yellow-500">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base flex items-center gap-2">
-                        👙 Sensitive（性的暗示）
+                        👙 R-15 (Sensitive)
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="text-sm">
-                      <p>水着、下着、露出度の高い服装、または性的なニュアンスを含むポーズなど。</p>
+                      <p>水着、下着、露出度の高い衣装。またはパンチラや性的な強調を含むポーズ・アングル。</p>
                     </CardContent>
                   </Card>
                   <Card className="border-2 border-orange-500">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base flex items-center gap-2">
-                        ⚠️ Questionable（軽度の露出）
+                        ⚠️ R-17 (Questionable)
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="text-sm">
-                      <p>乳首の露出、裸の臀部、衣服越しの性器の強調、擬似性行為など。</p>
+                      <p>乳首・肛門などの描写（テクスチャ含む）。性具や拘束具。局部が透ける衣装。</p>
                     </CardContent>
                   </Card>
                   <Card className="border-2 border-red-500">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base flex items-center gap-2">
-                        🔞 Explicit（成人向け）
+                        🔞 R-18 (Explicit)
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="text-sm">
-                      <p>露骨な性行為、性器の露出（修正有無問わず）、体液描写、激しい暴力描写など。</p>
+                      <p>性器の3Dモデル。性行為のアニメーション。修正の有無に関わらず露骨な性表現。</p>
                     </CardContent>
                   </Card>
                 </div>

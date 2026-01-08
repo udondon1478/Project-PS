@@ -11,7 +11,7 @@ import { ratingFlowchart } from '@/data/guidelines';
 export function RatingFlowchartDiagram() {
   const containerRef = useRef<HTMLDivElement>(null);
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(3.5);
+  const [scale, setScale] = useState(2.5);
   const [fullscreenScale, setFullscreenScale] = useState(2.5);
   const [error, setError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -193,10 +193,10 @@ export function RatingFlowchartDiagram() {
 
   const getRatingLabel = (rating: string): string => {
     const labels: Record<string, string> = {
-      general: '✅ General',
-      sensitive: '👙 Sensitive',
-      questionable: '⚠️ Questionable',
-      explicit: '🔞 Explicit',
+      general: '✅ 全年齢',
+      sensitive: '👙 R-15',
+      questionable: '⚠️ R-17',
+      explicit: '🔞 R-18',
     };
     return labels[rating] || rating;
   };
