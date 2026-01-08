@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ChevronLeft, AlertCircle, Check } from 'lucide-react';
-import { ratingFlowchart, ratingGuidelines, RatingLevel } from '@/data/guidelines';
+import { ratingFlowchart, ratingGuidelines, RatingLevel, RATING_LEVELS } from '@/data/guidelines';
 
 interface RatingFlowchartProps {
   onResult?: (rating: RatingLevel) => void;
@@ -31,7 +31,7 @@ export function RatingFlowchart({ onResult, onClose }: RatingFlowchartProps) {
     setHistory(prev => [...prev, currentQuestionId]);
 
     // 次がレーティング結果かチェック
-    if (['general', 'sensitive', 'questionable', 'explicit'].includes(nextId as string)) {
+    if (RATING_LEVELS.includes(nextId as RatingLevel)) {
       const rating = nextId as RatingLevel;
       setResult(rating);
       onResult?.(rating);
@@ -167,7 +167,7 @@ export function RatingFlowchart({ onResult, onClose }: RatingFlowchartProps) {
           <CardContent className="space-y-4">
             <p className="text-base">{ratingGuidelines[result].definition}</p>
 
-            {ratingGuidelines[result]?.warnings && ratingGuidelines[result].warnings.length > 0 && (
+            {ratingGuidelines[result].warnings && ratingGuidelines[result].warnings.length > 0 && (
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>

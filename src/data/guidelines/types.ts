@@ -1,6 +1,8 @@
 // レーティングレベル
 export type RatingLevel = 'general' | 'sensitive' | 'questionable' | 'explicit';
 
+export const RATING_LEVELS: readonly RatingLevel[] = ['general', 'sensitive', 'questionable', 'explicit'];
+
 // フローチャートの質問タイプ
 export interface FlowchartQuestion {
   id: string;

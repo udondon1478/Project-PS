@@ -10,7 +10,7 @@ import { ratingFlowchart } from '@/data/guidelines';
 
 const MERMAID_CONFIG = {
   startOnLoad: false,
-  theme: 'neutral',
+  theme: 'neutral' as const,
   themeVariables: {
     primaryColor: '#3498DB',
     primaryTextColor: '#fff',
@@ -23,12 +23,12 @@ const MERMAID_CONFIG = {
   },
   flowchart: {
     htmlLabels: true,
-    curve: 'basis',
+    curve: 'basis' as const,
     padding: 20,
     nodeSpacing: 60,
     rankSpacing: 80,
   },
-  securityLevel: 'loose',
+  securityLevel: 'loose' as const,
 };
 
 export function RatingFlowchartDiagram() {
@@ -39,51 +39,49 @@ export function RatingFlowchartDiagram() {
   const [error, setError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  useEffect(() => {
-    let mounted = true;
+  const RENDER_DELAY_MS = 100;
 
-    async function renderDiagram() {
-      try {
-        // Mermaid.jsを動的にインポート
-        const mermaid = (await import('mermaid')).default;
+  const renderMermaid = async (
+    targetRef: React.RefObject<HTMLDivElement | null>,
+    uniqueIdPrefix: string,
+    setLocalError?: (err: string) => void
+  ) => {
+    if (!targetRef.current) return;
 
-        // Mermaidを初期化
-        mermaid.initialize(MERMAID_CONFIG as any);
+    try {
+      const mermaid = (await import('mermaid')).default;
+      mermaid.initialize(MERMAID_CONFIG);
 
-        // Mermaid構文を生成
-        const mermaidSyntax = generateMermaidSyntax();
+      const mermaidSyntax = generateMermaidSyntax();
+      const uniqueId = `${uniqueIdPrefix}-${Date.now()}`;
+      const { svg } = await mermaid.render(uniqueId, mermaidSyntax);
 
-        if (!mounted || !containerRef.current) return;
-
-        // ユニークなIDを生成
-        const uniqueId = `flowchart-diagram-${Date.now()}`;
-
-        // Mermaidでレンダリング
-        const { svg } = await mermaid.render(uniqueId, mermaidSyntax);
-
-        if (!mounted || !containerRef.current) return;
-
-        // SVGを挿入
-        containerRef.current.innerHTML = svg;
-
-        // SVGのサイズを調整
-        const svgElement = containerRef.current.querySelector('svg');
+      if (targetRef.current) {
+        targetRef.current.innerHTML = svg;
+        const svgElement = targetRef.current.querySelector('svg');
         if (svgElement) {
           svgElement.style.maxWidth = '100%';
           svgElement.style.height = 'auto';
         }
-      } catch (err) {
-        console.error('Mermaid rendering error:', err);
-        if (mounted) {
-          setError('フローチャートの表示に失敗しました。ブラウザをリロードしてお試しください。');
-        }
+      }
+    } catch (err) {
+      console.error(`Mermaid rendering error (${uniqueIdPrefix}):`, err);
+      if (setLocalError) {
+        setLocalError('フローチャートの表示に失敗しました。ブラウザをリロードしてお試しください。');
       }
     }
+  };
+
+  useEffect(() => {
+    let mounted = true;
 
     // レンダリングを遅延実行
+    // レイアウトやDOMの初期化が完了するのを待つため
     const timer = setTimeout(() => {
-      renderDiagram();
-    }, 100);
+      if (mounted) {
+        renderMermaid(containerRef, 'flowchart-diagram', setError);
+      }
+    }, RENDER_DELAY_MS);
 
     return () => {
       mounted = false;
@@ -92,41 +90,17 @@ export function RatingFlowchartDiagram() {
   }, []);
 
   // フルスクリーンモード用のレンダリング
+  // フルスクリーンモード用のレンダリング
   useEffect(() => {
     if (!isFullscreen) return;
 
     let mounted = true;
 
-    async function renderFullscreenDiagram() {
-      try {
-        const mermaid = (await import('mermaid')).default;
-
-        mermaid.initialize(MERMAID_CONFIG as any);
-
-        const mermaidSyntax = generateMermaidSyntax();
-
-        if (!mounted || !fullscreenContainerRef.current) return;
-
-        const uniqueId = `flowchart-fullscreen-${Date.now()}`;
-        const { svg } = await mermaid.render(uniqueId, mermaidSyntax);
-
-        if (!mounted || !fullscreenContainerRef.current) return;
-
-        fullscreenContainerRef.current.innerHTML = svg;
-
-        const svgElement = fullscreenContainerRef.current.querySelector('svg');
-        if (svgElement) {
-          svgElement.style.maxWidth = '100%';
-          svgElement.style.height = 'auto';
-        }
-      } catch (err) {
-        console.error('Mermaid fullscreen rendering error:', err);
-      }
-    }
-
     const timer = setTimeout(() => {
-      renderFullscreenDiagram();
-    }, 100);
+      if (mounted) {
+        renderMermaid(fullscreenContainerRef, 'flowchart-fullscreen');
+      }
+    }, RENDER_DELAY_MS);
 
     return () => {
       mounted = false;
@@ -145,8 +119,7 @@ export function RatingFlowchartDiagram() {
       syntax += `    ${q.id}["${questionLabel}"]:::questionClass\n`;
 
       // はい/いいえの分岐
-      const yesLabel = typeof q.yesNext === 'string' && q.yesNext.length <= 10 ? q.yesNext : '次へ';
-      const noLabel = typeof q.noNext === 'string' && q.noNext.length <= 10 ? q.noNext : '次へ';
+      // はい/いいえの分岐
 
       if (['general', 'sensitive', 'questionable', 'explicit'].includes(q.yesNext as string)) {
         syntax += `    ${q.id} -->|はい| ${q.yesNext}_result["${getRatingLabel(q.yesNext as string)}"]:::${q.yesNext}Class\n`;

@@ -29,24 +29,18 @@ describe('categoryColors', () => {
 
   describe('getCategoryCardStyle', () => {
     it('should return correct style for valid color', () => {
-      // Assuming 'character' category exists and has a valid color.
-      // If it depends on external data that might change, we should mock getCategoryColor.
-      // But for this unit test, let's test the fallback path by mocking the color return or using an invalid category if that returns a default.
-      
-      // We can test the fallback directly by mocking hexToRgb or passing a category that results in invalid color if possible.
-      // However, getCategoryColor returns a default '#6B7280' if not found.
-      // So let's test that fallback behavior is consistent if hexToRgb fails (e.g. if default color was somehow invalid, which it isn't).
-      
-      // Indirectly testing via hexToRgb is hard because getCategoryColor defaults to a valid gray.
-      // But we can check if it returns the expected rgba for the default gray.
-      // #6B7280 -> r:107, g:114, b:128
+      // Test fallback to default gray if category not found (or mocked behavior)
       const style = getCategoryCardStyle('non-existent-category');
       expect(style.backgroundColor).toBe('rgba(107, 114, 128, 0.1)');
       expect(style.borderColor).toBe('#6B7280');
     });
 
-    // To test the "invalid RGB" path, we'd need to mock getCategoryColor to return an invalid string.
-    // Since we import getCategoryColor from same module, mocking might be tricky without jest.mock / vi.mock.
-    // Let's stick to testing the main paths.
+    it('should return correct style for known category', () => {
+       const style = getCategoryCardStyle('rating');
+       // 'rating' usually maps to a specific color (e.g. #3498db). 
+       // If implementation details change, update this test.
+       expect(style.borderColor).toMatch(/^#[0-9a-fA-F]{3,6}$/);
+       expect(style.backgroundColor).toMatch(/^rgba\(\d+, \d+, \d+, 0.1\)$/);
+    });
   });
 });
