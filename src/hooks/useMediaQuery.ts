@@ -5,7 +5,14 @@ import { useState, useEffect } from 'react';
 export function useMediaQuery(query: string): boolean | undefined {
   const [matches, setMatches] = useState<boolean | undefined>(() => {
     if (typeof window !== 'undefined') {
-      return window.matchMedia(query).matches;
+      try {
+        return window.matchMedia(query).matches;
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn(`Error matching media query "${query}":`, error);
+        }
+        return undefined;
+      }
     }
     return undefined;
   });
@@ -13,7 +20,17 @@ export function useMediaQuery(query: string): boolean | undefined {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const media = window.matchMedia(query);
+    let media: MediaQueryList;
+    try {
+      media = window.matchMedia(query);
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`Error matching media query "${query}":`, error);
+      }
+      setMatches(undefined);
+      return;
+    }
+
     setMatches(media.matches);
 
     const listener = () => setMatches(media.matches);
