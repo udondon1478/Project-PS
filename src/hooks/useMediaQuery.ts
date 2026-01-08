@@ -2,20 +2,22 @@
 
 import { useState, useEffect } from 'react';
 
-export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false);
+export function useMediaQuery(query: string): boolean | undefined {
+  const [matches, setMatches] = useState<boolean | undefined>(() => {
+    if (typeof window !== 'undefined') {
+      return window.matchMedia(query).matches;
+    }
+    return undefined;
+  });
 
   useEffect(() => {
-    const media = window.matchMedia(query);
+    if (typeof window === 'undefined') return;
 
-    // 初期値の設定
+    const media = window.matchMedia(query);
     setMatches(media.matches);
 
-    // リスナーの設定
     const listener = () => setMatches(media.matches);
     media.addEventListener('change', listener);
-
-    // クリーンアップ
     return () => media.removeEventListener('change', listener);
   }, [query]);
 

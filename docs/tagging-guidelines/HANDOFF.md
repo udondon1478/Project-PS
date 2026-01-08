@@ -14,7 +14,7 @@ VRChat向けBOOTH商品検索サービス「PolySeek」に、Danbooru等のBooru
 
 #### Danbooruのガイドライン調査 ✓
 
-- **調査対象**: https://danbooru.donmai.us/wiki_pages/howto:rate
+- **調査対象**: [Danbooru Rating Guide](https://danbooru.donmai.us/wiki_pages/howto:rate)
 - **調査内容**:
   - 4段階のレーティングシステム (General, Sensitive, Questionable, Explicit)
   - 各レーティングの詳細な基準と具体例
@@ -28,7 +28,7 @@ VRChat向けBOOTH商品検索サービス「PolySeek」に、Danbooru等のBooru
 
 #### sankakucomplexのUI調査 (部分的)
 
-- **試行内容**: https://chan.sankakucomplex.com/wiki へのアクセス
+- **試行内容**: [Sankaku Complex Wiki](https://chan.sankakucomplex.com/wiki) へのアクセス
 - **結果**: サンドボックス環境からのアクセスがBOT判定でブロック
 - **代替アプローチ**: Danbooruのガイドライン内容を主軸として進行
 
@@ -173,7 +173,8 @@ await prisma.tag.update({
 **ルート**: `/guidelines` または `/help/tagging`
 
 **コンポーネント構造**:
-```
+
+```plaintext
 src/app/guidelines/
 ├── page.tsx                    # メインページ
 ├── layout.tsx                  # レイアウト
@@ -200,6 +201,7 @@ src/app/guidelines/
 - Tailwind CSS (スタイリング)
 
 **コンポーネント例**:
+
 ```tsx
 // src/components/RatingFlowchart/RatingFlowchart.tsx
 interface Question {
@@ -237,6 +239,7 @@ export function RatingFlowchart() {
 **修正対象**: `src/app/api/products/route.ts` または検索API
 
 **実装内容**:
+
 - ユーザーの `isSafeSearchEnabled` 設定を確認
 - セーフサーチが有効な場合、`rating:explicit` および `rating:questionable` を除外
 - クエリパラメータでの一時的な切り替えをサポート
@@ -260,7 +263,7 @@ if (user?.isSafeSearchEnabled || query.safeSearch === 'true') {
 
 ### ファイル構造
 
-```
+```plaintext
 docs/tagging-guidelines/
 ├── index.md                    # ✓ 完成
 ├── rating-guidelines.md        # ✓ 完成
@@ -278,6 +281,7 @@ docs/tagging-guidelines/
 - レーティングタグ: 未作成
 
 **必要な作業**:
+
 1. TagCategory に 'rating' カテゴリを追加
 2. 8つのレーティングタグを作成
 3. エイリアス関係の設定 (g->general, s->sensitive, etc.)
@@ -344,8 +348,8 @@ docs/tagging-guidelines/
 
 ### 参考サイト
 
-- Danbooru Rating Guide: https://danbooru.donmai.us/wiki_pages/howto:rate
-- Danbooru Tagging Guide: https://danbooru.donmai.us/wiki_pages/howto:tag
+- [Danbooru Rating Guide](https://danbooru.donmai.us/wiki_pages/howto:rate)
+- [Danbooru Tagging Guide](https://danbooru.donmai.us/wiki_pages/howto:tag)
 
 ### プロジェクト内ドキュメント
 

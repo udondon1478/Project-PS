@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 
 interface GuidelineButtonProps {
   variant?: 'icon' | 'text' | 'inline';
-  section?: 'rating' | 'categories';
   tooltip?: string;
   className?: string;
   onClick?: () => void;
@@ -15,7 +14,6 @@ interface GuidelineButtonProps {
 
 export function GuidelineButton({
   variant = 'icon',
-  section,
   tooltip = 'ガイドラインを見る',
   className,
   onClick,

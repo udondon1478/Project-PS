@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { RatingFlowchart } from '@/components/guidelines/RatingFlowchart';
 import { RatingFlowchartDiagram } from '@/components/guidelines/RatingFlowchartDiagram';
 import { TagCategoryVisualizer } from '@/components/guidelines/TagCategoryVisualizer';
@@ -41,7 +40,7 @@ export function GuidelinesContent() {
             <span className="sm:hidden">Tags</span>
           </TabsTrigger>
           <TabsTrigger value="vrchat" className="flex items-center gap-2">
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-label="VRChat icon" role="img">
               <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
             </svg>
             <span className="hidden sm:inline">VRChat</span>

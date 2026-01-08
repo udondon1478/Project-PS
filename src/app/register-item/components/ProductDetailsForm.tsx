@@ -196,7 +196,6 @@ export const ProductDetailsForm = ({
             <div className="flex items-center gap-2 mb-2">
               <Label htmlFor="ageRating">対象年齢</Label>
               <GuidelineButton
-                section="rating"
                 tooltip="レーティングガイドを見る"
                 onClick={() => {
                   setShowGuideline(true);

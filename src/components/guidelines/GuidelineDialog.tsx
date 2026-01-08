@@ -64,7 +64,7 @@ export function GuidelineDialog({
             <TabsTrigger value="categories">タグカテゴリ</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="rating" className="flex-1 mt-4 flex flex-col min-h-0 data-[state=inactive]:hidden">
+          <TabsContent value="rating" className="flex-1 mt-4 flex flex-col min-h-0">
             {/* モード切り替え */}
             <RadioGroup
               value={flowchartMode}
@@ -110,7 +110,7 @@ export function GuidelineDialog({
             </div>
           </TabsContent>
 
-          <TabsContent value="categories" className="flex-1 mt-4 min-h-0 data-[state=inactive]:hidden">
+          <TabsContent value="categories" className="flex-1 mt-4 min-h-0">
             <div className="h-full -mx-6 overflow-y-auto">
               <div className="px-6 pb-4">
                 <TagCategoryVisualizer />

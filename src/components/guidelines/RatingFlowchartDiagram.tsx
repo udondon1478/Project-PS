@@ -28,14 +28,21 @@ const MERMAID_CONFIG = {
     nodeSpacing: 60,
     rankSpacing: 80,
   },
-  securityLevel: 'loose' as const,
+  securityLevel: 'strict' as const,
 };
+
+// ズーム関連の定数
+// ズーム関連の定数
+const ZOOM_STEP = 0.3;
+const ZOOM_MIN = 0.5;
+const ZOOM_MAX = 10;
+const ZOOM_DEFAULT = 2.5;
 
 export function RatingFlowchartDiagram() {
   const containerRef = useRef<HTMLDivElement>(null);
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(2.5);
-  const [fullscreenScale, setFullscreenScale] = useState(2.5);
+  const [scale, setScale] = useState(ZOOM_DEFAULT);
+  const [fullscreenScale, setFullscreenScale] = useState(ZOOM_DEFAULT);
   const [error, setError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -60,6 +67,8 @@ export function RatingFlowchartDiagram() {
         targetRef.current.innerHTML = svg;
         const svgElement = targetRef.current.querySelector('svg');
         if (svgElement) {
+          svgElement.setAttribute('role', 'img');
+          svgElement.setAttribute('aria-label', 'レーティング判定フローチャート詳細図');
           svgElement.style.maxWidth = '100%';
           svgElement.style.height = 'auto';
         }
@@ -90,7 +99,6 @@ export function RatingFlowchartDiagram() {
   }, []);
 
   // フルスクリーンモード用のレンダリング
-  // フルスクリーンモード用のレンダリング
   useEffect(() => {
     if (!isFullscreen) return;
 
@@ -115,12 +123,11 @@ export function RatingFlowchartDiagram() {
 
     ratingFlowchart.questions.forEach((q) => {
       // 質問ノード
-      const questionLabel = q.text.replace(/\?/g, '').substring(0, 20) + '...';
+      const textWithoutQuestion = q.text.replace(/\?/g, '');
+      const questionLabel = Array.from(textWithoutQuestion).slice(0, 20).join('') + '...';
       syntax += `    ${q.id}["${questionLabel}"]:::questionClass\n`;
 
       // はい/いいえの分岐
-      // はい/いいえの分岐
-
       if (['general', 'sensitive', 'questionable', 'explicit'].includes(q.yesNext as string)) {
         syntax += `    ${q.id} -->|はい| ${q.yesNext}_result["${getRatingLabel(q.yesNext as string)}"]:::${q.yesNext}Class\n`;
       } else {
@@ -155,13 +162,13 @@ export function RatingFlowchartDiagram() {
     return labels[rating] || rating;
   };
 
-  const handleZoomIn = () => setScale((prev) => Math.min(prev + 0.3, 10));
-  const handleZoomOut = () => setScale((prev) => Math.max(prev - 0.3, 0.5));
-  const handleResetZoom = () => setScale(2.5);
+  const handleZoomIn = () => setScale((prev) => Math.min(prev + ZOOM_STEP, ZOOM_MAX));
+  const handleZoomOut = () => setScale((prev) => Math.max(prev - ZOOM_STEP, ZOOM_MIN));
+  const handleResetZoom = () => setScale(ZOOM_DEFAULT);
 
-  const handleFullscreenZoomIn = () => setFullscreenScale((prev) => Math.min(prev + 0.3, 10));
-  const handleFullscreenZoomOut = () => setFullscreenScale((prev) => Math.max(prev - 0.3, 0.5));
-  const handleFullscreenResetZoom = () => setFullscreenScale(2.5);
+  const handleFullscreenZoomIn = () => setFullscreenScale((prev) => Math.min(prev + ZOOM_STEP, ZOOM_MAX));
+  const handleFullscreenZoomOut = () => setFullscreenScale((prev) => Math.max(prev - ZOOM_STEP, ZOOM_MIN));
+  const handleFullscreenResetZoom = () => setFullscreenScale(ZOOM_DEFAULT);
 
   if (error) {
     return (
@@ -200,6 +207,8 @@ export function RatingFlowchartDiagram() {
             ref={containerRef}
             style={{ transform: `scale(${scale})`, transformOrigin: 'top left', transition: 'transform 0.2s' }}
             className="min-h-[400px] sm:min-h-[500px] flex items-center justify-center"
+            role="img"
+            aria-label="レーティング判定フローチャート図"
           >
             {/* Mermaidがここにレンダリングされます */}
           </div>
@@ -234,19 +243,19 @@ export function RatingFlowchartDiagram() {
               <p className="text-sm text-muted-foreground">全体図を大画面で確認</p>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" onClick={handleFullscreenZoomOut} title="縮小">
+              <Button variant="outline" size="icon" onClick={handleFullscreenZoomOut} title="縮小" aria-label="縮小">
                 <ZoomOut className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="icon" onClick={handleFullscreenResetZoom} title="リセット">
+              <Button variant="outline" size="icon" onClick={handleFullscreenResetZoom} title="リセット" aria-label="ズームリセット">
                 <Maximize2 className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="icon" onClick={handleFullscreenZoomIn} title="拡大">
+              <Button variant="outline" size="icon" onClick={handleFullscreenZoomIn} title="拡大" aria-label="拡大">
                 <ZoomIn className="h-4 w-4" />
               </Button>
               <div className="text-sm text-muted-foreground px-2">
                 {Math.round(fullscreenScale * 100)}%
               </div>
-              <Button variant="ghost" size="icon" onClick={() => setIsFullscreen(false)} title="閉じる">
+              <Button variant="ghost" size="icon" onClick={() => setIsFullscreen(false)} title="閉じる" aria-label="閉じる">
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -258,6 +267,8 @@ export function RatingFlowchartDiagram() {
               ref={fullscreenContainerRef}
               style={{ transform: `scale(${fullscreenScale})`, transformOrigin: 'top left', transition: 'transform 0.2s' }}
               className="min-h-[500px] flex items-center justify-center"
+              role="img"
+              aria-label="レーティング判定フローチャート図（フルスクリーン）"
             >
               {/* Mermaidがここにレンダリングされます */}
             </div>

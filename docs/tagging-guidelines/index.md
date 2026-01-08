@@ -104,8 +104,6 @@ PolySeekでは、以下の検索機能を利用できます:
 - タグガイドライン表示ページ
 - タグウィキ機能(各タグの詳細説明ページ)
 
-詳細は[実装計画](./implementation-plan.md)を参照してください。
-
 ## 参考資料
 
 - [Danbooru Tagging Guide](https://danbooru.donmai.us/wiki_pages/howto:tag)

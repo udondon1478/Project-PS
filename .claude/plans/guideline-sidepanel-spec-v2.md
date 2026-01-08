@@ -28,7 +28,7 @@
 
 | 項目 | 決定 | 詳細 |
 |------|------|------|
-| **ブレークポイント** | 768px / 1024px | 768px未満=シート、1024px以上=サイドパネル |
+| **ブレークポイント** | 1024px | デスクトップ(1024px以上)=サイドパネル、タブレット/モバイル(1023px以下)=シート |
 | **パネル幅** | `clamp(450px, 40vw, 600px)` | 画面サイズに応じた最適化 |
 | **アニメーション** | 250ms ease-in-out | バランスの良い速度 |
 
@@ -53,12 +53,11 @@
 
 ### コンポーネント構成
 
-```
+```text
 GuidelineContainer (拡張)
 ├── mode: 'modal' | 'sidepanel' プロパティ追加
-├── < 768px → GuidelineSheet (既存)
-├── 768px - 1023px → GuidelineSheet (既存)
-└── ≥ 1024px
+├── < 1024px → GuidelineSheet (既存、タブレット・モバイル)
+└── ≥ 1024px (デスクトップ)
     ├── mode='modal' → GuidelineDialog (既存)
     └── mode='sidepanel' → GuidelineSidePanel (新規)
         ├── 固定ヘッダー（タイトル + 閉じるボタン）
@@ -86,7 +85,7 @@ GuidelineContainer (拡張)
 
 1. **`src/components/guidelines/GuidelineContainer.tsx`**
    - `mode` プロパティ追加
-   - ブレークポイント変更: 768px → 1024px
+   - ブレークポイント変更: 1024px
    - 条件分岐でGuidelineSidePanelを呼び出し
 
 2. **`src/app/register-item/page.tsx` または関連コンポーネント**
@@ -103,7 +102,7 @@ GuidelineContainer (拡張)
 
 #### レイアウト
 
-```tsx
+```css
 // CSS仕様
 .guideline-sidepanel {
   /* 位置 */
@@ -336,7 +335,7 @@ if (error) {
 
 ### デスクトップ (1024px以上)
 
-```
+```text
 ┌─────────────────────────────────────────┐
 │ Header                                   │
 ├──────────────┬──────────────────────────┤
@@ -366,7 +365,7 @@ if (error) {
 
 ### タブレット (768px - 1023px)
 
-```
+```text
 ┌─────────────────────┐
 │ Header              │
 ├─────────────────────┤
@@ -641,7 +640,6 @@ export function useGuidelineFirstVisit(page: string): boolean {
       try {
         const key = `guideline-visited-${page}`;
         localStorage.setItem(key, 'true');
-        setIsFirstVisit(false);
       } catch (error) {
         // エラーは無視（プライベートモード等）
         console.warn('Failed to save visit state:', error);
@@ -725,6 +723,52 @@ export default function RegisterItemPage() {
 }
 ```
 
+#### カスタムフック統合提案
+
+現在の実装では3つの状態(`guidelineOpen`, `shouldMount`, `initialTab`)を個別に管理していますが、これらを単一のカスタムフック `useGuidelinePanelState` に抽出することで、コードの保守性と再利用性を向上できます。
+
+```typescript
+// hooks/useGuidelinePanelState.ts
+export function useGuidelinePanelState(page: string) {
+  const isFirstVisit = useGuidelineFirstVisit(page);
+  const [guidelineOpen, setGuidelineOpen] = useState(isFirstVisit);
+  const [shouldMount, setShouldMount] = useState(isFirstVisit);
+  const [initialTab, setInitialTab] = useState<'rating' | 'categories'>('rating');
+
+  const openGuideline = useCallback((tab: 'rating' | 'categories') => {
+    setShouldMount(true);
+    setGuidelineOpen(true);
+    setInitialTab(tab);
+  }, []);
+
+  return {
+    guidelineOpen,
+    setGuidelineOpen,
+    shouldMount,
+    initialTab,
+    openGuideline,
+  };
+}
+
+// 使用例
+export default function RegisterItemPage() {
+  const {
+    guidelineOpen,
+    setGuidelineOpen,
+    shouldMount,
+    initialTab,
+    openGuideline,
+  } = useGuidelinePanelState('register');
+
+  return (
+    // ... 上記と同様
+    <Button onClick={() => openGuideline('rating')}>
+      レーティングガイドライン
+    </Button>
+  );
+}
+```
+
 ---
 
 ## 🚀 実装フェーズ
@@ -750,7 +794,7 @@ export default function RegisterItemPage() {
 
 1. **GuidelineContainer.tsx**
    - `mode` プロパティ追加（'modal' | 'sidepanel'）
-   - ブレークポイント変更: 768px → 1024px
+   - ブレークポイント変更: 1024px
    - 条件分岐: mode='sidepanel' → GuidelineSidePanel
 
 2. **src/app/register-item/page.tsx**
@@ -854,6 +898,14 @@ performance.measure('sidepanel-mount', 'sidepanel-mount-start', 'sidepanel-mount
 - 初回マウント: < 100ms
 - アニメーション: 250ms（仕様通り）
 - 2回目以降のマウント: < 50ms
+
+#### パフォーマンス目標の根拠
+
+1. **初回マウント < 100ms**: アニメーション開始までに処理が完了する必要があるため、250msアニメーションの半分以下を目標とする。これにより、ユーザーがページを開いた瞬間にスムーズなアニメーションが開始される。
+
+2. **2回目以降のマウント < 50ms**: レスポンシブなUIの基準である200ms応答性目標（[RAIL model](https://web.dev/rail/)）の1/4を目標とする。これにより、ボタンクリックから即座にパネルが表示され始める。
+
+3. **アニメーション 250ms**: Material Designのガイダンス（[Duration and easing](https://material.io/design/motion/speed.html)）に基づき、中サイズの要素の標準的な遷移時間として設定。ユーザーが視覚的な変化を認識しつつ、待ち時間を感じない適切なバランス。
 
 ### 3. アクセシビリティ検証
 

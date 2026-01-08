@@ -1,3 +1,5 @@
+# Recent Activity
+
 <claude-mem-context>
 # Recent Activity
 

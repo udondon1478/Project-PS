@@ -32,14 +32,14 @@ describe('categoryColors', () => {
       // Test fallback to default gray if category not found (or mocked behavior)
       const style = getCategoryCardStyle('non-existent-category');
       expect(style.backgroundColor).toBe('rgba(107, 114, 128, 0.1)');
-      expect(style.borderColor).toBe('#6B7280');
+      expect(style.borderColor).toBe('rgb(107, 114, 128)');
     });
 
     it('should return correct style for known category', () => {
        const style = getCategoryCardStyle('rating');
        // 'rating' usually maps to a specific color (e.g. #3498db). 
        // If implementation details change, update this test.
-       expect(style.borderColor).toMatch(/^#[0-9a-fA-F]{3,6}$/);
+       expect(style.borderColor).toMatch(/^rgb\(\d+, \d+, \d+\)$/);
        expect(style.backgroundColor).toMatch(/^rgba\(\d+, \d+, \d+, 0.1\)$/);
     });
   });

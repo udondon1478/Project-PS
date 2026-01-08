@@ -20,7 +20,7 @@ export function RatingFlowchart({ onResult, onClose }: RatingFlowchartProps) {
 
   const currentQuestion = ratingFlowchart.questions.find(q => q.id === currentQuestionId);
   const totalQuestions = ratingFlowchart.questions.length;
-  const progress = (history.length / totalQuestions) * 100;
+  const progress = result ? 100 : ((history.length + 1) / totalQuestions) * 100;
 
   const handleAnswer = useCallback((answer: 'yes' | 'no') => {
     if (!currentQuestion) return;
@@ -62,25 +62,25 @@ export function RatingFlowchart({ onResult, onClose }: RatingFlowchartProps) {
   }, []);
 
   // キーボードショートカット
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (result) return; // 結果が表示されている場合は無効
+
+    if (e.key === 'y' || e.key === 'Y') {
+      handleAnswer('yes');
+    } else if (e.key === 'n' || e.key === 'N') {
+      handleAnswer('no');
+    } else if (e.key === 'Backspace' && history.length > 0) {
+      e.preventDefault();
+      handleBack();
+    } else if (e.key === 'Escape') {
+      onClose?.();
+    }
+  }, [result, handleAnswer, history.length, handleBack, onClose]);
+
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (result) return; // 結果が表示されている場合は無効
-
-      if (e.key === 'y' || e.key === 'Y') {
-        handleAnswer('yes');
-      } else if (e.key === 'n' || e.key === 'N') {
-        handleAnswer('no');
-      } else if (e.key === 'Backspace' && history.length > 0) {
-        e.preventDefault();
-        handleBack();
-      } else if (e.key === 'Escape') {
-        onClose?.();
-      }
-    };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentQuestionId, history, result, handleAnswer, handleBack, onClose]);
+  }, [handleKeyDown]);
 
   if (!currentQuestion && !result) {
     return (

@@ -1,7 +1,3 @@
-# Recent Activity
-
-# Claude Memory Context
-
 <claude-mem-context>
 # Recent Activity
 

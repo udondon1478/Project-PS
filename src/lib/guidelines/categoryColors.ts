@@ -93,6 +93,6 @@ export function getCategoryCardStyle(categoryName: string): {
 
   return {
     backgroundColor: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.1)`,
-    borderColor: color,
+    borderColor: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`,
   };
 }
