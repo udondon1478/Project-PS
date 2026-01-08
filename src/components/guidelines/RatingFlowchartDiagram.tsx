@@ -8,6 +8,29 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ratingFlowchart } from '@/data/guidelines';
 
+const MERMAID_CONFIG = {
+  startOnLoad: false,
+  theme: 'neutral',
+  themeVariables: {
+    primaryColor: '#3498DB',
+    primaryTextColor: '#fff',
+    primaryBorderColor: '#2980B9',
+    lineColor: '#95A5A6',
+    secondaryColor: '#44ff88',
+    tertiaryColor: '#ffdd44',
+    fontSize: '18px',
+    fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+  },
+  flowchart: {
+    htmlLabels: true,
+    curve: 'basis',
+    padding: 20,
+    nodeSpacing: 60,
+    rankSpacing: 80,
+  },
+  securityLevel: 'loose',
+};
+
 export function RatingFlowchartDiagram() {
   const containerRef = useRef<HTMLDivElement>(null);
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
@@ -25,28 +48,7 @@ export function RatingFlowchartDiagram() {
         const mermaid = (await import('mermaid')).default;
 
         // Mermaidを初期化
-        mermaid.initialize({
-          startOnLoad: false,
-          theme: 'neutral',
-          themeVariables: {
-            primaryColor: '#3498DB',
-            primaryTextColor: '#fff',
-            primaryBorderColor: '#2980B9',
-            lineColor: '#95A5A6',
-            secondaryColor: '#44ff88',
-            tertiaryColor: '#ffdd44',
-            fontSize: '18px',
-            fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-          },
-          flowchart: {
-            htmlLabels: true,
-            curve: 'basis',
-            padding: 20,
-            nodeSpacing: 60,
-            rankSpacing: 80,
-          },
-          securityLevel: 'loose',
-        });
+        mermaid.initialize(MERMAID_CONFIG as any);
 
         // Mermaid構文を生成
         const mermaidSyntax = generateMermaidSyntax();
@@ -99,28 +101,7 @@ export function RatingFlowchartDiagram() {
       try {
         const mermaid = (await import('mermaid')).default;
 
-        mermaid.initialize({
-          startOnLoad: false,
-          theme: 'neutral',
-          themeVariables: {
-            primaryColor: '#3498DB',
-            primaryTextColor: '#fff',
-            primaryBorderColor: '#2980B9',
-            lineColor: '#95A5A6',
-            secondaryColor: '#44ff88',
-            tertiaryColor: '#ffdd44',
-            fontSize: '18px',
-            fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-          },
-          flowchart: {
-            htmlLabels: true,
-            curve: 'basis',
-            padding: 20,
-            nodeSpacing: 60,
-            rankSpacing: 80,
-          },
-          securityLevel: 'loose',
-        });
+        mermaid.initialize(MERMAID_CONFIG as any);
 
         const mermaidSyntax = generateMermaidSyntax();
 
@@ -228,13 +209,13 @@ export function RatingFlowchartDiagram() {
               <CardDescription className="text-xs sm:text-sm">全体の分岐を一目で確認できます</CardDescription>
             </div>
             <div className="flex gap-1 shrink-0">
-              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={handleZoomOut} title="縮小">
+              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={handleZoomOut} title="縮小" aria-label="縮小">
                 <ZoomOut className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
-              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={handleResetZoom} title="リセット">
+              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={handleResetZoom} title="リセット" aria-label="ズームリセット">
                 <Maximize2 className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
-              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={handleZoomIn} title="拡大">
+              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={handleZoomIn} title="拡大" aria-label="拡大">
                 <ZoomIn className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </div>

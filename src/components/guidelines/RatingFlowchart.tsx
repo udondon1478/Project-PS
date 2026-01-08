@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -22,13 +22,13 @@ export function RatingFlowchart({ onResult, onClose }: RatingFlowchartProps) {
   const totalQuestions = ratingFlowchart.questions.length;
   const progress = (history.length / totalQuestions) * 100;
 
-  const handleAnswer = (answer: 'yes' | 'no') => {
+  const handleAnswer = useCallback((answer: 'yes' | 'no') => {
     if (!currentQuestion) return;
 
     const nextId = answer === 'yes' ? currentQuestion.yesNext : currentQuestion.noNext;
 
     // 履歴に追加
-    setHistory([...history, currentQuestionId]);
+    setHistory(prev => [...prev, currentQuestionId]);
 
     // 次がレーティング結果かチェック
     if (['general', 'sensitive', 'questionable', 'explicit'].includes(nextId as string)) {
@@ -39,26 +39,27 @@ export function RatingFlowchart({ onResult, onClose }: RatingFlowchartProps) {
       // 次の質問に進む
       setCurrentQuestionId(nextId as string);
     }
-  };
+  }, [currentQuestion, currentQuestionId, onResult]);
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     if (history.length === 0) return;
 
-    const newHistory = [...history];
-    const previousQuestionId = newHistory.pop();
-    setHistory(newHistory);
+    setHistory(prev => {
+      const newHistory = [...prev];
+      const previousQuestionId = newHistory.pop();
+      if (previousQuestionId) {
+        setCurrentQuestionId(previousQuestionId);
+        setResult(null);
+      }
+      return newHistory;
+    });
+  }, [history]);
 
-    if (previousQuestionId) {
-      setCurrentQuestionId(previousQuestionId);
-      setResult(null);
-    }
-  };
-
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setCurrentQuestionId(ratingFlowchart.startQuestionId);
     setHistory([]);
     setResult(null);
-  };
+  }, []);
 
   // キーボードショートカット
   useEffect(() => {
@@ -79,7 +80,7 @@ export function RatingFlowchart({ onResult, onClose }: RatingFlowchartProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentQuestionId, history, result]);
+  }, [currentQuestionId, history, result, handleAnswer, handleBack, onClose]);
 
   if (!currentQuestion && !result) {
     return (
@@ -166,11 +167,11 @@ export function RatingFlowchart({ onResult, onClose }: RatingFlowchartProps) {
           <CardContent className="space-y-4">
             <p className="text-base">{ratingGuidelines[result].definition}</p>
 
-            {ratingGuidelines[result].warnings && ratingGuidelines[result].warnings!.length > 0 && (
+            {ratingGuidelines[result]?.warnings && ratingGuidelines[result].warnings.length > 0 && (
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  {ratingGuidelines[result].warnings![0]}
+                  {ratingGuidelines[result].warnings[0]}
                 </AlertDescription>
               </Alert>
             )}

@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { HelpCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface GuidelineButtonProps {
   variant?: 'icon' | 'text' | 'inline';
@@ -46,7 +47,7 @@ export function GuidelineButton({
         variant="link"
         size="sm"
         onClick={onClick}
-        className={`h-auto p-0 text-xs ${className}`}
+        className={cn('h-auto p-0 text-xs', className)}
       >
         <HelpCircle className="mr-1 h-3 w-3" />
         {tooltip}

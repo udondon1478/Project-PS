@@ -18,7 +18,13 @@ export function getCategoryColor(categoryName: string): string {
  * HEXカラーコードからRGBA値を抽出
  */
 export function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  // 3桁または6桁のHEXカラーコードを正規表現でマッチング
+  const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+  const hex6 = hex.replace(shorthandRegex, (m, r, g, b) => {
+    return r + r + g + g + b + b;
+  });
+
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex6);
   return result
     ? {
         r: parseInt(result[1], 16),
@@ -76,9 +82,12 @@ export function getCategoryCardStyle(categoryName: string): {
   const rgb = hexToRgb(color);
 
   if (!rgb) {
+    // RGB変換に失敗した場合は統一されたグレーを使用
+    const fallbackGray = 'rgba(107, 114, 128, 0.1)';
+    const fallbackBorder = 'rgb(107, 114, 128)';
     return {
-      backgroundColor: 'rgba(107, 114, 128, 0.1)',
-      borderColor: color,
+      backgroundColor: fallbackGray,
+      borderColor: fallbackBorder,
     };
   }
 
