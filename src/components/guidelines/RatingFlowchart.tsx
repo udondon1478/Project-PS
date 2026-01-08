@@ -13,10 +13,20 @@ interface RatingFlowchartProps {
   onClose?: () => void;
 }
 
+// 簡易的なHEX to RGBA変換ヘルパー
+function hexToRgba(hex: string, alpha: number): string {
+  // #RRGGBB形式を想定
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 export function RatingFlowchart({ onResult, onClose }: RatingFlowchartProps) {
   const [currentQuestionId, setCurrentQuestionId] = useState<string>(ratingFlowchart.startQuestionId);
   const [history, setHistory] = useState<string[]>([]);
   const [result, setResult] = useState<RatingLevel | null>(null);
+  const [showAllExamples, setShowAllExamples] = useState(false);
 
   const currentQuestion = ratingFlowchart.questions.find(q => q.id === currentQuestionId);
   const totalQuestions = ratingFlowchart.questions.length;
@@ -34,6 +44,7 @@ export function RatingFlowchart({ onResult, onClose }: RatingFlowchartProps) {
     if (RATING_LEVELS.includes(nextId as RatingLevel)) {
       const rating = nextId as RatingLevel;
       setResult(rating);
+      setShowAllExamples(false); // リセット
       onResult?.(rating);
     } else {
       // 次の質問に進む
@@ -58,7 +69,9 @@ export function RatingFlowchart({ onResult, onClose }: RatingFlowchartProps) {
   const handleReset = useCallback(() => {
     setCurrentQuestionId(ratingFlowchart.startQuestionId);
     setHistory([]);
+    setHistory([]);
     setResult(null);
+    setShowAllExamples(false);
   }, []);
 
   // キーボードショートカット
@@ -150,7 +163,7 @@ export function RatingFlowchart({ onResult, onClose }: RatingFlowchartProps) {
             <div className="flex items-center gap-3">
               <div
                 className="flex h-12 w-12 items-center justify-center rounded-full text-2xl"
-                style={{ backgroundColor: ratingGuidelines[result].color + '20' }}
+                style={{ backgroundColor: hexToRgba(ratingGuidelines[result].color, 0.2) }}
               >
                 {ratingGuidelines[result].emoji}
               </div>
@@ -178,11 +191,24 @@ export function RatingFlowchart({ onResult, onClose }: RatingFlowchartProps) {
 
             <div>
               <h4 className="font-semibold mb-2">このレーティングの例:</h4>
-              <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                {ratingGuidelines[result].examples.slice(0, 3).map((example, index) => (
-                  <li key={index}>{example}</li>
+              <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground mb-2">
+                {(showAllExamples 
+                  ? ratingGuidelines[result].examples 
+                  : ratingGuidelines[result].examples.slice(0, 3)
+                ).map((example, index) => (
+                  <li key={`${result}-example-${index}`}>{example}</li>
                 ))}
               </ul>
+              {ratingGuidelines[result].examples.length > 3 && (
+                <Button 
+                  variant="link" 
+                  size="sm" 
+                  className="p-0 h-auto text-muted-foreground"
+                  onClick={() => setShowAllExamples(prev => !prev)}
+                >
+                  {showAllExamples ? "折りたたむ" : "もっと見る"}
+                </Button>
+              )}
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-2 sm:flex-row">

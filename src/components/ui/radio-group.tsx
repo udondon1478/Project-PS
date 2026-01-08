@@ -22,7 +22,7 @@ RadioGroup.displayName = RadioGroupPrimitive.Root.displayName
 
 const RADIO_GROUP_ITEM_CLASSES = `
   aspect-square size-4 shrink-0 rounded-full border border-primary text-primary shadow
-  focus:outline-none resolve:ring-1 focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50
+  focus:outline-none focus:ring-1 focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50
   border-input focus-visible:border-ring focus-visible:ring-ring/50
   aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive
   dark:bg-input/30 transition-[color,box-shadow]

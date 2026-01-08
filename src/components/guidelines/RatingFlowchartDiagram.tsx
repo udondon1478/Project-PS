@@ -32,7 +32,6 @@ const MERMAID_CONFIG = {
 };
 
 // ズーム関連の定数
-// ズーム関連の定数
 const ZOOM_STEP = 0.3;
 const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 10;
@@ -60,18 +59,21 @@ export function RatingFlowchartDiagram() {
       mermaid.initialize(MERMAID_CONFIG);
 
       const mermaidSyntax = generateMermaidSyntax();
-      const uniqueId = `${uniqueIdPrefix}-${Date.now()}`;
+      const uniqueId = `${uniqueIdPrefix}-${crypto.randomUUID()}`;
       const { svg } = await mermaid.render(uniqueId, mermaidSyntax);
 
       if (targetRef.current) {
-        targetRef.current.innerHTML = svg;
-        const svgElement = targetRef.current.querySelector('svg');
-        if (svgElement) {
-          svgElement.setAttribute('role', 'img');
-          svgElement.setAttribute('aria-label', 'レーティング判定フローチャート詳細図');
-          svgElement.style.maxWidth = '100%';
-          svgElement.style.height = 'auto';
-        }
+        const parser = new DOMParser();
+        const svgDoc = parser.parseFromString(svg, "image/svg+xml");
+        const svgElement = svgDoc.documentElement;
+        
+        svgElement.setAttribute('role', 'img');
+        svgElement.setAttribute('aria-label', 'レーティング判定フローチャート詳細図');
+        svgElement.style.maxWidth = '100%';
+        svgElement.style.height = 'auto';
+
+        targetRef.current.innerHTML = '';
+        targetRef.current.appendChild(svgElement);
       }
     } catch (err) {
       console.error(`Mermaid rendering error (${uniqueIdPrefix}):`, err);
@@ -124,7 +126,8 @@ export function RatingFlowchartDiagram() {
     ratingFlowchart.questions.forEach((q) => {
       // 質問ノード
       const textWithoutQuestion = q.text.replace(/\?/g, '');
-      const questionLabel = Array.from(textWithoutQuestion).slice(0, 20).join('') + '...';
+      // 日本語の表示を考慮して長めに切り取る
+      const questionLabel = Array.from(textWithoutQuestion).slice(0, 30).join('') + (textWithoutQuestion.length > 30 ? '...' : '');
       syntax += `    ${q.id}["${questionLabel}"]:::questionClass\n`;
 
       // はい/いいえの分岐
@@ -189,13 +192,13 @@ export function RatingFlowchartDiagram() {
               <CardDescription className="text-xs sm:text-sm">全体の分岐を一目で確認できます</CardDescription>
             </div>
             <div className="flex gap-1 shrink-0">
-              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={handleZoomOut} title="縮小" aria-label="縮小">
+              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={handleZoomOut} aria-label="縮小">
                 <ZoomOut className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
-              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={handleResetZoom} title="リセット" aria-label="ズームリセット">
+              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={handleResetZoom} aria-label="ズームリセット">
                 <Maximize2 className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
-              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={handleZoomIn} title="拡大" aria-label="拡大">
+              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={handleZoomIn} aria-label="拡大">
                 <ZoomIn className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </div>
@@ -207,7 +210,7 @@ export function RatingFlowchartDiagram() {
             ref={containerRef}
             style={{ transform: `scale(${scale})`, transformOrigin: 'top left', transition: 'transform 0.2s' }}
             className="min-h-[400px] sm:min-h-[500px] flex items-center justify-center"
-            role="img"
+            // role="img" はSVG側にあるので削除
             aria-label="レーティング判定フローチャート図"
           >
             {/* Mermaidがここにレンダリングされます */}
