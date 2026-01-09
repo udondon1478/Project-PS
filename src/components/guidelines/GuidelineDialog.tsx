@@ -70,36 +70,28 @@ export function GuidelineDialog({
           <TabsContent value="rating" className="flex-1 mt-4 flex flex-col min-h-0">
             {/* モード切り替え */}
             <div className="flex items-center gap-2 mb-4 shrink-0">
-              <Toggle
-                pressed={flowchartMode === 'interactive'}
-                onPressedChange={(pressed) => {
-                  if (pressed) setFlowchartMode('interactive');
-                }}
-                variant="outline"
-                size="sm"
-                className={cn(
-                  flowchartMode === 'interactive' && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
-                )}
-                aria-label="ステップ形式で表示"
-              >
-                <Workflow className="mr-2 h-4 w-4" />
-                ステップ形式
-              </Toggle>
-              <Toggle
-                pressed={flowchartMode === 'diagram'}
-                onPressedChange={(pressed) => {
-                  if (pressed) setFlowchartMode('diagram');
-                }}
-                variant="outline"
-                size="sm"
-                className={cn(
-                  flowchartMode === 'diagram' && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
-                )}
-                aria-label="図表で表示"
-              >
-                <ListTree className="mr-2 h-4 w-4" />
-                図表で見る
-              </Toggle>
+              {[
+                { id: 'interactive', label: 'ステップ形式', icon: Workflow, aria: 'ステップ形式で表示' },
+                { id: 'diagram', label: '図表で見る', icon: ListTree, aria: '図表で表示' }
+              ].map((mode) => {
+                const Icon = mode.icon;
+                return (
+                  <Toggle
+                    key={mode.id}
+                    pressed={flowchartMode === mode.id}
+                    onPressedChange={(pressed) => pressed && setFlowchartMode(mode.id as 'interactive' | 'diagram')}
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      flowchartMode === mode.id && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+                    )}
+                    aria-label={mode.aria}
+                  >
+                    <Icon className="mr-2 h-4 w-4" />
+                    {mode.label}
+                  </Toggle>
+                );
+              })}
             </div>
 
             <div className="flex-1 -mx-6 overflow-y-auto min-h-0">

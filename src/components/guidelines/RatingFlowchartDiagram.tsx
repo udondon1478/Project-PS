@@ -43,7 +43,9 @@ export function RatingFlowchartDiagram() {
   const [scale, setScale] = useState(ZOOM_DEFAULT);
   const [fullscreenScale, setFullscreenScale] = useState(ZOOM_DEFAULT);
   const [error, setError] = useState<string | null>(null);
+  const [fullscreenError, setFullscreenError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const mountedRef = useRef(true);
 
   const RENDER_DELAY_MS = 100;
 
@@ -52,7 +54,7 @@ export function RatingFlowchartDiagram() {
     uniqueIdPrefix: string,
     setLocalError?: (err: string) => void
   ) => {
-    if (!targetRef.current) return;
+    if (!mountedRef.current || !targetRef.current) return;
 
     try {
       const mermaid = (await import('mermaid')).default;
@@ -62,11 +64,13 @@ export function RatingFlowchartDiagram() {
       const uniqueId = `${uniqueIdPrefix}-${crypto.randomUUID()}`;
       const { svg } = await mermaid.render(uniqueId, mermaidSyntax);
 
+      if (!mountedRef.current) return;
+
       if (targetRef.current) {
         const parser = new DOMParser();
         const svgDoc = parser.parseFromString(svg, "image/svg+xml");
         const svgElement = svgDoc.documentElement;
-        
+
         svgElement.setAttribute('role', 'img');
         svgElement.setAttribute('aria-label', 'レーティング判定フローチャート詳細図');
         svgElement.style.maxWidth = '100%';
@@ -77,25 +81,25 @@ export function RatingFlowchartDiagram() {
       }
     } catch (err) {
       console.error(`Mermaid rendering error (${uniqueIdPrefix}):`, err);
-      if (setLocalError) {
+      if (mountedRef.current && setLocalError) {
         setLocalError('フローチャートの表示に失敗しました。ブラウザをリロードしてお試しください。');
       }
     }
   };
 
   useEffect(() => {
-    let mounted = true;
+    mountedRef.current = true;
 
     // レンダリングを遅延実行
     // レイアウトやDOMの初期化が完了するのを待つため
     const timer = setTimeout(() => {
-      if (mounted) {
+      if (mountedRef.current) {
         renderMermaid(containerRef, 'flowchart-diagram', setError);
       }
     }, RENDER_DELAY_MS);
 
     return () => {
-      mounted = false;
+      mountedRef.current = false;
       clearTimeout(timer);
     };
   }, []);
@@ -104,16 +108,13 @@ export function RatingFlowchartDiagram() {
   useEffect(() => {
     if (!isFullscreen) return;
 
-    let mounted = true;
-
     const timer = setTimeout(() => {
-      if (mounted) {
-        renderMermaid(fullscreenContainerRef, 'flowchart-fullscreen');
+      if (mountedRef.current) {
+        renderMermaid(fullscreenContainerRef, 'flowchart-fullscreen', setFullscreenError);
       }
     }, RENDER_DELAY_MS);
 
     return () => {
-      mounted = false;
       clearTimeout(timer);
     };
   }, [isFullscreen]);
@@ -210,8 +211,6 @@ export function RatingFlowchartDiagram() {
             ref={containerRef}
             style={{ transform: `scale(${scale})`, transformOrigin: 'top left', transition: 'transform 0.2s' }}
             className="min-h-[400px] sm:min-h-[500px] flex items-center justify-center"
-            // role="img" はSVG側にあるので削除
-            aria-label="レーティング判定フローチャート図"
           >
             {/* Mermaidがここにレンダリングされます */}
           </div>

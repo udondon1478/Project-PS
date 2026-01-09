@@ -115,7 +115,7 @@ export function GuidelinesContent() {
                   <div className="flex items-center gap-2">
                     <Toggle
                       pressed={flowchartMode === 'interactive'}
-                      onPressedChange={() => setFlowchartMode('interactive')}
+                      onPressedChange={(pressed) => pressed && setFlowchartMode('interactive')}
                       size="sm"
                     >
                       <Workflow className="mr-2 h-4 w-4" />
@@ -123,7 +123,7 @@ export function GuidelinesContent() {
                     </Toggle>
                     <Toggle
                       pressed={flowchartMode === 'diagram'}
-                      onPressedChange={() => setFlowchartMode('diagram')}
+                      onPressedChange={(pressed) => pressed && setFlowchartMode('diagram')}
                       size="sm"
                     >
                       <ListTree className="mr-2 h-4 w-4" />

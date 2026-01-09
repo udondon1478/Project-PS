@@ -13,13 +13,29 @@ interface RatingFlowchartProps {
   onClose?: () => void;
 }
 
-// 簡易的なHEX to RGBA変換ヘルパー
+// HEX to RGBA変換ヘルパー（入力検証とショートフォーム対応）
 function hexToRgba(hex: string, alpha: number): string {
-  // #RRGGBB形式を想定
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  // alphaを0-1の範囲にクランプ
+  const clampedAlpha = Math.max(0, Math.min(1, alpha));
+
+  // #を削除して正規化
+  const normalized = hex.replace(/^#/, '');
+
+  // 3文字形式(RGB)を6文字形式(RRGGBB)に展開
+  const fullHex = normalized.length === 3
+    ? normalized.split('').map(c => c + c).join('')
+    : normalized;
+
+  // 6文字でない場合はエラー
+  if (fullHex.length !== 6 || !/^[0-9A-Fa-f]{6}$/.test(fullHex)) {
+    console.error(`Invalid hex color: ${hex}`);
+    return `rgba(0, 0, 0, ${clampedAlpha})`; // フォールバック
+  }
+
+  const r = parseInt(fullHex.slice(0, 2), 16);
+  const g = parseInt(fullHex.slice(2, 4), 16);
+  const b = parseInt(fullHex.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${clampedAlpha})`;
 }
 
 export function RatingFlowchart({ onResult, onClose }: RatingFlowchartProps) {
@@ -68,7 +84,6 @@ export function RatingFlowchart({ onResult, onClose }: RatingFlowchartProps) {
 
   const handleReset = useCallback(() => {
     setCurrentQuestionId(ratingFlowchart.startQuestionId);
-    setHistory([]);
     setHistory([]);
     setResult(null);
     setShowAllExamples(false);
