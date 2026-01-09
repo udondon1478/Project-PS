@@ -10,6 +10,8 @@ describe('useMediaQuery', () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
     window.matchMedia = originalMatchMedia;
   });
 
@@ -63,8 +65,6 @@ describe('useMediaQuery', () => {
       expect.stringContaining('Error matching media query "invalid-query":'),
       expect.any(Error)
     );
-    
-    vi.unstubAllEnvs();
   });
 
   it.skip('should return undefined during SSR (when window is undefined)', () => {
