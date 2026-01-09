@@ -4,7 +4,9 @@ import { useState, useRef, useEffect } from 'react';
 import type { Dispatch, SetStateAction, KeyboardEvent } from 'react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { X, BookOpen } from 'lucide-react';
+import { GuidelineContainer } from '@/components/guidelines/GuidelineContainer';
 
 interface TagInputProps {
   value: string[];
@@ -17,6 +19,7 @@ export const TagInput = ({ value: tags, onChange: setTags, disabled, id }: TagIn
   const [inputValue, setInputValue] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isComposing, setIsComposing] = useState(false);
+  const [showGuideline, setShowGuideline] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -127,9 +130,22 @@ export const TagInput = ({ value: tags, onChange: setTags, disabled, id }: TagIn
           disabled={disabled}
         />
       </div>
-      <p className="text-xs text-muted-foreground mt-1">
-        タグは入力後に半角スペース、Tabキー、またはEnterキーで確定されます
-      </p>
+      <div className="flex items-center justify-between mt-1">
+        <p className="text-xs text-muted-foreground">
+          タグは入力後に半角スペース、Tabキー、またはEnterキーで確定されます
+        </p>
+        <Button
+          type="button"
+          variant="link"
+          size="sm"
+          className="h-auto p-0 text-xs"
+          onClick={() => setShowGuideline(true)}
+          disabled={disabled}
+        >
+          <BookOpen className="mr-1 h-3 w-3" />
+          タグガイドライン
+        </Button>
+      </div>
       {suggestions.length > 0 && (
         <ul className="mt-2 border rounded-md bg-background list-none p-0">
           {suggestions.map((suggestion) => (
@@ -145,6 +161,14 @@ export const TagInput = ({ value: tags, onChange: setTags, disabled, id }: TagIn
           ))}
         </ul>
       )}
+
+      {/* ガイドラインダイアログ/シート */}
+      <GuidelineContainer
+        open={showGuideline}
+        onOpenChange={setShowGuideline}
+        initialTab="categories"
+        initialRatingFlow={false}
+      />
     </div>
   );
 };

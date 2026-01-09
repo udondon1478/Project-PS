@@ -10,7 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
 import { TagInput } from './TagInput';
 import {
   AlertDialog,
@@ -22,6 +22,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { GuidelineButton } from '@/components/guidelines/GuidelineButton';
+import { GuidelineContainer } from '@/components/guidelines/GuidelineContainer';
 
 // 商品情報の型定義 (page.tsxから移動・再利用)
 interface ProductInfo {
@@ -84,6 +86,10 @@ export const ProductDetailsForm = ({
   // 公式タグ警告ダイアログの状態
   const [isOfficialTagWarningOpen, setIsOfficialTagWarningOpen] = useState(false);
   const [pendingOfficialTagName, setPendingOfficialTagName] = useState<string | null>(null);
+
+  // ガイドライン関連の状態
+  const [showGuideline, setShowGuideline] = useState(false);
+  const [showRatingFlow, setShowRatingFlow] = useState(false);
 
   const handleFeatureTagToggle = (tagName: string) => {
     setManualTags((prevTags) =>
@@ -187,7 +193,16 @@ export const ProductDetailsForm = ({
         {/* Right Column: Input Form */}
         <div className="space-y-6">
           <div>
-            <Label htmlFor="ageRating">対象年齢</Label>
+            <div className="flex items-center gap-2 mb-2">
+              <Label htmlFor="ageRating">対象年齢</Label>
+              <GuidelineButton
+                tooltip="レーティングガイドを見る"
+                onClick={() => {
+                  setShowGuideline(true);
+                  setShowRatingFlow(false);
+                }}
+              />
+            </div>
             <Select onValueChange={setSelectedAgeRatingTagId} value={selectedAgeRatingTagId} disabled={isLoading}>
               <SelectTrigger id="ageRating">
                 <SelectValue placeholder="選択してください" />
@@ -200,6 +215,19 @@ export const ProductDetailsForm = ({
                 ))}
               </SelectContent>
             </Select>
+            <Button
+              variant="link"
+              size="sm"
+              className="mt-1 h-auto p-0"
+              onClick={() => {
+                setShowGuideline(true);
+                setShowRatingFlow(true);
+              }}
+              disabled={isLoading}
+            >
+              <Sparkles className="mr-1 h-3 w-3" />
+              レーティングを診断する
+            </Button>
           </div>
 
           <div>
@@ -314,6 +342,14 @@ export const ProductDetailsForm = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ガイドラインダイアログ/シート */}
+      <GuidelineContainer
+        open={showGuideline}
+        onOpenChange={setShowGuideline}
+        initialTab="rating"
+        initialRatingFlow={showRatingFlow}
+      />
     </Card>
   );
 };
