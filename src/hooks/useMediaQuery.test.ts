@@ -49,8 +49,7 @@ describe('useMediaQuery', () => {
   });
 
   it('should handle errors gracefully when matchMedia throws', () => {
-    const originalEnv = process.env;
-    process.env = { ...originalEnv, NODE_ENV: 'development' };
+    vi.stubEnv('NODE_ENV', 'development');
     const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     
     window.matchMedia = vi.fn().mockImplementation(() => {
@@ -62,7 +61,7 @@ describe('useMediaQuery', () => {
     expect(result.current).toBeUndefined();
     expect(consoleSpy).toHaveBeenCalled();
     
-    process.env = originalEnv;
+    vi.unstubAllEnvs();
   });
 
   it.skip('should return undefined during SSR (when window is undefined)', () => {

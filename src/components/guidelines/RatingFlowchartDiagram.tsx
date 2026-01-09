@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, ZoomIn, ZoomOut, Maximize2, X } from 'lucide-react';
@@ -49,10 +49,84 @@ export function RatingFlowchartDiagram() {
 
   const RENDER_DELAY_MS = 100;
 
-  const renderMermaid = async (
+  /* eslint-disable react-hooks/exhaustive-deps */
+  const generateMermaidSyntax = useCallback((): string => {
+    let syntax = 'graph TD\n';
+    syntax += '    Start([開始]):::startClass\n';
+    syntax += `    Start --> ${ratingFlowchart.startQuestionId}\n\n`;
+
+    // 結果ノードの定義済みセット
+    const definedResultNodes = new Set<string>();
+
+    ratingFlowchart.questions.forEach((q) => {
+      // 質問ノード
+      // 「？」と「?」を削除
+      const textWithoutQuestion = q.text.replace(/[?？]/g, '');
+      // 日本語の表示を考慮して長めに切り取る
+      const questionLabel = Array.from(textWithoutQuestion).slice(0, 30).join('') + (textWithoutQuestion.length > 30 ? '...' : '');
+      // エスケープ処理（改行と引用符）
+      const safeLabel = questionLabel.replace(/"/g, "'").replace(/\n/g, '<br>');
+      
+      syntax += `    ${q.id}["${safeLabel}"]:::questionClass\n`;
+
+      // はい/いいえの分岐
+      if (['general', 'sensitive', 'questionable', 'explicit'].includes(q.yesNext as string)) {
+        const rating = q.yesNext as string;
+        const resultNodeId = `${rating}_result`;
+        
+        // 結果ノードが未定義なら定義を追加
+        if (!definedResultNodes.has(resultNodeId)) {
+          const ratingLabel = getRatingLabel(rating).replace(/"/g, "'");
+          syntax += `    ${resultNodeId}["${ratingLabel}"]:::${rating}Class\n`;
+          definedResultNodes.add(resultNodeId);
+        }
+        
+        syntax += `    ${q.id} -->|はい| ${resultNodeId}\n`;
+      } else {
+        syntax += `    ${q.id} -->|はい| ${q.yesNext}\n`;
+      }
+
+      if (['general', 'sensitive', 'questionable', 'explicit'].includes(q.noNext as string)) {
+        const rating = q.noNext as string;
+        const resultNodeId = `${rating}_result`;
+        
+        if (!definedResultNodes.has(resultNodeId)) {
+          const ratingLabel = getRatingLabel(rating).replace(/"/g, "'");
+          syntax += `    ${resultNodeId}["${ratingLabel}"]:::${rating}Class\n`;
+          definedResultNodes.add(resultNodeId);
+        }
+        
+        syntax += `    ${q.id} -->|いいえ| ${resultNodeId}\n`;
+      } else {
+        syntax += `    ${q.id} -->|いいえ| ${q.noNext}\n`;
+      }
+    });
+
+    // スタイルクラス定義
+    syntax += '\n    classDef startClass fill:#44ff88,stroke:#2ecc71,stroke-width:3px,color:#000\n';
+    syntax += '    classDef questionClass fill:#3498DB,stroke:#2980B9,stroke-width:2px,color:#fff\n';
+    syntax += '    classDef generalClass fill:#44ff88,stroke:#2ecc71,stroke-width:3px,color:#000\n';
+    syntax += '    classDef sensitiveClass fill:#ffdd44,stroke:#f39c12,stroke-width:3px,color:#000\n';
+    syntax += '    classDef questionableClass fill:#ff9944,stroke:#e67e22,stroke-width:3px,color:#fff\n';
+    syntax += '    classDef explicitClass fill:#ff4444,stroke:#c0392b,stroke-width:3px,color:#fff\n';
+
+    return syntax;
+  }, []); // 依存関係なし（静的データ使用）
+
+  const getRatingLabel = useCallback((rating: string): string => {
+    const labels: Record<string, string> = {
+      general: '✅ 全年齢',
+      sensitive: '👙 R-15',
+      questionable: '⚠️ R-17',
+      explicit: '🔞 R-18',
+    };
+    return labels[rating] || rating;
+  }, []);
+
+  const renderMermaid = useCallback(async (
     targetRef: React.RefObject<HTMLDivElement | null>,
     uniqueIdPrefix: string,
-    setLocalError?: (err: string) => void
+    setLocalError?: (err: string | null) => void
   ) => {
     if (!mountedRef.current || !targetRef.current) return;
 
@@ -61,7 +135,16 @@ export function RatingFlowchartDiagram() {
       mermaid.initialize(MERMAID_CONFIG);
 
       const mermaidSyntax = generateMermaidSyntax();
-      const uniqueId = `${uniqueIdPrefix}-${crypto.randomUUID()}`;
+      
+      // UUIDのフォールバック
+      let uniqueSuffix;
+      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        uniqueSuffix = crypto.randomUUID();
+      } else {
+        uniqueSuffix = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      }
+      
+      const uniqueId = `${uniqueIdPrefix}-${uniqueSuffix}`;
       const { svg } = await mermaid.render(uniqueId, mermaidSyntax);
 
       if (!mountedRef.current) return;
@@ -78,6 +161,11 @@ export function RatingFlowchartDiagram() {
 
         targetRef.current.innerHTML = '';
         targetRef.current.appendChild(svgElement);
+        
+        // 成功時にエラーをクリア
+        if (setLocalError) {
+          setLocalError(null);
+        }
       }
     } catch (err) {
       console.error(`Mermaid rendering error (${uniqueIdPrefix}):`, err);
@@ -85,86 +173,7 @@ export function RatingFlowchartDiagram() {
         setLocalError('フローチャートの表示に失敗しました。ブラウザをリロードしてお試しください。');
       }
     }
-  };
-
-  useEffect(() => {
-    mountedRef.current = true;
-
-    // レンダリングを遅延実行
-    // レイアウトやDOMの初期化が完了するのを待つため
-    const timer = setTimeout(() => {
-      if (mountedRef.current) {
-        renderMermaid(containerRef, 'flowchart-diagram', setError);
-      }
-    }, RENDER_DELAY_MS);
-
-    return () => {
-      mountedRef.current = false;
-      clearTimeout(timer);
-    };
-  }, []);
-
-  // フルスクリーンモード用のレンダリング
-  useEffect(() => {
-    if (!isFullscreen) return;
-
-    const timer = setTimeout(() => {
-      if (mountedRef.current) {
-        renderMermaid(fullscreenContainerRef, 'flowchart-fullscreen', setFullscreenError);
-      }
-    }, RENDER_DELAY_MS);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [isFullscreen]);
-
-  const generateMermaidSyntax = (): string => {
-    let syntax = 'graph TD\n';
-    syntax += '    Start([開始]):::startClass\n';
-    syntax += `    Start --> ${ratingFlowchart.startQuestionId}\n\n`;
-
-    ratingFlowchart.questions.forEach((q) => {
-      // 質問ノード
-      const textWithoutQuestion = q.text.replace(/\?/g, '');
-      // 日本語の表示を考慮して長めに切り取る
-      const questionLabel = Array.from(textWithoutQuestion).slice(0, 30).join('') + (textWithoutQuestion.length > 30 ? '...' : '');
-      syntax += `    ${q.id}["${questionLabel}"]:::questionClass\n`;
-
-      // はい/いいえの分岐
-      if (['general', 'sensitive', 'questionable', 'explicit'].includes(q.yesNext as string)) {
-        syntax += `    ${q.id} -->|はい| ${q.yesNext}_result["${getRatingLabel(q.yesNext as string)}"]:::${q.yesNext}Class\n`;
-      } else {
-        syntax += `    ${q.id} -->|はい| ${q.yesNext}\n`;
-      }
-
-      if (['general', 'sensitive', 'questionable', 'explicit'].includes(q.noNext as string)) {
-        syntax += `    ${q.id} -->|いいえ| ${q.noNext}_result["${getRatingLabel(q.noNext as string)}"]:::${q.noNext}Class\n`;
-      } else {
-        syntax += `    ${q.id} -->|いいえ| ${q.noNext}\n`;
-      }
-    });
-
-    // スタイルクラス定義
-    syntax += '\n    classDef startClass fill:#44ff88,stroke:#2ecc71,stroke-width:3px,color:#000\n';
-    syntax += '    classDef questionClass fill:#3498DB,stroke:#2980B9,stroke-width:2px,color:#fff\n';
-    syntax += '    classDef generalClass fill:#44ff88,stroke:#2ecc71,stroke-width:3px,color:#000\n';
-    syntax += '    classDef sensitiveClass fill:#ffdd44,stroke:#f39c12,stroke-width:3px,color:#000\n';
-    syntax += '    classDef questionableClass fill:#ff9944,stroke:#e67e22,stroke-width:3px,color:#fff\n';
-    syntax += '    classDef explicitClass fill:#ff4444,stroke:#c0392b,stroke-width:3px,color:#fff\n';
-
-    return syntax;
-  };
-
-  const getRatingLabel = (rating: string): string => {
-    const labels: Record<string, string> = {
-      general: '✅ 全年齢',
-      sensitive: '👙 R-15',
-      questionable: '⚠️ R-17',
-      explicit: '🔞 R-18',
-    };
-    return labels[rating] || rating;
-  };
+  }, [generateMermaidSyntax]);
 
   const handleZoomIn = () => setScale((prev) => Math.min(prev + ZOOM_STEP, ZOOM_MAX));
   const handleZoomOut = () => setScale((prev) => Math.max(prev - ZOOM_STEP, ZOOM_MIN));
@@ -269,8 +278,7 @@ export function RatingFlowchartDiagram() {
               ref={fullscreenContainerRef}
               style={{ transform: `scale(${fullscreenScale})`, transformOrigin: 'top left', transition: 'transform 0.2s' }}
               className="min-h-[500px] flex items-center justify-center"
-              role="img"
-              aria-label="レーティング判定フローチャート図（フルスクリーン）"
+              // role="img" と aria-label は内部のSVGに付与されるため削除
             >
               {/* Mermaidがここにレンダリングされます */}
             </div>

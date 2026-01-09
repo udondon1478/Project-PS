@@ -71,15 +71,16 @@ export function RatingFlowchart({ onResult, onClose }: RatingFlowchartProps) {
   const handleBack = useCallback(() => {
     if (history.length === 0) return;
 
-    setHistory(prev => {
-      const newHistory = [...prev];
-      const previousQuestionId = newHistory.pop();
-      if (previousQuestionId) {
-        setCurrentQuestionId(previousQuestionId);
-        setResult(null);
-      }
-      return newHistory;
-    });
+    // 現在の履歴から新しい状態を計算
+    const newHistory = [...history];
+    const previousQuestionId = newHistory.pop();
+    
+    // 状態を一括更新（setHistoryの副作用として実行しない）
+    if (previousQuestionId) {
+      setHistory(newHistory);
+      setCurrentQuestionId(previousQuestionId);
+      setResult(null);
+    }
   }, [history]);
 
   const handleReset = useCallback(() => {
@@ -91,7 +92,22 @@ export function RatingFlowchart({ onResult, onClose }: RatingFlowchartProps) {
 
   // キーボードショートカット
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (result) return; // 結果が表示されている場合は無効
+    // 入力フォームでの入力中は無効化
+    if (
+      e.target instanceof HTMLInputElement || 
+      e.target instanceof HTMLTextAreaElement || 
+      e.target instanceof HTMLSelectElement ||
+      (e.target instanceof HTMLElement && e.target.isContentEditable)
+    ) {
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      onClose?.();
+      return;
+    }
+
+    if (result) return; // 結果が表示されている場合は他の操作を無効
 
     if (e.key === 'y' || e.key === 'Y') {
       handleAnswer('yes');
@@ -100,8 +116,6 @@ export function RatingFlowchart({ onResult, onClose }: RatingFlowchartProps) {
     } else if (e.key === 'Backspace' && history.length > 0) {
       e.preventDefault();
       handleBack();
-    } else if (e.key === 'Escape') {
-      onClose?.();
     }
   }, [result, handleAnswer, history.length, handleBack, onClose]);
 
@@ -169,7 +183,7 @@ export function RatingFlowchart({ onResult, onClose }: RatingFlowchartProps) {
             </Button>
           </CardFooter>
         </Card>
-      ) : result ? (
+      ) : result && ratingGuidelines[result] ? (
         <Card
           className="animate-in zoom-in duration-500 border-2"
           style={{ borderColor: ratingGuidelines[result].color }}
@@ -196,12 +210,16 @@ export function RatingFlowchart({ onResult, onClose }: RatingFlowchartProps) {
             <p className="text-base">{ratingGuidelines[result].definition}</p>
 
             {ratingGuidelines[result].warnings && ratingGuidelines[result].warnings.length > 0 && (
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  {ratingGuidelines[result].warnings[0]}
-                </AlertDescription>
-              </Alert>
+              <div className="space-y-2">
+                {ratingGuidelines[result].warnings.map((warning, i) => (
+                  <Alert key={i}>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      {warning}
+                    </AlertDescription>
+                  </Alert>
+                ))}
+              </div>
             )}
 
             <div>
@@ -239,6 +257,14 @@ export function RatingFlowchart({ onResult, onClose }: RatingFlowchartProps) {
             )}
           </CardFooter>
         </Card>
+      ) : result ? (
+        // 結果はあるがガイドラインが見つからない場合のフォールバック
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            判定結果の読み込みに失敗しました（ID: {result}）
+          </AlertDescription>
+        </Alert>
       ) : null}
 
       {/* 戻るボタン */}
