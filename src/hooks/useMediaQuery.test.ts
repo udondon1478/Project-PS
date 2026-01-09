@@ -59,7 +59,10 @@ describe('useMediaQuery', () => {
     const { result } = renderHook(() => useMediaQuery('invalid-query'));
     
     expect(result.current).toBeUndefined();
-    expect(consoleSpy).toHaveBeenCalled();
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Error matching media query "invalid-query":'),
+      expect.any(Error)
+    );
     
     vi.unstubAllEnvs();
   });
