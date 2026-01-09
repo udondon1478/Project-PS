@@ -45,7 +45,16 @@ export function RatingFlowchartDiagram() {
   const [error, setError] = useState<string | null>(null);
   const [fullscreenError, setFullscreenError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    setIsMounted(true);
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const RENDER_DELAY_MS = 100;
 
@@ -131,36 +140,36 @@ export function RatingFlowchartDiagram() {
     if (!mountedRef.current || !targetRef.current) return;
 
     try {
+      // Mermaidの初期化
       const mermaid = (await import('mermaid')).default;
       mermaid.initialize(MERMAID_CONFIG);
 
       const mermaidSyntax = generateMermaidSyntax();
       
-      // UUIDのフォールバック
-      let uniqueSuffix;
-      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-        uniqueSuffix = crypto.randomUUID();
-      } else {
-        uniqueSuffix = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      }
-      
+      // ユニークIDの生成（よりシンプルな実装に変更）
+      const uniqueSuffix = Math.random().toString(36).substring(2, 9);
       const uniqueId = `${uniqueIdPrefix}-${uniqueSuffix}`;
+      
+      // レンダリング実行
+      // mermaid.render はSVG文字列を返します
       const { svg } = await mermaid.render(uniqueId, mermaidSyntax);
 
-      if (!mountedRef.current) return;
+      if (!mountedRef.current) {
+        return;
+      }
 
       if (targetRef.current) {
-        const parser = new DOMParser();
-        const svgDoc = parser.parseFromString(svg, "image/svg+xml");
-        const svgElement = svgDoc.documentElement;
-
-        svgElement.setAttribute('role', 'img');
-        svgElement.setAttribute('aria-label', 'レーティング判定フローチャート詳細図');
-        svgElement.style.maxWidth = '100%';
-        svgElement.style.height = 'auto';
-
-        targetRef.current.innerHTML = '';
-        targetRef.current.appendChild(svgElement);
+        // SVGをそのままHTMLとして挿入
+        targetRef.current.innerHTML = svg;
+        
+        // アクセシビリティ属性の追加
+        const svgElement = targetRef.current.querySelector('svg');
+        if (svgElement) {
+          svgElement.setAttribute('role', 'img');
+          svgElement.setAttribute('aria-label', 'レーティング判定フローチャート詳細図');
+          svgElement.style.maxWidth = '100%';
+          svgElement.style.height = 'auto';
+        }
         
         // 成功時にエラーをクリア
         if (setLocalError) {
@@ -170,7 +179,7 @@ export function RatingFlowchartDiagram() {
     } catch (err) {
       console.error(`Mermaid rendering error (${uniqueIdPrefix}):`, err);
       if (mountedRef.current && setLocalError) {
-        setLocalError('フローチャートの表示に失敗しました。ブラウザをリロードしてお試しください。');
+        setLocalError('フローチャートの表示に失敗しました。');
       }
     }
   }, [generateMermaidSyntax]);
@@ -182,6 +191,29 @@ export function RatingFlowchartDiagram() {
   const handleFullscreenZoomIn = () => setFullscreenScale((prev) => Math.min(prev + ZOOM_STEP, ZOOM_MAX));
   const handleFullscreenZoomOut = () => setFullscreenScale((prev) => Math.max(prev - ZOOM_STEP, ZOOM_MIN));
   const handleFullscreenResetZoom = () => setFullscreenScale(ZOOM_DEFAULT);
+
+  // 初回マウント時とフルスクリーン切り替え時にMermaidを描画
+  useEffect(() => {
+    if (!isMounted) return;
+
+    // 少し遅延させてレンダリング（DOMの準備を待つため）
+    const timer = setTimeout(() => {
+      renderMermaid(containerRef, 'chart', setError);
+    }, RENDER_DELAY_MS);
+
+    return () => clearTimeout(timer);
+  }, [isMounted, renderMermaid]);
+
+  // フルスクリーン表示時のレンダリング
+  useEffect(() => {
+    if (!isMounted || !isFullscreen) return;
+
+    const timer = setTimeout(() => {
+      renderMermaid(fullscreenContainerRef, 'fullscreen-chart', setFullscreenError);
+    }, RENDER_DELAY_MS);
+
+    return () => clearTimeout(timer);
+  }, [isMounted, isFullscreen, renderMermaid]);
 
   if (error) {
     return (
@@ -220,8 +252,10 @@ export function RatingFlowchartDiagram() {
             ref={containerRef}
             style={{ transform: `scale(${scale})`, transformOrigin: 'top left', transition: 'transform 0.2s' }}
             className="min-h-[400px] sm:min-h-[500px] flex items-center justify-center"
+            suppressHydrationWarning={true}
           >
             {/* Mermaidがここにレンダリングされます */}
+            {/* ハイドレーションエラー対策: マウントされるまでレンダリングしない */}
           </div>
         </div>
         <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
@@ -278,6 +312,7 @@ export function RatingFlowchartDiagram() {
               ref={fullscreenContainerRef}
               style={{ transform: `scale(${fullscreenScale})`, transformOrigin: 'top left', transition: 'transform 0.2s' }}
               className="min-h-[500px] flex items-center justify-center"
+              suppressHydrationWarning={true}
               // role="img" と aria-label は内部のSVGに付与されるため削除
             >
               {/* Mermaidがここにレンダリングされます */}
