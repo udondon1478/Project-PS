@@ -9,6 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
 import { getErrorMessage } from './utils/errorHandling';
+import { GuidelineContainer } from '@/components/guidelines/GuidelineContainer';
+import { useGuidelineFirstVisit } from '@/hooks/useGuidelineFirstVisit';
+import { GuidelineOnboardingModal } from '@/components/guidelines/GuidelineOnboardingModal';
+import { RatingLevel } from '@/data/guidelines';
 
 // 商品情報の型定義 (変更なし)
 interface ProductInfo {
@@ -49,6 +53,64 @@ export default function RegisterItemPage() {
   const [categoryTags, setCategoryTags] = useState<{ id: string; name: string }[]>([]);
   const [featureTags, setFeatureTags] = useState<{ id: string; name: string }[]>([]);
   const fetchControllerRef = useRef<AbortController | null>(null);
+  const hasShownOnboardingRef = useRef(false);
+
+  // ガイドラインサイドパネルの状態管理
+  const isFirstVisit = useGuidelineFirstVisit('register');
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  const [guidelineOpen, setGuidelineOpen] = useState(false);
+  const [shouldMountGuideline, setShouldMountGuideline] = useState(false);
+  const [initialTab, setInitialTab] = useState<'rating' | 'categories'>('rating');
+  const [initialRatingFlow, setInitialRatingFlow] = useState(false);
+
+  // ガイドラインを開く処理
+  const handleOpenGuideline = (tab: 'rating' | 'categories', ratingFlow = false) => {
+    setShouldMountGuideline(true);
+    setGuidelineOpen(true);
+    setInitialTab(tab);
+    setInitialRatingFlow(ratingFlow);
+  };
+
+  // 「ガイドラインを見る」ボタンのハンドラ
+  const handleViewGuideline = () => {
+    setShowOnboardingModal(false);
+    setShouldMountGuideline(true);
+    setGuidelineOpen(true);
+    setInitialTab('rating');
+    setInitialRatingFlow(true);
+  };
+
+  // レーティング診断完了時のハンドラ
+  const handleRatingSelected = (rating: RatingLevel) => {
+    // RatingLevelからタグ名へのマッピング
+    const ratingToTagName: Record<RatingLevel, string> = {
+      general: '全年齢',
+      sensitive: 'R-15',
+      questionable: 'R-17',
+      explicit: 'R-18',
+    };
+
+    const tagName = ratingToTagName[rating];
+    const matchedTag = ageRatingTags.find((tag) => tag.name === tagName);
+
+    if (matchedTag) {
+      setSelectedAgeRatingTagId(matchedTag.id);
+    } else {
+      console.warn(`Tag not found for rating: ${rating} (expected tag name: ${tagName})`);
+    }
+  };
+
+  // details_confirmationステップでオンボーディングを表示（1回のみ）
+  useEffect(() => {
+    if (
+      step === 'details_confirmation' &&
+      isFirstVisit &&
+      !hasShownOnboardingRef.current
+    ) {
+      setShowOnboardingModal(true);
+      hasShownOnboardingRef.current = true;
+    }
+  }, [step, isFirstVisit]);
 
   // URLから商品情報を取得するハンドラ
   const handleFetchProduct = async (url: string) => {
@@ -333,6 +395,7 @@ export default function RegisterItemPage() {
             isLoading={isLoading}
             message={message}
             isError={isDetailsError}
+            onGuidelineOpen={handleOpenGuideline}
           />
         );
       case 'existing_product':
@@ -389,6 +452,27 @@ export default function RegisterItemPage() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8 text-center">商品登録</h1>
       {renderStep()}
+
+      {/* オンボーディングモーダル */}
+      {showOnboardingModal && (
+        <GuidelineOnboardingModal
+          open={showOnboardingModal}
+          onOpenChange={setShowOnboardingModal}
+          onViewGuideline={handleViewGuideline}
+        />
+      )}
+
+      {/* ガイドラインサイドパネル - 条件付きマウント */}
+      {shouldMountGuideline && (
+        <GuidelineContainer
+          mode="sidepanel"
+          open={guidelineOpen}
+          onOpenChange={setGuidelineOpen}
+          initialTab={initialTab}
+          initialRatingFlow={initialRatingFlow}
+          onRatingSelected={handleRatingSelected}
+        />
+      )}
     </div>
   );
 }

@@ -62,6 +62,7 @@ interface ProductDetailsFormProps {
   isLoading: boolean;
   message: string;
   isError?: boolean;
+  onGuidelineOpen?: (tab: 'rating' | 'categories', ratingFlow?: boolean) => void;
 }
 
 // LocalStorage key for tracking if the user has seen the official tag warning
@@ -82,12 +83,13 @@ export const ProductDetailsForm = ({
   isLoading,
   message,
   isError = false,
+  onGuidelineOpen,
 }: ProductDetailsFormProps) => {
   // 公式タグ警告ダイアログの状態
   const [isOfficialTagWarningOpen, setIsOfficialTagWarningOpen] = useState(false);
   const [pendingOfficialTagName, setPendingOfficialTagName] = useState<string | null>(null);
 
-  // ガイドライン関連の状態
+  // ガイドライン関連の状態（フォールバック用）
   const [showGuideline, setShowGuideline] = useState(false);
   const [showRatingFlow, setShowRatingFlow] = useState(false);
 
@@ -198,8 +200,12 @@ export const ProductDetailsForm = ({
               <GuidelineButton
                 tooltip="レーティングガイドを見る"
                 onClick={() => {
-                  setShowGuideline(true);
-                  setShowRatingFlow(false);
+                  if (onGuidelineOpen) {
+                    onGuidelineOpen('rating', false);
+                  } else {
+                    setShowGuideline(true);
+                    setShowRatingFlow(false);
+                  }
                 }}
               />
             </div>
@@ -220,8 +226,12 @@ export const ProductDetailsForm = ({
               size="sm"
               className="mt-1 h-auto p-0"
               onClick={() => {
-                setShowGuideline(true);
-                setShowRatingFlow(true);
+                if (onGuidelineOpen) {
+                  onGuidelineOpen('rating', true);
+                } else {
+                  setShowGuideline(true);
+                  setShowRatingFlow(true);
+                }
               }}
               disabled={isLoading}
             >
