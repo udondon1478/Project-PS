@@ -5,7 +5,6 @@ import { X, Workflow, ListTree } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Toggle } from '@/components/ui/toggle';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { RatingFlowchart } from './RatingFlowchart';
 import { RatingFlowchartDiagram } from './RatingFlowchartDiagram';
@@ -108,28 +107,45 @@ export function GuidelineSidePanel({
           className="flex-1 mt-0 flex flex-col min-h-0 data-[state=inactive]:hidden"
         >
           {/* 固定モード切り替え */}
-          <div className="flex items-center gap-2 px-6 py-3 shrink-0" role="group" aria-label="表示モード切り替え">
-            <Toggle
-              pressed={flowchartMode === 'interactive'}
-              onPressedChange={() => {
-                if (flowchartMode !== 'interactive') setFlowchartMode('interactive');
-              }}
-              aria-label="ステップ形式に切り替え"
-            >
-              <Workflow className="mr-2 h-4 w-4" />
-              ステップ形式
-            </Toggle>
-            <Toggle
-              pressed={flowchartMode === 'diagram'}
-              onPressedChange={() => {
-                if (flowchartMode !== 'diagram') setFlowchartMode('diagram');
-              }}
-              aria-label="図表で見る"
-            >
-              <ListTree className="mr-2 h-4 w-4" />
-              図表で見る
-            </Toggle>
-          </div>
+          <fieldset className="flex items-center gap-2 px-6 py-3 shrink-0">
+            <legend className="sr-only">表示モード切り替え</legend>
+            <div className="flex gap-2">
+              <label className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer transition-colors text-sm font-medium",
+                flowchartMode === 'interactive'
+                  ? "bg-accent text-accent-foreground"
+                  : "hover:bg-accent/50 text-muted-foreground hover:text-accent-foreground"
+              )}>
+                <input
+                  type="radio"
+                  name="flowchart-mode"
+                  value="interactive"
+                  checked={flowchartMode === 'interactive'}
+                  onChange={() => setFlowchartMode('interactive')}
+                  className="sr-only"
+                />
+                <Workflow className="h-4 w-4" />
+                <span>ステップ形式</span>
+              </label>
+              <label className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer transition-colors text-sm font-medium",
+                flowchartMode === 'diagram'
+                  ? "bg-accent text-accent-foreground"
+                  : "hover:bg-accent/50 text-muted-foreground hover:text-accent-foreground"
+              )}>
+                <input
+                  type="radio"
+                  name="flowchart-mode"
+                  value="diagram"
+                  checked={flowchartMode === 'diagram'}
+                  onChange={() => setFlowchartMode('diagram')}
+                  className="sr-only"
+                />
+                <ListTree className="h-4 w-4" />
+                <span>図表で見る</span>
+              </label>
+            </div>
+          </fieldset>
 
           {/* スクロール可能コンテンツエリア */}
           <div className="flex-1 overflow-y-auto px-6 pb-4 min-h-0">

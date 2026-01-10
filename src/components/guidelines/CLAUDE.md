@@ -12,3 +12,5 @@
 | #257 | 8:58 PM | 🔵 | Code Review Feedback Analysis | ~224 |
 </claude-mem-context>
 
+### Jan 10, 2026 (Continued)
+- **Refactor GuidelineSidePanel**: Switched from `Toggle` components to accessible radio buttons for view mode selection (interactive flowchart vs diagram). This improves accessibility and semantic correctness as requested in code review.
