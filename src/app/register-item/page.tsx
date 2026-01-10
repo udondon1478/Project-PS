@@ -99,6 +99,8 @@ export default function RegisterItemPage() {
     if (matchedTag) {
       setSelectedAgeRatingTagId(matchedTag.id);
       setPendingRating(null);
+      setIsDetailsError(false);
+      setMessage('');
     } else {
       console.warn(`Tag not found for rating: ${rating} (expected tag name: ${tagName})`);
       setMessage(`レーティング「${tagName}」の自動設定に失敗しました。手動で選択してください。`);
