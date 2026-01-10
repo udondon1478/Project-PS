@@ -371,7 +371,7 @@ export default function RegisterItemPage() {
     };
   }, []);
 
-  const resetFlow = () => {
+  const resetFlow = useCallback(() => {
     fetchControllerRef.current?.abort();
     setStep('url_input');
     setProductData(null);
@@ -381,7 +381,7 @@ export default function RegisterItemPage() {
     setIsDetailsError(false);
     setSelectedAgeRatingTagId('');
     setSelectedCategoryTagId('');
-  };
+  }, []);
 
   const renderStep = () => {
     switch (step) {
