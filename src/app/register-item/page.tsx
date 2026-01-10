@@ -144,7 +144,7 @@ export default function RegisterItemPage() {
   }, [step, isFirstVisit]);
 
   // URLから商品情報を取得するハンドラ
-  const handleFetchProduct = async (url: string) => {
+  const handleFetchProduct = useCallback(async (url: string) => {
     if (fetchControllerRef.current) {
       fetchControllerRef.current.abort();
     }
@@ -201,10 +201,10 @@ export default function RegisterItemPage() {
       }
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // 既存商品を更新するハンドラ
-  const handleUpdateProduct = async () => {
+  const handleUpdateProduct = useCallback(async () => {
     if (!productData?.id) {
       setMessage('商品IDが見つかりません。');
       setStep('error');
@@ -251,10 +251,10 @@ export default function RegisterItemPage() {
       }
       setIsLoading(false);
     }
-  };
+  }, [productData]);
 
   // 新規商品を作成するハンドラ
-  const handleCreateProduct = async () => {
+  const handleCreateProduct = useCallback(async () => {
     if (!productData) {
       setMessage('商品情報がありません。');
       setStep('error');
@@ -283,7 +283,7 @@ export default function RegisterItemPage() {
         }),
         signal: controller.signal,
       });
-      
+
 
       if (response.ok) {
         await response.json();
@@ -311,7 +311,7 @@ export default function RegisterItemPage() {
       }
       setIsLoading(false);
     }
-  };
+  }, [productData, manualTags, selectedAgeRatingTagId, selectedCategoryTagId]);
 
   // タグ選択肢をフェッチ & unmount時のクリーンアップ
   useEffect(() => {
