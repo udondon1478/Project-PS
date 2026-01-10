@@ -24,8 +24,6 @@ export function useGuidelineFirstVisit(page: string): boolean {
       try {
         const key = `guideline-onboarding-shown-${page}`;
         localStorage.setItem(key, 'true');
-        // 保存成功後は状態を更新して再レンダリングをトリガー
-        setIsFirstVisit(false);
       } catch (error) {
         // エラーは無視（プライベートモード等）
         console.warn('Failed to save onboarding state:', error);
