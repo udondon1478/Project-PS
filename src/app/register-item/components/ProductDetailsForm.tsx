@@ -1,7 +1,7 @@
 'use client';
 
 import type { Dispatch, SetStateAction } from 'react';
-import { useState } from 'react';
+import { useState, useCallback, memo } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -68,7 +68,7 @@ interface ProductDetailsFormProps {
 // LocalStorage key for tracking if the user has seen the official tag warning
 const OFFICIAL_TAG_WARNING_SHOWN_KEY = 'polyseek_official_tag_warning_shown';
 
-export const ProductDetailsForm = ({
+export const ProductDetailsForm = memo(({
   productData,
   ageRatingTags,
   categoryTags,
@@ -93,16 +93,16 @@ export const ProductDetailsForm = ({
   const [showGuideline, setShowGuideline] = useState(false);
   const [showRatingFlow, setShowRatingFlow] = useState(false);
 
-  const handleFeatureTagToggle = (tagName: string) => {
+  const handleFeatureTagToggle = useCallback((tagName: string) => {
     setManualTags((prevTags) =>
       prevTags.includes(tagName)
         ? prevTags.filter((t) => t !== tagName)
         : [...prevTags, tagName]
     );
-  };
+  }, [setManualTags]);
 
   // 公式タグクリック時のハンドラ
-  const handleOfficialTagClick = (tagName: string) => {
+  const handleOfficialTagClick = useCallback((tagName: string) => {
     // 既に選択されている場合は解除のみ（警告不要）
     if (manualTags.includes(tagName)) {
       handleFeatureTagToggle(tagName);
@@ -119,10 +119,10 @@ export const ProductDetailsForm = ({
       // 警告済みの場合は直接追加
       handleFeatureTagToggle(tagName);
     }
-  };
+  }, [manualTags, handleFeatureTagToggle]);
 
   // 警告ダイアログで「追加」を選択した場合
-  const handleConfirmOfficialTag = () => {
+  const handleConfirmOfficialTag = useCallback(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem(OFFICIAL_TAG_WARNING_SHOWN_KEY, 'true');
     }
@@ -131,13 +131,13 @@ export const ProductDetailsForm = ({
     }
     setIsOfficialTagWarningOpen(false);
     setPendingOfficialTagName(null);
-  };
+  }, [pendingOfficialTagName, handleFeatureTagToggle]);
 
   // 警告ダイアログで「キャンセル」を選択した場合
-  const handleCancelOfficialTag = () => {
+  const handleCancelOfficialTag = useCallback(() => {
     setIsOfficialTagWarningOpen(false);
     setPendingOfficialTagName(null);
-  };
+  }, []);
 
   return (
     <Card className="w-full">
@@ -362,4 +362,4 @@ export const ProductDetailsForm = ({
       />
     </Card>
   );
-};
+});
