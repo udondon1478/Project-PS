@@ -110,14 +110,14 @@ export default function RegisterItemPage() {
   }, [ageRatingTags]);
 
   // レーティング診断完了時のハンドラ
-  const handleRatingSelected = (rating: RatingLevel) => {
+  const handleRatingSelected = useCallback((rating: RatingLevel) => {
     // タグがまだ読み込まれていない場合は保留
     if (ageRatingTags.length === 0) {
       setPendingRating(rating);
       return;
     }
     resolveAndApplyRating(rating);
-  };
+  }, [ageRatingTags, resolveAndApplyRating]);
 
   // 保留中のレーティングがあれば、タグ読み込み完了後に適用
   useEffect(() => {
