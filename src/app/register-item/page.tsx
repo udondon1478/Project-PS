@@ -71,14 +71,14 @@ export default function RegisterItemPage() {
   const [pendingRating, setPendingRating] = useState<RatingLevel | null>(null);
 
   // ガイドラインを開く処理
-  const handleOpenGuideline = (tab: 'rating' | 'categories', ratingFlow = false) => {
+  const handleOpenGuideline = useCallback((tab: 'rating' | 'categories', ratingFlow = false) => {
     setGuidelineState({
       shouldMount: true,
       isOpen: true,
       initialTab: tab,
       initialRatingFlow: ratingFlow,
     });
-  };
+  }, [setGuidelineState]);
 
   // 「ガイドラインを見る」ボタンのハンドラ
   const handleViewGuideline = () => {
