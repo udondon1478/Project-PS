@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { URLInputForm } from './components/URLInputForm';
 import { ProductDetailsForm } from './components/ProductDetailsForm';
 import { CompletionScreen } from './components/CompletionScreen';
@@ -91,6 +91,22 @@ export default function RegisterItemPage() {
     });
   };
 
+  // レーティング設定を適用するヘルパー関数
+  const resolveAndApplyRating = useCallback((rating: RatingLevel) => {
+    const tagName = RATING_TAG_MAPPING[rating];
+    const matchedTag = ageRatingTags.find((tag) => tag.name === tagName);
+
+    if (matchedTag) {
+      setSelectedAgeRatingTagId(matchedTag.id);
+      setPendingRating(null);
+    } else {
+      console.warn(`Tag not found for rating: ${rating} (expected tag name: ${tagName})`);
+      setMessage(`レーティング「${tagName}」の自動設定に失敗しました。手動で選択してください。`);
+      setIsDetailsError(true);
+      setPendingRating(null);
+    }
+  }, [ageRatingTags]);
+
   // レーティング診断完了時のハンドラ
   const handleRatingSelected = (rating: RatingLevel) => {
     // タグがまだ読み込まれていない場合は保留
@@ -98,39 +114,15 @@ export default function RegisterItemPage() {
       setPendingRating(rating);
       return;
     }
-
-    // RatingLevelからタグ名へのマッピング
-    const tagName = RATING_TAG_MAPPING[rating];
-    const matchedTag = ageRatingTags.find((tag) => tag.name === tagName);
-
-    if (matchedTag) {
-      setSelectedAgeRatingTagId(matchedTag.id);
-    } else {
-      console.warn(`Tag not found for rating: ${rating} (expected tag name: ${tagName})`);
-      // ユーザーへの通知
-      setMessage(`レーティング「${tagName}」の自動設定に失敗しました。手動で選択してください。`);
-      setIsDetailsError(true);
-    }
+    resolveAndApplyRating(rating);
   };
 
   // 保留中のレーティングがあれば、タグ読み込み完了後に適用
   useEffect(() => {
     if (pendingRating && ageRatingTags.length > 0) {
-      const rating = pendingRating;
-      const tagName = RATING_TAG_MAPPING[rating];
-      const matchedTag = ageRatingTags.find((tag) => tag.name === tagName);
-
-      if (matchedTag) {
-        setSelectedAgeRatingTagId(matchedTag.id);
-        setPendingRating(null);
-      } else {
-        console.warn(`Tag not found for pending rating: ${rating} (expected tag name: ${tagName})`);
-        setMessage(`レーティング「${tagName}」の自動設定に失敗しました。手動で選択してください。`);
-        setIsDetailsError(true);
-        setPendingRating(null);
-      }
+      resolveAndApplyRating(pendingRating);
     }
-  }, [ageRatingTags, pendingRating]);
+  }, [ageRatingTags, pendingRating, resolveAndApplyRating]);
 
   // details_confirmationステップでオンボーディングを表示（1回のみ）
   useEffect(() => {
