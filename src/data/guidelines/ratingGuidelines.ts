@@ -1,4 +1,11 @@
-import { RatingGuidelineContent } from './types';
+import { RatingGuidelineContent, RatingLevel } from './types';
+
+export const RATING_TAG_MAPPING: Record<RatingLevel, string> = {
+  general: '全年齢',
+  sensitive: 'R-15',
+  questionable: 'R-17',
+  explicit: 'R-18',
+};
 
 export const ratingGuidelines: Record<string, RatingGuidelineContent> = {
   general: {

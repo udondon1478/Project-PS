@@ -29,7 +29,9 @@ export function useGuidelineFirstVisit(page: string): boolean {
         console.warn('Failed to save onboarding state:', error);
       }
     }
-  }, [isFirstVisit, page]);
+    // isFirstVisitは初期化時のみ設定され、このフック内では変更されないため依存配列から除外しても安全
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   return isFirstVisit;
 }

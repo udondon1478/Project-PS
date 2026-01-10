@@ -27,7 +27,6 @@ export function GuidelineOnboardingModal({
       <DialogContent
         className="sm:max-w-[500px]"
         onPointerDownOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <DialogHeader>
           <div className="flex items-center gap-2 mb-2">
@@ -51,8 +50,15 @@ export function GuidelineOnboardingModal({
         </DialogHeader>
         <DialogFooter>
           <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="w-full sm:w-auto"
+          >
+            後で見る
+          </Button>
+          <Button
             onClick={onViewGuideline}
-            className="w-full"
+            className="w-full sm:flex-1"
           >
             <Sparkles className="mr-2 h-4 w-4" />
             ガイドラインを見る

@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Workflow, ListTree } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Toggle } from '@/components/ui/toggle';
-import { Workflow, ListTree } from 'lucide-react';
 import { RatingFlowchart } from './RatingFlowchart';
 import { RatingFlowchartDiagram } from './RatingFlowchartDiagram';
 import { TagCategoryVisualizer } from './TagCategoryVisualizer';
@@ -31,7 +30,6 @@ export function GuidelineSidePanel({
   const [flowchartMode, setFlowchartMode] = useState<FlowchartMode>(
     initialRatingFlow ? 'interactive' : 'diagram'
   );
-  const [error, setError] = useState<Error | null>(null);
 
   // initialTabが変更されたら反映
   useEffect(() => {
@@ -58,33 +56,8 @@ export function GuidelineSidePanel({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [open, onOpenChange]);
 
-  // エラーハンドリング
-  if (error) {
-    return (
-      <aside
-        role="complementary"
-        aria-label="タグ付けガイドライン"
-        className={cn(
-          "fixed left-0 top-0 h-screen w-[clamp(450px,40vw,600px)] z-60",
-          "bg-background border-r shadow-lg",
-          "flex flex-col items-center justify-center p-6",
-          open ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        <div className="text-destructive text-center">
-          <p className="font-semibold text-lg">ガイドラインの読み込みに失敗しました</p>
-          <p className="text-sm mt-2">{error.message}</p>
-          <Button onClick={() => window.location.reload()} className="mt-4">
-            再読み込み
-          </Button>
-        </div>
-      </aside>
-    );
-  }
-
   return (
     <aside
-      role="complementary"
       aria-label="タグ付けガイドライン"
       aria-hidden={!open}
       className={cn(
@@ -122,10 +95,12 @@ export function GuidelineSidePanel({
         className="flex-1 flex flex-col min-h-0"
       >
         {/* 固定タブリスト */}
-        <TabsList className="grid w-full grid-cols-2 shrink-0 mx-6 mt-4">
-          <TabsTrigger value="rating">レーティング</TabsTrigger>
-          <TabsTrigger value="categories">タグカテゴリ</TabsTrigger>
-        </TabsList>
+        <div className="px-6 mt-4 shrink-0">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="rating">レーティング</TabsTrigger>
+            <TabsTrigger value="categories">タグカテゴリ</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent
           value="rating"

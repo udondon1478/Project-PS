@@ -12,7 +12,7 @@ import { getErrorMessage } from './utils/errorHandling';
 import { GuidelineContainer } from '@/components/guidelines/GuidelineContainer';
 import { useGuidelineFirstVisit } from '@/hooks/useGuidelineFirstVisit';
 import { GuidelineOnboardingModal } from '@/components/guidelines/GuidelineOnboardingModal';
-import { RatingLevel } from '@/data/guidelines';
+import { RatingLevel, RATING_TAG_MAPPING } from '@/data/guidelines';
 
 // 商品情報の型定義 (変更なし)
 interface ProductInfo {
@@ -83,20 +83,16 @@ export default function RegisterItemPage() {
   // レーティング診断完了時のハンドラ
   const handleRatingSelected = (rating: RatingLevel) => {
     // RatingLevelからタグ名へのマッピング
-    const ratingToTagName: Record<RatingLevel, string> = {
-      general: '全年齢',
-      sensitive: 'R-15',
-      questionable: 'R-17',
-      explicit: 'R-18',
-    };
-
-    const tagName = ratingToTagName[rating];
+    const tagName = RATING_TAG_MAPPING[rating];
     const matchedTag = ageRatingTags.find((tag) => tag.name === tagName);
 
     if (matchedTag) {
       setSelectedAgeRatingTagId(matchedTag.id);
     } else {
       console.warn(`Tag not found for rating: ${rating} (expected tag name: ${tagName})`);
+      // ユーザーへの通知
+      setMessage(`レーティング「${tagName}」の自動設定に失敗しました。手動で選択してください。`);
+      setIsDetailsError(true);
     }
   };
 
