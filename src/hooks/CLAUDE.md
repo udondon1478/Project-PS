@@ -1,3 +1,4 @@
+
 <claude-mem-context>
 # Recent Activity
 
@@ -9,3 +10,20 @@
 |----|------|---|-------|------|
 | #257 | 8:58 PM | 🔵 | Code Review Feedback Analysis | ~224 |
 </claude-mem-context>
+
+## Hooks
+
+### useGuidelineFirstVisit
+
+ページごとのオンボーディング表示状態（初回訪問かどうか）を管理するフック。
+localStorageを使用して訪問状態を永続化する。
+
+- **Path**: `src/hooks/useGuidelineFirstVisit.ts`
+- **Params**:
+  - `page` (string): ページ識別子 (例: 'register')
+- **Returns**: `boolean` (初回訪問の場合 `true`)
+- **Behavior**:
+  - 初回呼び出し時にlocalStorageをチェックし、未訪問なら `true` を返す。
+  - 同時にlocalStorageに訪問済みフラグをセットする。
+  - SSR環境（window undefined）では `false` を返す。
+  - localStorageが無効な場合は安全にフォールバックし、常に `true` (初回扱い) とする。
