@@ -81,7 +81,7 @@ export default function RegisterItemPage() {
   }, [setGuidelineState]);
 
   // 「ガイドラインを見る」ボタンのハンドラ
-  const handleViewGuideline = () => {
+  const handleViewGuideline = useCallback(() => {
     setShowOnboardingModal(false);
     setGuidelineState({
       shouldMount: true,
@@ -89,7 +89,7 @@ export default function RegisterItemPage() {
       initialTab: 'rating',
       initialRatingFlow: true,
     });
-  };
+  }, []);
 
   // レーティング設定を適用するヘルパー関数
   const resolveAndApplyRating = useCallback((rating: RatingLevel) => {

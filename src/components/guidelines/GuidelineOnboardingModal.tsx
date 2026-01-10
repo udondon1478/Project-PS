@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -17,7 +18,7 @@ interface GuidelineOnboardingModalProps {
   onViewGuideline: () => void;
 }
 
-export function GuidelineOnboardingModal({
+export const GuidelineOnboardingModal = memo(function GuidelineOnboardingModal({
   open,
   onOpenChange,
   onViewGuideline,
@@ -67,4 +68,4 @@ export function GuidelineOnboardingModal({
       </DialogContent>
     </Dialog>
   );
-}
+});

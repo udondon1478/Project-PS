@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,7 +15,7 @@ interface URLInputFormProps {
   isError?: boolean;
 }
 
-export const URLInputForm = ({ onSubmit, isLoading, message, isError = false }: URLInputFormProps) => {
+export const URLInputForm = memo(({ onSubmit, isLoading, message, isError = false }: URLInputFormProps) => {
   const [url, setUrl] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -67,4 +67,4 @@ export const URLInputForm = ({ onSubmit, isLoading, message, isError = false }: 
       </form>
     </Card>
   );
-};
+});
