@@ -119,6 +119,11 @@ export default function RegisterItemPage() {
     resolveAndApplyRating(rating);
   }, [ageRatingTags, resolveAndApplyRating]);
 
+  // ガイドラインの開閉ハンドラ
+  const handleGuidelineOpenChange = useCallback((isOpen: boolean) => {
+    setGuidelineState((prev) => ({ ...prev, isOpen }));
+  }, []);
+
   // 保留中のレーティングがあれば、タグ読み込み完了後に適用
   useEffect(() => {
     if (pendingRating && ageRatingTags.length > 0) {
@@ -493,7 +498,7 @@ export default function RegisterItemPage() {
         <GuidelineContainer
           mode="sidepanel"
           open={guidelineState.isOpen}
-          onOpenChange={(isOpen) => setGuidelineState((prev) => ({ ...prev, isOpen }))}
+          onOpenChange={handleGuidelineOpenChange}
           initialTab={guidelineState.initialTab}
           initialRatingFlow={guidelineState.initialRatingFlow}
           onRatingSelected={handleRatingSelected}
