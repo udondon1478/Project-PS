@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { GuidelineDialog } from './GuidelineDialog';
 import { GuidelineSheet } from './GuidelineSheet';
@@ -15,7 +16,7 @@ interface GuidelineContainerProps {
   onRatingSelected?: (rating: RatingLevel) => void;
 }
 
-export function GuidelineContainer({
+export const GuidelineContainer = memo(function GuidelineContainer({
   mode = 'modal',
   ...props
 }: GuidelineContainerProps) {
@@ -32,4 +33,4 @@ export function GuidelineContainer({
   ) : (
     <GuidelineDialog {...props} />
   );
-}
+});
