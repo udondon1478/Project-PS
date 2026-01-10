@@ -16,6 +16,9 @@ const config: Config = {
       transitionDuration: {
         '250': '250ms',
       },
+      zIndex: {
+        '60': '60',
+      },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic':

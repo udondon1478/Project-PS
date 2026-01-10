@@ -58,30 +58,47 @@ export default function RegisterItemPage() {
   // ガイドラインサイドパネルの状態管理
   const isFirstVisit = useGuidelineFirstVisit('register');
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
-  const [guidelineOpen, setGuidelineOpen] = useState(false);
-  const [shouldMountGuideline, setShouldMountGuideline] = useState(false);
-  const [initialTab, setInitialTab] = useState<'rating' | 'categories'>('rating');
-  const [initialRatingFlow, setInitialRatingFlow] = useState(false);
+
+  // 統合されたガイドライン状態
+  const [guidelineState, setGuidelineState] = useState({
+    isOpen: false,
+    shouldMount: false,
+    initialTab: 'rating' as 'rating' | 'categories',
+    initialRatingFlow: false,
+  });
+
+  // レーティング保留状態 (タグ読み込み完了待ち)
+  const [pendingRating, setPendingRating] = useState<RatingLevel | null>(null);
 
   // ガイドラインを開く処理
   const handleOpenGuideline = (tab: 'rating' | 'categories', ratingFlow = false) => {
-    setShouldMountGuideline(true);
-    setGuidelineOpen(true);
-    setInitialTab(tab);
-    setInitialRatingFlow(ratingFlow);
+    setGuidelineState({
+      shouldMount: true,
+      isOpen: true,
+      initialTab: tab,
+      initialRatingFlow: ratingFlow,
+    });
   };
 
   // 「ガイドラインを見る」ボタンのハンドラ
   const handleViewGuideline = () => {
     setShowOnboardingModal(false);
-    setShouldMountGuideline(true);
-    setGuidelineOpen(true);
-    setInitialTab('rating');
-    setInitialRatingFlow(true);
+    setGuidelineState({
+      shouldMount: true,
+      isOpen: true,
+      initialTab: 'rating',
+      initialRatingFlow: true,
+    });
   };
 
   // レーティング診断完了時のハンドラ
   const handleRatingSelected = (rating: RatingLevel) => {
+    // タグがまだ読み込まれていない場合は保留
+    if (ageRatingTags.length === 0) {
+      setPendingRating(rating);
+      return;
+    }
+
     // RatingLevelからタグ名へのマッピング
     const tagName = RATING_TAG_MAPPING[rating];
     const matchedTag = ageRatingTags.find((tag) => tag.name === tagName);
@@ -95,6 +112,25 @@ export default function RegisterItemPage() {
       setIsDetailsError(true);
     }
   };
+
+  // 保留中のレーティングがあれば、タグ読み込み完了後に適用
+  useEffect(() => {
+    if (pendingRating && ageRatingTags.length > 0) {
+      const rating = pendingRating;
+      const tagName = RATING_TAG_MAPPING[rating];
+      const matchedTag = ageRatingTags.find((tag) => tag.name === tagName);
+
+      if (matchedTag) {
+        setSelectedAgeRatingTagId(matchedTag.id);
+        setPendingRating(null);
+      } else {
+        console.warn(`Tag not found for pending rating: ${rating} (expected tag name: ${tagName})`);
+        setMessage(`レーティング「${tagName}」の自動設定に失敗しました。手動で選択してください。`);
+        setIsDetailsError(true);
+        setPendingRating(null);
+      }
+    }
+  }, [ageRatingTags, pendingRating]);
 
   // details_confirmationステップでオンボーディングを表示（1回のみ）
   useEffect(() => {
@@ -459,13 +495,13 @@ export default function RegisterItemPage() {
       )}
 
       {/* ガイドラインサイドパネル - 条件付きマウント */}
-      {shouldMountGuideline && (
+      {guidelineState.shouldMount && (
         <GuidelineContainer
           mode="sidepanel"
-          open={guidelineOpen}
-          onOpenChange={setGuidelineOpen}
-          initialTab={initialTab}
-          initialRatingFlow={initialRatingFlow}
+          open={guidelineState.isOpen}
+          onOpenChange={(isOpen) => setGuidelineState((prev) => ({ ...prev, isOpen }))}
+          initialTab={guidelineState.initialTab}
+          initialRatingFlow={guidelineState.initialRatingFlow}
           onRatingSelected={handleRatingSelected}
         />
       )}

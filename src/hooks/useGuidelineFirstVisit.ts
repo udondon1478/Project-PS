@@ -24,14 +24,14 @@ export function useGuidelineFirstVisit(page: string): boolean {
       try {
         const key = `guideline-onboarding-shown-${page}`;
         localStorage.setItem(key, 'true');
+        // 保存成功後は状態を更新して再レンダリングをトリガー
+        setIsFirstVisit(false);
       } catch (error) {
         // エラーは無視（プライベートモード等）
         console.warn('Failed to save onboarding state:', error);
       }
     }
-    // isFirstVisitは初期化時のみ設定され、このフック内では変更されないため依存配列から除外しても安全
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+  }, [page, isFirstVisit]);
 
   return isFirstVisit;
 }

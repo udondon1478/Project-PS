@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Toggle } from '@/components/ui/toggle';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { RatingFlowchart } from './RatingFlowchart';
 import { RatingFlowchartDiagram } from './RatingFlowchartDiagram';
 import { TagCategoryVisualizer } from './TagCategoryVisualizer';
@@ -107,10 +108,12 @@ export function GuidelineSidePanel({
           className="flex-1 mt-0 flex flex-col min-h-0 data-[state=inactive]:hidden"
         >
           {/* 固定モード切り替え */}
-          <div className="flex items-center gap-2 px-6 py-3 shrink-0">
+          <div className="flex items-center gap-2 px-6 py-3 shrink-0" role="group" aria-label="表示モード切り替え">
             <Toggle
               pressed={flowchartMode === 'interactive'}
-              onPressedChange={() => setFlowchartMode('interactive')}
+              onPressedChange={() => {
+                if (flowchartMode !== 'interactive') setFlowchartMode('interactive');
+              }}
               aria-label="ステップ形式に切り替え"
             >
               <Workflow className="mr-2 h-4 w-4" />
@@ -118,7 +121,9 @@ export function GuidelineSidePanel({
             </Toggle>
             <Toggle
               pressed={flowchartMode === 'diagram'}
-              onPressedChange={() => setFlowchartMode('diagram')}
+              onPressedChange={() => {
+                if (flowchartMode !== 'diagram') setFlowchartMode('diagram');
+              }}
               aria-label="図表で見る"
             >
               <ListTree className="mr-2 h-4 w-4" />
@@ -128,13 +133,15 @@ export function GuidelineSidePanel({
 
           {/* スクロール可能コンテンツエリア */}
           <div className="flex-1 overflow-y-auto px-6 pb-4 min-h-0">
-            {flowchartMode === 'interactive' ? (
-              <RatingFlowchart
-                onComplete={handleRatingFlowComplete}
-              />
-            ) : (
-              <RatingFlowchartDiagram />
-            )}
+            <ErrorBoundary>
+              {flowchartMode === 'interactive' ? (
+                <RatingFlowchart
+                  onComplete={handleRatingFlowComplete}
+                />
+              ) : (
+                <RatingFlowchartDiagram />
+              )}
+            </ErrorBoundary>
           </div>
         </TabsContent>
 
@@ -142,7 +149,9 @@ export function GuidelineSidePanel({
           value="categories"
           className="flex-1 mt-0 min-h-0 data-[state=inactive]:hidden overflow-y-auto px-6 py-4"
         >
-          <TagCategoryVisualizer />
+          <ErrorBoundary>
+            <TagCategoryVisualizer />
+          </ErrorBoundary>
         </TabsContent>
       </Tabs>
     </aside>
