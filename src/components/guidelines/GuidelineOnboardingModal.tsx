@@ -36,17 +36,19 @@ export const GuidelineOnboardingModal = memo(function GuidelineOnboardingModal({
               タグ付けガイドラインへようこそ
             </DialogTitle>
           </div>
-          <DialogDescription className="text-base space-y-3 pt-2">
-            <p>
-              <strong>正確なタグ付け</strong>は、他のユーザーが商品を見つけるために重要です。
-            </p>
-            <p>
-              ガイドラインでは、レーティングの判定方法やタグカテゴリの使い分けを
-              分かりやすく説明しています。
-            </p>
-            <p className="text-sm text-muted-foreground">
-              💡 初めての方は、ぜひガイドラインをご確認ください
-            </p>
+          <DialogDescription asChild className="text-base space-y-3 pt-2">
+            <div>
+              <p>
+                <strong>正確なタグ付け</strong>は、他のユーザーが商品を見つけるために重要です。
+              </p>
+              <p>
+                ガイドラインでは、レーティングの判定方法やタグカテゴリの使い分けを
+                分かりやすく説明しています。
+              </p>
+              <p className="text-sm text-muted-foreground">
+                💡 初めての方は、ぜひガイドラインをご確認ください
+              </p>
+            </div>
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
