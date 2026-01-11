@@ -6,30 +6,30 @@ import { useState, useEffect } from 'react';
  * @returns 初回訪問かどうか
  */
 export function useGuidelineFirstVisit(page: string): boolean {
-  const [isFirstVisit, setIsFirstVisit] = useState(() => {
-    if (typeof window === 'undefined') return false;
+  // 常に初期値をtrueにする（SSR/ハイドレーション不一致回避のため）
+  const [isFirstVisit, setIsFirstVisit] = useState(true);
+
+  useEffect(() => {
+    // クライアントサイドでのみ実行
+    if (typeof window === 'undefined') return;
 
     try {
       const key = `guideline-onboarding-shown-${page}`;
-      return !localStorage.getItem(key);
-    } catch (error) {
-      // LocalStorage無効時は常に初回扱い
-      console.warn('localStorage unavailable:', error);
-      return true;
-    }
-  });
+      const hasShown = localStorage.getItem(key);
 
-  useEffect(() => {
-    if (isFirstVisit && typeof window !== 'undefined') {
-      try {
-        const key = `guideline-onboarding-shown-${page}`;
+      if (hasShown) {
+        // 既に表示済みの場合はfalseに更新
+        setIsFirstVisit(false);
+      } else {
+        // まだ表示していない場合は、表示済みとしてマーク（今回が初回）
+        // ※ isFirstVisitは初期値trueなので更新不要
         localStorage.setItem(key, 'true');
-      } catch (error) {
-        // エラーは無視（プライベートモード等）
-        console.warn('Failed to save onboarding state:', error);
       }
+    } catch (error) {
+      console.warn('Failed to access localStorage:', error);
+      // エラー時は初期値(true)のまま維持
     }
-  }, [page, isFirstVisit]);
+  }, [page]);
 
   return isFirstVisit;
 }
