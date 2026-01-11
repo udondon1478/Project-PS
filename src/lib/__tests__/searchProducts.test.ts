@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach, type Mock, type MockedFunction } from 'vitest';
 import { searchProducts, SearchParams } from '../searchProducts';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
@@ -27,9 +27,9 @@ type WhereCondition = {
 };
 
 // モックされた関数に型アサーションを適用
-const mockedPrismaFindMany = prisma.product.findMany as vi.Mock;
-const mockedPrismaCount = prisma.product.count as vi.Mock;
-const mockedAuth = auth as vi.MockedFunction<typeof auth>;
+const mockedPrismaFindMany = prisma.product.findMany as Mock;
+const mockedPrismaCount = prisma.product.count as Mock;
+const mockedAuth = auth as any;
 
 describe('searchProducts', () => {
   beforeEach(() => {

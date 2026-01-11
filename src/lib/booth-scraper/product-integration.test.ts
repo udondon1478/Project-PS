@@ -85,7 +85,7 @@ describe('Product Creator', () => {
         
         // Mock TagResolver dependencies
         mockTagFindMany.mockResolvedValue([]); // No existing tags
-        mockTagCreate.mockImplementation((args) => Promise.resolve({ id: `tag-${args.data.name}`, name: args.data.name } as any));
+        mockTagCreate.mockImplementation((args) => Promise.resolve({ id: `tag-${args.data.name}`, name: args.data.name } as any) as any);
         
         const mockTagCategoryFindUnique = vi.mocked(prisma.tagCategory.findUnique);
         const mockTagCategoryCreate = vi.mocked(prisma.tagCategory.create);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { URLInputForm } from './components/URLInputForm';
 import { ProductDetailsForm } from './components/ProductDetailsForm';
 import { CompletionScreen } from './components/CompletionScreen';
@@ -9,6 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
 import { getErrorMessage } from './utils/errorHandling';
+import { GuidelineContainer } from '@/components/guidelines/GuidelineContainer';
+import { useGuidelineFirstVisit } from '@/hooks/useGuidelineFirstVisit';
+import { GuidelineOnboardingModal } from '@/components/guidelines/GuidelineOnboardingModal';
+import { RatingLevel, RATING_TAG_MAPPING } from '@/data/guidelines';
 
 // 商品情報の型定義 (変更なし)
 interface ProductInfo {
@@ -39,6 +43,7 @@ export default function RegisterItemPage() {
   const [step, setStep] = useState<RegisterStep>('url_input');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [ratingError, setRatingError] = useState('');
   const [isUrlInputError, setIsUrlInputError] = useState(false);
   const [isDetailsError, setIsDetailsError] = useState(false);
   const [productData, setProductData] = useState<ProductInfo | null>(null);
@@ -49,9 +54,103 @@ export default function RegisterItemPage() {
   const [categoryTags, setCategoryTags] = useState<{ id: string; name: string }[]>([]);
   const [featureTags, setFeatureTags] = useState<{ id: string; name: string }[]>([]);
   const fetchControllerRef = useRef<AbortController | null>(null);
+  const hasShownOnboardingRef = useRef(false);
+
+  // ガイドラインサイドパネルの状態管理
+  const [isFirstVisit, markAsVisited] = useGuidelineFirstVisit('register-item');
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+
+  // 統合されたガイドライン状態
+  const [guidelineState, setGuidelineState] = useState({
+    isOpen: false,
+    shouldMount: false,
+    initialTab: 'rating' as 'rating' | 'categories',
+    initialRatingFlow: false,
+  });
+
+  // レーティング保留状態 (タグ読み込み完了待ち)
+  const [pendingRating, setPendingRating] = useState<RatingLevel | null>(null);
+
+  // ガイドラインを開く処理
+  const handleOpenGuideline = useCallback((tab: 'rating' | 'categories', ratingFlow = false) => {
+    setGuidelineState({
+      shouldMount: true,
+      isOpen: true,
+      initialTab: tab,
+      initialRatingFlow: ratingFlow,
+    });
+  }, [setGuidelineState]);
+
+  // 「ガイドラインを見る」ボタンのハンドラ
+  const handleViewGuideline = useCallback(() => {
+    setShowOnboardingModal(false);
+    setGuidelineState({
+      shouldMount: true,
+      isOpen: true,
+      initialTab: 'rating',
+      initialRatingFlow: true,
+    });
+  }, []);
+
+  // レーティング設定を適用するヘルパー関数
+  const resolveAndApplyRating = useCallback((rating: RatingLevel) => {
+    const tagName = RATING_TAG_MAPPING[rating];
+    const matchedTag = ageRatingTags.find((tag) => tag.name === tagName);
+
+    if (matchedTag) {
+      setSelectedAgeRatingTagId(matchedTag.id);
+      setPendingRating(null);
+      setRatingError('');
+    } else {
+      console.warn(`Tag not found for rating: ${rating} (expected tag name: ${tagName})`);
+      setRatingError(`レーティング「${tagName}」の自動設定に失敗しました。手動で選択してください。`);
+      setPendingRating(null);
+    }
+  }, [ageRatingTags]);
+
+  // レーティング診断完了時のハンドラ
+  const handleRatingSelected = useCallback((rating: RatingLevel) => {
+    // タグがまだ読み込まれていない場合は保留
+    if (ageRatingTags.length === 0) {
+      setPendingRating(rating);
+      return;
+    }
+    resolveAndApplyRating(rating);
+  }, [ageRatingTags, resolveAndApplyRating]);
+
+  // ガイドラインの開閉ハンドラ
+  const handleGuidelineOpenChange = useCallback((isOpen: boolean) => {
+    setGuidelineState((prev) => ({ ...prev, isOpen }));
+  }, []);
+
+  // 保留中のレーティングがあれば、タグ読み込み完了後に適用
+  useEffect(() => {
+    if (pendingRating && ageRatingTags.length > 0) {
+      resolveAndApplyRating(pendingRating);
+    }
+  }, [ageRatingTags, pendingRating, resolveAndApplyRating]);
+
+  // details_confirmationステップでオンボーディングを表示（1回のみ）
+  useEffect(() => {
+    if (
+      step === 'details_confirmation' &&
+      isFirstVisit &&
+      !hasShownOnboardingRef.current
+    ) {
+      setShowOnboardingModal(true);
+      markAsVisited(); // ここで「表示した」とマークする
+      hasShownOnboardingRef.current = true;
+    }
+  }, [step, isFirstVisit, markAsVisited]);
+
+  // 手動で年齢レーティングが変更された場合、保留中の自動適用を無効化する
+  const handleManualAgeRatingChange = useCallback((id: string) => {
+    setSelectedAgeRatingTagId(id);
+    setPendingRating(null); // 上書き防止ガード
+  }, []);
 
   // URLから商品情報を取得するハンドラ
-  const handleFetchProduct = async (url: string) => {
+  const handleFetchProduct = useCallback(async (url: string) => {
     if (fetchControllerRef.current) {
       fetchControllerRef.current.abort();
     }
@@ -108,10 +207,10 @@ export default function RegisterItemPage() {
       }
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // 既存商品を更新するハンドラ
-  const handleUpdateProduct = async () => {
+  const handleUpdateProduct = useCallback(async () => {
     if (!productData?.id) {
       setMessage('商品IDが見つかりません。');
       setStep('error');
@@ -158,10 +257,10 @@ export default function RegisterItemPage() {
       }
       setIsLoading(false);
     }
-  };
+  }, [productData]);
 
   // 新規商品を作成するハンドラ
-  const handleCreateProduct = async () => {
+  const handleCreateProduct = useCallback(async () => {
     if (!productData) {
       setMessage('商品情報がありません。');
       setStep('error');
@@ -190,7 +289,7 @@ export default function RegisterItemPage() {
         }),
         signal: controller.signal,
       });
-      
+
 
       if (response.ok) {
         await response.json();
@@ -218,7 +317,7 @@ export default function RegisterItemPage() {
       }
       setIsLoading(false);
     }
-  };
+  }, [productData, manualTags, selectedAgeRatingTagId, selectedCategoryTagId]);
 
   // タグ選択肢をフェッチ & unmount時のクリーンアップ
   useEffect(() => {
@@ -278,7 +377,7 @@ export default function RegisterItemPage() {
     };
   }, []);
 
-  const resetFlow = () => {
+  const resetFlow = useCallback(() => {
     fetchControllerRef.current?.abort();
     setStep('url_input');
     setProductData(null);
@@ -288,7 +387,7 @@ export default function RegisterItemPage() {
     setIsDetailsError(false);
     setSelectedAgeRatingTagId('');
     setSelectedCategoryTagId('');
-  };
+  }, []);
 
   const renderStep = () => {
     switch (step) {
@@ -326,13 +425,15 @@ export default function RegisterItemPage() {
             manualTags={manualTags}
             setManualTags={setManualTags}
             selectedAgeRatingTagId={selectedAgeRatingTagId}
-            setSelectedAgeRatingTagId={setSelectedAgeRatingTagId}
+            setSelectedAgeRatingTagId={handleManualAgeRatingChange}
             selectedCategoryTagId={selectedCategoryTagId}
             setSelectedCategoryTagId={setSelectedCategoryTagId}
             onSubmit={handleCreateProduct}
             isLoading={isLoading}
             message={message}
             isError={isDetailsError}
+            ratingError={ratingError}
+            onGuidelineOpen={handleOpenGuideline}
           />
         );
       case 'existing_product':
@@ -389,6 +490,27 @@ export default function RegisterItemPage() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8 text-center">商品登録</h1>
       {renderStep()}
+
+      {/* オンボーディングモーダル */}
+      {showOnboardingModal && (
+        <GuidelineOnboardingModal
+          open={showOnboardingModal}
+          onOpenChange={setShowOnboardingModal}
+          onViewGuideline={handleViewGuideline}
+        />
+      )}
+
+      {/* ガイドラインサイドパネル - 条件付きマウント */}
+      {guidelineState.shouldMount && (
+        <GuidelineContainer
+          mode="sidepanel"
+          open={guidelineState.isOpen}
+          onOpenChange={handleGuidelineOpenChange}
+          initialTab={guidelineState.initialTab}
+          initialRatingFlow={guidelineState.initialRatingFlow}
+          onRatingSelected={handleRatingSelected}
+        />
+      )}
     </div>
   );
 }

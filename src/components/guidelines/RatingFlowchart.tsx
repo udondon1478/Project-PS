@@ -11,6 +11,7 @@ import { ratingFlowchart, ratingGuidelines, RatingLevel, RATING_LEVELS } from '@
 interface RatingFlowchartProps {
   onResult?: (rating: RatingLevel) => void;
   onClose?: () => void;
+  onComplete?: (rating: RatingLevel) => void;
 }
 
 // HEX to RGBA変換ヘルパー（入力検証とショートフォーム対応）
@@ -38,7 +39,7 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${clampedAlpha})`;
 }
 
-export function RatingFlowchart({ onResult, onClose }: RatingFlowchartProps) {
+export function RatingFlowchart({ onResult, onClose, onComplete }: RatingFlowchartProps) {
   const [currentQuestionId, setCurrentQuestionId] = useState<string>(ratingFlowchart.startQuestionId);
   const [history, setHistory] = useState<string[]>([]);
   const [result, setResult] = useState<RatingLevel | null>(null);
@@ -249,8 +250,8 @@ export function RatingFlowchart({ onResult, onClose }: RatingFlowchartProps) {
               <ChevronLeft className="mr-2 h-4 w-4" />
               最初からやり直す
             </Button>
-            {onClose && (
-              <Button onClick={onClose} className="w-full sm:w-auto">
+            {onComplete && (
+              <Button onClick={() => onComplete(result)} className="w-full sm:w-auto">
                 <Check className="mr-2 h-4 w-4" />
                 完了
               </Button>

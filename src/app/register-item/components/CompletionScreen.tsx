@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -11,7 +12,7 @@ interface CompletionScreenProps {
   isError?: boolean;
 }
 
-export const CompletionScreen = ({ message, onReset, isError = false }: CompletionScreenProps) => {
+export const CompletionScreen = memo(({ message, onReset, isError = false }: CompletionScreenProps) => {
   return (
     <Card className="w-full max-w-lg mx-auto">
       <CardHeader>
@@ -40,4 +41,4 @@ export const CompletionScreen = ({ message, onReset, isError = false }: Completi
       </CardFooter>
     </Card>
   );
-};
+});

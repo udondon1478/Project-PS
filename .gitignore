@@ -59,3 +59,6 @@ repomix-*.xml
 .claude/settings.local.json
 .mcp.json
 .claude/plans/CLAUDE.md
+
+# Claude Memory files
+CLAUDE.md

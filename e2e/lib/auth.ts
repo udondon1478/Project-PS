@@ -32,6 +32,11 @@ export async function mockSession(
   // Generate JWT
   const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'secret';
 
+  // Determine cookie name first (needed for salt)
+  const useSecureCookies = process.env.USE_SECURE_COOKIES === 'true' ||
+      (process.env.NODE_ENV === 'production' && process.env.USE_SECURE_COOKIES !== 'false');
+  const cookieName = useSecureCookies ? '__Secure-authjs.session-token' : 'authjs.session-token';
+
   const token = await encode({
     token: {
       name: user.name,
@@ -40,23 +45,22 @@ export async function mockSession(
       sub: user.id,
       id: user.id,
       role: user.role,
+      status: user.status || UserStatus.ACTIVE,
       termsAgreedAt: user.termsAgreedAt ?? null,
+      isSafeSearchEnabled: user.isSafeSearchEnabled ?? true,
     },
     secret,
     salt: 'authjs.session-token',
   });
 
-  // Determine cookie name based on USE_SECURE_COOKIES setting
-  const useSecureCookies = process.env.USE_SECURE_COOKIES === 'true' ||
-      (process.env.NODE_ENV === 'production' && process.env.USE_SECURE_COOKIES !== 'false');
-  const cookieName = useSecureCookies ? '__Secure-authjs.session-token' : 'authjs.session-token';
+  // テスト環境ではポート3001を使用するため、NEXT_PUBLIC_BASE_URL (3000) は無視する
+  const baseURL = process.env.BASE_URL || 'http://localhost:3001';
 
   await context.addCookies([
     {
       name: cookieName,
       value: token,
-      domain: 'localhost',
-      path: '/',
+      url: baseURL,
       httpOnly: true,
       sameSite: 'Lax',
       secure: useSecureCookies,

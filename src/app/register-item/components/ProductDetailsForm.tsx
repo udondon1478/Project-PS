@@ -1,7 +1,7 @@
 'use client';
 
 import type { Dispatch, SetStateAction } from 'react';
-import { useState } from 'react';
+import { useState, useCallback, memo } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,6 +24,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { GuidelineButton } from '@/components/guidelines/GuidelineButton';
 import { GuidelineContainer } from '@/components/guidelines/GuidelineContainer';
+
+import { RatingPolicyDialog } from './RatingPolicyDialog';
 
 // 商品情報の型定義 (page.tsxから移動・再利用)
 interface ProductInfo {
@@ -62,12 +64,14 @@ interface ProductDetailsFormProps {
   isLoading: boolean;
   message: string;
   isError?: boolean;
+  ratingError?: string;
+  onGuidelineOpen?: (tab: 'rating' | 'categories', ratingFlow?: boolean) => void;
 }
 
 // LocalStorage key for tracking if the user has seen the official tag warning
 const OFFICIAL_TAG_WARNING_SHOWN_KEY = 'polyseek_official_tag_warning_shown';
 
-export const ProductDetailsForm = ({
+export const ProductDetailsForm = memo(({
   productData,
   ageRatingTags,
   categoryTags,
@@ -82,25 +86,30 @@ export const ProductDetailsForm = ({
   isLoading,
   message,
   isError = false,
+  ratingError,
+  onGuidelineOpen,
 }: ProductDetailsFormProps) => {
   // 公式タグ警告ダイアログの状態
   const [isOfficialTagWarningOpen, setIsOfficialTagWarningOpen] = useState(false);
   const [pendingOfficialTagName, setPendingOfficialTagName] = useState<string | null>(null);
 
-  // ガイドライン関連の状態
+  // レーティングポリシーダイアログの状態
+  const [isPolicyDialogOpen, setIsPolicyDialogOpen] = useState(false);
+
+  // ガイドライン関連の状態（フォールバック用）
   const [showGuideline, setShowGuideline] = useState(false);
   const [showRatingFlow, setShowRatingFlow] = useState(false);
 
-  const handleFeatureTagToggle = (tagName: string) => {
+  const handleFeatureTagToggle = useCallback((tagName: string) => {
     setManualTags((prevTags) =>
       prevTags.includes(tagName)
         ? prevTags.filter((t) => t !== tagName)
         : [...prevTags, tagName]
     );
-  };
+  }, [setManualTags]);
 
   // 公式タグクリック時のハンドラ
-  const handleOfficialTagClick = (tagName: string) => {
+  const handleOfficialTagClick = useCallback((tagName: string) => {
     // 既に選択されている場合は解除のみ（警告不要）
     if (manualTags.includes(tagName)) {
       handleFeatureTagToggle(tagName);
@@ -117,10 +126,10 @@ export const ProductDetailsForm = ({
       // 警告済みの場合は直接追加
       handleFeatureTagToggle(tagName);
     }
-  };
+  }, [manualTags, handleFeatureTagToggle]);
 
   // 警告ダイアログで「追加」を選択した場合
-  const handleConfirmOfficialTag = () => {
+  const handleConfirmOfficialTag = useCallback(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem(OFFICIAL_TAG_WARNING_SHOWN_KEY, 'true');
     }
@@ -129,13 +138,13 @@ export const ProductDetailsForm = ({
     }
     setIsOfficialTagWarningOpen(false);
     setPendingOfficialTagName(null);
-  };
+  }, [pendingOfficialTagName, handleFeatureTagToggle]);
 
   // 警告ダイアログで「キャンセル」を選択した場合
-  const handleCancelOfficialTag = () => {
+  const handleCancelOfficialTag = useCallback(() => {
     setIsOfficialTagWarningOpen(false);
     setPendingOfficialTagName(null);
-  };
+  }, []);
 
   return (
     <Card className="w-full">
@@ -196,11 +205,8 @@ export const ProductDetailsForm = ({
             <div className="flex items-center gap-2 mb-2">
               <Label htmlFor="ageRating">対象年齢</Label>
               <GuidelineButton
-                tooltip="レーティングガイドを見る"
-                onClick={() => {
-                  setShowGuideline(true);
-                  setShowRatingFlow(false);
-                }}
+                tooltip="レーティング基準について"
+                onClick={() => setIsPolicyDialogOpen(true)}
               />
             </div>
             <Select onValueChange={setSelectedAgeRatingTagId} value={selectedAgeRatingTagId} disabled={isLoading}>
@@ -220,14 +226,23 @@ export const ProductDetailsForm = ({
               size="sm"
               className="mt-1 h-auto p-0"
               onClick={() => {
-                setShowGuideline(true);
-                setShowRatingFlow(true);
+                if (onGuidelineOpen) {
+                  onGuidelineOpen('rating', true);
+                } else {
+                  setShowGuideline(true);
+                  setShowRatingFlow(true);
+                }
               }}
               disabled={isLoading}
             >
               <Sparkles className="mr-1 h-3 w-3" />
               レーティングを診断する
             </Button>
+            {ratingError && (
+              <p className="text-sm text-destructive mt-1" role="alert">
+                {ratingError}
+              </p>
+            )}
           </div>
 
           <div>
@@ -297,6 +312,7 @@ export const ProductDetailsForm = ({
               value={manualTags}
               onChange={setManualTags}
               disabled={isLoading}
+              onGuidelineClick={onGuidelineOpen ? () => onGuidelineOpen('categories') : undefined}
             />
           </div>
         </div>
@@ -343,6 +359,11 @@ export const ProductDetailsForm = ({
         </AlertDialogContent>
       </AlertDialog>
 
+      <RatingPolicyDialog
+        open={isPolicyDialogOpen}
+        onOpenChange={setIsPolicyDialogOpen}
+      />
+
       {/* ガイドラインダイアログ/シート */}
       <GuidelineContainer
         open={showGuideline}
@@ -352,4 +373,4 @@ export const ProductDetailsForm = ({
       />
     </Card>
   );
-};
+});

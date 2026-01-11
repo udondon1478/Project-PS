@@ -81,6 +81,7 @@ export default defineConfig({
       NEXTAUTH_SECRET: TEST_AUTH_SECRET,
       NEXT_PUBLIC_BASE_URL: baseURL,
       NEXTAUTH_URL: baseURL,
+      USE_SECURE_COOKIES: 'false',
     },
   },
 });
