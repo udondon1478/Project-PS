@@ -153,10 +153,6 @@ test.describe('Product Registration Flow', () => {
       
       // UIの安定化を待つ（アニメーションやフォーカス移動対策）
       await page.waitForTimeout(500);
-      
-      // UIの安定化を待つ（アニメーションやフォーカス移動対策）
-      await page.waitForTimeout(500);
-      
       // ボタンクリックの代わりにEnterキーで送信（より堅牢）
       await urlInput.press('Enter');
 
