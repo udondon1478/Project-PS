@@ -142,6 +142,12 @@ export default function RegisterItemPage() {
     }
   }, [step, isFirstVisit]);
 
+  // 手動で年齢レーティングが変更された場合、保留中の自動適用を無効化する
+  const handleManualAgeRatingChange = useCallback((id: string) => {
+    setSelectedAgeRatingTagId(id);
+    setPendingRating(null); // 上書き防止ガード
+  }, []);
+
   // URLから商品情報を取得するハンドラ
   const handleFetchProduct = useCallback(async (url: string) => {
     if (fetchControllerRef.current) {
@@ -418,7 +424,7 @@ export default function RegisterItemPage() {
             manualTags={manualTags}
             setManualTags={setManualTags}
             selectedAgeRatingTagId={selectedAgeRatingTagId}
-            setSelectedAgeRatingTagId={setSelectedAgeRatingTagId}
+            setSelectedAgeRatingTagId={handleManualAgeRatingChange}
             selectedCategoryTagId={selectedCategoryTagId}
             setSelectedCategoryTagId={setSelectedCategoryTagId}
             onSubmit={handleCreateProduct}
