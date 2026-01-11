@@ -56,7 +56,7 @@ export default function RegisterItemPage() {
   const hasShownOnboardingRef = useRef(false);
 
   // ガイドラインサイドパネルの状態管理
-  const isFirstVisit = useGuidelineFirstVisit('register');
+  const isFirstVisit = useGuidelineFirstVisit('register-item');
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
 
   // 統合されたガイドライン状態
