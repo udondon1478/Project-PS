@@ -41,6 +41,8 @@ test.describe('Product Registration Flow', () => {
     // オンボーディングツアーをスキップ
     await page.addInitScript(() => {
       localStorage.setItem('guideline-onboarding-shown-register-item', 'true');
+      localStorage.setItem('onboarding_completed', 'true');
+      localStorage.setItem('polyseek_official_tag_warning_shown', 'true');
     });
 
     // 1. Seed required data for the API to work
