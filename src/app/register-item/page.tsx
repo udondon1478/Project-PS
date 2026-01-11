@@ -43,6 +43,7 @@ export default function RegisterItemPage() {
   const [step, setStep] = useState<RegisterStep>('url_input');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [ratingError, setRatingError] = useState('');
   const [isUrlInputError, setIsUrlInputError] = useState(false);
   const [isDetailsError, setIsDetailsError] = useState(false);
   const [productData, setProductData] = useState<ProductInfo | null>(null);
@@ -99,12 +100,10 @@ export default function RegisterItemPage() {
     if (matchedTag) {
       setSelectedAgeRatingTagId(matchedTag.id);
       setPendingRating(null);
-      setIsDetailsError(false);
-      setMessage('');
+      setRatingError('');
     } else {
       console.warn(`Tag not found for rating: ${rating} (expected tag name: ${tagName})`);
-      setMessage(`レーティング「${tagName}」の自動設定に失敗しました。手動で選択してください。`);
-      setIsDetailsError(true);
+      setRatingError(`レーティング「${tagName}」の自動設定に失敗しました。手動で選択してください。`);
       setPendingRating(null);
     }
   }, [ageRatingTags]);
@@ -426,6 +425,7 @@ export default function RegisterItemPage() {
             isLoading={isLoading}
             message={message}
             isError={isDetailsError}
+            ratingError={ratingError}
             onGuidelineOpen={handleOpenGuideline}
           />
         );

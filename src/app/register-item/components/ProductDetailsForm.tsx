@@ -62,6 +62,7 @@ interface ProductDetailsFormProps {
   isLoading: boolean;
   message: string;
   isError?: boolean;
+  ratingError?: string;
   onGuidelineOpen?: (tab: 'rating' | 'categories', ratingFlow?: boolean) => void;
 }
 
@@ -83,6 +84,7 @@ export const ProductDetailsForm = memo(({
   isLoading,
   message,
   isError = false,
+  ratingError,
   onGuidelineOpen,
 }: ProductDetailsFormProps) => {
   // 公式タグ警告ダイアログの状態
@@ -238,6 +240,11 @@ export const ProductDetailsForm = memo(({
               <Sparkles className="mr-1 h-3 w-3" />
               レーティングを診断する
             </Button>
+            {ratingError && (
+              <p className="text-sm text-destructive mt-1" role="alert">
+                {ratingError}
+              </p>
+            )}
           </div>
 
           <div>
