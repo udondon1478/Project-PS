@@ -13,9 +13,10 @@ interface TagInputProps {
   onChange: Dispatch<SetStateAction<string[]>>;
   disabled?: boolean;
   id?: string;
+  onGuidelineClick?: () => void;
 }
 
-export const TagInput = ({ value: tags, onChange: setTags, disabled, id }: TagInputProps) => {
+export const TagInput = ({ value: tags, onChange: setTags, disabled, id, onGuidelineClick }: TagInputProps) => {
   const [inputValue, setInputValue] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isComposing, setIsComposing] = useState(false);
@@ -139,7 +140,13 @@ export const TagInput = ({ value: tags, onChange: setTags, disabled, id }: TagIn
           variant="link"
           size="sm"
           className="h-auto p-0 text-xs"
-          onClick={() => setShowGuideline(true)}
+          onClick={() => {
+            if (onGuidelineClick) {
+              onGuidelineClick();
+            } else {
+              setShowGuideline(true);
+            }
+          }}
           disabled={disabled}
         >
           <BookOpen className="mr-1 h-3 w-3" />

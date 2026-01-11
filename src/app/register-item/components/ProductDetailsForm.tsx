@@ -25,6 +25,8 @@ import {
 import { GuidelineButton } from '@/components/guidelines/GuidelineButton';
 import { GuidelineContainer } from '@/components/guidelines/GuidelineContainer';
 
+import { RatingPolicyDialog } from './RatingPolicyDialog';
+
 // 商品情報の型定義 (page.tsxから移動・再利用)
 interface ProductInfo {
   id?: string;
@@ -90,6 +92,9 @@ export const ProductDetailsForm = memo(({
   // 公式タグ警告ダイアログの状態
   const [isOfficialTagWarningOpen, setIsOfficialTagWarningOpen] = useState(false);
   const [pendingOfficialTagName, setPendingOfficialTagName] = useState<string | null>(null);
+
+  // レーティングポリシーダイアログの状態
+  const [isPolicyDialogOpen, setIsPolicyDialogOpen] = useState(false);
 
   // ガイドライン関連の状態（フォールバック用）
   const [showGuideline, setShowGuideline] = useState(false);
@@ -200,15 +205,8 @@ export const ProductDetailsForm = memo(({
             <div className="flex items-center gap-2 mb-2">
               <Label htmlFor="ageRating">対象年齢</Label>
               <GuidelineButton
-                tooltip="レーティングガイドを見る"
-                onClick={() => {
-                  if (onGuidelineOpen) {
-                    onGuidelineOpen('rating', false);
-                  } else {
-                    setShowGuideline(true);
-                    setShowRatingFlow(false);
-                  }
-                }}
+                tooltip="レーティング基準について"
+                onClick={() => setIsPolicyDialogOpen(true)}
               />
             </div>
             <Select onValueChange={setSelectedAgeRatingTagId} value={selectedAgeRatingTagId} disabled={isLoading}>
@@ -314,6 +312,7 @@ export const ProductDetailsForm = memo(({
               value={manualTags}
               onChange={setManualTags}
               disabled={isLoading}
+              onGuidelineClick={onGuidelineOpen ? () => onGuidelineOpen('categories') : undefined}
             />
           </div>
         </div>
@@ -359,6 +358,11 @@ export const ProductDetailsForm = memo(({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <RatingPolicyDialog
+        open={isPolicyDialogOpen}
+        onOpenChange={setIsPolicyDialogOpen}
+      />
 
       {/* ガイドラインダイアログ/シート */}
       <GuidelineContainer

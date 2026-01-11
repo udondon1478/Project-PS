@@ -5,7 +5,7 @@ import { describe, it, expect } from 'vitest';
 describe('BoothQueue Pressure & Timeout', () => {
   it('should timeout tasks taking longer than configured limit', async () => {
     // Create queue with 100ms timeout
-    const queue = createBoothQueue({ timeout: 100, throwOnTimeout: true });
+    const queue = createBoothQueue({ timeout: 100 });
     
     // Task taking 500ms
     const longRunningTask = async () => {
