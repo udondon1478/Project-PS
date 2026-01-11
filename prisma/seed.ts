@@ -81,6 +81,7 @@ async function main() {
   const ageRatingTags = [
     { name: '全年齢', tagCategoryId: ageRatingCategory.id },
     { name: 'R-15', tagCategoryId: ageRatingCategory.id },
+    { name: 'R-17', tagCategoryId: ageRatingCategory.id },
     { name: 'R-18', tagCategoryId: ageRatingCategory.id },
   ];
 
