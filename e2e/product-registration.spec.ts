@@ -164,13 +164,22 @@ test.describe('Product Registration Flow', () => {
       await expect(page.getByText('商品情報の確認と登録')).toBeVisible();
 
       // ★追加: Onboardingが表示されていたら閉じる (localStorage設定が効かない場合への保険)
+      // ★追加: Onboardingが表示されていたら閉じる (localStorage設定が効かない場合への保険)
+      // 修正: より堅牢なチェックと閉じる処理
       try {
         const driverOverlay = page.locator('.driver-overlay');
-        if (await driverOverlay.isVisible({ timeout: 2000 })) {
+        // わずかな遅延を入れてオーバーレイの出現を待つ
+        await page.waitForTimeout(1000);
+        
+        if (await driverOverlay.isVisible()) {
           console.log('[DEBUG] Closing driver overlay with Escape');
+          // オーバーレイが表示されている場合、強制的にEscapeキーを連打して閉じる
           await page.keyboard.press('Escape');
-          await expect(driverOverlay).not.toBeVisible();
-          await page.waitForTimeout(500); // 念のため待機
+          await page.waitForTimeout(300);
+          await page.keyboard.press('Escape');
+          
+          await expect(driverOverlay).not.toBeVisible({ timeout: 5000 });
+          await page.waitForTimeout(500); // アニメーション完了待ち
         }
       } catch (e) {
         console.log('[DEBUG] Driver overlay check error (ignoring):', e);
@@ -183,36 +192,46 @@ test.describe('Product Registration Flow', () => {
       
       // '対象年齢' の SelectTrigger をクリック
       // 修正: nth(0) ではなく getByLabel で堅牢に指定
+      // '対象年齢' の SelectTrigger をクリック
       const ageRatingTrigger = page.getByLabel('対象年齢');
       await expect(ageRatingTrigger).toBeVisible();
-      // ローディング完了（有効化）を待つ
       await expect(ageRatingTrigger).toBeEnabled();
-      // クリックの代わりにキーボード操作で開く（より確実）
-      await ageRatingTrigger.focus();
-      await page.keyboard.press('Enter');
-      await expect(page.getByRole('option', { name: '全年齢' })).toBeVisible(); // オプションが表示されるのを待つ
-      // クリックではなくキーボードで選択
-      await page.keyboard.press('ArrowDown');
-      await page.keyboard.press('Enter');
-      await page.waitForTimeout(200);
-      await expect(ageRatingTrigger).toHaveText(/全年齢/); // 選択が反映されているか確認
-
+      
+      // クリックで開く (キーボード操作よりも確実)
+      await ageRatingTrigger.click();
+      
+      // オプションが表示されるのを待つ (role="listbox" が表示されるはず)
+      // Radix UIのSelectは role="dialog" などを経由する場合があるが、アイテムは role="option"
+      const ageOption = page.getByRole('option', { name: '全年齢' });
+      await expect(ageOption).toBeVisible();
+      
+      // オプションをクリックして選択
+      await ageOption.click();
+      
+      // 選択が反映されているか確認 (テキストが変わるのを待つ)
+      await expect(ageRatingTrigger).toHaveText(/全年齢/); 
 
       // 'カテゴリー' の SelectTrigger を操作
       const categoryTrigger = page.getByLabel('カテゴリー');
-      // 前のコンボボックスが完全に閉じるのを待つ
-      await expect(page.locator('[role="listbox"]')).not.toBeVisible();
-      await page.waitForTimeout(500);
+      
+      // 前のポップアップが閉じるのを待つ (重要)
+      await expect(ageOption).not.toBeVisible();
+      await page.waitForTimeout(300); // アニメーションマージン
       
       await expect(categoryTrigger).toBeEnabled();
-      await categoryTrigger.focus();
-      await page.keyboard.press('Enter');
+      await categoryTrigger.click();
       
-      await expect(page.getByRole('option', { name: 'アバター' })).toBeVisible(); // オプションが表示されるのを待つ
-      // クリックではなくキーボードで選択
-      await page.keyboard.press('ArrowDown');
-      await page.keyboard.press('Enter');
-      await expect(categoryTrigger).toHaveText(/アバター/); // 選択が反映されているか確認
+      const categoryOption = page.getByRole('option', { name: 'アバター' });
+      await expect(categoryOption).toBeVisible();
+      
+      // オプションをクリックして選択
+      await categoryOption.click();
+      
+      // 選択が反映されているか確認
+      await expect(categoryTrigger).toHaveText(/アバター/); 
+      
+      // ポップアップが閉じるのを待つ
+      await expect(categoryOption).not.toBeVisible();
 
       // 手動タグを追加（TagInputコンポーネントの操作）(app/register-item/components/TagInput.tsx)
       const tagInput = page.locator('input[type="text"][id="otherTags"]');
