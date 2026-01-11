@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useGuidelineFirstVisit } from '../useGuidelineFirstVisit';
 
@@ -18,22 +18,41 @@ describe('useGuidelineFirstVisit', () => {
 
   it('should return true initially (SSR/hydration match)', () => {
     const { result } = renderHook(() => useGuidelineFirstVisit(pageId));
-    expect(result.current).toBe(true);
+    const [isFirstVisit] = result.current;
+    expect(isFirstVisit).toBe(true);
   });
 
-  it('should set localStorage and keep true if it is the first visit', () => {
+  it('should NOT set localStorage automatically even if it is the first visit', () => {
     const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
     const getItemSpy = vi.spyOn(Storage.prototype, 'getItem');
 
     const { result } = renderHook(() => useGuidelineFirstVisit(pageId));
+    const [isFirstVisit] = result.current;
 
     // Initially true
-    expect(result.current).toBe(true);
+    expect(isFirstVisit).toBe(true);
 
     // Should have checked localStorage
     expect(getItemSpy).toHaveBeenCalledWith(storageKey);
-    // Should have set localStorage
+    // Should NOT have set localStorage yet
+    expect(setItemSpy).not.toHaveBeenCalled();
+  });
+
+  it('should set localStorage only when markAsVisited is called', () => {
+    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
+    const { result } = renderHook(() => useGuidelineFirstVisit(pageId));
+    
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [_, markAsVisited] = result.current;
+
+    act(() => {
+      markAsVisited();
+    });
+
     expect(setItemSpy).toHaveBeenCalledWith(storageKey, 'true');
+    
+    // Check state update
+    expect(result.current[0]).toBe(false);
   });
 
   it('should return false if localStorage has the key (subsequent visit)', () => {
@@ -42,27 +61,29 @@ describe('useGuidelineFirstVisit', () => {
     const getItemSpy = vi.spyOn(Storage.prototype, 'getItem');
 
     const { result } = renderHook(() => useGuidelineFirstVisit(pageId));
+    const [isFirstVisit] = result.current;
     
     // It starts as true (for hydration matching) but updates to false in useEffect
-    expect(result.current).toBe(false);
+    expect(isFirstVisit).toBe(false);
     expect(getItemSpy).toHaveBeenCalledWith(storageKey);
   });
 
   it('should handle localStorage errors gracefully', () => {
-    // Simulate localStorage error (e.g., Safari private mode)
+    // Simulate localStorage error
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('QuotaExceededError');
     });
-    // We also need to mock getItem to not crash if code calls it, 
-    // though the error here is specifically about setItem in the catch block 
-    // or initially checks.
-    // The current code calls getItem in initializer (which will throw if we mock it to throw or if access is denied)
-    // AND setItem in useEffect.
 
-    // If we want to simulate the useEffect error:
     const { result } = renderHook(() => useGuidelineFirstVisit(pageId));
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [_, markAsVisited] = result.current;
 
-    // Should not crash and remain true (first visit behavior)
-    expect(result.current).toBe(true);
+    // Should not crash when calling markAsVisited
+    act(() => {
+      markAsVisited();
+    });
+
+    // Determine expected behavior: currently code just logs error and sets state
+    expect(result.current[0]).toBe(false);
   });
 });

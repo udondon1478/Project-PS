@@ -40,7 +40,7 @@ test.describe('Product Registration Flow', () => {
   test.beforeEach(async ({ page, context }) => {
     // オンボーディングツアーをスキップ
     await page.addInitScript(() => {
-      localStorage.setItem('guideline-onboarding-shown-register', 'true');
+      localStorage.setItem('guideline-onboarding-shown-register-item', 'true');
     });
 
     // 1. Seed required data for the API to work

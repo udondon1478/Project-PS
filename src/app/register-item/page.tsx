@@ -57,7 +57,7 @@ export default function RegisterItemPage() {
   const hasShownOnboardingRef = useRef(false);
 
   // ガイドラインサイドパネルの状態管理
-  const isFirstVisit = useGuidelineFirstVisit('register-item');
+  const [isFirstVisit, markAsVisited] = useGuidelineFirstVisit('register-item');
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
 
   // 統合されたガイドライン状態
@@ -138,9 +138,10 @@ export default function RegisterItemPage() {
       !hasShownOnboardingRef.current
     ) {
       setShowOnboardingModal(true);
+      markAsVisited(); // ここで「表示した」とマークする
       hasShownOnboardingRef.current = true;
     }
-  }, [step, isFirstVisit]);
+  }, [step, isFirstVisit, markAsVisited]);
 
   // 手動で年齢レーティングが変更された場合、保留中の自動適用を無効化する
   const handleManualAgeRatingChange = useCallback((id: string) => {
