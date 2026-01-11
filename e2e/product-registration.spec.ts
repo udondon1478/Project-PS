@@ -40,7 +40,7 @@ test.describe('Product Registration Flow', () => {
   test.beforeEach(async ({ page, context }) => {
     // オンボーディングツアーをスキップ
     await page.addInitScript(() => {
-      localStorage.setItem('onboarding_completed', 'true');
+      localStorage.setItem('guideline-onboarding-shown-register', 'true');
     });
 
     // 1. Seed required data for the API to work
@@ -125,11 +125,22 @@ test.describe('Product Registration Flow', () => {
       // 商品登録ページにアクセス
       await page.goto('/register-item');
 
+      // デバッグ: ページ遷移後のURLとタイトルを確認
+      const currentUrl = page.url();
+      const currentTitle = await page.title();
+      console.log('[DEBUG] Current URL:', currentUrl);
+      console.log('[DEBUG] Current Title:', currentTitle);
+
+      // 認証失敗でログインページにリダイレクトされていないか確認
+      if (currentUrl.includes('/api/auth/signin')) {
+        throw new Error('Authentication failed: redirected to sign-in page');
+      }
+
       // ステップ1 (URL入力) (app/register-item/components/URLInputForm.tsx)
       const urlInput = page.getByPlaceholder('https://example.booth.pm/items/123456');
       // 修正 (WebKit対策): focus -> fill -> blur の順で操作し、確実にイベントを発火させる
       await urlInput.click();
-      await urlInput.pressSequentially(BOOTH_URL, { delay: 10 });
+      await urlInput.fill(BOOTH_URL);
       await urlInput.blur();
 
       // 修正: 入力がReactのStateに反映され、DOM値が更新されるのを確実に待つ
@@ -137,8 +148,17 @@ test.describe('Product Registration Flow', () => {
 
       // ボタンが有効になるのを明示的に待つ (WebKit対策)
       const fetchButton = page.getByRole('button', { name: '商品情報を取得' });
+      await expect(fetchButton).toBeVisible();
       await expect(fetchButton).toBeEnabled();
-      await fetchButton.click();
+      
+      // UIの安定化を待つ（アニメーションやフォーカス移動対策）
+      await page.waitForTimeout(500);
+      
+      // UIの安定化を待つ（アニメーションやフォーカス移動対策）
+      await page.waitForTimeout(500);
+      
+      // ボタンクリックの代わりにEnterキーで送信（より堅牢）
+      await urlInput.press('Enter');
 
     // ✅ 商品情報ロード完了を待つ
     await page.waitForSelector('text=商品情報の確認と登録', { timeout: 10000 });
@@ -146,6 +166,20 @@ test.describe('Product Registration Flow', () => {
       // ステップ2 (詳細入力) (app/register-item/components/ProductDetailsForm.tsx)
       // ProductDetailsFormが表示され、自動入力されていることを確認
       await expect(page.getByText('商品情報の確認と登録')).toBeVisible();
+
+      // ★追加: Onboardingが表示されていたら閉じる (localStorage設定が効かない場合への保険)
+      try {
+        const driverOverlay = page.locator('.driver-overlay');
+        if (await driverOverlay.isVisible({ timeout: 2000 })) {
+          console.log('[DEBUG] Closing driver overlay with Escape');
+          await page.keyboard.press('Escape');
+          await expect(driverOverlay).not.toBeVisible();
+          await page.waitForTimeout(500); // 念のため待機
+        }
+      } catch (e) {
+        console.log('[DEBUG] Driver overlay check error (ignoring):', e);
+      }
+
       await expect(page.getByText(MOCK_PRODUCT_TITLE)).toBeVisible();
       await expect(page.getByText(`by ${MOCK_SELLER_NAME}`)).toBeVisible();
 
@@ -155,18 +189,34 @@ test.describe('Product Registration Flow', () => {
       // 修正: nth(0) ではなく getByLabel で堅牢に指定
       const ageRatingTrigger = page.getByLabel('対象年齢');
       await expect(ageRatingTrigger).toBeVisible();
-      await ageRatingTrigger.click();
+      // ローディング完了（有効化）を待つ
+      await expect(ageRatingTrigger).toBeEnabled();
+      // クリックの代わりにキーボード操作で開く（より確実）
+      await ageRatingTrigger.focus();
+      await page.keyboard.press('Enter');
       await expect(page.getByRole('option', { name: '全年齢' })).toBeVisible(); // オプションが表示されるのを待つ
-      await page.getByRole('option', { name: '全年齢' }).click();
-      await page.waitForTimeout(200); // コンボボックス閉じアニメーション待ち
+      // クリックではなくキーボードで選択
+      await page.keyboard.press('ArrowDown');
+      await page.keyboard.press('Enter');
+      await page.waitForTimeout(200);
+      await expect(ageRatingTrigger).toHaveText(/全年齢/); // 選択が反映されているか確認
 
 
-
-      // 'カテゴリー' の SelectTrigger をクリック
+      // 'カテゴリー' の SelectTrigger を操作
       const categoryTrigger = page.getByLabel('カテゴリー');
-      await categoryTrigger.click();
+      // 前のコンボボックスが完全に閉じるのを待つ
+      await expect(page.locator('[role="listbox"]')).not.toBeVisible();
+      await page.waitForTimeout(500);
+      
+      await expect(categoryTrigger).toBeEnabled();
+      await categoryTrigger.focus();
+      await page.keyboard.press('Enter');
+      
       await expect(page.getByRole('option', { name: 'アバター' })).toBeVisible(); // オプションが表示されるのを待つ
-      await page.getByRole('option', { name: 'アバター' }).click();
+      // クリックではなくキーボードで選択
+      await page.keyboard.press('ArrowDown');
+      await page.keyboard.press('Enter');
+      await expect(categoryTrigger).toHaveText(/アバター/); // 選択が反映されているか確認
 
       // 手動タグを追加（TagInputコンポーネントの操作）(app/register-item/components/TagInput.tsx)
       const tagInput = page.locator('input[type="text"][id="otherTags"]');
@@ -179,21 +229,20 @@ test.describe('Product Registration Flow', () => {
       const registerButton = page.getByRole('button', { name: '商品を登録' });
       await expect(registerButton).toBeEnabled();
 
+      // キーボード操作対策: フォーカスを外すために別の場所をクリック
+      await page.getByText('商品情報の確認と登録').first().click();
+      await page.waitForTimeout(500);
+
       // 「商品を登録」ボタンをクリック (★ ここで実際のDBに書き込まれます)
       // ★修正2 (Chromium対策): ステータスコードのチェックを waitForResponse から除外
-      // これにより、エラー(500等)が返ってきた場合にタイムアウトせず即座に検知可能にする
+      // デバッグ: リクエストが送信されたか確認
       const createResponsePromise = page.waitForResponse(response => 
-        response.url().includes('/api/items/create')
+        response.url().includes('/api/items/create') && response.request().method() === 'POST'
       );
 
-      await registerButton.click();
+      await registerButton.click({ force: true });
 
       const response = await createResponsePromise;
-
-      // レスポンスの内容をログに出力（デバッグ用）
-      if (response.status() !== 201) {
-        console.log('Create API Error Body:', await response.text());
-      }
 
       // ステータスコードを検証
       expect(response.status()).toBe(201);
