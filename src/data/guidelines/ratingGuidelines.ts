@@ -22,7 +22,7 @@ export const ratingGuidelines: Record<string, RatingGuidelineContent> = {
       'デフォルメされたキャラクター（ちびキャラ）',
     ],
     warnings: [
-      '子供のようなキャラクター（ロリ・ショタ）に関しては、少しでも不適切または示唆的な要素がある場合はGeneralと評価しないでください。',
+      '商品サムネイルに、少しでも不適切または示唆的な要素がある場合は全年齢と評価しないでください。',
     ],
   },
   sensitive: {
@@ -69,7 +69,7 @@ export const ratingGuidelines: Record<string, RatingGuidelineContent> = {
       '断面図（内部構造）の描写',
     ],
     warnings: [
-      '修正（モザイク、黒塗りなど）が施されていても、性器の形状が明確な場合や露骨な性行為が含まれる場合は Explicit に分類されます。',
+      '修正（モザイク、黒塗りなど）が施されていても、性器の形状が明確な場合や露骨な性行為が含まれる場合は R-18 に分類されます。',
     ],
   },
 };
