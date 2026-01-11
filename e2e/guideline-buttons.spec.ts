@@ -71,6 +71,27 @@ test.describe('Guideline Buttons Interaction', () => {
     });
   });
 
+  // Helper to handle overlays that might intercept clicks
+  async function handleOverlays(page: any) {
+    // Handle Cookie Banner
+    const cookieBanner = page.locator('[aria-label="Cookie同意"]');
+    if (await cookieBanner.isVisible()) {
+      await page.getByRole('button', { name: '拒否する' }).click();
+    }
+
+    // Handle Driver.js overlay
+    const driverOverlay = page.locator('.driver-overlay');
+    try {
+      if (await driverOverlay.isVisible({ timeout: 2000 })) {
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(300);
+        await page.keyboard.press('Escape');
+      }
+    } catch (e) {
+      // Ignore if overlay doesn't appear
+    }
+  }
+
   test('should open Policy Modal when clicking the "?" icon', async ({ page }) => {
     // Navigate to register page
     await page.goto('/register-item');
@@ -81,13 +102,10 @@ test.describe('Guideline Buttons Interaction', () => {
     await urlInput.press('Enter');
     await page.waitForSelector('text=商品情報の確認と登録', { timeout: 10000 });
 
-    // Locate the "?" button (GuidelineButton) and click it
-    // Note: GuidelineButton has a Sparkles icon if it's the "Diagnose" button,
-    // but the one next to the label should be the question mark icon (HelpCircle).
-    // The previous implementation used GuidelineButton with a tooltip.
-    // Based on the code changes:
-    // <GuidelineButton tooltip="レーティング基準について" onClick={() => setIsPolicyDialogOpen(true)} />
+    // Handle potential overlays before clicking
+    await handleOverlays(page);
 
+    // Locate the "?" button (GuidelineButton) and click it
     // Find button by tooltip text
     const helpButton = page.getByRole('button', { name: 'レーティング基準について' });
     await expect(helpButton).toBeVisible();
@@ -108,6 +126,9 @@ test.describe('Guideline Buttons Interaction', () => {
     await urlInput.fill(BOOTH_URL);
     await urlInput.press('Enter');
     await page.waitForSelector('text=商品情報の確認と登録', { timeout: 10000 });
+
+    // Handle potential overlays before clicking
+    await handleOverlays(page);
 
     // Locate "Tag Guideline" button in TagInput component
     const tagGuidelineButton = page.getByRole('button', { name: 'タグガイドライン' });
