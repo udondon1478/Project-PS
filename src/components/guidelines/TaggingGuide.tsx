@@ -91,7 +91,7 @@ export function TaggingGuide() {
           <h4 className="text-sm font-semibold mb-2">📌 まとめ</h4>
           <ul className="text-sm text-muted-foreground space-y-1.5 list-disc list-inside">
             <li>見えるものをタグ付け（主観を避ける）</li>
-            <li>アンダースコア・小文字・英語で統一</li>
+            <li>空白はアンダースコアに、大文字小文字は正式表記に合わせる</li>
             <li>10〜20個程度のタグを目安に</li>
             <li>レーティングタグは必須</li>
           </ul>
