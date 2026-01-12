@@ -128,7 +128,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
         targetName: activeStatus.currentTarget?.targetName || 'Unknown Target',
         mode: activeStatus.mode || 'NEW',
         status: 'RUNNING',
-        startTime: new Date().toISOString(),
+        startTime: activeStatus.timings?.startTime ? new Date(activeStatus.timings.startTime).toISOString() : new Date().toISOString(),
         progress: {
           pagesProcessed: activeStatus.progress.pagesProcessed,
           productsFound: activeStatus.progress.productsFound,
