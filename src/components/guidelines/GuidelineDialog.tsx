@@ -17,12 +17,13 @@ import { Workflow, ListTree } from 'lucide-react';
 import { RatingFlowchart } from './RatingFlowchart';
 import { RatingFlowchartDiagram } from './RatingFlowchartDiagram';
 import { TagCategoryVisualizer } from './TagCategoryVisualizer';
+import { TaggingGuide } from './TaggingGuide';
 import { FlowchartMode } from '@/data/guidelines';
 
 interface GuidelineDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initialTab?: 'rating' | 'categories';
+  initialTab?: 'rating' | 'categories' | 'guide';
   initialRatingFlow?: boolean;
 }
 
@@ -32,7 +33,7 @@ export function GuidelineDialog({
   initialTab = 'rating',
   initialRatingFlow = false,
 }: GuidelineDialogProps) {
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const [activeTab, setActiveTab] = useState<'rating' | 'categories' | 'guide'>(initialTab);
   const [flowchartMode, setFlowchartMode] = useState<FlowchartMode>(
     initialRatingFlow ? 'interactive' : 'diagram'
   );
@@ -56,15 +57,16 @@ export function GuidelineDialog({
         <Tabs
           value={activeTab}
           onValueChange={(value) => {
-            if (value === 'rating' || value === 'categories') {
+            if (value === 'rating' || value === 'categories' || value === 'guide') {
               setActiveTab(value);
             }
           }}
           className="flex-1 flex flex-col px-6 pb-6 min-h-0"
         >
-          <TabsList className="grid w-full grid-cols-2 shrink-0">
+          <TabsList className="grid w-full grid-cols-3 shrink-0">
             <TabsTrigger value="rating">レーティング</TabsTrigger>
             <TabsTrigger value="categories">タグカテゴリ</TabsTrigger>
+            <TabsTrigger value="guide">タグ付けガイド</TabsTrigger>
           </TabsList>
 
           <TabsContent value="rating" className="flex-1 mt-4 flex flex-col min-h-0">
@@ -109,6 +111,14 @@ export function GuidelineDialog({
             <div className="h-full -mx-6 overflow-y-auto">
               <div className="px-6 pb-4">
                 <TagCategoryVisualizer />
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="guide" className="flex-1 mt-4 min-h-0">
+            <div className="h-full -mx-6 overflow-y-auto">
+              <div className="px-6 pb-4">
+                <TaggingGuide />
               </div>
             </div>
           </TabsContent>
