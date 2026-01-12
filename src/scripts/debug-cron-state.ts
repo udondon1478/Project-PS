@@ -1,8 +1,7 @@
 
 import { prisma } from '../lib/prisma';
 import { orchestrator } from '../lib/booth-scraper/orchestrator';
-
-const SYSTEM_USER_EMAIL = 'system-scraper@polyseek.com';
+import { SYSTEM_USER_EMAIL } from '../lib/constants';
 
 async function main() {
   console.log('--- Cron Debug Info ---');

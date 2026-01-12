@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
@@ -12,8 +12,9 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ClockIcon, TrashIcon, FastForwardIcon, ListIcon, PlayIcon, AlertTriangleIcon, CheckCircleIcon, XCircleIcon, CalendarIcon } from 'lucide-react';
+import { ClockIcon, TrashIcon, ListIcon, AlertTriangleIcon, CheckCircleIcon, XCircleIcon, CalendarIcon, PlayIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { RunningTaskCard, type UnifiedRunningTask } from './RunningTaskCard';
 
 import { type ScraperRun, type ScraperLog, type ScraperStatus } from '@/lib/booth-scraper/orchestrator';
 
@@ -28,23 +29,6 @@ interface SerializedScraperRun extends Omit<ScraperRun, 'startTime' | 'endTime' 
 }
 
 // 統合されたRunningTask型（Local/Remote両方を表現）
-interface UnifiedRunningTask {
-  id: string;
-  runId: string;
-  source: 'local' | 'remote';
-  targetName: string;
-  mode: string;
-  status: string;
-  startTime: string;
-  progress: {
-    pagesProcessed: number;
-    productsFound: number;
-    productsCreated: number;
-    productsFailed: number;
-  };
-  logs: ScraperLog[];
-  skipRequested?: boolean;
-}
 
 interface DashboardProps {
   recentRuns: SerializedScraperRun[];
@@ -55,7 +39,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
   const [activeStatus, setActiveStatus] = useState<ScraperStatus | null>(null);
   const [runningFromDb, setRunningFromDb] = useState<SerializedScraperRun[]>([]);
   const [loading, setLoading] = useState(false);
-  
+
   // Config Inputs for "Manual Enqueue"
   const [mode, setMode] = useState<'NEW' | 'BACKFILL'>('NEW');
 
@@ -115,6 +99,9 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
   // Remote task logs state (for polling)
   const [remoteTaskLogs, setRemoteTaskLogs] = useState<Record<string, ScraperLog[]>>({});
 
+  // Skipping state to prevent double clicks
+  const [skippingRunIds, setSkippingRunIds] = useState<Set<string>>(new Set());
+
   // Unified running tasks - combines local (activeStatus) and remote (runningFromDb)
   const allRunningTasks = useMemo<UnifiedRunningTask[]>(() => {
     const tasks: UnifiedRunningTask[] = [];
@@ -128,7 +115,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
         targetName: activeStatus.currentTarget?.targetName || 'Unknown Target',
         mode: activeStatus.mode || 'NEW',
         status: 'RUNNING',
-        startTime: new Date().toISOString(),
+        startTime: activeStatus.timings?.startTime ? new Date(activeStatus.timings.startTime).toISOString() : new Date().toISOString(),
         progress: {
           pagesProcessed: activeStatus.progress.pagesProcessed,
           productsFound: activeStatus.progress.productsFound,
@@ -159,6 +146,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
             productsFailed: 0,
           },
           logs: remoteTaskLogs[run.runId] || [],
+          skipRequested: run.skipRequested,
         });
       });
 
@@ -173,8 +161,8 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
         const logs = await res.json();
         setRemoteTaskLogs(prev => ({ ...prev, [runId]: logs }));
       }
-    } catch (e) {
-      console.error('Failed to fetch remote logs:', e);
+    } catch (error) {
+      console.error('Failed to fetch remote logs:', error);
     }
   }, []);
 
@@ -193,20 +181,41 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
     return () => clearInterval(interval);
   }, [allRunningTasks, fetchRemoteLogs]);
 
-  // Handle skip request for remote tasks
-  const handleSkipRemote = async (runId: string) => {
+  // Handle skip request (works for both local and remote)
+  const handleSkip = async (runId: string) => {
+    if (skippingRunIds.has(runId)) return;
+
+    setSkippingRunIds(prev => {
+      const next = new Set(prev);
+      next.add(runId);
+      return next;
+    });
+
     try {
-      const res = await fetch(`/api/admin/booth-scraper/scrape/${runId}/skip`, {
-        method: 'POST',
-      });
+      let res;
+      if (runId === 'local') {
+         // Fallback for legacy/dev local tasks without DB ID
+         res = await fetch('/api/admin/booth-scraper/scrape?skipCurrent=true', { method: 'DELETE' });
+      } else {
+         res = await fetch(`/api/admin/booth-scraper/scrape/${runId}/skip`, {
+           method: 'POST',
+         });
+      }
+
       if (res.ok) {
         toast.info('Skip request sent. The task will stop shortly.');
       } else {
         const err = await res.json().catch(() => ({ error: 'Unknown error' }));
         toast.error(`Failed to skip: ${err.error}`);
       }
-    } catch (e) {
+    } catch (_) {
       toast.error('Failed to send skip request');
+    } finally {
+      setSkippingRunIds(prev => {
+        const next = new Set(prev);
+        next.delete(runId);
+        return next;
+      });
     }
   };
 
@@ -280,7 +289,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
         toast.error('Failed to fetch logs');
         setLogViewer(prev => ({ ...prev, loading: false }));
       }
-    } catch (e) {
+    } catch (_) {
       toast.error('Error fetching logs');
       setLogViewer(prev => ({ ...prev, loading: false }));
     }
@@ -292,7 +301,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
       .then(data => {
         if (Array.isArray(data)) setTags(data);
       })
-      .catch(e => toast.error('Failed to load tags'));
+      .catch(() => toast.error('Failed to load tags'));
   }, []);
 
   const handleAddTag = async () => {
@@ -301,7 +310,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
       const res = await fetch('/api/admin/booth-scraper/tags', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           tag: newTagInput,
           category: newCategoryInput.trim() || null,
         }),
@@ -315,7 +324,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
       } else {
         toast.error('Failed to add tag');
       }
-    } catch (e) {
+    } catch (_) {
       toast.error('Failed to add tag');
     }
   };
@@ -335,7 +344,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
             const err = await res.json().catch(() => ({ error: res.statusText }));
             toast.error(`Failed to delete tag: ${err.error || 'Server error'}`);
           }
-        } catch (e) {
+        } catch (_) {
           toast.error('Failed to delete tag');
         }
         setConfirmDialog(prev => ({ ...prev, open: false }));
@@ -345,14 +354,14 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
 
   const handleToggleTag = async (id: string, current: boolean) => {
     try {
-      const res = await fetch(`/api/admin/booth-scraper/tags/${id}`, { 
+      const res = await fetch(`/api/admin/booth-scraper/tags/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled: !current })
       });
       if (!res.ok) return;
       setTags(prev => prev.map(t => t.id === id ? { ...t, enabled: !current } : t));
-    } catch (e) {
+    } catch (_) {
       toast.error('Failed to toggle tag');
     }
   };
@@ -408,7 +417,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
       } else {
         toast.success(`Enqueued: ${tagName}${category ? ` (${category})` : ''}`);
       }
-    } catch (e) {
+    } catch (_) {
       toast.error('Error starting scraper');
     } finally {
       setLoading(false);
@@ -434,7 +443,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
             }
           })
         });
-        
+
         if (res.ok) {
             toast.success('All enabled tags enqueued');
         } else {
@@ -450,20 +459,6 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
       }
   };
 
-  const handleSkipCurrent = async () => {
-    try {
-        const res = await fetch('/api/admin/booth-scraper/scrape?skipCurrent=true', { method: 'DELETE' });
-        if (res.ok) {
-          toast.info('Skipping current task...');
-        } else {
-          const err = await res.json().catch(() => ({ error: res.statusText }));
-          toast.error(`Failed to skip: ${err.error || 'Server error'}`);
-        }
-    } catch(e) {
-        toast.error('Failed to skip');
-    }
-  };
-
   const handleRemoveFromQueue = async (targetId: string) => {
       try {
           const res = await fetch(`/api/admin/booth-scraper/scrape?targetId=${targetId}`, { method: 'DELETE' });
@@ -473,7 +468,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
             const err = await res.json().catch(() => ({ error: res.statusText }));
             toast.error(`Failed to remove: ${err.error || 'Server error'}`);
           }
-      } catch(e) {
+      } catch(_) {
           toast.error('Failed to remove');
       }
   };
@@ -649,95 +644,12 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
               {allRunningTasks.length > 0 ? (
                 <div className="space-y-4">
                   {allRunningTasks.map((task) => (
-                    <div
+                    <RunningTaskCard
                       key={task.id}
-                      className={`bg-white dark:bg-gray-800 p-6 rounded-xl border shadow-sm relative overflow-hidden ${
-                        task.source === 'local'
-                          ? 'border-blue-200 dark:border-blue-900'
-                          : 'border-orange-200 dark:border-orange-900'
-                      }`}
-                    >
-                        <div className={`absolute top-0 right-0 p-4 opacity-10`}>
-                            <PlayIcon className={`w-32 h-32 ${task.source === 'local' ? 'text-blue-500' : 'text-orange-500'}`} />
-                        </div>
-
-                        <div className="flex justify-between items-start mb-6">
-                            <div>
-                                {/* Source Badge */}
-                                <div className="mb-2">
-                                  <Badge
-                                    className={task.source === 'local'
-                                      ? 'bg-blue-100 text-blue-800 hover:bg-blue-100 border-0'
-                                      : 'bg-orange-100 text-orange-800 hover:bg-orange-100 border-0'
-                                    }
-                                  >
-                                    {task.source === 'local' ? 'Local' : 'Remote'}
-                                  </Badge>
-                                </div>
-                                <div className="text-sm text-gray-500 uppercase font-bold tracking-wider mb-1">Current Target</div>
-                                <div className={`text-3xl font-bold ${task.source === 'local' ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400'}`}>
-                                    {task.targetName}
-                                </div>
-                                <div className="flex gap-2 mt-2">
-                                    <Badge variant="outline">{task.mode}</Badge>
-                                    <Badge className={task.source === 'local'
-                                      ? 'bg-blue-100 text-blue-800 hover:bg-blue-100 border-0'
-                                      : 'bg-orange-100 text-orange-800 hover:bg-orange-100 border-0'
-                                    }>RUNNING</Badge>
-                                </div>
-                            </div>
-
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => task.source === 'local' ? handleSkipCurrent() : handleSkipRemote(task.runId)}
-                              className="z-10 shadow-lg"
-                            >
-                               <FastForwardIcon className="w-4 h-4 mr-2" />
-                               Skip This Task
-                            </Button>
-                        </div>
-
-                        <div className="grid grid-cols-4 gap-4 mb-6 relative z-10">
-                            <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded">
-                                <div className="text-xs text-gray-500">Pages</div>
-                                <div className="text-xl font-bold">{task.progress.pagesProcessed}</div>
-                            </div>
-                            <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded">
-                                <div className="text-xs text-gray-500">Found</div>
-                                <div className="text-xl font-bold">{task.progress.productsFound}</div>
-                            </div>
-                            <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded">
-                                <div className="text-xs text-gray-500">Created</div>
-                                <div className="text-xl font-bold text-green-600">{task.progress.productsCreated}</div>
-                            </div>
-                            <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded">
-                                <div className="text-xs text-gray-500">Failed</div>
-                                <div className="text-xl font-bold text-red-500">{task.progress.productsFailed}</div>
-                            </div>
-                        </div>
-
-                        {/* Live Log Snippet */}
-                        <div className="bg-black text-xs text-green-400 p-4 rounded h-32 overflow-y-auto font-mono custom-scrollbar">
-                             {task.logs.slice(-5).map((log) => {
-                               // Safe timestamp formatting with fallback
-                               let timeStr = '';
-                               try {
-                                 const date = new Date(log.timestamp);
-                                 timeStr = isNaN(date.getTime()) ? log.timestamp : date.toLocaleTimeString();
-                               } catch {
-                                 timeStr = log.timestamp;
-                               }
-                               return (
-                                 <div key={log.id} className="truncate">
-                                   <span className="opacity-50 mr-2">[{timeStr}]</span>
-                                   {log.message}
-                                 </div>
-                               );
-                             })}
-                             {task.logs.length === 0 && <div className="opacity-50">{task.source === 'remote' ? 'Loading logs...' : 'Waiting for logs...'}</div>}
-                        </div>
-                    </div>
+                      task={task}
+                      isSkipping={skippingRunIds.has(task.runId) || !!task.skipRequested}
+                      onSkip={(t) => handleSkip(t.runId)}
+                    />
                   ))}
                 </div>
               ) : (
@@ -756,7 +668,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                   Execution Queue
                   <Badge variant="secondary" className="ml-auto">{activeStatus?.queue.length || 0}</Badge>
               </h2>
-              
+
               <div className="bg-white dark:bg-gray-800 rounded-xl border shadow-sm h-[400px] overflow-hidden flex flex-col">
                   <div className="flex-1 overflow-y-auto p-2 space-y-2">
                       {activeStatus?.queue.map((item, i) => (
@@ -769,9 +681,9 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                                       <span>#{i + 1}</span>
                                   </div>
                               </div>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
+                              <Button
+                                variant="ghost"
+                                size="icon"
                                 className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50"
                                 onClick={() => handleRemoveFromQueue(item.id)}
                               >
@@ -787,7 +699,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                   </div>
                   {/* Quick Queue Actions */}
                   <div className="p-3 border-t bg-gray-50 dark:bg-gray-900/50">
-                      <select 
+                      <select
                         id="scanModeSelect"
                         aria-label="Scan mode"
                         className="w-full mb-2 p-2 rounded border text-sm"
@@ -821,19 +733,19 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
               {/* Tag List */}
               <div className="lg:col-span-2 space-y-4">
                   <div className="flex gap-2">
-                     <input 
+                     <input
                        id="newTagNameInput"
                        aria-label="New Tag Name"
-                       className="flex-1 border rounded p-2" 
-                       placeholder="New Tag Name" 
+                       className="flex-1 border rounded p-2"
+                       placeholder="New Tag Name"
                        value={newTagInput}
                        onChange={e => setNewTagInput(e.target.value)}
                      />
-                     <input 
+                     <input
                        id="newCategoryInput"
                        aria-label="Category"
-                       className="w-32 border rounded p-2" 
-                       placeholder="Category" 
+                       className="w-32 border rounded p-2"
+                       placeholder="Category"
                        value={newCategoryInput}
                        onChange={e => setNewCategoryInput(e.target.value)}
                      />
@@ -854,10 +766,10 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                               {tags.map(tag => (
                                   <tr key={tag.id} className="hover:bg-gray-50 dark:hover:bg-gray-900">
                                       <td className="p-3">
-                                          <input 
-                                            type="checkbox" 
+                                          <input
+                                            type="checkbox"
                                             aria-label={`Enable tag ${tag.tag}`}
-                                            checked={tag.enabled} 
+                                            checked={tag.enabled}
                                             onChange={() => handleToggleTag(tag.id, tag.enabled)}
                                           />
                                       </td>
@@ -873,9 +785,9 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                                               <PlayIcon className="w-3 h-3 mr-1" />
                                               Enqueue
                                           </Button>
-                                          <Button 
-                                            size="sm" 
-                                            variant="ghost" 
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
                                             className="h-7 w-7 text-red-400"
                                             onClick={() => handleDeleteTag(tag.id)}
                                           >
@@ -895,12 +807,12 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
               {/* Scheduler Settings */}
               <div className="space-y-4 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg">
                   <h3 className="font-bold text-sm uppercase text-gray-500">Auto-Scheduler Settings</h3>
-                  
+
                   <div className="flex items-center justify-between">
                       <label htmlFor="schedulerEnabledCheckbox" className="text-sm font-medium">Scheduler Enabled</label>
-                      <input 
+                      <input
                         id="schedulerEnabledCheckbox"
-                        type="checkbox" 
+                        type="checkbox"
                         checked={schedulerConfig.isSchedulerEnabled}
                         onChange={e => setSchedulerConfig(prev => ({ ...prev, isSchedulerEnabled: e.target.checked }))}
                         className="toggle"
@@ -910,9 +822,9 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                   <div className="border-t pt-4 space-y-3">
                       <div>
                           <label htmlFor="newScanIntervalMinInput" className="text-xs text-gray-500 block mb-1">New Scan Interval (min)</label>
-                          <input 
+                          <input
                             id="newScanIntervalMinInput"
-                            type="number" 
+                            type="number"
                             className="w-full border rounded p-1 text-sm bg-white dark:bg-black"
                             value={schedulerConfig.newScanIntervalMin}
                             onChange={e => setSchedulerConfig(prev => ({ ...prev, newScanIntervalMin: parseInt(e.target.value) || 10 }))}
@@ -920,9 +832,9 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                       </div>
                       <div>
                           <label htmlFor="newScanPageLimitInput" className="text-xs text-gray-500 block mb-1">Page Limit per Run</label>
-                          <input 
+                          <input
                             id="newScanPageLimitInput"
-                            type="number" 
+                            type="number"
                             className="w-full border rounded p-1 text-sm bg-white dark:bg-black"
                             value={schedulerConfig.newScanPageLimit}
                             onChange={e => setSchedulerConfig(prev => ({ ...prev, newScanPageLimit: parseInt(e.target.value) || 3 }))}
@@ -930,23 +842,23 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                       </div>
                       <div>
                           <label htmlFor="backfillIntervalMinInput" className="text-xs text-gray-500 block mb-1">Backfill Interval (min)</label>
-                          <input 
+                          <input
                             id="backfillIntervalMinInput"
-                            type="number" 
+                            type="number"
                             className="w-full border rounded p-1 text-sm bg-white dark:bg-black"
                             value={schedulerConfig.backfillIntervalMin}
                             onChange={e => setSchedulerConfig(prev => ({ ...prev, backfillIntervalMin: parseInt(e.target.value) || 5 }))}
                           />
                       </div>
-                      
+
                       <div className="pt-2 border-t mt-2">
                         <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase">Advanced Tuning</h4>
                         <div className="space-y-3">
                            <div>
                               <label htmlFor="backfillPageCountInput" className="text-xs text-gray-500 block mb-1">Backfill Page Count (Depth)</label>
-                              <input 
+                              <input
                                 id="backfillPageCountInput"
-                                type="number" 
+                                type="number"
                                 className="w-full border rounded p-1 text-sm bg-white dark:bg-black"
                                 value={schedulerConfig.backfillPageCount}
                                 onChange={e => setSchedulerConfig(prev => ({ ...prev, backfillPageCount: parseInt(e.target.value) || 3 }))}
@@ -954,9 +866,9 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                            </div>
                            <div>
                               <label htmlFor="backfillProductLimitInput" className="text-xs text-gray-500 block mb-1">Backfill Product Limit (Per Run)</label>
-                              <input 
+                              <input
                                 id="backfillProductLimitInput"
-                                type="number" 
+                                type="number"
                                 className="w-full border rounded p-1 text-sm bg-white dark:bg-black"
                                 value={schedulerConfig.backfillProductLimit}
                                 onChange={e => setSchedulerConfig(prev => ({ ...prev, backfillProductLimit: parseInt(e.target.value) || 9 }))}
@@ -964,9 +876,9 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                            </div>
                            <div>
                               <label htmlFor="requestIntervalMsInput" className="text-xs text-gray-500 block mb-1">Request Interval (ms)</label>
-                              <input 
+                              <input
                                 id="requestIntervalMsInput"
-                                type="number" 
+                                type="number"
                                 className="w-full border rounded p-1 text-sm bg-white dark:bg-black"
                                 value={schedulerConfig.requestIntervalMs}
                                 onChange={e => setSchedulerConfig(prev => ({ ...prev, requestIntervalMs: parseInt(e.target.value) || 5000 }))}
@@ -1034,8 +946,8 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                   <td className="p-3 text-right">{run.productsFound}</td>
                   <td className="p-3 text-right text-green-600 font-bold">+{run.productsCreated}</td>
                   <td className="p-3 text-right text-gray-500">
-                    {run.endTime ? 
-                      ((new Date(run.endTime).getTime() - new Date(run.startTime).getTime()) / 1000).toFixed(1) + 's' 
+                    {run.endTime ?
+                      ((new Date(run.endTime).getTime() - new Date(run.startTime).getTime()) / 1000).toFixed(1) + 's'
                       : '-'}
                   </td>
                   <td className="p-3 text-gray-500 text-xs">

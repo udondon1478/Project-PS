@@ -423,8 +423,8 @@ class BoothScraperOrchestrator {
         }
         
         await this.checkRemoteStopSignal();
-        
-        return continued; // Signal to crawler whether to continue
+
+        return continued && !this.shouldStop; // Signal to crawler whether to continue
       }
     });
 

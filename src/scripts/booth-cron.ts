@@ -3,15 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { orchestrator } from '@/lib/booth-scraper/orchestrator';
 import * as Sentry from '@sentry/nextjs';
 
-const SYSTEM_USER_EMAIL = 'system-scraper@polyseek.com';
-
-// Default configuration constants for scraper operations
-const DEFAULT_BACKFILL_PAGES_PER_RUN = 3;
-const DEFAULT_BACKFILL_MAX_PRODUCTS = 9;
-const DEFAULT_REQUEST_INTERVAL_MS = 5000;
-
-// Stale run recovery: Mark RUNNING records older than this as FAILED
-const STALE_RUN_THRESHOLD_MS = 60 * 60 * 1000; // 1 hour
+import { STALE_RUN_THRESHOLD_MS, SYSTEM_USER_EMAIL, DEFAULT_BACKFILL_PAGES_PER_RUN, DEFAULT_BACKFILL_MAX_PRODUCTS, DEFAULT_REQUEST_INTERVAL_MS } from '@/lib/constants';
 
 async function getSystemUserId(): Promise<string> {
   try {
@@ -52,7 +44,7 @@ async function start() {
     try {
       // 1. Get Configuration
       const config = await prisma.scraperConfig.findFirst();
-      
+
       if (!config) {
         console.log('[Cron] No ScraperConfig found. Skipping.');
         return;
@@ -87,14 +79,27 @@ async function start() {
         for (const run of activeRuns) {
           const runAge = now.getTime() - run.startTime.getTime();
           if (runAge > STALE_RUN_THRESHOLD_MS) {
-            console.log(`[Cron] Recovering stale run: ${run.runId} (started ${run.startTime.toISOString()}, age: ${Math.floor(runAge / 1000 / 60)}min)`);
+            const ageMin = Math.floor(runAge / 1000 / 60);
+            console.log(`[Cron] Recovering stale run: ${run.runId} (started ${run.startTime.toISOString()}, age: ${ageMin}min)`);
+
             await prisma.scraperRun.update({
               where: { id: run.id },
               data: {
                 status: 'FAILED',
                 endTime: now,
+                errors: {
+                  push: 'Auto-recovered: Run exceeded stale threshold'
+                }
               },
             });
+
+            // Log the recovery action
+            await prisma.scraperLog.create({
+              data: {
+                runId: run.runId,
+                message: `Auto-recovered: Run was stale (${ageMin}min old)`,
+              },
+            }).catch(() => {}); // Non-blocking
           } else {
             dbRunning = true; // Still have a valid running process
           }
@@ -131,7 +136,7 @@ async function start() {
            const runId = await orchestrator.start('NEW', userId, {
              pageLimit: config.newScanPageLimit, // Use configurable limit
              // rateLimitOverride: 1500, // Fixed rate limit for cron safety -> Now use config
-             requestInterval: config.requestIntervalMs ?? DEFAULT_REQUEST_INTERVAL_MS, 
+             requestInterval: config.requestIntervalMs ?? DEFAULT_REQUEST_INTERVAL_MS,
              searchParams: { useTargetTags: true }
            });
            console.log(`[Cron] New Product Scan started (RunID: ${runId})`);
@@ -144,7 +149,7 @@ async function start() {
 
       // 4. Check Last Run for BACKFILL Mode
       // Only runs if NEW scan didn't just start
-      
+
       const lastBackfillRun = await prisma.scraperRun.findFirst({
         where: {
           metadata: {
@@ -182,17 +187,17 @@ async function start() {
   });
 
   console.log('BOOTH Cron Scheduler is now running (DB-Driven Mode).');
-  
+
   // Graceful Shutdown
   const shutdown = async (signal: string) => {
     console.log(`Received ${signal}. Shutting down gracefully...`);
-    
+
     // Stop orchestrator if running
     await orchestrator.stopAll();
-    
+
     // Disconnect Prisma
     await prisma.$disconnect();
-    
+
     console.log('Cleanup complete.');
   };
 
