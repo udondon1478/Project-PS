@@ -7,7 +7,7 @@ export const tagCategories: TagCategoryInfo[] = [
     nameEn: 'Rating',
     color: '#E74C3C',
     description: '商品の年齢制限や内容の適切性を示します。最も重要なカテゴリです。',
-    examples: ['rating:general', 'rating:sensitive', 'rating:questionable', 'rating:explicit'],
+    examples: ['全年齢', 'R-15', 'R-17', 'R-18'],
     priority: 1
   },
   {
@@ -16,7 +16,7 @@ export const tagCategories: TagCategoryInfo[] = [
     nameEn: 'Character',
     color: '#3498DB',
     description: '特定のキャラクター、アバター、種族などを表します。',
-    examples: ['mamehinata', 'kikyo', 'original_character', 'elf'],
+    examples: ['まめひなた', '桔梗', 'マヌカ', 'キプフェル'],
     priority: 2
   },
   {
@@ -25,7 +25,7 @@ export const tagCategories: TagCategoryInfo[] = [
     nameEn: 'Clothing',
     color: '#9B59B6',
     description: '着用している衣装、アクセサリー、装備品などを表します。',
-    examples: ['school_uniform', 'swimsuit', 'glasses', 'maid_costume'],
+    examples: ['学生服', 'ピアス', 'ゴーグル', 'メイド服'],
     priority: 3
   },
   {
@@ -33,8 +33,8 @@ export const tagCategories: TagCategoryInfo[] = [
     name: '身体',
     nameEn: 'Body',
     color: '#E67E22',
-    description: '身体的特徴、髪型、瞳の色、ポーズなどを表します。',
-    examples: ['long_hair', 'blue_eyes', 'sitting', 'large_breasts'],
+    description: '身体的特徴、髪型、瞳の色、体の作りなどを表します。',
+    examples: ['長髪', '青い瞳', '高身長', 'サイボーグ'],
     priority: 4
   },
   {
@@ -43,7 +43,7 @@ export const tagCategories: TagCategoryInfo[] = [
     nameEn: 'Scene',
     color: '#1ABC9C',
     description: '背景、場所、環境、小道具などを表します。',
-    examples: ['bedroom', 'beach', 'chair', 'night'],
+    examples: ['寝室', '海岸', '椅子', '夜'],
     priority: 5
   },
   {
@@ -51,8 +51,8 @@ export const tagCategories: TagCategoryInfo[] = [
     name: 'スタイル',
     nameEn: 'Style',
     color: '#F39C12',
-    description: 'アートスタイル、画材、表現技法などを表します。',
-    examples: ['sketch', 'pixel_art', 'monochrome', 'photorealistic'],
+    description: '商品全体のジャンル、スタイルなどを表します。',
+    examples: ['サイバーパンク', 'レトロ', '清楚', '近未来'],
     priority: 6
   },
   {
@@ -61,7 +61,7 @@ export const tagCategories: TagCategoryInfo[] = [
     nameEn: 'Meta',
     color: '#95A5A6',
     description: '商品自体の形式、ライセンス、利用規約、対応プラットフォームなどを表します。',
-    examples: ['unity_package', 'fbx', 'vrc_quest_compatible', 'commercial_use_allowed'],
+    examples: ['Unity_Package', 'FBX', 'クエスト対応', '商用利用可能'],
     priority: 7
   },
   {
@@ -69,8 +69,8 @@ export const tagCategories: TagCategoryInfo[] = [
     name: '一般',
     nameEn: 'General',
     color: '#34495E',
-    description: '上記のどのカテゴリにも当てはまらない、一般的なタグです。',
-    examples: ['cute', 'cool', 'funny', 'text'],
+    description: '上記のどのカテゴリにも当てはまらない、一般的なタグです。大多数のタグはここに属します',
+    examples: ['可愛い', 'クール', 'ネタアバター', '寿司'],
     priority: 8
   },
 ];

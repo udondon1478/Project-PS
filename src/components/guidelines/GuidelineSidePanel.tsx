@@ -9,12 +9,13 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { RatingFlowchart } from './RatingFlowchart';
 import { RatingFlowchartDiagram } from './RatingFlowchartDiagram';
 import { TagCategoryVisualizer } from './TagCategoryVisualizer';
+import { TaggingGuide } from './TaggingGuide';
 import { FlowchartMode, RatingLevel } from '@/data/guidelines';
 
 interface GuidelineSidePanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initialTab?: 'rating' | 'categories';
+  initialTab?: 'rating' | 'categories' | 'guide';
   initialRatingFlow?: boolean;
   onRatingSelected?: (rating: RatingLevel) => void;
 }
@@ -26,7 +27,7 @@ export function GuidelineSidePanel({
   initialRatingFlow = false,
   onRatingSelected,
 }: GuidelineSidePanelProps) {
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const [activeTab, setActiveTab] = useState<'rating' | 'categories' | 'guide'>(initialTab);
   const [flowchartMode, setFlowchartMode] = useState<FlowchartMode>(
     initialRatingFlow ? 'interactive' : 'diagram'
   );
@@ -91,14 +92,15 @@ export function GuidelineSidePanel({
       {/* タブコンテンツ */}
       <Tabs
         value={activeTab}
-        onValueChange={(value) => setActiveTab(value as 'rating' | 'categories')}
+        onValueChange={(value) => setActiveTab(value as 'rating' | 'categories' | 'guide')}
         className="flex-1 flex flex-col min-h-0"
       >
         {/* 固定タブリスト */}
         <div className="px-6 mt-4 shrink-0">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="rating">レーティング</TabsTrigger>
             <TabsTrigger value="categories">タグカテゴリ</TabsTrigger>
+            <TabsTrigger value="guide">タグ付けガイド</TabsTrigger>
           </TabsList>
         </div>
 
@@ -167,6 +169,15 @@ export function GuidelineSidePanel({
         >
           <ErrorBoundary>
             <TagCategoryVisualizer />
+          </ErrorBoundary>
+        </TabsContent>
+
+        <TabsContent
+          value="guide"
+          className="flex-1 mt-0 min-h-0 data-[state=inactive]:hidden overflow-y-auto px-6 py-4"
+        >
+          <ErrorBoundary>
+            <TaggingGuide />
           </ErrorBoundary>
         </TabsContent>
       </Tabs>
