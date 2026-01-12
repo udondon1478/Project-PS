@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
@@ -12,7 +12,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ClockIcon, TrashIcon, FastForwardIcon, ListIcon, PlayIcon, AlertTriangleIcon, CheckCircleIcon, XCircleIcon, CalendarIcon } from 'lucide-react';
+import { ClockIcon, TrashIcon, FastForwardIcon, ListIcon, PlayIcon, AlertTriangleIcon, CheckCircleIcon, XCircleIcon, CalendarIcon, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 import { type ScraperRun, type ScraperLog, type ScraperStatus } from '@/lib/booth-scraper/orchestrator';
@@ -115,6 +115,9 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
   // Remote task logs state (for polling)
   const [remoteTaskLogs, setRemoteTaskLogs] = useState<Record<string, ScraperLog[]>>({});
 
+  // Skipping state to prevent double clicks
+  const [skippingRunIds, setSkippingRunIds] = useState<Set<string>>(new Set());
+
   // Unified running tasks - combines local (activeStatus) and remote (runningFromDb)
   const allRunningTasks = useMemo<UnifiedRunningTask[]>(() => {
     const tasks: UnifiedRunningTask[] = [];
@@ -159,6 +162,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
             productsFailed: 0,
           },
           logs: remoteTaskLogs[run.runId] || [],
+          skipRequested: run.skipRequested,
         });
       });
 
@@ -173,8 +177,8 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
         const logs = await res.json();
         setRemoteTaskLogs(prev => ({ ...prev, [runId]: logs }));
       }
-    } catch (e) {
-      console.error('Failed to fetch remote logs:', e);
+    } catch (error) {
+      console.error('Failed to fetch remote logs:', error);
     }
   }, []);
 
@@ -195,6 +199,14 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
 
   // Handle skip request for remote tasks
   const handleSkipRemote = async (runId: string) => {
+    if (skippingRunIds.has(runId)) return;
+
+    setSkippingRunIds(prev => {
+      const next = new Set(prev);
+      next.add(runId);
+      return next;
+    });
+
     try {
       const res = await fetch(`/api/admin/booth-scraper/scrape/${runId}/skip`, {
         method: 'POST',
@@ -205,8 +217,14 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
         const err = await res.json().catch(() => ({ error: 'Unknown error' }));
         toast.error(`Failed to skip: ${err.error}`);
       }
-    } catch (e) {
+    } catch (_) {
       toast.error('Failed to send skip request');
+    } finally {
+      setSkippingRunIds(prev => {
+        const next = new Set(prev);
+        next.delete(runId);
+        return next;
+      });
     }
   };
 
@@ -280,7 +298,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
         toast.error('Failed to fetch logs');
         setLogViewer(prev => ({ ...prev, loading: false }));
       }
-    } catch (e) {
+    } catch (_) {
       toast.error('Error fetching logs');
       setLogViewer(prev => ({ ...prev, loading: false }));
     }
@@ -292,7 +310,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
       .then(data => {
         if (Array.isArray(data)) setTags(data);
       })
-      .catch(e => toast.error('Failed to load tags'));
+      .catch(() => toast.error('Failed to load tags'));
   }, []);
 
   const handleAddTag = async () => {
@@ -315,7 +333,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
       } else {
         toast.error('Failed to add tag');
       }
-    } catch (e) {
+    } catch (_) {
       toast.error('Failed to add tag');
     }
   };
@@ -335,7 +353,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
             const err = await res.json().catch(() => ({ error: res.statusText }));
             toast.error(`Failed to delete tag: ${err.error || 'Server error'}`);
           }
-        } catch (e) {
+        } catch (_) {
           toast.error('Failed to delete tag');
         }
         setConfirmDialog(prev => ({ ...prev, open: false }));
@@ -352,7 +370,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
       });
       if (!res.ok) return;
       setTags(prev => prev.map(t => t.id === id ? { ...t, enabled: !current } : t));
-    } catch (e) {
+    } catch (_) {
       toast.error('Failed to toggle tag');
     }
   };
@@ -408,7 +426,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
       } else {
         toast.success(`Enqueued: ${tagName}${category ? ` (${category})` : ''}`);
       }
-    } catch (e) {
+    } catch (_) {
       toast.error('Error starting scraper');
     } finally {
       setLoading(false);
@@ -459,7 +477,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
           const err = await res.json().catch(() => ({ error: res.statusText }));
           toast.error(`Failed to skip: ${err.error || 'Server error'}`);
         }
-    } catch(e) {
+    } catch(_) {
         toast.error('Failed to skip');
     }
   };
@@ -473,7 +491,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
             const err = await res.json().catch(() => ({ error: res.statusText }));
             toast.error(`Failed to remove: ${err.error || 'Server error'}`);
           }
-      } catch(e) {
+      } catch(_) {
           toast.error('Failed to remove');
       }
   };
@@ -690,11 +708,16 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                             <Button
                               variant="destructive"
                               size="sm"
+                              disabled={task.source === 'local' ? false : (skippingRunIds.has(task.runId) || task.skipRequested)}
                               onClick={() => task.source === 'local' ? handleSkipCurrent() : handleSkipRemote(task.runId)}
                               className="z-10 shadow-lg"
                             >
-                               <FastForwardIcon className="w-4 h-4 mr-2" />
-                               Skip This Task
+                               {task.source === 'remote' && (skippingRunIds.has(task.runId) || task.skipRequested) ? (
+                                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                               ) : (
+                                 <FastForwardIcon className="w-4 h-4 mr-2" />
+                               )}
+                               {task.source === 'remote' && (skippingRunIds.has(task.runId) || task.skipRequested) ? 'Skipping...' : 'Skip This Task'}
                             </Button>
                         </div>
 
