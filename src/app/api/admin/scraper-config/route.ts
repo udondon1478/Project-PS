@@ -37,15 +37,21 @@ export async function GET() {
     // Fetch scheduler status information
     const now = new Date();
 
-    // Get last runs for NEW and BACKFILL modes
+    // Get last COMPLETED runs for NEW and BACKFILL modes
     const [lastNewRun, lastBackfillRun] = await Promise.all([
       prisma.scraperRun.findFirst({
-        where: { metadata: { path: ['mode'], equals: 'NEW' } },
+        where: {
+          metadata: { path: ['mode'], equals: 'NEW' },
+          status: { not: 'RUNNING' }, // Only completed or failed runs
+        },
         orderBy: { startTime: 'desc' },
         select: { startTime: true, endTime: true, status: true, productsCreated: true, productsFound: true },
       }),
       prisma.scraperRun.findFirst({
-        where: { metadata: { path: ['mode'], equals: 'BACKFILL' } },
+        where: {
+          metadata: { path: ['mode'], equals: 'BACKFILL' },
+          status: { not: 'RUNNING' }, // Only completed or failed runs
+        },
         orderBy: { startTime: 'desc' },
         select: { startTime: true, endTime: true, status: true, productsCreated: true, productsFound: true },
       }),

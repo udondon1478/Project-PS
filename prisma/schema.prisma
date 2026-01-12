@@ -466,6 +466,7 @@ model ScraperRun {
   metadata          Json?    // フィルタ設定などのメタデータ
   processedPages    Int      @default(0)
   failedUrls        String[] // 処理に失敗した商品URL
+  skipRequested     Boolean  @default(false) // UIからのスキップリクエストフラグ
 
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
