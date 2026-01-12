@@ -78,14 +78,26 @@ async function start() {
         for (const run of activeRuns) {
           const runAge = now.getTime() - run.startTime.getTime();
           if (runAge > STALE_RUN_THRESHOLD_MS) {
-            console.log(`[Cron] Recovering stale run: ${run.runId} (started ${run.startTime.toISOString()}, age: ${Math.floor(runAge / 1000 / 60)}min)`);
+            const ageMin = Math.floor(runAge / 1000 / 60);
+            console.log(`[Cron] Recovering stale run: ${run.runId} (started ${run.startTime.toISOString()}, age: ${ageMin}min)`);
             await prisma.scraperRun.update({
               where: { id: run.id },
               data: {
                 status: 'FAILED',
                 endTime: now,
+                errors: {
+                  push: 'Auto-recovered: Run exceeded stale threshold'
+                }
               },
             });
+
+            // Log the recovery action
+            await prisma.scraperLog.create({
+              data: {
+                runId: run.runId,
+                message: `Auto-recovered: Run was stale (${ageMin}min old)`,
+              },
+            }).catch(() => {}); // Non-blocking
           } else {
             dbRunning = true; // Still have a valid running process
           }
