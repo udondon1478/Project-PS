@@ -10,6 +10,9 @@ const DEFAULT_BACKFILL_PAGES_PER_RUN = 3;
 const DEFAULT_BACKFILL_MAX_PRODUCTS = 9;
 const DEFAULT_REQUEST_INTERVAL_MS = 5000;
 
+// Stale run recovery: Mark RUNNING records older than this as FAILED
+const STALE_RUN_THRESHOLD_MS = 60 * 60 * 1000; // 1 hour
+
 async function getSystemUserId(): Promise<string> {
   try {
     const user = await prisma.user.findUnique({
@@ -75,10 +78,27 @@ async function start() {
       // Also check DB for RUNNING state (handles separate processes or restarts)
       let dbRunning = false;
       try {
-        const activeRun = await prisma.scraperRun.findFirst({
+        const activeRuns = await prisma.scraperRun.findMany({
           where: { status: 'RUNNING' },
         });
-        dbRunning = !!activeRun;
+
+        // Auto-recover stale RUNNING records (older than threshold)
+        const now = new Date();
+        for (const run of activeRuns) {
+          const runAge = now.getTime() - run.startTime.getTime();
+          if (runAge > STALE_RUN_THRESHOLD_MS) {
+            console.log(`[Cron] Recovering stale run: ${run.runId} (started ${run.startTime.toISOString()}, age: ${Math.floor(runAge / 1000 / 60)}min)`);
+            await prisma.scraperRun.update({
+              where: { id: run.id },
+              data: {
+                status: 'FAILED',
+                endTime: now,
+              },
+            });
+          } else {
+            dbRunning = true; // Still have a valid running process
+          }
+        }
       } catch (err) {
         console.error('[Cron] Failed to check DB running state, conservatively assuming running:', err);
         dbRunning = true; // Conservative fallback

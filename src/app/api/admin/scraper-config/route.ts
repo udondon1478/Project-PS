@@ -12,6 +12,9 @@ const MAX_INTERVAL_MIN = 10080; // One week in minutes
 const MAX_PAGE_LIMIT = 1000;
 const MAX_REQUEST_INTERVAL_MS = 60000;
 
+// Stale run threshold (must match booth-cron.ts)
+const STALE_RUN_THRESHOLD_MS = 60 * 60 * 1000; // 1 hour
+
 export async function GET() {
   const session = await auth();
   if (!session?.user || session.user.role !== Role.ADMIN) {
@@ -31,7 +34,76 @@ export async function GET() {
       }
     });
 
-    return NextResponse.json(config);
+    // Fetch scheduler status information
+    const now = new Date();
+
+    // Get last runs for NEW and BACKFILL modes
+    const [lastNewRun, lastBackfillRun] = await Promise.all([
+      prisma.scraperRun.findFirst({
+        where: { metadata: { path: ['mode'], equals: 'NEW' } },
+        orderBy: { startTime: 'desc' },
+        select: { startTime: true, endTime: true, status: true, productsCreated: true, productsFound: true },
+      }),
+      prisma.scraperRun.findFirst({
+        where: { metadata: { path: ['mode'], equals: 'BACKFILL' } },
+        orderBy: { startTime: 'desc' },
+        select: { startTime: true, endTime: true, status: true, productsCreated: true, productsFound: true },
+      }),
+    ]);
+
+    // Get stale RUNNING records (potential stuck jobs)
+    const runningRecords = await prisma.scraperRun.findMany({
+      where: { status: 'RUNNING' },
+      select: { id: true, runId: true, startTime: true },
+    });
+
+    const staleRuns = runningRecords.filter(
+      r => now.getTime() - r.startTime.getTime() > STALE_RUN_THRESHOLD_MS
+    );
+    const activeRuns = runningRecords.filter(
+      r => now.getTime() - r.startTime.getTime() <= STALE_RUN_THRESHOLD_MS
+    );
+
+    // Calculate next scheduled runs
+    const newScanIntervalMs = config.newScanIntervalMin * 60 * 1000;
+    const backfillIntervalMs = config.backfillIntervalMin * 60 * 1000;
+
+    const nextNewScan = lastNewRun
+      ? new Date(lastNewRun.startTime.getTime() + newScanIntervalMs)
+      : now; // Would run immediately if never ran
+
+    const nextBackfill = lastBackfillRun
+      ? new Date(lastBackfillRun.startTime.getTime() + backfillIntervalMs)
+      : now;
+
+    // Build scheduler status object
+    const schedulerStatus = {
+      lastNewRun: lastNewRun ? {
+        startTime: lastNewRun.startTime.toISOString(),
+        endTime: lastNewRun.endTime?.toISOString() ?? null,
+        status: lastNewRun.status,
+        productsCreated: lastNewRun.productsCreated,
+        productsFound: lastNewRun.productsFound,
+      } : null,
+      lastBackfillRun: lastBackfillRun ? {
+        startTime: lastBackfillRun.startTime.toISOString(),
+        endTime: lastBackfillRun.endTime?.toISOString() ?? null,
+        status: lastBackfillRun.status,
+        productsCreated: lastBackfillRun.productsCreated,
+        productsFound: lastBackfillRun.productsFound,
+      } : null,
+      nextNewScanAt: nextNewScan.toISOString(),
+      nextBackfillAt: nextBackfill.toISOString(),
+      activeRunsCount: activeRuns.length,
+      staleRunsCount: staleRuns.length,
+      staleRuns: staleRuns.map(r => ({
+        runId: r.runId,
+        startTime: r.startTime.toISOString(),
+        ageMinutes: Math.floor((now.getTime() - r.startTime.getTime()) / 1000 / 60),
+      })),
+    };
+
+    return NextResponse.json({ ...config, schedulerStatus });
   } catch (error) {
     console.error('Failed to fetch scraper config:', error);
     return NextResponse.json({ error: 'Failed to fetch config' }, { status: 500 });

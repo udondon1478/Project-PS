@@ -12,7 +12,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ClockIcon, TrashIcon, FastForwardIcon, ListIcon, PlayIcon } from 'lucide-react';
+import { ClockIcon, TrashIcon, FastForwardIcon, ListIcon, PlayIcon, AlertTriangleIcon, CheckCircleIcon, XCircleIcon, CalendarIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 import { type ScraperRun, type ScraperLog, type ScraperStatus } from '@/lib/booth-scraper/orchestrator';
@@ -61,6 +61,17 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
     loading: boolean;
   }>({ open: false, runId: '', logs: [], loading: false });
 
+  // Scheduler Status State (from API)
+  interface SchedulerStatusType {
+    lastNewRun: { startTime: string; endTime: string | null; status: string; productsCreated: number; productsFound: number } | null;
+    lastBackfillRun: { startTime: string; endTime: string | null; status: string; productsCreated: number; productsFound: number } | null;
+    nextNewScanAt: string;
+    nextBackfillAt: string;
+    activeRunsCount: number;
+    staleRunsCount: number;
+    staleRuns: Array<{ runId: string; startTime: string; ageMinutes: number }>;
+  }
+
   // Scheduler Config State (For interval display only mostly)
   const [schedulerConfig, setSchedulerConfig] = useState<{
     isSchedulerEnabled: boolean;
@@ -80,8 +91,10 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
     requestIntervalMs: 5000,
   });
 
+  const [schedulerStatus, setSchedulerStatus] = useState<SchedulerStatusType | null>(null);
+
   // Fetch Scheduler Config
-  useEffect(() => {
+  const fetchSchedulerConfig = () => {
     fetch('/api/admin/scraper-config')
       .then(res => {
         if (!res.ok) {
@@ -100,12 +113,22 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
              backfillProductLimit: data.backfillProductLimit ?? 9,
              requestIntervalMs: data.requestIntervalMs ?? 5000,
            });
+           if (data.schedulerStatus) {
+             setSchedulerStatus(data.schedulerStatus);
+           }
         }
       })
       .catch(e => {
         console.error('Failed to load scheduler config', e);
         toast.error(`Failed to load scheduler config: ${e?.message || e}`);
       });
+  };
+
+  useEffect(() => {
+    fetchSchedulerConfig();
+    // Refresh scheduler status every 30 seconds
+    const interval = setInterval(fetchSchedulerConfig, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const saveSchedulerConfig = async () => {
@@ -348,8 +371,152 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
     }
   };
 
+  // Helper to format relative time
+  const formatRelativeTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diff = date.getTime() - now.getTime();
+    const absDiff = Math.abs(diff);
+    const minutes = Math.floor(absDiff / 1000 / 60);
+    const hours = Math.floor(minutes / 60);
+
+    if (diff > 0) {
+      // Future
+      if (minutes < 1) return 'まもなく';
+      if (minutes < 60) return `${minutes}分後`;
+      return `${hours}時間${minutes % 60}分後`;
+    } else {
+      // Past (overdue)
+      if (minutes < 1) return '実行待ち';
+      if (minutes < 60) return `${minutes}分超過`;
+      return `${hours}時間${minutes % 60}分超過`;
+    }
+  };
+
+  const isOverdue = (dateStr: string) => new Date(dateStr).getTime() < new Date().getTime();
+
   return (
     <div className="space-y-8">
+      {/* Warnings Section */}
+      {schedulerStatus && (schedulerStatus.staleRunsCount > 0 || !schedulerConfig.isSchedulerEnabled) && (
+        <div className="space-y-3">
+          {/* Stale Runs Warning */}
+          {schedulerStatus.staleRunsCount > 0 && (
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 flex items-start gap-3">
+              <AlertTriangleIcon className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-bold text-yellow-800 dark:text-yellow-200">スタックしたジョブが検出されました</h3>
+                <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                  {schedulerStatus.staleRunsCount}件のジョブが1時間以上RUNNING状態のまま残っています。
+                  次回のcron実行時に自動的にFAILEDに更新されます。
+                </p>
+                <div className="mt-2 text-xs text-yellow-600 dark:text-yellow-400">
+                  {schedulerStatus.staleRuns.map(run => (
+                    <div key={run.runId} className="font-mono">
+                      {run.runId} - {run.ageMinutes}分経過
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Scheduler Disabled Warning */}
+          {!schedulerConfig.isSchedulerEnabled && (
+            <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg p-4 flex items-start gap-3">
+              <XCircleIcon className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-bold text-orange-800 dark:text-orange-200">スケジューラーが無効です</h3>
+                <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
+                  自動スキャンは実行されません。有効にするには下部の設定で「Scheduler Enabled」をONにしてください。
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Scheduler Status Overview */}
+      {schedulerStatus && schedulerConfig.isSchedulerEnabled && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border-l-4 border-green-500">
+          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+            <CalendarIcon className="w-5 h-5 text-green-600" />
+            スケジューラー状態
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Next NEW Scan */}
+            <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+              <div className="text-xs text-gray-500 uppercase font-bold mb-1">次回NEWスキャン</div>
+              <div className={`text-lg font-bold ${isOverdue(schedulerStatus.nextNewScanAt) ? 'text-orange-600' : 'text-gray-900 dark:text-white'}`}>
+                {formatRelativeTime(schedulerStatus.nextNewScanAt)}
+              </div>
+              <div className="text-xs text-gray-400 mt-1">
+                間隔: {schedulerConfig.newScanIntervalMin}分
+              </div>
+            </div>
+
+            {/* Next Backfill */}
+            <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+              <div className="text-xs text-gray-500 uppercase font-bold mb-1">次回Backfill</div>
+              <div className={`text-lg font-bold ${isOverdue(schedulerStatus.nextBackfillAt) ? 'text-orange-600' : 'text-gray-900 dark:text-white'}`}>
+                {formatRelativeTime(schedulerStatus.nextBackfillAt)}
+              </div>
+              <div className="text-xs text-gray-400 mt-1">
+                間隔: {schedulerConfig.backfillIntervalMin}分
+              </div>
+            </div>
+
+            {/* Last NEW Run Status */}
+            <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+              <div className="text-xs text-gray-500 uppercase font-bold mb-1">最後のNEWスキャン</div>
+              {schedulerStatus.lastNewRun ? (
+                <>
+                  <div className="flex items-center gap-2">
+                    {schedulerStatus.lastNewRun.status === 'COMPLETED' ? (
+                      <CheckCircleIcon className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <XCircleIcon className="w-4 h-4 text-red-500" />
+                    )}
+                    <span className={`font-bold ${schedulerStatus.lastNewRun.status === 'COMPLETED' ? 'text-green-600' : 'text-red-600'}`}>
+                      {schedulerStatus.lastNewRun.status}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    +{schedulerStatus.lastNewRun.productsCreated} / {schedulerStatus.lastNewRun.productsFound}件
+                  </div>
+                </>
+              ) : (
+                <div className="text-gray-400">未実行</div>
+              )}
+            </div>
+
+            {/* Last Backfill Status */}
+            <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+              <div className="text-xs text-gray-500 uppercase font-bold mb-1">最後のBackfill</div>
+              {schedulerStatus.lastBackfillRun ? (
+                <>
+                  <div className="flex items-center gap-2">
+                    {schedulerStatus.lastBackfillRun.status === 'COMPLETED' ? (
+                      <CheckCircleIcon className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <XCircleIcon className="w-4 h-4 text-red-500" />
+                    )}
+                    <span className={`font-bold ${schedulerStatus.lastBackfillRun.status === 'COMPLETED' ? 'text-green-600' : 'text-red-600'}`}>
+                      {schedulerStatus.lastBackfillRun.status}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    +{schedulerStatus.lastBackfillRun.productsCreated} / {schedulerStatus.lastBackfillRun.productsFound}件
+                  </div>
+                </>
+              ) : (
+                <div className="text-gray-400">未実行</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top Section: Active Job & Queue */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left: Active Task Monitor */}
