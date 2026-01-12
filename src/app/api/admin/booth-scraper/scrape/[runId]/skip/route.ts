@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { auth } from '@/auth';
+import { Role } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
 /**
@@ -10,6 +12,11 @@ export async function POST(
   _request: Request,
   { params }: { params: Promise<{ runId: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== Role.ADMIN) {
+    return new NextResponse('Unauthorized', { status: 403 });
+  }
+
   try {
     const { runId } = await params;
 
