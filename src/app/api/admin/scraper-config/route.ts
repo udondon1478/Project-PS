@@ -3,15 +3,7 @@ import { auth } from "@/auth";
 import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { STALE_RUN_THRESHOLD_MS } from "@/lib/constants";
-
-// Fixed ID for singleton enforcement
-const SCRAPER_CONFIG_SINGLETON_ID = 'scraper-config-singleton';
-
-// Maximum allowed values for configuration
-const MAX_INTERVAL_MIN = 10080; // One week in minutes
-const MAX_PAGE_LIMIT = 1000;
-const MAX_REQUEST_INTERVAL_MS = 60000;
+import { STALE_RUN_THRESHOLD_MS, SCRAPER_CONFIG_SINGLETON_ID, MAX_INTERVAL_MIN, MAX_PAGE_LIMIT, MAX_REQUEST_INTERVAL_MS, DEFAULT_NEW_SCAN_INTERVAL_MIN, DEFAULT_BACKFILL_INTERVAL_MIN, DEFAULT_NEW_SCAN_PAGE_LIMIT, DEFAULT_BACKFILL_PAGES_PER_RUN, DEFAULT_BACKFILL_MAX_PRODUCTS, DEFAULT_REQUEST_INTERVAL_MS } from "@/lib/constants";
 
 export async function GET() {
   const session = await auth();
@@ -27,8 +19,8 @@ export async function GET() {
       create: {
         id: SCRAPER_CONFIG_SINGLETON_ID,
         isSchedulerEnabled: true,
-        newScanIntervalMin: 10,
-        backfillIntervalMin: 5,
+        newScanIntervalMin: DEFAULT_NEW_SCAN_INTERVAL_MIN,
+        backfillIntervalMin: DEFAULT_BACKFILL_INTERVAL_MIN,
       }
     });
 
@@ -188,12 +180,12 @@ export async function PATCH(req: Request) {
       create: {
         id: SCRAPER_CONFIG_SINGLETON_ID,
         isSchedulerEnabled: isSchedulerEnabled ?? true,
-        newScanIntervalMin: newScanIntervalMin ?? 10,
-        newScanPageLimit: newScanPageLimit ?? 3,
-        backfillIntervalMin: backfillIntervalMin ?? 5,
-        backfillPageCount: backfillPageCount ?? 3,
-        backfillProductLimit: backfillProductLimit ?? 9,
-        requestIntervalMs: requestIntervalMs ?? 5000,
+        newScanIntervalMin: newScanIntervalMin ?? DEFAULT_NEW_SCAN_INTERVAL_MIN,
+        newScanPageLimit: newScanPageLimit ?? DEFAULT_NEW_SCAN_PAGE_LIMIT,
+        backfillIntervalMin: backfillIntervalMin ?? DEFAULT_BACKFILL_INTERVAL_MIN,
+        backfillPageCount: backfillPageCount ?? DEFAULT_BACKFILL_PAGES_PER_RUN,
+        backfillProductLimit: backfillProductLimit ?? DEFAULT_BACKFILL_MAX_PRODUCTS,
+        requestIntervalMs: requestIntervalMs ?? DEFAULT_REQUEST_INTERVAL_MS,
         lastUpdatedBy: session.user.id,
       }
     });

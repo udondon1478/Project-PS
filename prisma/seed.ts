@@ -1,4 +1,5 @@
-import { PrismaClient, Role } from '@prisma/client'; // Roleをインポート
+import { PrismaClient, Role } from '@prisma/client';
+import { SYSTEM_USER_EMAIL } from '../src/lib/constants';
 
 const prisma = new PrismaClient();
 
@@ -41,10 +42,10 @@ async function main() {
   // システムユーザー (スクレイパー用) の作成
   // cronやスクリプトで使用するため、環境に関わらず作成する
   const systemUser = await prisma.user.upsert({
-    where: { email: 'system-scraper@polyseek.com' },
+    where: { email: SYSTEM_USER_EMAIL },
     update: {}, // 既存の場合は更新しない
     create: {
-      email: 'system-scraper@polyseek.com',
+      email: SYSTEM_USER_EMAIL,
       name: 'System Bot',
       role: Role.USER, // Changed to USER for security
     },

@@ -2,14 +2,7 @@ import cron from 'node-cron';
 import { prisma } from '@/lib/prisma';
 import { orchestrator } from '@/lib/booth-scraper/orchestrator';
 import * as Sentry from '@sentry/nextjs';
-import { STALE_RUN_THRESHOLD_MS } from '@/lib/constants';
-
-const SYSTEM_USER_EMAIL = 'system-scraper@polyseek.com';
-
-// Default configuration constants for scraper operations
-const DEFAULT_BACKFILL_PAGES_PER_RUN = 3;
-const DEFAULT_BACKFILL_MAX_PRODUCTS = 9;
-const DEFAULT_REQUEST_INTERVAL_MS = 5000;
+import { STALE_RUN_THRESHOLD_MS, SYSTEM_USER_EMAIL, DEFAULT_BACKFILL_PAGES_PER_RUN, DEFAULT_BACKFILL_MAX_PRODUCTS, DEFAULT_REQUEST_INTERVAL_MS } from '@/lib/constants';
 
 async function getSystemUserId(): Promise<string> {
   try {
