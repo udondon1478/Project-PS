@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import { prisma } from '@/lib/prisma';
 import { orchestrator } from '@/lib/booth-scraper/orchestrator';
 import * as Sentry from '@sentry/nextjs';
+import { STALE_RUN_THRESHOLD_MS } from '@/lib/constants';
 
 const SYSTEM_USER_EMAIL = 'system-scraper@polyseek.com';
 
@@ -9,9 +10,6 @@ const SYSTEM_USER_EMAIL = 'system-scraper@polyseek.com';
 const DEFAULT_BACKFILL_PAGES_PER_RUN = 3;
 const DEFAULT_BACKFILL_MAX_PRODUCTS = 9;
 const DEFAULT_REQUEST_INTERVAL_MS = 5000;
-
-// Stale run recovery: Mark RUNNING records older than this as FAILED
-const STALE_RUN_THRESHOLD_MS = 60 * 60 * 1000; // 1 hour
 
 async function getSystemUserId(): Promise<string> {
   try {

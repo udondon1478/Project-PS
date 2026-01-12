@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { STALE_RUN_THRESHOLD_MS } from "@/lib/constants";
 
 // Fixed ID for singleton enforcement
 const SCRAPER_CONFIG_SINGLETON_ID = 'scraper-config-singleton';
@@ -11,9 +12,6 @@ const SCRAPER_CONFIG_SINGLETON_ID = 'scraper-config-singleton';
 const MAX_INTERVAL_MIN = 10080; // One week in minutes
 const MAX_PAGE_LIMIT = 1000;
 const MAX_REQUEST_INTERVAL_MS = 60000;
-
-// Stale run threshold (must match booth-cron.ts)
-const STALE_RUN_THRESHOLD_MS = 60 * 60 * 1000; // 1 hour
 
 export async function GET() {
   const session = await auth();

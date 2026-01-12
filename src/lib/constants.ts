@@ -20,3 +20,6 @@ export const ReportStatus = {
 export type ReportStatus = (typeof ReportStatus)[keyof typeof ReportStatus];
 
 export const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://polyseek.jp';
+
+// Stale run recovery: Mark RUNNING records older than this as FAILED
+export const STALE_RUN_THRESHOLD_MS = 60 * 60 * 1000; // 1 hour
