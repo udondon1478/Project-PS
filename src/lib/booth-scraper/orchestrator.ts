@@ -441,12 +441,23 @@ class BoothScraperOrchestrator {
     try {
       const run = await prisma.scraperRun.findUnique({
         where: { runId: this.currentStatus.runId },
-        select: { status: true }
+        select: { status: true, skipRequested: true }
       });
 
+      // Check for STOPPING status (existing logic)
       if ((run?.status as string) === 'STOPPING') {
         this.addLog('Received remote stop signal.');
-        this.shouldStop = true; // Use local flag
+        this.shouldStop = true;
+        this.currentStatus.status = 'stopping';
+        if (this.queue) {
+            this.queue.clear();
+        }
+      }
+
+      // Check for skipRequested flag (new logic for dashboard skip button)
+      if (run?.skipRequested) {
+        this.addLog('Skip requested from dashboard. Stopping task...');
+        this.shouldStop = true;
         this.currentStatus.status = 'stopping';
         if (this.queue) {
             this.queue.clear();

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
@@ -25,6 +25,25 @@ interface SerializedScraperRun extends Omit<ScraperRun, 'startTime' | 'endTime' 
     mode?: string;
     [key: string]: unknown;
   } | null;
+}
+
+// 統合されたRunningTask型（Local/Remote両方を表現）
+interface UnifiedRunningTask {
+  id: string;
+  runId: string;
+  source: 'local' | 'remote';
+  targetName: string;
+  mode: string;
+  status: string;
+  startTime: string;
+  progress: {
+    pagesProcessed: number;
+    productsFound: number;
+    productsCreated: number;
+    productsFailed: number;
+  };
+  logs: ScraperLog[];
+  skipRequested?: boolean;
 }
 
 interface DashboardProps {
@@ -92,6 +111,104 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
   });
 
   const [schedulerStatus, setSchedulerStatus] = useState<SchedulerStatusType | null>(null);
+
+  // Remote task logs state (for polling)
+  const [remoteTaskLogs, setRemoteTaskLogs] = useState<Record<string, ScraperLog[]>>({});
+
+  // Unified running tasks - combines local (activeStatus) and remote (runningFromDb)
+  const allRunningTasks = useMemo<UnifiedRunningTask[]>(() => {
+    const tasks: UnifiedRunningTask[] = [];
+
+    // Add local task if running
+    if (activeStatus && activeStatus.status === 'running') {
+      tasks.push({
+        id: activeStatus.runId || 'local',
+        runId: activeStatus.runId || 'local',
+        source: 'local',
+        targetName: activeStatus.currentTarget?.targetName || 'Unknown Target',
+        mode: activeStatus.mode || 'NEW',
+        status: 'RUNNING',
+        startTime: new Date().toISOString(),
+        progress: {
+          pagesProcessed: activeStatus.progress.pagesProcessed,
+          productsFound: activeStatus.progress.productsFound,
+          productsCreated: activeStatus.progress.productsCreated,
+          productsFailed: activeStatus.progress.productsFailed,
+        },
+        logs: activeStatus.logs,
+      });
+    }
+
+    // Add remote tasks (excluding the local one if it exists)
+    const localRunId = activeStatus?.runId;
+    runningFromDb
+      .filter(r => r.runId !== localRunId)
+      .forEach(run => {
+        tasks.push({
+          id: run.runId,
+          runId: run.runId,
+          source: 'remote',
+          targetName: run.metadata?.target || 'Unknown Target',
+          mode: run.metadata?.mode || 'NEW',
+          status: run.status,
+          startTime: run.startTime,
+          progress: {
+            pagesProcessed: run.processedPages || 0,
+            productsFound: run.productsFound,
+            productsCreated: run.productsCreated,
+            productsFailed: 0,
+          },
+          logs: remoteTaskLogs[run.runId] || [],
+        });
+      });
+
+    return tasks;
+  }, [activeStatus, runningFromDb, remoteTaskLogs]);
+
+  // Fetch logs for remote tasks
+  const fetchRemoteLogs = useCallback(async (runId: string) => {
+    try {
+      const res = await fetch(`/api/admin/booth-scraper/logs/${runId}?limit=10`);
+      if (res.ok) {
+        const logs = await res.json();
+        setRemoteTaskLogs(prev => ({ ...prev, [runId]: logs }));
+      }
+    } catch (e) {
+      console.error('Failed to fetch remote logs:', e);
+    }
+  }, []);
+
+  // Poll logs for remote tasks every 2 seconds
+  useEffect(() => {
+    const remoteTasks = allRunningTasks.filter(t => t.source === 'remote');
+    if (remoteTasks.length === 0) return;
+
+    // Initial fetch
+    remoteTasks.forEach(task => fetchRemoteLogs(task.runId));
+
+    const interval = setInterval(() => {
+      remoteTasks.forEach(task => fetchRemoteLogs(task.runId));
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [allRunningTasks, fetchRemoteLogs]);
+
+  // Handle skip request for remote tasks
+  const handleSkipRemote = async (runId: string) => {
+    try {
+      const res = await fetch(`/api/admin/booth-scraper/scrape/${runId}/skip`, {
+        method: 'POST',
+      });
+      if (res.ok) {
+        toast.info('Skip request sent. The task will stop shortly.');
+      } else {
+        const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+        toast.error(`Failed to skip: ${err.error}`);
+      }
+    } catch (e) {
+      toast.error('Failed to send skip request');
+    }
+  };
 
   // Fetch Scheduler Config
   const fetchSchedulerConfig = () => {
@@ -523,78 +640,106 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
           <div className="lg:col-span-2 space-y-4">
               <h2 className="text-xl font-bold flex items-center gap-2">
                   <ClockIcon className="w-5 h-5 text-green-600" />
-                  Running Task
+                  Running Tasks
+                  {allRunningTasks.length > 0 && (
+                    <Badge variant="secondary" className="ml-2">{allRunningTasks.length}</Badge>
+                  )}
               </h2>
-              
-              {activeStatus && activeStatus.status === 'running' ? (
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-blue-200 dark:border-blue-900 shadow-sm relative overflow-hidden">
-                      <div className="absolute top-0 right-0 p-4 opacity-10">
-                          <PlayIcon className="w-32 h-32 text-blue-500" />
-                      </div>
-                      
-                      <div className="flex justify-between items-start mb-6">
-                          <div>
-                              <div className="text-sm text-gray-500 uppercase font-bold tracking-wider mb-1">Current Target</div>
-                              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                                  {activeStatus.currentTarget?.targetName || 'Unknown Target'}
-                              </div>
-                              <div className="flex gap-2 mt-2">
-                                  <Badge variant="outline">{activeStatus.mode}</Badge>
-                                  <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-0">RUNNING</Badge>
-                              </div>
-                          </div>
-                          
-                          <Button 
-                            variant="destructive" 
-                            size="sm" 
-                            onClick={handleSkipCurrent}
-                            className="z-10 shadow-lg"
-                          >
-                             <FastForwardIcon className="w-4 h-4 mr-2" />
-                             Skip This Task
-                          </Button>
-                      </div>
 
-                      <div className="grid grid-cols-4 gap-4 mb-6 relative z-10">
-                          <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded">
-                              <div className="text-xs text-gray-500">Pages</div>
-                              <div className="text-xl font-bold">{activeStatus.progress.pagesProcessed}</div>
-                          </div>
-                          <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded">
-                              <div className="text-xs text-gray-500">Found</div>
-                              <div className="text-xl font-bold">{activeStatus.progress.productsFound}</div>
-                          </div>
-                          <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded">
-                              <div className="text-xs text-gray-500">Created</div>
-                              <div className="text-xl font-bold text-green-600">{activeStatus.progress.productsCreated}</div>
-                          </div>
-                          <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded">
-                              <div className="text-xs text-gray-500">Failed</div>
-                              <div className="text-xl font-bold text-red-500">{activeStatus.progress.productsFailed}</div>
-                          </div>
-                      </div>
+              {allRunningTasks.length > 0 ? (
+                <div className="space-y-4">
+                  {allRunningTasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className={`bg-white dark:bg-gray-800 p-6 rounded-xl border shadow-sm relative overflow-hidden ${
+                        task.source === 'local'
+                          ? 'border-blue-200 dark:border-blue-900'
+                          : 'border-orange-200 dark:border-orange-900'
+                      }`}
+                    >
+                        <div className={`absolute top-0 right-0 p-4 opacity-10`}>
+                            <PlayIcon className={`w-32 h-32 ${task.source === 'local' ? 'text-blue-500' : 'text-orange-500'}`} />
+                        </div>
 
-                      {/* Live Log Snippet */}
-                      <div className="bg-black text-xs text-green-400 p-4 rounded h-32 overflow-y-auto font-mono custom-scrollbar">
-                           {activeStatus.logs.slice(-5).map((log) => {
-                             // Safe timestamp formatting with fallback
-                             let timeStr = '';
-                             try {
-                               const date = new Date(log.timestamp);
-                               timeStr = isNaN(date.getTime()) ? log.timestamp : date.toLocaleTimeString();
-                             } catch {
-                               timeStr = log.timestamp;
-                             }
-                             return (
-                               <div key={log.id} className="truncate">
-                                 <span className="opacity-50 mr-2">[{timeStr}]</span>
-                                 {log.message}
-                               </div>
-                             );
-                           })}
-                           {activeStatus.logs.length === 0 && <div className="opacity-50">Waiting for logs...</div>}
-                      </div>
-                  </div>
+                        <div className="flex justify-between items-start mb-6">
+                            <div>
+                                {/* Source Badge */}
+                                <div className="mb-2">
+                                  <Badge
+                                    className={task.source === 'local'
+                                      ? 'bg-blue-100 text-blue-800 hover:bg-blue-100 border-0'
+                                      : 'bg-orange-100 text-orange-800 hover:bg-orange-100 border-0'
+                                    }
+                                  >
+                                    {task.source === 'local' ? 'Local' : 'Remote'}
+                                  </Badge>
+                                </div>
+                                <div className="text-sm text-gray-500 uppercase font-bold tracking-wider mb-1">Current Target</div>
+                                <div className={`text-3xl font-bold ${task.source === 'local' ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400'}`}>
+                                    {task.targetName}
+                                </div>
+                                <div className="flex gap-2 mt-2">
+                                    <Badge variant="outline">{task.mode}</Badge>
+                                    <Badge className={task.source === 'local'
+                                      ? 'bg-blue-100 text-blue-800 hover:bg-blue-100 border-0'
+                                      : 'bg-orange-100 text-orange-800 hover:bg-orange-100 border-0'
+                                    }>RUNNING</Badge>
+                                </div>
+                            </div>
+
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => task.source === 'local' ? handleSkipCurrent() : handleSkipRemote(task.runId)}
+                              className="z-10 shadow-lg"
+                            >
+                               <FastForwardIcon className="w-4 h-4 mr-2" />
+                               Skip This Task
+                            </Button>
+                        </div>
+
+                        <div className="grid grid-cols-4 gap-4 mb-6 relative z-10">
+                            <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded">
+                                <div className="text-xs text-gray-500">Pages</div>
+                                <div className="text-xl font-bold">{task.progress.pagesProcessed}</div>
+                            </div>
+                            <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded">
+                                <div className="text-xs text-gray-500">Found</div>
+                                <div className="text-xl font-bold">{task.progress.productsFound}</div>
+                            </div>
+                            <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded">
+                                <div className="text-xs text-gray-500">Created</div>
+                                <div className="text-xl font-bold text-green-600">{task.progress.productsCreated}</div>
+                            </div>
+                            <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded">
+                                <div className="text-xs text-gray-500">Failed</div>
+                                <div className="text-xl font-bold text-red-500">{task.progress.productsFailed}</div>
+                            </div>
+                        </div>
+
+                        {/* Live Log Snippet */}
+                        <div className="bg-black text-xs text-green-400 p-4 rounded h-32 overflow-y-auto font-mono custom-scrollbar">
+                             {task.logs.slice(-5).map((log) => {
+                               // Safe timestamp formatting with fallback
+                               let timeStr = '';
+                               try {
+                                 const date = new Date(log.timestamp);
+                                 timeStr = isNaN(date.getTime()) ? log.timestamp : date.toLocaleTimeString();
+                               } catch {
+                                 timeStr = log.timestamp;
+                               }
+                               return (
+                                 <div key={log.id} className="truncate">
+                                   <span className="opacity-50 mr-2">[{timeStr}]</span>
+                                   {log.message}
+                                 </div>
+                               );
+                             })}
+                             {task.logs.length === 0 && <div className="opacity-50">{task.source === 'remote' ? 'Loading logs...' : 'Waiting for logs...'}</div>}
+                        </div>
+                    </div>
+                  ))}
+                </div>
               ) : (
                   <div className="bg-gray-100 dark:bg-gray-800/50 p-8 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 text-center flex flex-col items-center justify-center h-64">
                       <ClockIcon className="w-12 h-12 text-gray-300 mb-3" />
@@ -859,60 +1004,6 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
-      {/* Running Workers from DB (visible if other processes are running) */}
-      {(() => {
-        // Filter out the currently displayed local run to avoid duplication
-        const remoteWorkers = runningFromDb.filter(r => r.runId !== activeStatus?.runId);
-        
-        if (remoteWorkers.length === 0) return null;
-
-        return (
-        <div className="p-6 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-200 dark:border-yellow-700 space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-bold">🔄 実行中のワーカー（別プロセス）</h3>
-            <span className="text-sm text-yellow-700 dark:text-yellow-300">
-              DBから検出: {remoteWorkers.length}件
-            </span>
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            このプロセスでは詳細なログを見れませんが、ワーカーが実行中です。
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b dark:border-gray-700">
-                  <th className="p-2">Run ID</th>
-                  <th className="p-2">開始時間</th>
-                  <th className="p-2">進捗</th>
-                  <th className="p-2">操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {remoteWorkers.map(run => (
-                  <tr key={run.runId} className="border-b dark:border-gray-700">
-                    <td className="p-2 font-mono text-xs">{run.runId}</td>
-                    <td className="p-2">{new Date(run.startTime).toLocaleString()}</td>
-                    <td className="p-2">
-                      ページ: {run.processedPages || 0}, 作成: {run.productsCreated}
-                    </td>
-                    <td className="p-2 flex gap-2">
-                       <button
-                         type="button"
-                         onClick={() => fetchLogs(run.runId)}
-                         className="text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 px-2 py-1 rounded"
-                       >
-                         Logs
-                       </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        );
-      })()}
 
       {/* Recent History */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
