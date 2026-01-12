@@ -2,11 +2,14 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { Role } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { orchestrator } from "@/lib/booth-scraper/orchestrator";
 
 /**
  * POST /api/admin/booth-scraper/scrape/[runId]/skip
  * リモートプロセスで実行中のスクレイパーにスキップリクエストを送信
  * DBのskipRequestedフラグをtrueに設定し、cron側で検出して停止する
+ *
+ * ローカルプロセスで実行中の場合は、直接orchestratorを操作して即時停止させる
  */
 export async function POST(
   _request: Request,
@@ -40,7 +43,14 @@ export async function POST(
       );
     }
 
-    // Set skipRequested flag
+    // OPTIMIZATION: If the task is running locally in this process, skip it immediately
+    const currentStatus = orchestrator.getStatus();
+    if (currentStatus && currentStatus.runId === runId) {
+        console.log(`[API] Skipping local task ${runId} immediately`);
+        await orchestrator.skipCurrent();
+    }
+
+    // Set skipRequested flag (works for both remote and ensures local state is persisted)
     await prisma.scraperRun.update({
       where: { runId },
       data: { skipRequested: true },
@@ -56,7 +66,7 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      message: 'Skip request sent. The task will stop on next iteration.',
+      message: 'Skip request sent. The task will stop shortly.',
     });
   } catch (error) {
     console.error('Error sending skip request:', error);

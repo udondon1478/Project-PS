@@ -179,8 +179,8 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
     return () => clearInterval(interval);
   }, [allRunningTasks, fetchRemoteLogs]);
 
-  // Handle skip request for remote tasks
-  const handleSkipRemote = async (runId: string) => {
+  // Handle skip request (works for both local and remote)
+  const handleSkip = async (runId: string) => {
     if (skippingRunIds.has(runId)) return;
 
     setSkippingRunIds(prev => {
@@ -190,9 +190,16 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
     });
 
     try {
-      const res = await fetch(`/api/admin/booth-scraper/scrape/${runId}/skip`, {
-        method: 'POST',
-      });
+      let res;
+      if (runId === 'local') {
+         // Fallback for legacy/dev local tasks without DB ID
+         res = await fetch('/api/admin/booth-scraper/scrape?skipCurrent=true', { method: 'DELETE' });
+      } else {
+         res = await fetch(`/api/admin/booth-scraper/scrape/${runId}/skip`, {
+           method: 'POST',
+         });
+      }
+
       if (res.ok) {
         toast.info('Skip request sent. The task will stop shortly.');
       } else {
@@ -450,20 +457,6 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
       }
   };
 
-  const handleSkipCurrent = async () => {
-    try {
-        const res = await fetch('/api/admin/booth-scraper/scrape?skipCurrent=true', { method: 'DELETE' });
-        if (res.ok) {
-          toast.info('Skipping current task...');
-        } else {
-          const err = await res.json().catch(() => ({ error: res.statusText }));
-          toast.error(`Failed to skip: ${err.error || 'Server error'}`);
-        }
-    } catch(_) {
-        toast.error('Failed to skip');
-    }
-  };
-
   const handleRemoveFromQueue = async (targetId: string) => {
       try {
           const res = await fetch(`/api/admin/booth-scraper/scrape?targetId=${targetId}`, { method: 'DELETE' });
@@ -653,7 +646,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                       key={task.id}
                       task={task}
                       isSkipping={skippingRunIds.has(task.runId) || !!task.skipRequested}
-                      onSkip={(t) => t.source === 'local' ? handleSkipCurrent() : handleSkipRemote(t.runId)}
+                      onSkip={(t) => handleSkip(t.runId)}
                     />
                   ))}
                 </div>

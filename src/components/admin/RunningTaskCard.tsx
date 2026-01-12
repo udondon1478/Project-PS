@@ -70,16 +70,16 @@ export function RunningTaskCard({ task, isSkipping, onSkip }: RunningTaskCardPro
             <Button
               variant="destructive"
               size="sm"
-              disabled={task.source === 'local' ? false : isSkipping}
+              disabled={isSkipping}
               onClick={() => onSkip(task)}
               className="z-10 shadow-lg"
             >
-               {task.source === 'remote' && isSkipping ? (
+               {isSkipping ? (
                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                ) : (
                  <FastForwardIcon className="w-4 h-4 mr-2" />
                )}
-               {task.source === 'remote' && isSkipping ? 'Skipping...' : 'Skip This Task'}
+               {isSkipping ? 'Skipping...' : 'Skip This Task'}
             </Button>
         </div>
 
