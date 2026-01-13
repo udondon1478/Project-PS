@@ -6,7 +6,7 @@ export interface ScraperRun {
   runId: string;
   startTime: Date;
   endTime: Date | null;
-  status: ScraperRunStatus | string; // Allow string for flexibility
+  status: ScraperRunStatus; // 厳密な型チェックを有効にする
   productsFound: number;
   productsCreated: number;
   errors: string[];
