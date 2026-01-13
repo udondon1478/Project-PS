@@ -1,19 +1,10 @@
 'use client';
 
 import { useState, useCallback } from "react";
-import { Tag } from "@prisma/client";
 import TagList from "@/components/admin/TagList";
 import TagEditModal from "@/components/admin/TagEditModal";
 import AdminLayout from "@/components/admin/AdminLayout";
-
-// APIから取得するタグの型定義（関連するカテゴリ情報を含む）
-interface TagWithCategory extends Tag {
-  tagCategory?: {
-    id: string;
-    name: string;
-    color: string;
-  } | null;
-}
+import { TagWithCategory } from "@/types/tag";
 
 const AdminPageContent = () => {
   const [editingTag, setEditingTag] = useState<TagWithCategory | null>(null);

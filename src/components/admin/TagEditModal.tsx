@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect, ChangeEvent, useRef } from 'react';
-import { Tag } from '@prisma/client';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,15 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { tagCategories } from '@/data/guidelines/tagCategories';
-
-// APIから取得するタグの型定義（関連するカテゴリ情報を含む）
-interface TagWithCategory extends Tag {
-  tagCategory?: {
-    id: string;
-    name: string;
-    color: string;
-  } | null;
-}
+import { TagWithCategory } from "@/types/tag";
 
 // タグ候補APIから返されるタグの簡易型
 interface TagSuggestion {

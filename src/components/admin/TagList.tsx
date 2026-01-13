@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Tag } from '@prisma/client';
 import {
   Table,
   TableBody,
@@ -16,18 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PencilIcon } from '@heroicons/react/24/solid';
 import { tagCategories } from '@/data/guidelines/tagCategories';
-
-// Tagの型を明示的に定義
-interface TagWithCategory extends Tag {
-  tagCategory?: {
-    id: string;
-    name: string;
-    color: string;
-  };
-  _count?: {
-    productTags: number;
-  };
-}
+import { TagWithCategory } from "@/types/tag";
 
 interface TagListProps {
   onEditClick: (tag: TagWithCategory) => void;
