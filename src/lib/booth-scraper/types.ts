@@ -11,7 +11,7 @@ export interface ScraperRun {
   productsCreated: number;
   errors: string[];
   lastProcessedPage: number | null;
-  metadata: any; // Using any for Json compatibility
+  metadata: Record<string, unknown> | null; // Improved type safety for JSON data
   processedPages: number;
   failedUrls: string[];
   skipRequested: boolean;
