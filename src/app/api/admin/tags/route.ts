@@ -12,16 +12,23 @@ export async function GET(request: Request) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const type = searchParams.get('type');
+    const type = searchParams.get('type'); // 後方互換性のため維持
+    const categoryId = searchParams.get('categoryId'); // 新しいカテゴリIDフィルター
     const limit = parseInt(searchParams.get('limit') || '20', 10); // デフォルト20
     const offset = parseInt(searchParams.get('offset') || '0', 10); // デフォルト0
 
-    // typeパラメータは必須ではないが、指定があればフィルタリング
-    const where: Prisma.TagWhereInput = type ? {
-      tagCategory: {
+    // フィルタリング条件を構築
+    const where: Prisma.TagWhereInput = {};
+
+    if (categoryId) {
+      // categoryIdで直接フィルタリング
+      where.tagCategoryId = categoryId;
+    } else if (type) {
+      // 後方互換性: typeパラメータでカテゴリ名によるフィルタリング
+      where.tagCategory = {
         name: type,
-      },
-    } : {};
+      };
+    }
 
     // タグのリストを取得 (ページネーション適用)
     const tags = await prisma.tag.findMany({
@@ -29,25 +36,31 @@ export async function GET(request: Request) {
       select: {
         id: true,
         name: true,
-        displayName: true, // 表示名
-        language: true, // 管理画面ではlanguageも表示
-        isAlias: true, // 管理画面ではisAliasも表示
-        canonicalId: true, // 管理画面ではcanonicalIdも表示
-        description: true, // 管理画面ではdescriptionも表示
-        count: true, // 管理画面ではcountも表示
-        tagCategory: { // TagCategory モデルを関連付けて取得
+        displayName: true,
+        language: true,
+        isAlias: true,
+        canonicalId: true,
+        description: true,
+        count: true,
+        tagCategoryId: true,
+        tagCategory: {
           select: {
-            id: true, // カテゴリIDも必要であれば取得
-            name: true, // カテゴリ名
-            color: true, // カテゴリの色
+            id: true,
+            name: true,
+            color: true,
+          },
+        },
+        _count: {
+          select: {
+            productTags: true, // 使用中の商品数をカウント
           },
         },
       },
       orderBy: {
-        name: 'asc', // 名前順でソート
+        name: 'asc',
       },
-      take: limit, // 取得するレコード数
-      skip: offset, // スキップするレコード数
+      take: limit,
+      skip: offset,
     });
 
     // 条件に一致するタグの総数を取得
@@ -210,7 +223,3 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ message: 'タグの削除に失敗しました。', error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
 }
-
-// TODO: DELETE メソッドを追加
-
-// TODO: PUT, DELETE メソッドを追加

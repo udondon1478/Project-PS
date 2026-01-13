@@ -32,5 +32,6 @@ jobs:
           npx prisma generate
           npm run build
           npx prisma migrate deploy
+          npx prisma db seed
           pm2 restart polyseek-app
           EOF
