@@ -15,10 +15,22 @@ export default async function BoothScraperAdminPage() {
   });
 
   // Explicitly serialize Date fields and metadata for passing to Client Component
+  // Manually map fields to avoid any serialization issues with spread operator or hidden properties
   const recentRuns = runs.map(r => ({
-    ...r,
+    id: r.id,
+    runId: r.runId,
+    status: r.status,
+    productsFound: r.productsFound,
+    productsCreated: r.productsCreated,
+    errors: r.errors,
+    lastProcessedPage: r.lastProcessedPage,
+    processedPages: r.processedPages,
+    failedUrls: r.failedUrls,
+    skipRequested: r.skipRequested,
     startTime: r.startTime.toISOString(),
-    endTime: r.endTime?.toISOString(),
+    endTime: r.endTime ? r.endTime.toISOString() : null,
+    createdAt: r.createdAt.toISOString(),
+    updatedAt: r.updatedAt.toISOString(),
     metadata: r.metadata as { target?: string; mode?: string; [key: string]: unknown } | null,
   }));
 

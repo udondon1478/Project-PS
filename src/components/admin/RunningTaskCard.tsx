@@ -1,7 +1,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ScraperLog } from '@/lib/booth-scraper/orchestrator';
+import { ScraperLog } from '@/lib/booth-scraper/types';
 import { FastForwardIcon, Loader2, PlayIcon } from 'lucide-react';
 
 export interface UnifiedRunningTask {

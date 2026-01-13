@@ -16,11 +16,13 @@ import { ClockIcon, TrashIcon, ListIcon, AlertTriangleIcon, CheckCircleIcon, XCi
 import { Badge } from '@/components/ui/badge';
 import { RunningTaskCard, type UnifiedRunningTask } from './RunningTaskCard';
 
-import { type ScraperRun, type ScraperLog, type ScraperStatus } from '@/lib/booth-scraper/orchestrator';
+import { type ScraperRun, type ScraperLog, type ScraperStatus } from '@/lib/booth-scraper/types';
 
-interface SerializedScraperRun extends Omit<ScraperRun, 'startTime' | 'endTime' | 'metadata'> {
+interface SerializedScraperRun extends Omit<ScraperRun, 'startTime' | 'endTime' | 'createdAt' | 'updatedAt' | 'metadata'> {
   startTime: string;
   endTime?: string | null;
+  createdAt: string;
+  updatedAt: string;
   metadata: {
     target?: string;
     mode?: string;
