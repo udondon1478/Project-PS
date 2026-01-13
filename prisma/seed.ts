@@ -1,5 +1,6 @@
 import { PrismaClient, Role } from '@prisma/client';
 import { SYSTEM_USER_EMAIL } from '../src/lib/constants';
+import { seedTagCategories } from './seed-categories';
 
 const prisma = new PrismaClient();
 
@@ -52,7 +53,15 @@ async function main() {
   });
   console.log(`Created/Updated system user with id: ${systemUser.id}`);
 
-  // タグカテゴリの初期データを作成
+  // タグカテゴリの同期（tagCategories.tsから読み込み）
+  await seedTagCategories(prisma);
+
+  // 注意: 以下の古いカテゴリ定義は非推奨です
+  // 新しいカテゴリはsrc/data/guidelines/tagCategories.tsで管理されています
+  // 既存のタグデータとの互換性のため、古いカテゴリも維持しますが、
+  // 新規タグは新しい8カテゴリのいずれかに割り当ててください
+
+  // 古いカテゴリの取得（既存タグとの互換性のため）
   const ageRatingCategory = await prisma.tagCategory.upsert({
     where: { name: 'age_rating' },
     update: {},

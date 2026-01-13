@@ -1,41 +1,61 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Tag } from "@prisma/client";
 import TagList from "@/components/admin/TagList";
-import TagForm from "@/components/admin/TagForm";
+import TagEditModal from "@/components/admin/TagEditModal";
 import AdminLayout from "@/components/admin/AdminLayout";
 
+// APIから取得するタグの型定義（関連するカテゴリ情報を含む）
+interface TagWithCategory extends Tag {
+  tagCategory?: {
+    id: string;
+    name: string;
+    color: string;
+  } | null;
+}
+
 const AdminPageContent = () => {
-  const [editingTag, setEditingTag] = useState<Tag | undefined>(undefined); // 編集中のタグを保持するstate
+  const [editingTag, setEditingTag] = useState<TagWithCategory | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0); // TagListをリフレッシュするためのキー
 
   // TagListから編集ボタンがクリックされたときに呼ばれるハンドラ
-  const handleEditClick = (tag: Tag) => {
+  const handleEditClick = useCallback((tag: TagWithCategory) => {
     setEditingTag(tag);
-  };
+    setIsEditModalOpen(true);
+  }, []);
 
-  // TagFormで作成または更新が成功したときに呼ばれるハンドラ
-  const handleFormSuccess = () => {
-    setEditingTag(undefined); // フォームを閉じる（新規作成モードに戻る）
-    // TODO: TagListをリフレッシュするロジックを追加 (SWRなどを使うと容易)
-    // 現時点ではページ全体のリロードや、TagListコンポーネントにリフレッシュ関数を渡すなどの方法が必要
-    // シンプルにするため、ここでは編集モードを解除するのみ
-  };
+  // 編集モーダルでの更新が成功したときに呼ばれるハンドラ
+  const handleEditSuccess = useCallback(() => {
+    setRefreshKey(prev => prev + 1); // TagListをリフレッシュ
+  }, []);
+
+  // モーダルの開閉状態が変わったときに呼ばれるハンドラ
+  const handleModalOpenChange = useCallback((open: boolean) => {
+    setIsEditModalOpen(open);
+    if (!open) {
+      setEditingTag(null);
+    }
+  }, []);
 
   return (
     <AdminLayout>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* タグ一覧セクション */}
-        <div>
-          <TagList onEditClick={handleEditClick} /> {/* 編集ボタンクリックハンドラを渡す */}
-        </div>
-
-        {/* タグ追加・編集フォームセクション */}
-        <div>
-          <h2 className="text-2xl font-bold mb-4">{editingTag ? 'タグ編集' : '新しいタグを作成'}</h2>
-          <TagForm initialData={editingTag} onSuccess={handleFormSuccess} /> {/* 編集中のタグと成功時のハンドラを渡す */}
-        </div>
+      {/* タグ一覧セクション - フル幅 */}
+      <div className="w-full">
+        <TagList
+          key={refreshKey}
+          onEditClick={handleEditClick}
+        />
       </div>
+
+      {/* タグ編集モーダル */}
+      <TagEditModal
+        tag={editingTag}
+        open={isEditModalOpen}
+        onOpenChange={handleModalOpenChange}
+        onSuccess={handleEditSuccess}
+      />
     </AdminLayout>
   );
 };
