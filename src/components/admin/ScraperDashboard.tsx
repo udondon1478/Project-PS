@@ -108,15 +108,15 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
   const allRunningTasks = useMemo<UnifiedRunningTask[]>(() => {
     const tasks: UnifiedRunningTask[] = [];
 
-    // Add local task if running
-    if (activeStatus && activeStatus.status === 'running') {
+    // Add local task if running or stopping
+    if (activeStatus && (activeStatus.status === 'running' || activeStatus.status === 'stopping')) {
       tasks.push({
         id: activeStatus.runId || 'local',
         runId: activeStatus.runId || 'local',
         source: 'local',
         targetName: activeStatus.currentTarget?.targetName || 'Unknown Target',
         mode: activeStatus.mode || 'NEW',
-        status: 'RUNNING',
+        status: activeStatus.status.toUpperCase(),
         startTime: activeStatus.timings?.startTime ? new Date(activeStatus.timings.startTime).toISOString() : new Date().toISOString(),
         progress: {
           pagesProcessed: activeStatus.progress.pagesProcessed,
@@ -477,10 +477,10 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
 
   const statusColor = (s: string) => {
     switch (s) {
-      case 'running': return 'text-blue-500 font-bold';
-      case 'stopping': return 'text-yellow-500 font-bold';
-      case 'completed': return 'text-green-500';
-      case 'failed': return 'text-red-500';
+      case 'RUNNING': return 'text-blue-500 font-bold';
+      case 'STOPPING': return 'text-yellow-500 font-bold';
+      case 'COMPLETED': return 'text-green-500';
+      case 'FAILED': return 'text-red-500';
       default: return 'text-gray-500';
     }
   };
@@ -938,7 +938,7 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
             <tbody className="divide-y dark:divide-gray-700">
               {recentRuns.map((run) => (
                 <tr key={run.id} className="hover:bg-gray-50 dark:hover:bg-gray-900">
-                  <td className={`p-3 font-bold ${statusColor(run.status.toLowerCase())}`}>
+                  <td className={`p-3 font-bold ${statusColor(run.status)}`}>
                     {run.status}
                   </td>
                   <td className="p-3">

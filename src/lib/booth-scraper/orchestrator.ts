@@ -40,7 +40,7 @@ const STATUS_MAP = {
   running: 'RUNNING',
   completed: 'COMPLETED',
   failed: 'FAILED',
-  stopping: 'FAILED',
+  stopping: 'STOPPING',
 } as const;
 
 /**
