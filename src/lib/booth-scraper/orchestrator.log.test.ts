@@ -24,11 +24,12 @@ vi.mock('./http-client', () => ({
 
 // Mock ListingCrawler to force an error for log generation
 vi.mock('./listing-crawler', () => {
-    return {
-        ListingCrawler: vi.fn().mockImplementation(() => ({
-            run: vi.fn().mockRejectedValue(new Error('Forced crawler error')),
-        })),
-    };
+  return {
+    ListingCrawler: class {
+      constructor() {}
+      run = vi.fn().mockRejectedValue(new Error('Forced crawler error'));
+    },
+  };
 });
 
 describe('Orchestrator Log Structure', () => {

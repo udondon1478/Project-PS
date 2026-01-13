@@ -1,7 +1,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ScraperLog } from '@/lib/booth-scraper/orchestrator';
+import { ScraperLog } from '@/lib/booth-scraper/types';
 import { FastForwardIcon, Loader2, PlayIcon } from 'lucide-react';
 
 export interface UnifiedRunningTask {
@@ -63,7 +63,7 @@ export function RunningTaskCard({ task, isSkipping, onSkip }: RunningTaskCardPro
                     <Badge className={task.source === 'local'
                       ? 'bg-blue-100 text-blue-800 hover:bg-blue-100 border-0'
                       : 'bg-orange-100 text-orange-800 hover:bg-orange-100 border-0'
-                    }>RUNNING</Badge>
+                    }>{task.status}</Badge>
                 </div>
             </div>
 

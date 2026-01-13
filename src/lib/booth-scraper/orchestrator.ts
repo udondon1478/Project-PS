@@ -1,6 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { Prisma, type ScraperRun } from '@prisma/client';
-export type { ScraperRun };
+import { Prisma } from '@prisma/client';
 import PQueue from 'p-queue';
 import { ListingCrawler } from './listing-crawler';
 import { checkExistingProducts } from './product-checker';
@@ -9,6 +8,11 @@ import { parseProductPage, parseProductJson, type ProductPageResult } from './pr
 import { createProductFromScraper, ScrapedProductData } from './product-creator';
 import { waitJitter } from './utils';
 import crypto from 'crypto';
+import type { ScraperRun, ScraperMode, ScraperOptions, ScraperLog, ScraperStatus, QueueItem } from './types';
+
+// Re-export types for backward compatibility (if needed) but prefer importing from types.ts directly
+export type { ScraperRun, ScraperMode, ScraperOptions, ScraperLog, ScraperStatus, QueueItem };
+
 
 
 /**
@@ -32,79 +36,11 @@ const TASK_WAIT_MS = Number(process.env.TASK_WAIT_MS) || 2000;
  */
 const MAX_QUEUE_SIZE = Number(process.env.MAX_QUEUE_SIZE) || 100;
 
-export type ScraperMode = 'NEW' | 'BACKFILL';
-
-export interface ScraperOptions {
-  pageLimit?: number;
-  pagesPerRun?: number; // BACKFILL: Number of pages to go back in one run
-  maxProducts?: number; // BACKFILL: Max products to process
-  requestInterval?: number; // Base interval between requests in ms
-  rateLimitOverride?: number; // Deprecated: alias for requestInterval
-  /**
-   * 既存の商品チェック（checkExistingProducts）が失敗した場合の動作を指定します。
-   * 
-   * - 'continue': 空のセットで処理を続行し、すべての商品を新規として扱います。
-   *               重複登録の試行が発生する可能性がありますが、DBのユニーク制約により
-   *               実際の重複は防止されます。（デフォルト）
-   * - 'stop': バッチ処理を停止し、エラーをログに記録します。
-   *           データの整合性を優先する場合に使用してください。
-   */
-  onExistenceCheckFailure?: 'continue' | 'stop';
-  searchParams?: {
-    query?: string; // Keyword search (maps to q= parameter)
-    tags?: string[]; // Tag filter (maps to tags[]= parameter)
-    category?: string;
-    adult?: boolean;
-    useTargetTags?: boolean;
-  };
-}
-
-export interface ScraperLog {
-  id: string;
-  timestamp: string;
-  message: string;
-}
-
-export interface ScraperStatus {
-  runId: string;
-  mode: ScraperMode;
-  status: 'running' | 'completed' | 'failed' | 'stopping';
-  progress: {
-    pagesProcessed: number;
-    productsFound: number;
-    productsExisting: number;
-    productsCreated: number;
-    productsSkipped: number;
-    productsFailed: number;
-    lastProcessedPage: number;
-  };
-  timings: {
-    startTime: number;
-    endTime?: number;
-    averageDelay: number;
-  };
-  logs: ScraperLog[];
-  // Added for queue visibility
-  queue: QueueItem[];
-  currentTarget: QueueItem | null;
-}
-
-export interface QueueItem {
-  id: string; // Internal Queue ID
-  mode: ScraperMode;
-  userId: string;
-  options: ScraperOptions;
-  // Metadata for display
-  targetName: string; // e.g. "VRChat" or "Global Scan"
-  addedAt: Date;
-}
-
-
 const STATUS_MAP = {
   running: 'RUNNING',
   completed: 'COMPLETED',
   failed: 'FAILED',
-  stopping: 'FAILED',
+  stopping: 'STOPPING',
 } as const;
 
 /**
