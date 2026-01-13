@@ -48,6 +48,8 @@ const TagEditModal = ({ tag, open, onOpenChange, onSuccess }: TagEditModalProps)
   const [canonicalTagSuggestions, setCanonicalTagSuggestions] = useState<TagSuggestion[]>([]);
   const [showCanonicalTagSuggestions, setShowCanonicalTagSuggestions] = useState(false);
   const canonicalInputRef = useRef<HTMLInputElement>(null);
+  const canonicalDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const canonicalAbortRef = useRef<AbortController | null>(null);
 
   // 編集モードの場合、tagが変更されたらフォームデータを更新
   useEffect(() => {
@@ -64,6 +66,18 @@ const TagEditModal = ({ tag, open, onOpenChange, onSuccess }: TagEditModalProps)
     }
   }, [tag]);
 
+  // クリーンアップ: デバウンスタイマーと進行中のリクエストをキャンセル
+  useEffect(() => {
+    return () => {
+      if (canonicalDebounceRef.current) {
+        clearTimeout(canonicalDebounceRef.current);
+      }
+      if (canonicalAbortRef.current) {
+        canonicalAbortRef.current.abort();
+      }
+    };
+  }, []);
+
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     setFormData({
@@ -72,25 +86,51 @@ const TagEditModal = ({ tag, open, onOpenChange, onSuccess }: TagEditModalProps)
     });
   };
 
-  const handleCanonicalInputChange = async (e: ChangeEvent<HTMLInputElement>) => {
+  const handleCanonicalInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setFormData({ ...formData, canonicalId: query });
     setShowCanonicalTagSuggestions(true);
 
+    // 既存のデバウンスタイマーをクリア
+    if (canonicalDebounceRef.current) {
+      clearTimeout(canonicalDebounceRef.current);
+    }
+
+    // 進行中のリクエストをキャンセル
+    if (canonicalAbortRef.current) {
+      canonicalAbortRef.current.abort();
+    }
+
     if (query.length > 0) {
-      try {
-        const response = await fetch(`/api/tags/search?query=${query}`);
-        const data = await response.json();
-        if (response.ok) {
-          setCanonicalTagSuggestions(data.map((tag: TagSuggestion) => ({ id: tag.id, name: tag.name })));
-        } else {
-          console.error("タグ候補の取得に失敗:", data.message);
+      // 300msのデバウンス後にフェッチを実行
+      canonicalDebounceRef.current = setTimeout(async () => {
+        const abortController = new AbortController();
+        canonicalAbortRef.current = abortController;
+
+        try {
+          const response = await fetch(`/api/tags/search?query=${query}`, {
+            signal: abortController.signal,
+          });
+          const data = await response.json();
+
+          // リクエストがアボートされていない場合のみ結果を適用
+          if (!abortController.signal.aborted) {
+            if (response.ok) {
+              setCanonicalTagSuggestions(data.map((tag: TagSuggestion) => ({ id: tag.id, name: tag.name })));
+            } else {
+              console.error("タグ候補の取得に失敗:", data.message);
+              setCanonicalTagSuggestions([]);
+            }
+          }
+        } catch (error) {
+          // AbortErrorは無視（意図的なキャンセル）
+          if (error instanceof Error && error.name === 'AbortError') {
+            return;
+          }
+          console.error("タグ候補の取得中にエラーが発生:", error);
           setCanonicalTagSuggestions([]);
         }
-      } catch (error) {
-        console.error("タグ候補の取得中にエラーが発生:", error);
-        setCanonicalTagSuggestions([]);
-      }
+      }, 300);
     } else {
       setCanonicalTagSuggestions([]);
     }
