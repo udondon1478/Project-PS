@@ -334,7 +334,7 @@ const ProductDetailPage = () => {
           </main>
 
           <aside className="hidden lg:block lg:col-span-4">
-            <div className="lg:sticky lg:top-header-desktop space-y-6">
+            <div className="lg:sticky lg:top-header-desktop lg:max-h-[calc(100vh-var(--header-height-desktop))] lg:overflow-y-auto space-y-6">
               <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-lg border dark:border-slate-700">
                 <h2 className="text-xl font-semibold mb-4">アクション</h2>
                 <div className="space-y-3">
