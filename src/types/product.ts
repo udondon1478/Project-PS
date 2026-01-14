@@ -1,10 +1,18 @@
+/**
+ * タグ情報（カテゴリ色を含む）
+ */
+export interface TagInfo {
+  name: string;
+  categoryColor: string | null; // HEXカラーコード (例: "#E74C3C") or null
+}
+
 export interface Product {
   id: string;
   title:string;
   lowPrice: number;
   highPrice: number;
   mainImageUrl: string | null;
-  tags: string[];
+  tags: TagInfo[];
   isLiked?: boolean;
   isOwned?: boolean;
   ageRatingId?: string | null;
@@ -54,6 +62,7 @@ export interface ProductTag {
     tagCategory: {
       id: string;
       name: string;
+      color?: string; // カテゴリ色
     };
   };
   isOfficial: boolean; // BOOTH由来の公式タグかどうか

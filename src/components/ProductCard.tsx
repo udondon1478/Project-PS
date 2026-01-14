@@ -5,6 +5,7 @@ import Image from 'next/image';
 import PriceDisplay from './PriceDisplay';
 import { Product } from "@/types/product";
 import { Heart, Archive } from 'lucide-react';
+import { CategoryTag } from '@/components/ui/category-tag';
 
 interface ProductCardProps {
   product: Product;
@@ -169,9 +170,12 @@ const ProductCard = ({ product, showLikeButton = false, showOwnButton = false, m
         )}
         <div className="flex flex-wrap gap-1 mb-2">
           {displayedTags.map((tag, index) => (
-            <span key={index} className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-              {tag}
-            </span>
+            <CategoryTag
+              key={index}
+              name={tag.name}
+              categoryColor={tag.categoryColor}
+              size="sm"
+            />
           ))}
         </div>
         <PriceDisplay product={product} />

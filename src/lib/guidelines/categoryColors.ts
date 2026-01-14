@@ -96,3 +96,44 @@ export function getCategoryCardStyle(categoryName: string): {
     borderColor: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`,
   };
 }
+
+/** デフォルトのグレー色（カテゴリ未設定時） */
+const DEFAULT_GRAY = '#6B7280';
+
+/**
+ * タグ表示用のスタイルを生成（薄い背景色 + テキスト色）
+ * ダークモード対応
+ * @param categoryColor - HEXカラーコード or null（未設定時）
+ * @param isDark - ダークモードかどうか
+ */
+export function getTagStyle(
+  categoryColor: string | null,
+  isDark: boolean = false
+): {
+  backgroundColor: string;
+  color: string;
+} {
+  const color = categoryColor || DEFAULT_GRAY;
+  const rgb = hexToRgb(color);
+
+  if (!rgb) {
+    // RGB変換に失敗した場合はデフォルトスタイル
+    return isDark
+      ? { backgroundColor: 'rgba(107, 114, 128, 0.3)', color: '#D1D5DB' }
+      : { backgroundColor: 'rgba(107, 114, 128, 0.15)', color: '#374151' };
+  }
+
+  if (isDark) {
+    // ダークモード: 背景をやや明るめに、テキストは明るい色
+    return {
+      backgroundColor: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25)`,
+      color: `rgb(${Math.min(255, rgb.r + 80)}, ${Math.min(255, rgb.g + 80)}, ${Math.min(255, rgb.b + 80)})`,
+    };
+  }
+
+  // ライトモード: 薄い背景 + 濃いテキスト
+  return {
+    backgroundColor: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.15)`,
+    color: `rgb(${Math.max(0, rgb.r - 40)}, ${Math.max(0, rgb.g - 40)}, ${Math.max(0, rgb.b - 40)})`,
+  };
+}

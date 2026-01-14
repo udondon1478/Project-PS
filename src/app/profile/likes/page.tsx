@@ -23,9 +23,14 @@ async function getLikedProducts(userId: string): Promise<Product[]> {
           productTags: {
             include: {
               tag: {
-                select: { 
+                select: {
                   name: true,
                   displayName: true,
+                  tagCategory: {
+                    select: {
+                      color: true,
+                    },
+                  },
                 },
               },
             },
@@ -51,7 +56,10 @@ async function getLikedProducts(userId: string): Promise<Product[]> {
       lowPrice: p.lowPrice,
       highPrice: p.highPrice,
       mainImageUrl: p.images.length > 0 ? p.images[0].imageUrl : null,
-      tags: p.productTags.map(pt => pt.tag.displayName || pt.tag.name),
+      tags: p.productTags.map(pt => ({
+        name: pt.tag.displayName || pt.tag.name,
+        categoryColor: pt.tag.tagCategory?.color || null,
+      })),
       isLiked: true, // It's the liked list, so this is always true
       isOwned: p.productOwners.length > 0,
       variations: p.variations.map(v => ({
