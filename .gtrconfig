@@ -1,17 +1,14 @@
-# .gtrconfig - commit this file to share settings with your team
-
 [copy]
-    include = **/.env
-    include = *.md
-
-[copy]
-    includeDirs = node_modules
-    includeDirs = .claude
-    excludeDirs = node_modules/.cache
+include = .env
+include = .env.test
+include = .env.sentry-build-plugin
+includeDirs = node_modules
+includeDirs = .claude
+excludeDirs = node_modules/.cache
 
 [hooks]
-    postCreate = npm install
+postCreate = npm install
 
 [defaults]
-    editor = antigravity
-    ai = claude
+editor = antigravity
+ai = claude
