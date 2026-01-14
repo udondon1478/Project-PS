@@ -1,0 +1,17 @@
+# .gtrconfig - commit this file to share settings with your team
+
+[copy]
+    include = **/.env
+    include = *.md
+
+[copy]
+    includeDirs = node_modules
+    includeDirs = .claude
+    excludeDirs = node_modules/.cache
+
+[hooks]
+    postCreate = npm install
+
+[defaults]
+    editor = antigravity
+    ai = claude
