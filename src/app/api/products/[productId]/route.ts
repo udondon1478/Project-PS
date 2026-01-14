@@ -33,6 +33,7 @@ export async function GET(request: Request, context: { params: Promise<{ product
                   select: {
                     id: true,
                     name: true,
+                    color: true, // カテゴリ色を追加
                   },
                 },
               },

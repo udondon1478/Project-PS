@@ -27,7 +27,17 @@ export default async function UserProfilePage({ params }: Props) {
           },
           productTags: {
             include: {
-              tag: true,
+              tag: {
+                select: {
+                  name: true,
+                  displayName: true,
+                  tagCategory: {
+                    select: {
+                      color: true,
+                    },
+                  },
+                },
+              },
             },
           },
           variations: true,
@@ -47,7 +57,10 @@ export default async function UserProfilePage({ params }: Props) {
     lowPrice: p.lowPrice,
     highPrice: p.highPrice,
     mainImageUrl: p.images.length > 0 ? p.images[0].imageUrl : null,
-    tags: p.productTags.map(pt => pt.tag.displayName || pt.tag.name),
+    tags: p.productTags.map(pt => ({
+      name: pt.tag.displayName || pt.tag.name,
+      categoryColor: pt.tag.tagCategory?.color || null,
+    })),
     variations: p.variations,
   }));
 
