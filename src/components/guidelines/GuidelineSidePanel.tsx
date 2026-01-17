@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Workflow, ListTree } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,13 @@ import { RatingFlowchartDiagram } from './RatingFlowchartDiagram';
 import { TagCategoryVisualizer } from './TagCategoryVisualizer';
 import { TaggingGuide } from './TaggingGuide';
 import { FlowchartMode, RatingLevel } from '@/data/guidelines';
+
+type PanelPosition = 'left' | 'right';
+
+// タブに基づいて位置を決定するヘルパー関数
+function getPositionForTab(tab: 'rating' | 'categories' | 'guide'): PanelPosition {
+  return tab === 'rating' ? 'right' : 'left';
+}
 
 interface GuidelineSidePanelProps {
   open: boolean;
@@ -32,17 +39,48 @@ export function GuidelineSidePanel({
     initialRatingFlow ? 'interactive' : 'diagram'
   );
 
+  // 位置管理: タブに基づいて決定
+  const [position, setPosition] = useState<PanelPosition>(getPositionForTab(initialTab));
+  // アニメーション状態: 位置変更時の退場/登場を制御
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const pendingPositionRef = useRef<PanelPosition | null>(null);
+
   // initialTabが変更されたら反映
   useEffect(() => {
     setActiveTab(initialTab);
+    setPosition(getPositionForTab(initialTab));
   }, [initialTab]);
+
+  // タブ変更時の位置変更アニメーション
+  const handleTabChange = (newTab: 'rating' | 'categories' | 'guide') => {
+    const newPosition = getPositionForTab(newTab);
+
+    if (newPosition !== position && open) {
+      // 位置が変わる場合: 退場→位置変更→登場のアニメーション
+      pendingPositionRef.current = newPosition;
+      setIsTransitioning(true);
+
+      // 退場アニメーション完了後に位置を変更
+      setTimeout(() => {
+        setPosition(newPosition);
+        pendingPositionRef.current = null;
+        // 位置変更後、CSSが画面外の状態を適用するまで待ってから登場アニメーションを開始
+        // 50msの遅延でブラウザにCSSの再計算を確実に行わせる
+        setTimeout(() => {
+          setIsTransitioning(false);
+        }, 50);
+      }, 300); // アニメーション時間と同じ
+    }
+
+    setActiveTab(newTab);
+  };
 
   // フローチャート完了時のハンドラー
   const handleRatingFlowComplete = (rating: RatingLevel) => {
     // 親コンポーネントに通知
     onRatingSelected?.(rating);
-    // タグカテゴリタブに切り替え
-    setActiveTab('categories');
+    // タグカテゴリタブに切り替え（位置も連動して変更される）
+    handleTabChange('categories');
   };
 
   // Escキーで閉じる
@@ -61,14 +99,24 @@ export function GuidelineSidePanel({
     <aside
       aria-label="タグ付けガイドライン"
       aria-hidden={!open}
+      style={{
+        // transform と opacity のみトランジション（left/right の切り替えはアニメーションしない）
+        transitionProperty: 'transform, opacity',
+        transitionDuration: '300ms',
+        transitionTimingFunction: 'ease-in-out',
+      }}
       className={cn(
-        "fixed left-0 top-0 h-screen w-[clamp(450px,40vw,600px)] z-60",
-        "bg-background border-r shadow-lg",
-        "transition-all duration-250 ease-in-out",
+        "fixed top-0 h-screen w-[clamp(450px,40vw,600px)] z-60",
+        "bg-background shadow-lg",
         "flex flex-col",
-        open
+        // 位置に応じたスタイル
+        position === 'left' ? "left-0 border-r" : "right-0 border-l",
+        // 表示/非表示のアニメーション
+        open && !isTransitioning
           ? "translate-x-0 opacity-100"
-          : "-translate-x-full opacity-0 pointer-events-none"
+          : position === 'left'
+            ? "-translate-x-full opacity-0 pointer-events-none"
+            : "translate-x-full opacity-0 pointer-events-none"
       )}
     >
       {/* 固定ヘッダー */}
@@ -92,7 +140,7 @@ export function GuidelineSidePanel({
       {/* タブコンテンツ */}
       <Tabs
         value={activeTab}
-        onValueChange={(value) => setActiveTab(value as 'rating' | 'categories' | 'guide')}
+        onValueChange={(value) => handleTabChange(value as 'rating' | 'categories' | 'guide')}
         className="flex-1 flex flex-col min-h-0"
       >
         {/* 固定タブリスト */}
