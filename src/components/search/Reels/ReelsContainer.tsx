@@ -41,6 +41,7 @@ export function ReelsContainer({
 
   const loadMoreControllerRef = useRef<AbortController | null>(null);
   const tagSearchControllerRef = useRef<AbortController | null>(null);
+  const pushedReelsStateRef = useRef(false);
 
   const [emblaRef, emblaApi] = useEmblaCarousel({
     axis: 'y',
@@ -208,12 +209,23 @@ export function ReelsContainer({
     }
   }, [prefetchDetails, products.length]);
 
+  const handleClose = useCallback(() => {
+    if (pushedReelsStateRef.current) {
+      pushedReelsStateRef.current = false;
+      history.back();
+    } else {
+      onClose();
+    }
+  }, [onClose]);
+
   useEffect(() => {
     const handlePopState = () => {
+      pushedReelsStateRef.current = false;
       onClose();
     };
 
     history.pushState({ reelsMode: true }, '');
+    pushedReelsStateRef.current = true;
     window.addEventListener('popstate', handlePopState);
 
     return () => {
@@ -242,7 +254,7 @@ export function ReelsContainer({
           variant="ghost"
           size="icon"
           className="absolute left-4 top-4 z-10 h-10 w-10"
-          onClick={onClose}
+          onClick={handleClose}
           aria-label="閉じる"
         >
           <X className="h-6 w-6" />
@@ -258,7 +270,7 @@ export function ReelsContainer({
         variant="ghost"
         size="icon"
         className="absolute left-4 top-4 z-10 h-10 w-10 bg-background/50 backdrop-blur-sm"
-        onClick={onClose}
+        onClick={handleClose}
         aria-label="閉じる"
         style={{ top: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}
       >
