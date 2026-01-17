@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Workflow, ListTree } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,9 @@ interface GuidelineSidePanelProps {
   onRatingSelected?: (rating: RatingLevel) => void;
 }
 
+// アニメーション時間（ms）
+const ANIMATION_DURATION = 300;
+
 export function GuidelineSidePanel({
   open,
   onOpenChange,
@@ -41,9 +44,14 @@ export function GuidelineSidePanel({
 
   // 位置管理: タブに基づいて決定
   const [position, setPosition] = useState<PanelPosition>(getPositionForTab(initialTab));
-  // アニメーション状態: 位置変更時の退場/登場を制御
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const pendingPositionRef = useRef<PanelPosition | null>(null);
+  // タブ切り替え時のアニメーション状態: 退場→登場を制御
+  const [isTabTransitioning, setIsTabTransitioning] = useState(false);
+  // 位置変更中はトランジションを無効化
+  const [disableTransition, setDisableTransition] = useState(false);
+  // DOM描画制御: アニメーション完了までDOMを維持
+  const [shouldRender, setShouldRender] = useState(open);
+  // スライドアニメーション制御: trueで画面内に表示
+  const [isSlideIn, setIsSlideIn] = useState(false);
 
   // initialTabが変更されたら反映
   useEffect(() => {
@@ -51,25 +59,49 @@ export function GuidelineSidePanel({
     setPosition(getPositionForTab(initialTab));
   }, [initialTab]);
 
+  // パネル開閉アニメーション制御
+  useEffect(() => {
+    if (open) {
+      // 開く: まずDOMを描画し、次フレームでスライドイン
+      setShouldRender(true);
+      // 2フレーム待ってからスライドイン（CSSが初期状態を適用するのを確実にする）
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setIsSlideIn(true);
+        });
+      });
+    } else {
+      // 閉じる: スライドアウトを開始し、アニメーション完了後にDOMから削除
+      setIsSlideIn(false);
+      const timer = setTimeout(() => {
+        setShouldRender(false);
+      }, ANIMATION_DURATION);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
+
   // タブ変更時の位置変更アニメーション
   const handleTabChange = (newTab: 'rating' | 'categories' | 'guide') => {
     const newPosition = getPositionForTab(newTab);
 
     if (newPosition !== position && open) {
       // 位置が変わる場合: 退場→位置変更→登場のアニメーション
-      pendingPositionRef.current = newPosition;
-      setIsTransitioning(true);
+      setIsTabTransitioning(true);
 
       // 退場アニメーション完了後に位置を変更
       setTimeout(() => {
+        // トランジションを無効化して位置を即座に変更
+        setDisableTransition(true);
         setPosition(newPosition);
-        pendingPositionRef.current = null;
-        // 位置変更後、CSSが画面外の状態を適用するまで待ってから登場アニメーションを開始
-        // 50msの遅延でブラウザにCSSの再計算を確実に行わせる
-        setTimeout(() => {
-          setIsTransitioning(false);
-        }, 50);
-      }, 300); // アニメーション時間と同じ
+
+        // 次フレームでブラウザにスタイルを適用させてから、トランジションを再有効化
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            setDisableTransition(false);
+            setIsTabTransitioning(false);
+          });
+        });
+      }, ANIMATION_DURATION);
     }
 
     setActiveTab(newTab);
@@ -95,14 +127,31 @@ export function GuidelineSidePanel({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [open, onOpenChange]);
 
+  // DOMに描画しない場合は早期リターン
+  if (!shouldRender) {
+    return null;
+  }
+
+  // スライドアニメーション用のtransform値を計算
+  const getTransformValue = () => {
+    if (isSlideIn && !isTabTransitioning) {
+      return 'translateX(0)';
+    }
+    return position === 'left' ? 'translateX(-100%)' : 'translateX(100%)';
+  };
+
+  const transformValue = getTransformValue();
+  const opacityValue = isSlideIn && !isTabTransitioning ? 1 : 0;
+
   return (
     <aside
       aria-label="タグ付けガイドライン"
       aria-hidden={!open}
       style={{
-        // transform と opacity のみトランジション（left/right の切り替えはアニメーションしない）
-        transitionProperty: 'transform, opacity',
-        transitionDuration: '300ms',
+        transform: transformValue,
+        opacity: opacityValue,
+        transitionProperty: disableTransition ? 'none' : 'transform, opacity',
+        transitionDuration: disableTransition ? '0ms' : `${ANIMATION_DURATION}ms`,
         transitionTimingFunction: 'ease-in-out',
       }}
       className={cn(
@@ -111,12 +160,8 @@ export function GuidelineSidePanel({
         "flex flex-col",
         // 位置に応じたスタイル
         position === 'left' ? "left-0 border-r" : "right-0 border-l",
-        // 表示/非表示のアニメーション
-        open && !isTransitioning
-          ? "translate-x-0 opacity-100"
-          : position === 'left'
-            ? "-translate-x-full opacity-0 pointer-events-none"
-            : "translate-x-full opacity-0 pointer-events-none"
+        // pointer-events制御
+        !(isSlideIn && !isTabTransitioning) && "pointer-events-none"
       )}
     >
       {/* 固定ヘッダー */}
