@@ -29,10 +29,20 @@ export async function GET(request: Request) {
     if (ageRatingTags) params.ageRatingTags = ageRatingTags;
 
     const minPrice = searchParams.get('minPrice');
-    if (minPrice) params.minPrice = minPrice;
+    if (minPrice) {
+      const parsed = parseFloat(minPrice);
+      if (isFinite(parsed) && parsed >= 0) {
+        params.minPrice = minPrice;
+      }
+    }
 
     const maxPrice = searchParams.get('maxPrice');
-    if (maxPrice) params.maxPrice = maxPrice;
+    if (maxPrice) {
+      const parsed = parseFloat(maxPrice);
+      if (isFinite(parsed) && parsed >= 0) {
+        params.maxPrice = maxPrice;
+      }
+    }
 
     const page = searchParams.get('page');
     if (page) {
