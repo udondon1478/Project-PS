@@ -65,7 +65,9 @@ function buildSearchParamsString(searchParams: SearchParams & { page?: string })
     if (value === undefined || value === null) continue;
 
     if (Array.isArray(value)) {
-      value.forEach(v => params.append(key, v));
+      // URLを短く保つため、配列はカンマ区切り文字列としてシリアライズする
+      // SearchResultsでget('tags').split(',')として解析されるため一貫性を保つ
+      params.set(key, value.join(','));
     } else {
       params.set(key, String(value));
     }

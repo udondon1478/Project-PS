@@ -118,8 +118,8 @@ export function ReelsContainer({
     setCurrentTags(newTags);
 
     const newParams = new URLSearchParams(internalSearchParams);
-    newParams.delete('tags');
-    newTags.forEach(tag => newParams.append('tags', tag));
+    // カンマ区切り形式に統一（SearchResultsでget('tags').split(',')として解析される）
+    newParams.set('tags', newTags.join(','));
     newParams.delete('page');
     setInternalSearchParams(newParams);
 
