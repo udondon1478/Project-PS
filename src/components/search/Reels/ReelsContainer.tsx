@@ -39,6 +39,9 @@ export function ReelsContainer({
   const detailCache = useRef<Map<string, ProductDetail>>(new Map());
   const [loadedDetails, setLoadedDetails] = useState<Map<string, ProductDetail>>(new Map());
 
+  const loadMoreControllerRef = useRef<AbortController | null>(null);
+  const tagSearchControllerRef = useRef<AbortController | null>(null);
+
   const [emblaRef, emblaApi] = useEmblaCarousel({
     axis: 'y',
     dragFree: false,
@@ -84,6 +87,10 @@ export function ReelsContainer({
   const loadMoreProducts = useCallback(async () => {
     if (isLoading || !hasMore) return;
 
+    loadMoreControllerRef.current?.abort();
+    const controller = new AbortController();
+    loadMoreControllerRef.current = controller;
+
     setIsLoading(true);
     try {
       const nextPage = currentPage + 1;
@@ -91,10 +98,15 @@ export function ReelsContainer({
       params.set('page', nextPage.toString());
       params.set('pageSize', PAGE_SIZE.toString());
 
-      const res = await fetch(`/api/products?${params.toString()}`);
+      const res = await fetch(`/api/products?${params.toString()}`, {
+        signal: controller.signal,
+      });
       if (!res.ok) throw new Error('Failed to load more products');
 
       const data = await res.json();
+
+      if (controller.signal.aborted) return;
+
       const newProducts = data.products as Product[];
 
       if (newProducts.length > 0) {
@@ -105,14 +117,22 @@ export function ReelsContainer({
         setHasMore(false);
       }
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') return;
       console.error('Failed to load more products:', error);
     } finally {
-      setIsLoading(false);
+      if (!controller.signal.aborted) {
+        setIsLoading(false);
+      }
     }
   }, [isLoading, hasMore, currentPage, internalSearchParams, products.length]);
 
   const handleAddTag = useCallback(async (tagName: string) => {
     if (currentTags.includes(tagName)) return;
+
+    loadMoreControllerRef.current?.abort();
+    tagSearchControllerRef.current?.abort();
+    const controller = new AbortController();
+    tagSearchControllerRef.current = controller;
 
     const newTags = [...currentTags, tagName];
     setCurrentTags(newTags);
@@ -130,15 +150,21 @@ export function ReelsContainer({
     setLoadedDetails(new Map());
     setCurrentPage(1);
     setCurrentIndex(0);
+    setIsLoading(false);
 
     try {
       const fetchParams = new URLSearchParams(newParams);
       fetchParams.set('pageSize', PAGE_SIZE.toString());
 
-      const res = await fetch(`/api/products?${fetchParams.toString()}`);
+      const res = await fetch(`/api/products?${fetchParams.toString()}`, {
+        signal: controller.signal,
+      });
       if (!res.ok) throw new Error('Failed to fetch products with new tag');
 
       const data = await res.json();
+
+      if (controller.signal.aborted) return;
+
       const newProducts = data.products as Product[];
 
       setProducts(newProducts);
@@ -152,6 +178,7 @@ export function ReelsContainer({
         prefetchDetails(0);
       }
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') return;
       console.error('Failed to fetch products with new tag:', error);
     }
   }, [currentTags, internalSearchParams, router, emblaApi, prefetchDetails]);
@@ -198,6 +225,13 @@ export function ReelsContainer({
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = '';
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      loadMoreControllerRef.current?.abort();
+      tagSearchControllerRef.current?.abort();
     };
   }, []);
 
