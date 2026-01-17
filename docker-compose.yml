@@ -24,6 +24,20 @@ services:
     volumes:
       - test_db_data:/var/lib/postgresql/data # テスト用ボリューム
 
+  promotion-db: # プロモーション動画用 (許諾済み商品のみ)
+    image: postgres:17.4-alpine
+    container_name: polyseek-promotion-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${PROMO_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${PROMO_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${PROMO_POSTGRES_DB}
+    ports:
+      - "5434:5432" # プロモーション用ポート
+    volumes:
+      - promotion_db_data:/var/lib/postgresql/data
+
 volumes:
   db_data:
   test_db_data:
+  promotion_db_data:
