@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Check } from 'lucide-react';
 import {
   Sheet,
@@ -42,6 +42,16 @@ export function ReelsTagSheet({
   const [openPopoverTag, setOpenPopoverTag] = useState<string | null>(null);
   const [ripples, setRipples] = useState<Map<string, RippleState[]>>(new Map());
   const rippleIdRef = useRef(0);
+  const rippleTimeoutRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+
+  useEffect(() => {
+    return () => {
+      rippleTimeoutRef.current.forEach((timeoutId) => {
+        clearTimeout(timeoutId);
+      });
+      rippleTimeoutRef.current.clear();
+    };
+  }, []);
 
   const tags = detail.productTags.map(pt => ({
     name: pt.tag.displayName || pt.tag.name,
@@ -87,7 +97,8 @@ export function ReelsTagSheet({
       return newMap;
     });
 
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
+      rippleTimeoutRef.current.delete(newRipple.id);
       setRipples(prev => {
         const newMap = new Map(prev);
         const existing = newMap.get(tagRawName) || [];
@@ -95,6 +106,7 @@ export function ReelsTagSheet({
         return newMap;
       });
     }, 400);
+    rippleTimeoutRef.current.set(newRipple.id, timeoutId);
 
     setOpenPopoverTag(tagRawName);
   }, [isTagActive]);
@@ -124,13 +136,13 @@ export function ReelsTagSheet({
                 {category}
               </h3>
               <div className="flex flex-wrap gap-2">
-                {categoryTags.map((tag, index) => {
+                {categoryTags.map((tag) => {
                   const isActive = isTagActive(tag.rawName);
                   const tagRipples = ripples.get(tag.rawName) || [];
 
                   return (
                     <Popover
-                      key={index}
+                      key={tag.rawName}
                       open={openPopoverTag === tag.rawName}
                       onOpenChange={(open) => {
                         if (!open) setOpenPopoverTag(null);
