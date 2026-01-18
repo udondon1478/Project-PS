@@ -30,6 +30,7 @@ export function ReelsDetailSheet({
   detail,
 }: ReelsDetailSheetProps) {
   const tags = detail.productTags.map(pt => ({
+    id: pt.tag.id,
     name: pt.tag.displayName || pt.tag.name,
     categoryColor: pt.tag.tagCategory?.color || null,
   }));
@@ -81,9 +82,9 @@ export function ReelsDetailSheet({
           <div className="space-y-2">
             <h3 className="text-sm font-semibold">タグ</h3>
             <div className="flex flex-wrap gap-1.5">
-              {tags.map((tag, index) => (
+              {tags.map((tag) => (
                 <CategoryTag
-                  key={index}
+                  key={tag.id}
                   name={tag.name}
                   categoryColor={tag.categoryColor}
                   size="sm"
