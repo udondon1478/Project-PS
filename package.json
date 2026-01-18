@@ -22,7 +22,7 @@
     "db:promo:up": "docker compose --env-file .env.promotion up -d promotion-db",
     "db:promo:migrate": "dotenv -e .env.promotion -- npx prisma migrate deploy",
     "db:promo:seed": "dotenv -e .env.promotion -- npx prisma db seed",
-    "dev:promotion": "dotenv -e .env.promotion -- next dev -p 3000",
+    "dev:promotion": "dotenv -e .env.promotion -- next dev -p 3001",
     "promo:add-shop": "dotenv -e .env.promotion -- tsx src/scripts/add-promotion-shop.ts"
   },
   "dependencies": {
