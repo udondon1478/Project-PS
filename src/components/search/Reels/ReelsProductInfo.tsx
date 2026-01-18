@@ -25,6 +25,7 @@ export function ReelsProductInfo({ product, detail }: ReelsProductInfoProps) {
   return (
     <>
       <button
+        type="button"
         className="w-full p-4 pb-6 text-left"
         onClick={() => setIsSheetOpen(true)}
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}
