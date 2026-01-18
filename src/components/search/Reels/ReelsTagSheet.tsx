@@ -196,6 +196,7 @@ export function ReelsTagSheet({
                           </p>
                           <div className="flex justify-end gap-2">
                             <Button
+                              type="button"
                               variant="outline"
                               size="sm"
                               onClick={handleCancel}
@@ -203,6 +204,7 @@ export function ReelsTagSheet({
                               キャンセル
                             </Button>
                             <Button
+                              type="button"
                               size="sm"
                               onClick={() => handleAddTag(tag.rawName)}
                             >
