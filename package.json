@@ -18,7 +18,12 @@
     "db:test:migrate": "dotenv -e .env.test -- npx prisma migrate deploy",
     "test:e2e:run": "cross-env NEXT_PUBLIC_SENTRY_ENABLED=false dotenv -e .env.test -- npx playwright test --trace on",
     "test:e2e": "cross-env NEXT_PUBLIC_SENTRY_ENABLED=false dotenv -e .env.test -- npm run build && npm run db:test:up && npm run db:test:migrate && dotenv -e .env.test -- npx prisma db seed && npm run test:e2e:run",
-    "compare-queries": "tsx src/scripts/compare-queries.ts"
+    "compare-queries": "tsx src/scripts/compare-queries.ts",
+    "db:promo:up": "docker compose --env-file .env.promotion up -d promotion-db",
+    "db:promo:migrate": "dotenv -e .env.promotion -- npx prisma migrate deploy",
+    "db:promo:seed": "dotenv -e .env.promotion -- npx prisma db seed",
+    "dev:promotion": "dotenv -e .env.promotion -- next dev -p 3001",
+    "promo:add-shop": "dotenv -e .env.promotion -- tsx src/scripts/add-promotion-shop.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.9.1",
