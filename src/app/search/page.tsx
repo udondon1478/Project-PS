@@ -1,4 +1,3 @@
-import ProductGrid from "@/components/ProductGrid";
 import { Product } from "@/types/product";
 import type { Metadata } from 'next';
 import { searchProducts } from '@/lib/searchProducts';
@@ -8,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import Link from "next/link";
 import { PlusCircle, SearchX } from "lucide-react";
+import { SearchResults } from "@/components/search/SearchResults";
 
 /** 1ページあたりの商品件数 */
 const PAGE_SIZE = 24;
@@ -36,11 +36,11 @@ function parsePageParam(pageParam: string | string[] | undefined): number {
  */
 function buildBaseUrl(searchParams: SearchParams & { page?: string }): string {
   const params = new URLSearchParams();
-  
+
   for (const [key, value] of Object.entries(searchParams)) {
     if (key === 'page') continue; // pageパラメータは除外
     if (value === undefined || value === null) continue;
-    
+
     if (Array.isArray(value)) {
       // URLを短く保つため、配列はカンマ区切り文字列としてシリアライズする
       // normalizeQueryParamで自動的に配列に戻されるため安全
@@ -49,9 +49,31 @@ function buildBaseUrl(searchParams: SearchParams & { page?: string }): string {
       params.set(key, String(value));
     }
   }
-  
+
   const queryString = params.toString();
   return queryString ? `/search?${queryString}` : '/search';
+}
+
+/**
+ * 検索パラメータを文字列に変換（Reelsモード用）
+ */
+function buildSearchParamsString(searchParams: SearchParams & { page?: string }): string {
+  const params = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(searchParams)) {
+    if (key === 'page') continue;
+    if (value === undefined || value === null) continue;
+
+    if (Array.isArray(value)) {
+      // URLを短く保つため、配列はカンマ区切り文字列としてシリアライズする
+      // SearchResultsでget('tags').split(',')として解析されるため一貫性を保つ
+      params.set(key, value.join(','));
+    } else {
+      params.set(key, String(value));
+    }
+  }
+
+  return params.toString();
 }
 
 export async function generateMetadata({ searchParams }: SearchPageProps): Promise<Metadata> {
@@ -161,16 +183,26 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
     );
   }
 
+  // 検索パラメータを文字列に変換（Reelsモード用）
+  const searchParamsString = buildSearchParamsString(resolvedSearchParams);
+
   return (
     <div className="container mx-auto px-4 py-8">
       {q && <p>Search query: {q}</p>}
       {category && <p>Category: {category}</p>}
 
-      <ProductGrid products={products} showLikeButton={true} showOwnButton={true} maxTags={MAX_TAGS_IN_SEARCH} />
+      <SearchResults
+        products={products}
+        totalProducts={total}
+        searchParamsString={searchParamsString}
+        showLikeButton={true}
+        showOwnButton={true}
+        maxTags={MAX_TAGS_IN_SEARCH}
+      />
 
       {totalPages > 1 && (
         <div className="mt-8 flex justify-center">
-          <Pagination 
+          <Pagination
             currentPage={page}
             totalPages={totalPages}
             baseUrl={baseUrl}

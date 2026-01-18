@@ -17,7 +17,9 @@ export function cn(...inputs: ClassValue[]) {
 
 export function normalizeQueryParam(param: string | string[] | null | undefined): string[] | undefined {
   if (!param) return undefined;
-  const arr = Array.isArray(param) ? param : param.split(',');
+  const arr = Array.isArray(param)
+    ? param.flatMap(s => s.split(','))
+    : param.split(',');
   const trimmedAndFiltered = arr.map(s => s.trim()).filter(Boolean);
   const unique = [...new Set(trimmedAndFiltered)];
   return unique.length > 0 ? unique : undefined;

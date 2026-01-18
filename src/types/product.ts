@@ -57,6 +57,7 @@ export interface ProductTag {
   tag: {
     id: string;
     name: string;
+    displayName?: string;
     description: string | null;
     tagCategoryId: string;
     tagCategory: {
@@ -83,4 +84,36 @@ export interface TagEditHistory {
   score: number;
   createdAt: string;
   userVote: { score: number } | null;
+}
+
+/**
+ * 商品詳細情報（Reelsモード用）
+ * /api/products/[productId] から取得する拡張データ
+ */
+export interface ProductDetail {
+  id: string;
+  title: string;
+  description: string | null;
+  lowPrice: number;
+  highPrice: number;
+  boothJpUrl: string;
+  images: {
+    id: string;
+    imageUrl: string;
+    order: number;
+    isMain: boolean;
+  }[];
+  productTags: ProductTag[];
+  variations: {
+    id: string;
+    name: string;
+    price: number;
+  }[];
+  seller: {
+    name: string;
+    iconUrl: string | null;
+    sellerUrl: string;
+  } | null;
+  isLiked: boolean;
+  isOwned: boolean;
 }

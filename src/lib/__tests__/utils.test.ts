@@ -21,6 +21,11 @@ describe('normalizeQueryParam', () => {
     expect(normalizeQueryParam(['foo', 'bar'])).toEqual(['foo', 'bar']);
   });
 
+  it('handles array with comma-separated elements', () => {
+    expect(normalizeQueryParam(['foo,bar', 'baz'])).toEqual(['foo', 'bar', 'baz']);
+    expect(normalizeQueryParam(['a,b', 'c,d'])).toEqual(['a', 'b', 'c', 'd']);
+  });
+
   it('trims whitespace and filters empty strings', () => {
     expect(normalizeQueryParam(' foo ,  , bar ')).toEqual(['foo', 'bar']);
     expect(normalizeQueryParam([' foo ', ' ', 'bar'])).toEqual(['foo', 'bar']);
