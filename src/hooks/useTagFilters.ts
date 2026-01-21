@@ -224,28 +224,12 @@ export function useTagFilters() {
     return activeFilters.length > 0;
   }, [activeFilters]);
 
-  // API用のクエリパラメータを生成
-  const apiQueryParams = useMemo(() => {
-    const params = new URLSearchParams();
-
-    if (filters.q) params.set('q', filters.q);
-    if (filters.categoryId) params.set('categoryId', filters.categoryId);
-    if (filters.lang) params.set('lang', filters.lang);
-    if (filters.usage) params.set('usage', filters.usage);
-    if (filters.alias) params.set('alias', filters.alias);
-    params.set('sort', filters.sort);
-    params.set('order', filters.order);
-
-    return params;
-  }, [filters]);
-
   return {
     filters,
     searchInput,
     debouncedSearch,
     activeFilters,
     hasActiveFilters,
-    apiQueryParams,
     setSearch,
     setCategory,
     setLanguage,
