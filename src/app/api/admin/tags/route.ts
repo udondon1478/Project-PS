@@ -13,21 +13,78 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type'); // 後方互換性のため維持
-    const categoryId = searchParams.get('categoryId'); // 新しいカテゴリIDフィルター
+    const categoryId = searchParams.get('categoryId'); // カテゴリIDフィルター
     const limit = parseInt(searchParams.get('limit') || '20', 10); // デフォルト20
     const offset = parseInt(searchParams.get('offset') || '0', 10); // デフォルト0
+
+    // 新規パラメータ
+    const q = searchParams.get('q'); // 検索キーワード
+    const lang = searchParams.get('lang'); // 言語フィルター
+    const usage = searchParams.get('usage'); // 使用数範囲フィルター
+    const alias = searchParams.get('alias'); // エイリアス状態フィルター
+    const sort = searchParams.get('sort') || 'usageCount'; // ソート対象（デフォルト: 使用数）
+    const order = searchParams.get('order') || 'desc'; // ソート方向（デフォルト: 降順）
 
     // フィルタリング条件を構築
     const where: Prisma.TagWhereInput = {};
 
+    // カテゴリフィルター
     if (categoryId) {
-      // categoryIdで直接フィルタリング
       where.tagCategoryId = categoryId;
     } else if (type) {
       // 後方互換性: typeパラメータでカテゴリ名によるフィルタリング
       where.tagCategory = {
         name: type,
       };
+    }
+
+    // 検索キーワード（タグ名の部分一致、大文字小文字区別なし）
+    if (q) {
+      where.name = {
+        contains: q,
+        mode: 'insensitive',
+      };
+    }
+
+    // 言語フィルター
+    if (lang && (lang === 'ja' || lang === 'en')) {
+      where.language = lang;
+    }
+
+    // エイリアス状態フィルター
+    if (alias === 'true') {
+      where.isAlias = true;
+    } else if (alias === 'false') {
+      where.isAlias = false;
+    }
+
+    // ソート条件を構築
+    type TagOrderByInput = Prisma.TagOrderByWithRelationInput;
+    let orderBy: TagOrderByInput | TagOrderByInput[] = { name: 'asc' };
+
+    const sortDirection: 'asc' | 'desc' = order === 'asc' ? 'asc' : 'desc';
+
+    switch (sort) {
+      case 'name':
+        orderBy = { name: sortDirection };
+        break;
+      case 'category':
+        orderBy = { tagCategory: { name: sortDirection } };
+        break;
+      case 'language':
+        orderBy = { language: sortDirection };
+        break;
+      case 'description':
+        orderBy = { description: sortDirection };
+        break;
+      case 'usageCount':
+        orderBy = { productTags: { _count: sortDirection } };
+        break;
+      case 'createdAt':
+        orderBy = { createdAt: sortDirection };
+        break;
+      default:
+        orderBy = { productTags: { _count: 'desc' } };
     }
 
     // タグのリストを取得 (ページネーション適用)
@@ -43,11 +100,19 @@ export async function GET(request: Request) {
         description: true,
         count: true,
         tagCategoryId: true,
+        createdAt: true,
         tagCategory: {
           select: {
             id: true,
             name: true,
             color: true,
+          },
+        },
+        canonicalTag: {
+          select: {
+            id: true,
+            name: true,
+            displayName: true,
           },
         },
         _count: {
@@ -56,20 +121,69 @@ export async function GET(request: Request) {
           },
         },
       },
-      orderBy: {
-        name: 'asc',
-      },
+      orderBy: orderBy,
       take: limit,
       skip: offset,
     });
 
+    // 使用数フィルターを適用（DBレベルでのフィルタリングが難しいためポストフィルタ）
+    let filteredTags = tags;
+    if (usage) {
+      filteredTags = tags.filter(tag => {
+        const count = tag._count?.productTags || 0;
+        switch (usage) {
+          case '0':
+            return count === 0;
+          case '1-10':
+            return count >= 1 && count <= 10;
+          case '11-50':
+            return count >= 11 && count <= 50;
+          case '50+':
+            return count > 50;
+          default:
+            return true;
+        }
+      });
+    }
+
     // 条件に一致するタグの総数を取得
-    const totalTags = await prisma.tag.count({
-      where: where,
-    });
+    // 使用数フィルターがある場合は全件取得してカウントする必要がある
+    let totalTags: number;
+    if (usage) {
+      const allTags = await prisma.tag.findMany({
+        where: where,
+        select: {
+          id: true,
+          _count: {
+            select: {
+              productTags: true,
+            },
+          },
+        },
+      });
+      totalTags = allTags.filter(tag => {
+        const count = tag._count?.productTags || 0;
+        switch (usage) {
+          case '0':
+            return count === 0;
+          case '1-10':
+            return count >= 1 && count <= 10;
+          case '11-50':
+            return count >= 11 && count <= 50;
+          case '50+':
+            return count > 50;
+          default:
+            return true;
+        }
+      }).length;
+    } else {
+      totalTags = await prisma.tag.count({
+        where: where,
+      });
+    }
 
     // タグのリストと総数をレスポンスとして返す
-    return NextResponse.json({ tags, totalTags });
+    return NextResponse.json({ tags: usage ? filteredTags : tags, totalTags });
   } catch (error) {
     console.error('Error fetching tags:', error);
     return NextResponse.json({ message: 'タグの取得に失敗しました。' }, { status: 500 });
