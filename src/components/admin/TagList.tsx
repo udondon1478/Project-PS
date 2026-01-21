@@ -1,7 +1,7 @@
 // src/components/admin/TagList.tsx
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Table,
   TableBody,
@@ -333,12 +333,6 @@ function TagListContent({ onEditClick }: TagListProps) {
   );
 }
 
-const TagList = ({ onEditClick }: TagListProps) => {
-  return (
-    <Suspense fallback={<TagListSkeleton rowCount={20} />}>
-      <TagListContent onEditClick={onEditClick} />
-    </Suspense>
-  );
-};
-
-export default TagList;
+export default function TagList({ onEditClick }: TagListProps) {
+  return <TagListContent onEditClick={onEditClick} />;
+}
