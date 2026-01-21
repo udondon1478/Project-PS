@@ -152,6 +152,7 @@ function TagListContent({ onEditClick }: TagListProps) {
   if (error) return <div className="text-red-500 p-4">Error: {error}</div>;
 
   return (
+    <TooltipProvider>
     <div className="w-full">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">タグ一覧</h2>
@@ -256,7 +257,6 @@ function TagListContent({ onEditClick }: TagListProps) {
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
                         {tag.isAlias && (
-                          <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <ArrowRightIcon className="h-4 w-4 text-amber-600 flex-shrink-0" />
@@ -265,7 +265,6 @@ function TagListContent({ onEditClick }: TagListProps) {
                                 <p>正規タグ: {tag.canonicalTag?.displayName || tag.canonicalTag?.name || '-'}</p>
                               </TooltipContent>
                             </Tooltip>
-                          </TooltipProvider>
                         )}
                         <span>{tag.displayName || tag.name}</span>
                       </div>
@@ -330,6 +329,7 @@ function TagListContent({ onEditClick }: TagListProps) {
         </Button>
       </div>
     </div>
+    </TooltipProvider>
   );
 }
 
