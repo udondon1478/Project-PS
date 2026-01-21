@@ -12,6 +12,11 @@ export interface TagWithCategory extends Tag {
     name: string;
     color: string;
   } | null;
+  canonicalTag?: {
+    id: string;
+    name: string;
+    displayName: string | null;
+  } | null;
   _count?: {
     productTags: number;
   };
