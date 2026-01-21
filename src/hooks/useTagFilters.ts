@@ -73,6 +73,9 @@ export function useTagFilters() {
     if (debouncedSearch !== filters.q) {
       setFilters({ q: debouncedSearch, page: 1 });
     }
+    // useTagFilters: filters (filters.q) is intentionally excluded to ensure this effect
+    // only runs on debouncedSearch changes, not when filters change elsewhere.
+    // setFilters updates q and resets page to 1.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch]);
 
