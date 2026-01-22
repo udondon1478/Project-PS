@@ -1,0 +1,72 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '18px'}}}%%
+flowchart TB
+    subgraph Client["クライアント"]
+        Browser["ブラウザ"]
+    end
+
+    subgraph DNS["ドメイン管理"]
+        StarDomain["スタードメイン<br/>(DNS)"]
+    end
+
+    subgraph OCI["Oracle Cloud Infrastructure"]
+        subgraph VPS["VPS (Ubuntu)"]
+            subgraph WebServer["Webサーバ層"]
+                Nginx["nginx<br/>(リバースプロキシ)"]
+                LetsEncrypt["Let's Encrypt<br/>(SSL/TLS)"]
+            end
+            subgraph AppServer["アプリケーション層"]
+                PM2["PM2<br/>(プロセス管理)"]
+                subgraph NextJS["Next.js 16 App Router"]
+                    SC["Server Components<br/>(SSR)"]
+                    CC["Client Components<br/>(React)"]
+                    API["API Routes<br/>(REST API)"]
+                end
+            end
+            subgraph DataLayer["データ層"]
+                Prisma["Prisma ORM"]
+                PG[("PostgreSQL")]
+            end
+        end
+    end
+
+    subgraph External["外部サービス"]
+        Auth["Auth.js<br/>(OAuth 2.0)"]
+        Sentry["Sentry<br/>(エラー監視)"]
+    end
+
+    subgraph CICD["CI/CD"]
+        GHA["GitHub Actions"]
+        Test["Vitest / Playwright"]
+    end
+
+    Browser -->|HTTPS| StarDomain
+    StarDomain -->|DNS解決| Nginx
+    LetsEncrypt -.->|証明書| Nginx
+    Nginx -->|プロキシ| PM2
+    PM2 -->|管理| NextJS
+    CC <--> API
+    SC --> Prisma
+    API --> Prisma
+    Prisma <--> PG
+    API <--> Auth
+    NextJS --> Sentry
+    GHA --> Test
+    GHA -->|SSH デプロイ| VPS
+
+    classDef client fill:#e1f5fe,stroke:#01579b
+    classDef dns fill:#ffeb3b,stroke:#f57f17
+    classDef webserver fill:#009688,stroke:#004d40,color:#fff
+    classDef pm2 fill:#9c27b0,stroke:#4a148c,color:#fff
+    classDef nextjs fill:#0070f3,stroke:#fff,color:#fff
+    classDef data fill:#e8f5e9,stroke:#2e7d32
+    classDef external fill:#fff3e0,stroke:#e65100
+    classDef cicd fill:#f3e5f5,stroke:#7b1fa2
+
+    class Browser client
+    class StarDomain dns
+    class Nginx,LetsEncrypt webserver
+    class PM2 pm2
+    class SC,CC,API nextjs
+    class Prisma,PG data
+    class Auth,Sentry external
+    class GHA,Test cicd

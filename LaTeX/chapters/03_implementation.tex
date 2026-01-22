@@ -1,0 +1,151 @@
+% 第3章 実装詳細
+\chapter{実装詳細}
+
+\section{スクレイピング基盤}
+
+\subsection{スクレイピングの必要性と課題}
+
+本作品では，ユーザがBOOTHの商品URLを入力することで，商品情報をデータベースに登録できる機能を提供している．この機能を実現するためには，BOOTHの商品ページから必要な情報を自動的に抽出するスクレイピング処理が必要となる．
+
+スクレイピング処理の実装にあたっては，いくつかの課題があった．まず，BOOTHはAPIを公開していないため，HTMLページを解析して情報を抽出する必要がある．また，大量のリクエストを送信すると対象サーバに負荷をかけるため，適切なレート制限が必要である．さらに，長時間の処理中に中断が発生した場合に備え，処理状態の保存と再開機能も求められた．
+
+これらの課題に対応するため，Node.js上で動作する独自のスクレイピングツールを開発した．
+
+\subsection{技術選定}
+
+スクレイピング処理の実装にあたり，Puppeteer等のヘッドレスブラウザを使用する方式と，軽量なHTML解析ライブラリを使用する方式を比較検討した．
+
+ヘッドレスブラウザを使用する場合，JavaScript によって動的に生成されるコンテンツも取得できるメリットがある．しかし，ブラウザインスタンスの起動に時間がかかり，メモリ消費も大きい．BOOTHの商品ページは，主要な商品情報がHTMLに直接含まれているため，動的コンテンツの取得は必須ではないと判断した．
+
+そのため，軽量なHTML解析ライブラリであるCheerioを採用した．CheerioはjQueryライクなAPIを提供し，DOM操作を直感的に行える点が特徴である．メモリ効率も良く，大量のページを処理する本作品の要件に適している．また，並行処理数の制限にはPromise対応のキュー制御ライブラリであるp-queueを使用し，対象サーバへの負荷を適切に管理している．
+
+\subsection{レート制限の実装}
+
+対象サーバへの負荷を考慮し，リクエスト間隔を制御するレート制限機能を実装した．
+
+\begin{figure}[H]
+\begin{lstlisting}[language=TypeScript,caption=レート制限付きスクレイピングキュー]
+import PQueue from 'p-queue';
+
+const queue = new PQueue({
+  concurrency: 1,        // 同時実行数
+  interval: 1000,        // インターバル（ミリ秒）
+  intervalCap: 1,        // インターバルあたりの最大実行数
+});
+
+async function scrapeProduct(url: string) {
+  return queue.add(async () => {
+    const response = await fetch(url);
+    const html = await response.text();
+    return parseProductHtml(html);
+  });
+}
+\end{lstlisting}
+\end{figure}
+
+\subsection{レジューム機能}
+
+大量の商品情報を収集する際，処理中断時に直前の状態から再開できるレジューム機能を実装した．これにより，ネットワークエラーやプロセス停止時にも，収集済みのデータを無駄にすることなく処理を継続できる．
+
+\begin{figure}[H]
+\begin{lstlisting}[language=TypeScript,caption=レジューム機能の実装例]
+interface ScrapeState {
+  lastProcessedId: string;
+  processedCount: number;
+  errorCount: number;
+}
+
+async function resumableScrape(stateFile: string) {
+  // 前回の状態を読み込み
+  const state = await loadState(stateFile);
+
+  // 未処理のアイテムから再開
+  const items = await getUnprocessedItems(state.lastProcessedId);
+
+  for (const item of items) {
+    try {
+      await scrapeProduct(item.url);
+      state.lastProcessedId = item.id;
+      state.processedCount++;
+    } catch (error) {
+      state.errorCount++;
+    }
+    // 定期的に状態を保存
+    await saveState(stateFile, state);
+  }
+}
+\end{lstlisting}
+\end{figure}
+
+\subsection{データ正規化}
+
+スクレイピングで取得した生データを，データベースに格納可能な形式に正規化する処理を実装した．商品タイトル，価格，画像URL，カテゴリなどの情報を抽出し，一貫したスキーマに変換する．
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/scraping_flow.pdf}
+    \caption{スクレイピング処理フロー}
+    \label{fig:scraping_flow}
+\end{figure}
+
+\section{UIと検索機能}
+
+\subsection{検索システム}
+
+検索機能は本作品の中核となる機能であり，ユーザが求める商品を効率的に発見できるよう，複数の検索手法を実装した．
+
+既存のBOOTHの検索機能では，キーワードが商品タイトルや説明文に含まれているかどうかのみで検索が行われる．この方式では，「こたつ」を検索した際に，こたつ本体だけでなく「こたつに合う衣装」といった関連商品も表示されてしまう問題があった．
+
+本作品では，この問題を解決するため，タグベースの検索システムを実装した．ユーザが付与したタグによる絞り込みでは，明確にタグ付けされた商品のみが検索結果に表示される．これにより，キーワード検索の曖昧さを排除し，目的の商品に効率的にたどり着くことが可能となった．
+
+検索バーは，複数の条件を組み合わせるAND検索や，特定の要素を除外するマイナス検索にも対応し，高度なニーズにも応えられるように設計した．マイナス検索の実装にあたっては，検索クエリのパース処理を行い，「-」プレフィックスが付いたキーワードを除外条件として認識する仕組みを構築した．
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/search_ui.pdf}
+    \caption{検索インターフェース}
+    \label{fig:search_ui}
+\end{figure}
+
+検索機能は，複数の検索手法を組み合わせて利用できるよう設計されている．キーワード検索では商品タイトルおよび説明文からの全文検索を行い，タグ検索ではユーザが付与したタグによる絞り込みが可能である．また，衣服やアクセサリー等のカテゴリ分類による検索や，価格帯を指定したフィルタリングにも対応している．さらに，これらの条件を組み合わせたAND検索や，特定条件を除外するマイナス検索機能により，高度な検索ニーズにも応えている．
+
+\subsection{タグ編集インターフェース}
+
+タグ編集機能は，本作品のコンセプトである「ユーザコミュニティ主導のデータベース構築」を実現するための重要な機能である．OAuth認証済みのユーザが自由にタグを編集できるインターフェースを実装した．
+
+タグ編集UIの設計にあたっては，入力の効率性と誤操作の防止を両立させることを重視した．タグ入力欄では，オートコンプリート機能により既存のタグを候補として表示し，表記ゆれの防止と入力効率の向上を図っている．また，新しいタグを作成する際には，既存の類似タグを提示し，重複タグの作成を抑制する仕組みを導入した．
+
+編集内容はすべてバージョン管理され，編集履歴として保存される．他のユーザは編集履歴を閲覧し，適切な編集に対しては賛成投票，不適切な編集に対しては反対投票を行うことができる．この投票機能により，コミュニティ全体でタグの品質を維持する体制を構築した．
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/tag_edit.pdf}
+    \caption{タグ編集画面}
+    \label{fig:tag_edit}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/tag_history.pdf}
+    \caption{タグ編集履歴と評価機能}
+    \label{fig:tag_history}
+\end{figure}
+
+\subsection{ユーザ機能}
+
+第2章で述べたOAuth 2.0認証を基盤として，ユーザ向け機能を実装した．ログイン後のユーザは，商品に対する「いいね」や「所有済み」のマーク機能を利用できる．マイページでは，これらのマークを付けた商品をリスト形式で一覧管理できる．また，他のユーザのタグ編集履歴に対する投票機能も提供している．
+
+\subsection{オンボーディング機能}
+
+ユーザビリティ向上のため，Driver.jsを用いたオンボーディングツアー機能を実装した．初めてサービスを訪れたユーザでも主要機能を迷わず利用できるよう配慮している．
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/onboarding.pdf}
+    \caption{オンボーディングツアー}
+    \label{fig:onboarding}
+\end{figure}
+
+\subsection{テストとCI/CD}
+
+UIコンポーネントの品質を担保するため，第2章で述べたVitest（ユニットテスト）とPlaywright（E2Eテスト）によるテスト環境を構築した．GitHub Actionsによるテストの自動実行により，コード変更時に品質を維持しながら継続的なデプロイが可能となっている．

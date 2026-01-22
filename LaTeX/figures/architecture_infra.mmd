@@ -1,0 +1,50 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '18px'}}}%%
+flowchart TB
+    subgraph Client["クライアント"]
+        Browser["ブラウザ"]
+    end
+
+    subgraph DNS["ドメイン管理"]
+        StarDomain["スタードメイン<br/>(DNS)"]
+    end
+
+    subgraph OCI["Oracle Cloud Infrastructure"]
+        subgraph WebServer["Webサーバ層"]
+            Nginx["nginx<br/>(リバースプロキシ)"]
+            LetsEncrypt["Let's Encrypt<br/>(SSL/TLS)"]
+        end
+        NextApp["Next.js アプリ"]
+    end
+
+    subgraph External["外部サービス"]
+        Auth["Auth.js<br/>(OAuth 2.0)"]
+        Sentry["Sentry<br/>(エラー監視)"]
+    end
+
+    subgraph CICD["CI/CD"]
+        GHA["GitHub Actions"]
+        Test["Vitest / Playwright"]
+    end
+
+    Browser -->|HTTPS| StarDomain
+    StarDomain -->|DNS解決| Nginx
+    LetsEncrypt -.->|証明書| Nginx
+    Nginx -->|プロキシ| NextApp
+    NextApp <--> Auth
+    NextApp --> Sentry
+    GHA --> Test
+    GHA -->|SSH デプロイ| NextApp
+
+    classDef client fill:#e1f5fe,stroke:#01579b
+    classDef dns fill:#ffeb3b,stroke:#f57f17
+    classDef webserver fill:#009688,stroke:#004d40,color:#fff
+    classDef app fill:#0070f3,stroke:#fff,color:#fff
+    classDef external fill:#fff3e0,stroke:#e65100
+    classDef cicd fill:#f3e5f5,stroke:#7b1fa2
+
+    class Browser client
+    class StarDomain dns
+    class Nginx,LetsEncrypt webserver
+    class NextApp app
+    class Auth,Sentry external
+    class GHA,Test cicd

@@ -1,0 +1,25 @@
+# 画像ファイル配置用フォルダ
+
+このフォルダにスクリーンショットや図を配置してください。
+
+## 配置予定の画像
+
+### 第1章 作品概要
+- `top_page.png` - トップページ全景
+
+### 第2章 システム設計
+- `architecture.png` - システム全体構成図
+- `er_diagram.png` - タグシステムER図
+
+### 第3章 実装詳細
+- `scraping_flow.png` - スクレイピング処理フロー
+- `search_ui.png` - 検索インターフェース
+- `tag_edit.png` - タグ編集画面
+- `tag_history.png` - タグ編集履歴と評価機能
+- `onboarding.png` - オンボーディングツアー
+
+### 第4章 公開と運用
+- `product_detail.png` - 商品詳細ページ
+- `search_result.png` - 検索結果ページ
+- `admin_panel.png` - 管理者向けタグ管理画面
+- `sentry_dashboard.png` - Sentryエラー監視ダッシュボード

@@ -1,0 +1,173 @@
+% 第2章 システム設計
+\chapter{システム設計}
+
+\section{全体アーキテクチャ}
+
+\subsection{アーキテクチャ選定の背景}
+
+本作品のアーキテクチャ設計にあたり，ホスティング方式の選定を行った．Vercel等のPaaS（Platform as a Service）は，デプロイの簡便さやスケーラビリティというメリットがある．一方で，Serverless Functionsの実行時間制限（Vercelの場合，無料プランで10秒）があり，BOOTHからの商品情報スクレイピングのような長時間処理には制約がある．
+
+本作品ではOracle Cloud Infrastructure（OCI）上のVPSにセルフホスティングする構成を採用した．OCIのAlways Freeティアでは，ARM64アーキテクチャのVMを無料で利用できるため，学生プロジェクトとしてコスト面でも適切であった．
+
+\subsection{採用したアーキテクチャ}
+
+本アプリケーションは，フロントエンドとバックエンドを統合したNext.js 16のApp Routerを基盤としている．Next.jsのAPI Routesを活用することで，フロントエンドとバックエンドで型定義を共有でき，開発効率とコードの一貫性が向上する．Server Componentsによるサーバサイドレンダリングと，API Routesによるバックエンドロジックを一体化することで，開発効率とパフォーマンスの両立を実現している．
+
+インフラ層では，スタードメインでDNS管理を行い，nginxをリバースプロキシとして配置している．SSL/TLS証明書はLet's Encryptから自動取得し，HTTPS通信を実現している．アプリケーションプロセスはPM2で管理し，クラッシュ時の自動再起動やログ管理を行っている．データベースにはPostgreSQLを採用し，Prisma ORMを介して型安全なデータアクセスを実現している．
+
+デプロイはGitHub Actionsを用いたCI/CDパイプラインで自動化しており，テスト実行後にSSH経由でVPSへデプロイする構成としている．
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/architecture_a4portrait.pdf}
+    \caption{システム全体構成図}
+    \label{fig:architecture}
+\end{figure}
+
+\section{技術スタック}
+
+本アプリケーションの開発にあたっては，堅牢性と将来的な拡張性を確保するため，各レイヤーにおいて技術選定を行った．選定にあたっては，開発効率，型安全性，コミュニティの活発さ，ドキュメントの充実度を重視した．
+
+\subsection{フロントエンド}
+
+フロントエンド開発にはTypeScriptを採用した．静的型付けにより，コンパイル時のエラー検出やIDEによる補完機能の恩恵を受けられる．本作品のようなタグシステムでは，タグオブジェクトの構造やAPIレスポンスの型を厳密に定義することで，ランタイムエラーの防止に貢献した．
+
+UIフレームワークにはNext.js 16のApp Routerを採用した．Server Componentsによるレンダリング最適化や，ファイルベースルーティングによる直感的なページ構成が可能である点が特徴である．Vercelが開発元であることから，ドキュメントの充実度やアップデートの継続性についても信頼性が高い．
+
+スタイリングにはTailwind CSSを採用した．ユーティリティファーストのアプローチにより，HTMLとスタイルを同一ファイル内で管理でき，コンポーネントの可読性が向上する．アクセシビリティに配慮したコンポーネント基盤としてRadix UIを併用し，キーボードナビゲーションやスクリーンリーダー対応を効率的に実装した．初回訪問ユーザ向けのオンボーディングツアー機能にはDriver.jsを採用した．
+
+\subsection{バックエンド}
+
+バックエンドにはNext.js API Routesを採用した．フロントエンドとバックエンドでTypeScriptの型定義を共有できるため，APIレスポンスの型不整合によるバグを防止でき，開発効率が向上する．
+
+データベースにはPostgreSQLを採用した．本作品のタグシステムでは，タグ間の含意関係や商品とタグの多対多関係など，リレーショナルな構造が多く存在する．外部キー制約やJOINクエリを効率的に扱えるリレーショナルデータベースが適している．
+
+ORMにはPrismaを採用した．TypeScriptとの統合が優れており，スキーマ定義から自動生成される型によってデータベースアクセス時の型安全性が確保される．マイグレーション機能も充実しており，スキーマ変更を履歴管理しながら安全に適用できる．
+
+認証システムにはAuth.js（旧NextAuth.js）を採用し，OAuth 2.0ベースの認証を実現した．GoogleおよびDiscordをOAuthプロバイダとして設定し，ユーザは既存のアカウントでログインできる．
+
+\subsection{インフラ・運用}
+
+インフラ構成については，図\ref{fig:architecture}で述べた通りである．
+
+テスト環境については，ユニットテストにVitest，E2EテストにPlaywrightを採用している．また，本番環境のエラー監視にはSentryを導入し，問題の早期発見と対応を可能としている．
+
+\section{タグシステムのデータモデル設計}
+
+\subsection{設計の背景と方針}
+
+本作品の核心となるタグシステムの設計にあたり，既存のタグベース検索システムを調査した．画像共有サイトにおけるタグシステムでは，単純なタグ付けにとどまらず，タグ間の意味的関係（含意，エイリアス）を管理することで，検索の網羅性と精度を向上させている事例がある．
+
+本作品でも同様のアプローチを採用し，以下の4つのデータモデルを設計した：含意関係テーブル，翻訳テーブル，タグカテゴリ，バージョン管理システムである．これらの設計により，単純なタグ検索を超えた，インテリジェントな検索体験の実現を目指した．
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/er_diagram.pdf}
+    \caption{タグシステムER図}
+    \label{fig:er_diagram}
+\end{figure}
+
+\subsection{含意関係テーブル}
+
+タグ間の含意関係（親子関係）を表現するテーブルを設計した．これにより，「パーカー」というタグを登録した際に，上位タグである「トップス」も自動登録されるようなインテリジェントなタグ付けが可能となる．
+
+\begin{figure}[H]
+\begin{lstlisting}[language=TypeScript,caption=含意関係モデル（Prisma Schema）]
+model TagImplication {
+  id          String   @id @default(cuid())
+  parentTagId String   // 上位タグ（例：トップス）
+  childTagId  String   // 下位タグ（例：パーカー）
+  parentTag   Tag      @relation("ParentTag", fields: [parentTagId])
+  childTag    Tag      @relation("ChildTag", fields: [childTagId])
+  createdAt   DateTime @default(now())
+
+  @@unique([parentTagId, childTagId])
+}
+\end{lstlisting}
+\end{figure}
+
+この設計により，ユーザが細かいタグを付けるだけで，検索時には上位カテゴリでもヒットするようになる．また，タグの一貫性が保たれることでデータベースの品質が向上し，将来的なタグの階層構造の拡張にも対応可能となる．
+
+\subsection{翻訳テーブル}
+
+海外展開を想定し，日本語タグに対する多言語翻訳を格納するテーブルを設計した．
+
+\begin{figure}[H]
+\begin{lstlisting}[language=TypeScript,caption=タグ翻訳モデル（Prisma Schema）]
+model TagTranslation {
+  id        String   @id @default(cuid())
+  tagId     String
+  tag       Tag      @relation(fields: [tagId])
+  locale    String   // 言語コード（例：en, zh-CN）
+  name      String   // 翻訳されたタグ名
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tagId, locale])
+}
+\end{lstlisting}
+\end{figure}
+
+この設計により，日本語のタグに対して英語や中国語の翻訳を提案する機能が実現可能となる．また，ユーザの言語設定に応じたタグ表示の切り替えや，国際的なユーザコミュニティへの対応も可能である．
+
+\subsection{タグカテゴリ設計}
+
+タグを「衣服」「スタイル」「素材」などのカテゴリで分類することで，利用者が直感的かつ詳細な絞り込み検索ができるようにした．
+
+\begin{figure}[H]
+\begin{lstlisting}[language=TypeScript,caption=タグカテゴリモデル（Prisma Schema）]
+model TagCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique  // カテゴリ名
+  description String?           // カテゴリの説明
+  sortOrder   Int      @default(0)  // 表示順
+  tags        Tag[]
+  createdAt   DateTime @default(now())
+}
+
+model Tag {
+  id          String        @id @default(cuid())
+  name        String        @unique
+  categoryId  String?
+  category    TagCategory?  @relation(fields: [categoryId])
+  // ... 他のリレーション
+}
+\end{lstlisting}
+\end{figure}
+
+\subsection{バージョン管理設計}
+
+タグ編集の信頼性を担保するため，Gitのようなバージョン管理システムをデータベース上で構築した．タグ編集のたびに追加・削除・維持されたタグの差分とバージョン番号を履歴テーブルに保存し，任意の過去時点の状態参照やロールバックを可能にする設計としている．
+
+\begin{figure}[H]
+\begin{lstlisting}[language=TypeScript,caption=タグ編集履歴モデル（Prisma Schema）]
+model TagEditHistory {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId])
+  userId      String
+  user        User     @relation(fields: [userId])
+  version     Int      // バージョン番号
+  addedTags   String[] // 追加されたタグID
+  removedTags String[] // 削除されたタグID
+  createdAt   DateTime @default(now())
+
+  // 評価機能
+  votes       TagEditVote[]
+}
+
+model TagEditVote {
+  id        String         @id @default(cuid())
+  historyId String
+  history   TagEditHistory @relation(fields: [historyId])
+  userId    String
+  user      User           @relation(fields: [userId])
+  isUpvote  Boolean        // 賛成/反対
+  createdAt DateTime       @default(now())
+
+  @@unique([historyId, userId])
+}
+\end{lstlisting}
+\end{figure}
+
+この設計により，誰がいつ，どのようにタグを編集したかという透明性が確保される．他のユーザは編集履歴に対して賛成・反対の投票を行うことができ，不正な編集があった場合にはロールバックが可能である．これらの仕組みにより，コミュニティ全体で情報品質を維持する体制が構築される．
