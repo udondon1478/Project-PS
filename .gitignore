@@ -76,7 +76,6 @@ LaTeX/*.fdb_latexmk
 LaTeX/*.fls
 LaTeX/*.log
 LaTeX/*.out
-LaTeX/*.pdf
 LaTeX/*.run.xml
 LaTeX/*.synctex.gz
 LaTeX/*.toc
