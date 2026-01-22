@@ -1,0 +1,85 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '16px'}}}%%
+erDiagram
+    Tag ||--o{ TagImplication : "親タグ"
+    Tag ||--o{ TagImplication : "子タグ"
+    Tag ||--o{ TagTranslation : "翻訳"
+    Tag }o--|| TagCategory : "カテゴリ"
+    Tag ||--o{ ProductTag : "商品タグ"
+
+    Product ||--o{ ProductTag : "タグ付け"
+    Product ||--o{ TagEditHistory : "編集履歴"
+
+    User ||--o{ TagEditHistory : "編集者"
+    User ||--o{ TagEditVote : "投票者"
+
+    TagEditHistory ||--o{ TagEditVote : "投票"
+
+    Tag {
+        string id PK
+        string name UK
+        string categoryId FK
+        datetime createdAt
+    }
+
+    TagCategory {
+        string id PK
+        string name UK
+        string description
+        int sortOrder
+        datetime createdAt
+    }
+
+    TagImplication {
+        string id PK
+        string parentTagId FK
+        string childTagId FK
+        datetime createdAt
+    }
+
+    TagTranslation {
+        string id PK
+        string tagId FK
+        string locale
+        string name
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Product {
+        string id PK
+        string title
+        string url
+        datetime createdAt
+    }
+
+    ProductTag {
+        string id PK
+        string productId FK
+        string tagId FK
+        datetime createdAt
+    }
+
+    TagEditHistory {
+        string id PK
+        string productId FK
+        string userId FK
+        int version
+        array addedTags
+        array removedTags
+        datetime createdAt
+    }
+
+    TagEditVote {
+        string id PK
+        string historyId FK
+        string userId FK
+        boolean isUpvote
+        datetime createdAt
+    }
+
+    User {
+        string id PK
+        string name
+        string email
+        datetime createdAt
+    }

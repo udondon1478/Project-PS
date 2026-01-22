@@ -62,3 +62,23 @@ repomix-*.xml
 
 # Claude Memory files
 CLAUDE.md
+
+# LaTeX
+LaTeX/sample/
+LaTeX/backup-*/
+LaTeX/*.aux
+LaTeX/*.bbl
+LaTeX/*.bbl-SAVE-ERROR
+LaTeX/*.bcf
+LaTeX/*.blg
+LaTeX/*.dvi
+LaTeX/*.fdb_latexmk
+LaTeX/*.fls
+LaTeX/*.log
+LaTeX/*.out
+LaTeX/*.run.xml
+LaTeX/*.synctex.gz
+LaTeX/*.toc
+LaTeX/chapters/*.aux
+LaTeX/figures/*.pdf
+LaTeX/figures/*.xbb

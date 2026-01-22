@@ -1,0 +1,49 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '20px'}}}%%
+flowchart TB
+    Browser["ブラウザ"]
+
+    subgraph OCI["Oracle Cloud Infrastructure (VPS)"]
+        Nginx["nginx + Let's Encrypt"]
+        PM2["PM2"]
+
+        subgraph NextJS["Next.js 16"]
+            SSR["Server Components"]
+            Client["Client Components"]
+            API["API Routes"]
+        end
+
+        Prisma["Prisma ORM"]
+        PG[("PostgreSQL")]
+    end
+
+    subgraph External["外部サービス"]
+        Auth["Auth.js (OAuth)"]
+        Sentry["Sentry"]
+    end
+
+    GHA["GitHub Actions"]
+
+    Browser -->|HTTPS| Nginx
+    Nginx --> PM2
+    PM2 --> NextJS
+    Client <--> API
+    SSR --> Prisma
+    API --> Prisma
+    Prisma <--> PG
+    API <--> Auth
+    NextJS -.-> Sentry
+    GHA -->|デプロイ| PM2
+
+    classDef browser fill:#e1f5fe,stroke:#01579b
+    classDef infra fill:#009688,stroke:#004d40,color:#fff
+    classDef nextjs fill:#0070f3,stroke:#0050a0,color:#fff
+    classDef data fill:#e8f5e9,stroke:#2e7d32
+    classDef external fill:#fff3e0,stroke:#e65100
+    classDef cicd fill:#f3e5f5,stroke:#7b1fa2
+
+    class Browser browser
+    class Nginx,PM2 infra
+    class SSR,Client,API nextjs
+    class Prisma,PG data
+    class Auth,Sentry external
+    class GHA cicd

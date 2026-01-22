@@ -1,0 +1,30 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '18px'}}}%%
+flowchart TB
+    subgraph VPS["VPS (Ubuntu) - アプリケーション構成"]
+        subgraph AppServer["アプリケーション層"]
+            PM2["PM2<br/>(プロセス管理)"]
+            subgraph NextJS["Next.js 16 App Router"]
+                SC["Server Components<br/>(SSR)"]
+                CC["Client Components<br/>(React)"]
+                API["API Routes<br/>(REST API)"]
+            end
+        end
+        subgraph DataLayer["データ層"]
+            Prisma["Prisma ORM"]
+            PG[("PostgreSQL")]
+        end
+    end
+
+    PM2 --> NextJS
+    CC <--> API
+    SC --> Prisma
+    API --> Prisma
+    Prisma <--> PG
+
+    classDef pm2 fill:#9c27b0,stroke:#4a148c,color:#fff
+    classDef nextjs fill:#0070f3,stroke:#fff,color:#fff
+    classDef data fill:#e8f5e9,stroke:#2e7d32
+
+    class PM2 pm2
+    class SC,CC,API nextjs
+    class Prisma,PG data

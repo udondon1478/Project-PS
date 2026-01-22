@@ -1,0 +1,114 @@
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'fontSize': '24px',
+    'fontFamily': 'Noto Sans JP, sans-serif',
+    'lineColor': '#333333',
+    'primaryColor': '#f0f0f0',
+    'primaryTextColor': '#1a1a1a',
+    'primaryBorderColor': '#333333',
+    'secondaryColor': '#e8e8e8',
+    'tertiaryColor': '#ffffff',
+    'nodePadding': '20',
+    'nodeSpacing': '50',
+    'rankSpacing': '80'
+  },
+  'flowchart': {
+    'nodeSpacing': 60,
+    'rankSpacing': 100,
+    'curve': 'basis',
+    'padding': 30
+  }
+}}%%
+
+flowchart LR
+
+%% ── クライアント層 ──────────────────
+subgraph CLIENT["　クライアント　"]
+    direction TB
+    BROWSER["🌐<br/><b>ブラウザ</b>"]
+end
+
+%% ── DNS / ドメイン層 ──────────────────
+subgraph DNS["　ドメイン管理　"]
+    direction TB
+    STARDOMAIN["🔗<br/><b>スタードメイン</b><br/>(DNS)"]
+end
+
+%% ── Oracle Cloud Infrastructure ──────
+subgraph OCI["　　Oracle Cloud Infrastructure (VPS / Ubuntu)　　"]
+    direction TB
+    
+    subgraph WEBSERVER["Webサーバ層"]
+        direction LR
+        NGINX["🔒<br/><b>nginx</b><br/>(リバースプロキシ)"]
+        LETSENCRYPT["🔐<br/><b>Let's Encrypt</b><br/>(SSL/TLS)"]
+    end
+    
+    subgraph APPSERVER["アプリケーション層"]
+        direction TB
+        PM2["⚡<br/><b>PM2</b><br/>(プロセス管理)"]
+        
+        subgraph NEXTJS["　Next.js 16 App Router　"]
+            direction LR
+            SC["<b>Server<br/>Components</b><br/>(SSR)"]
+            CC["<b>Client<br/>Components</b><br/>(React)"]
+            API["<b>API<br/>Routes</b><br/>(REST)"]
+        end
+    end
+    
+    subgraph DATALAYER["データ層"]
+        direction LR
+        PRISMA["📦<br/><b>Prisma ORM</b>"]
+        PG[("🗄️<br/><b>PostgreSQL</b>")]
+    end
+end
+
+%% ── 外部サービス ──────────────────
+subgraph EXTERNAL["　外部サービス　"]
+    direction TB
+    AUTH["🔑<br/><b>Auth.js</b><br/>(OAuth 2.0)"]
+    SENTRY["📊<br/><b>Sentry</b><br/>(エラー監視)"]
+end
+
+%% ── CI/CD ──────────────────────────
+subgraph CICD["　CI/CD　"]
+    direction TB
+    GHA["🚀<br/><b>GitHub Actions</b>"]
+    TEST["🧪<br/><b>Vitest / Playwright</b>"]
+end
+
+%% ── 接続線 ──────────────────────────
+BROWSER ==>|"HTTPS"| STARDOMAIN
+STARDOMAIN ==>|"DNS解決"| NGINX
+LETSENCRYPT -.->|"SSL証明書"| NGINX
+NGINX ==>|"プロキシ"| PM2
+PM2 ==> NEXTJS
+CC <-->|"API通信"| API
+SC -->|"クエリ"| PRISMA
+API -->|"クエリ"| PRISMA
+PRISMA <-->|"読み書き"| PG
+API <-->|"認証"| AUTH
+NEXTJS -.->|"エラー送信"| SENTRY
+GHA ==>|"テスト実行"| TEST
+GHA ==>|"SSH デプロイ"| PM2
+
+%% ── スタイル定義 ──────────────────
+classDef clientStyle fill:#e3f2fd,stroke:#1565c0,stroke-width:3px,color:#0d47a1
+classDef dnsStyle fill:#fff9c4,stroke:#f9a825,stroke-width:3px,color:#795548
+classDef webserverStyle fill:#00897b,stroke:#004d40,stroke-width:3px,color:#ffffff
+classDef appStyle fill:#7c4dff,stroke:#311b92,stroke-width:3px,color:#ffffff
+classDef nextjsStyle fill:#0d47a1,stroke:#1a237e,stroke-width:3px,color:#ffffff
+classDef dataStyle fill:#c8e6c9,stroke:#2e7d32,stroke-width:3px,color:#1b5e20
+classDef externalStyle fill:#ffe0b2,stroke:#e65100,stroke-width:3px,color:#bf360c
+classDef cicdStyle fill:#f3e5f5,stroke:#6a1b9a,stroke-width:3px,color:#4a148c
+
+%% ── スタイル適用 ──────────────────
+class BROWSER clientStyle
+class STARDOMAIN dnsStyle
+class NGINX,LETSENCRYPT webserverStyle
+class PM2 appStyle
+class SC,CC,API nextjsStyle
+class PRISMA,PG dataStyle
+class AUTH,SENTRY externalStyle
+class GHA,TEST cicdStyle

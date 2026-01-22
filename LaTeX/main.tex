@@ -1,0 +1,130 @@
+%
+% PolySeek ポートフォリオ
+% メタバース向けアセット検索Webアプリケーションの制作
+%
+\documentclass[a4paper,12pt]{jreport}
+
+% ========================================
+% パッケージ読み込み
+% ========================================
+
+% 日本語対応
+\usepackage[dvipdfmx]{graphicx}
+\usepackage[dvipdfmx]{hyperref}
+\usepackage{pxjahyper}
+
+% 図表関連
+\usepackage{subcaption}
+\usepackage{float}
+
+% コード表示（listings）
+\usepackage{listings}
+\usepackage{xcolor}
+
+% 参考文献（BibLaTeX）
+\usepackage[backend=biber,style=numeric,sorting=none]{biblatex}
+\addbibresource{references.bib}
+
+% URL表示
+\usepackage{url}
+
+% ========================================
+% ページ設定（A4, 左右均一余白）
+% ========================================
+\topmargin=-14mm
+\headsep=15mm
+\textwidth=15.7cm
+\textheight=24.5cm
+\oddsidemargin=7.5mm
+\evensidemargin=7.5mm
+
+% ========================================
+% 目次設定（sectionまで表示）
+% ========================================
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{2}
+
+% ========================================
+% コードスタイル設定（listings）
+% ========================================
+\lstdefinestyle{codestyle}{
+    backgroundcolor=\color{gray!10},
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    commentstyle=\color{green!60!black},
+    keywordstyle=\color{blue},
+    stringstyle=\color{orange},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    frame=single,
+    tabsize=2
+}
+\lstset{style=codestyle}
+\renewcommand{\lstlistingname}{リスト}
+
+
+% TypeScript用の言語定義
+\lstdefinelanguage{TypeScript}{
+    keywords={break, case, catch, continue, debugger, default, delete, do, else, finally, for, function, if, in, instanceof, new, return, switch, this, throw, try, typeof, var, void, while, with, let, const, class, extends, export, import, default, static, async, await, interface, type, enum, implements, private, protected, public, readonly, abstract, as, from},
+    morecomment=[l]{//},
+    morecomment=[s]{/*}{*/},
+    morestring=[b]',
+    morestring=[b]",
+    morestring=[b]`,
+    sensitive=true
+}
+
+% ========================================
+% ハイパーリンク設定
+% ========================================
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    citecolor=blue,
+    urlcolor=blue,
+    bookmarksnumbered=true,
+    pdfborder={0 0 0}
+}
+
+% ========================================
+% 参考文献の名前変更
+% ========================================
+\renewcommand{\bibname}{参考文献}
+
+% ========================================
+% ページスタイル
+% ========================================
+\pagestyle{headings}
+
+% ========================================
+% 本文開始
+% ========================================
+\begin{document}
+
+% 表紙
+\include{chapters/00_title}
+
+% 目次
+\tableofcontents
+\thispagestyle{empty}
+\setcounter{page}{0}
+
+% 本文
+\include{chapters/01_overview}
+\include{chapters/02_design}
+\include{chapters/03_implementation}
+\include{chapters/04_release}
+\include{chapters/05_future}
+
+% 謝辞
+\include{chapters/06_thanks}
+
+% 参考文献
+\printbibliography[heading=bibintoc,title=参考文献]
+
+\end{document}

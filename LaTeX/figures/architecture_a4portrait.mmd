@@ -1,0 +1,96 @@
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'fontSize': '20px',
+    'fontFamily': 'Noto Sans JP, sans-serif',
+    'lineColor': '#333333',
+    'primaryColor': '#f0f0f0',
+    'primaryTextColor': '#1a1a1a',
+    'primaryBorderColor': '#333333'
+  },
+  'flowchart': {
+    'nodeSpacing': 80,
+    'rankSpacing': 120,
+    'curve': 'basis',
+    'padding': 40,
+    'wrappingWidth': 200
+  }
+}}%%
+
+flowchart TB
+
+%% ────────── クライアント & DNS ──────────
+BROWSER["🌐 <b>ブラウザ</b>"]
+STARDOMAIN["🔗 <b>スタードメイン</b><br/>(DNS)"]
+
+%% ────────── Oracle Cloud Infrastructure ──────────
+subgraph OCI["Oracle Cloud Infrastructure"]
+    direction TB
+    
+    subgraph WEBSERVER["Webサーバ層"]
+        NGINX["🔒 <b>nginx</b><br/>リバースプロキシ"]
+        LETSENCRYPT["🔐 <b>Let's Encrypt</b><br/>SSL/TLS"]
+    end
+    
+    subgraph APPSERVER["アプリケーション層"]
+        PM2["⚡ <b>PM2</b><br/>プロセス管理"]
+        
+        subgraph NEXTJS["Next.js 16"]
+            SC["<b>Server<br/>Components</b>"]
+            CC["<b>Client<br/>Components</b>"]
+            API["<b>API<br/>Routes</b>"]
+        end
+    end
+    
+    subgraph DATALAYER["データ層"]
+        PRISMA["📦 <b>Prisma</b>"]
+        PG[("🗄️ <b>PostgreSQL</b>")]
+    end
+end
+
+%% ────────── 外部サービス ──────────
+subgraph EXTERNAL["外部サービス"]
+    AUTH["🔑 <b>Auth.js</b><br/>OAuth 2.0"]
+    SENTRY["📊 <b>Sentry</b><br/>エラー監視"]
+end
+
+%% ────────── CI/CD ──────────
+subgraph CICD["CI/CD"]
+    GHA["🚀 <b>GitHub<br/>Actions</b>"]
+    TEST["🧪 <b>Vitest<br/>Playwright</b>"]
+end
+
+%% ────────── 接続線 ──────────
+BROWSER ==>|"HTTPS"| STARDOMAIN
+STARDOMAIN ==>|"DNS"| NGINX
+LETSENCRYPT -.->|"証明書"| NGINX
+NGINX ==>|"プロキシ"| PM2
+PM2 ==> NEXTJS
+CC <--> API
+SC --> PRISMA
+API --> PRISMA
+PRISMA <--> PG
+API <--> AUTH
+NEXTJS -.-> SENTRY
+GHA ==> TEST
+GHA ==>|"デプロイ"| PM2
+
+%% ────────── スタイル定義 ──────────
+classDef clientStyle fill:#e3f2fd,stroke:#1565c0,stroke-width:3px,color:#0d47a1
+classDef dnsStyle fill:#fff9c4,stroke:#f9a825,stroke-width:3px,color:#5d4037
+classDef webserverStyle fill:#00897b,stroke:#004d40,stroke-width:3px,color:#ffffff
+classDef appStyle fill:#7c4dff,stroke:#311b92,stroke-width:3px,color:#ffffff
+classDef nextjsStyle fill:#0d47a1,stroke:#1a237e,stroke-width:3px,color:#ffffff
+classDef dataStyle fill:#c8e6c9,stroke:#2e7d32,stroke-width:3px,color:#1b5e20
+classDef externalStyle fill:#ffe0b2,stroke:#e65100,stroke-width:3px,color:#bf360c
+classDef cicdStyle fill:#f3e5f5,stroke:#6a1b9a,stroke-width:3px,color:#4a148c
+
+%% ────────── スタイル適用 ──────────
+class BROWSER clientStyle
+class STARDOMAIN dnsStyle
+class NGINX,LETSENCRYPT webserverStyle
+class PM2 appStyle
+class SC,CC,API nextjsStyle
+class PRISMA,PG dataStyle
+class AUTH,SENTRY externalStyle
+class GHA,TEST cicdStyle
