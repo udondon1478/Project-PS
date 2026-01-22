@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { X } from 'lucide-react';
+import { AGE_RATING_WHITELIST } from '@/lib/constants';
 
 interface QuickFiltersProps {
   ageRatingTags: { id: string; name: string; displayName?: string; color?: string | null }[];
@@ -35,12 +36,20 @@ export const QuickFilters: React.FC<QuickFiltersProps> = ({
   handleRemoveTag,
 }) => {
   const ageRatingLookup = React.useMemo(() => new Map(ageRatingTags.map(t => [t.name, t])), [ageRatingTags]);
-  
-  const label = React.useMemo(() => 
-      selectedAgeRatingTags.map(tagName => { 
-          const t = ageRatingLookup.get(tagName); 
-          return t?.displayName || t?.name || tagName; 
-      }).join(', '), 
+
+  // Filter and sort age rating tags based on whitelist
+  // Only show tags in AGE_RATING_WHITELIST, in the order defined by the whitelist
+  const filteredAgeRatingTags = React.useMemo(() => {
+    return AGE_RATING_WHITELIST
+      .map(name => ageRatingTags.find(tag => tag.name === name))
+      .filter((tag): tag is NonNullable<typeof tag> => tag !== undefined);
+  }, [ageRatingTags]);
+
+  const label = React.useMemo(() =>
+      selectedAgeRatingTags.map(tagName => {
+          const t = ageRatingLookup.get(tagName);
+          return t?.displayName || t?.name || tagName;
+      }).join(', '),
       [selectedAgeRatingTags, ageRatingLookup]
   );
 
@@ -60,7 +69,7 @@ export const QuickFilters: React.FC<QuickFiltersProps> = ({
         <DropdownMenuContent>
           <DropdownMenuLabel>対象年齢</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {ageRatingTags.map(tag => (
+          {filteredAgeRatingTags.map(tag => (
             <DropdownMenuItem key={tag.id} onSelect={(e) => e.preventDefault()}>
               <div className="flex items-center space-x-2">
                 <Checkbox

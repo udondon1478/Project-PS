@@ -24,6 +24,7 @@ import { Slider } from '@/components/ui/slider';
 import { Filter, X } from 'lucide-react';
 import { SortSelector } from './SortSelector';
 import { type SortOption } from '@/constants/sort';
+import { AGE_RATING_WHITELIST } from '@/lib/constants';
 
 interface FilterSidebarProps {
   isFilterSidebarOpen: boolean;
@@ -80,6 +81,14 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   sortBy,
   onSortChange,
 }) => {
+  // Filter and sort age rating tags based on whitelist
+  // Only show tags in AGE_RATING_WHITELIST, in the order defined by the whitelist
+  const filteredAgeRatingTags = React.useMemo(() => {
+    return AGE_RATING_WHITELIST
+      .map(name => ageRatingTags.find(tag => tag.name === name))
+      .filter((tag): tag is NonNullable<typeof tag> => tag !== undefined);
+  }, [ageRatingTags]);
+
   return (
     <Sheet open={isFilterSidebarOpen} onOpenChange={setIsFilterSidebarOpen}>
       <SheetTrigger asChild>
@@ -113,14 +122,14 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                     <Button variant="outline" className="w-full justify-start text-sm">
                       {selectedAgeRatingTags.length > 0
                         ? (() => {
-                            const ageRatingLookup = new Map(ageRatingTags.map(t => [t.name, t]));
+                            const ageRatingLookup = new Map(filteredAgeRatingTags.map(t => [t.name, t]));
                             return `対象年齢: ${selectedAgeRatingTags.map(tagId => { const t = ageRatingLookup.get(tagId); return t?.displayName || t?.name || tagId; }).join(', ')}`;
                           })()
                         : "対象年齢"}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
-                    {ageRatingTags.map(tag => (
+                    {filteredAgeRatingTags.map(tag => (
                       <DropdownMenuItem key={tag.id} onSelect={(e) => e.preventDefault()}>
                         <div className="flex items-center space-x-2">
                           <Checkbox

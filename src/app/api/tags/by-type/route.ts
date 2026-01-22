@@ -7,11 +7,22 @@ export async function GET(request: Request) {
     const categoryNamesParam = searchParams.get('categoryNames');
     const categoryNames = categoryNamesParam ? categoryNamesParam.split(',') : [];
 
+    // カテゴリ名のマッピング（後方互換性のため）
+    // age_rating → rating への移行をサポート
+    const categoryMapping: Record<string, string[]> = {
+      'age_rating': ['age_rating', 'rating'], // 両方のカテゴリを検索
+    };
+
+    // カテゴリ名を展開（マッピングがあれば適用）
+    const expandedCategoryNames = categoryNames.flatMap(
+      name => categoryMapping[name] || [name]
+    );
+
     const tags = await prisma.tag.findMany({
       where: {
         tagCategory: {
           name: {
-            in: categoryNames.length > 0 ? categoryNames : undefined, // categoryNamesが空の場合はフィルタリングしない
+            in: expandedCategoryNames.length > 0 ? expandedCategoryNames : undefined, // categoryNamesが空の場合はフィルタリングしない
           },
         },
       },

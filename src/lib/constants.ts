@@ -41,3 +41,8 @@ export const DEFAULT_REQUEST_INTERVAL_MS = 5000;
 export const MAX_INTERVAL_MIN = 10080; // One week in minutes
 export const MAX_PAGE_LIMIT = 1000;
 export const MAX_REQUEST_INTERVAL_MS = 60000;
+
+// Age Rating Tags Whitelist (defines which tags to show in QuickFilter and their display order)
+// Tags not in this list (e.g., R-18G from scraping) will be excluded from UI
+export const AGE_RATING_WHITELIST = ['全年齢', 'R-15', 'R-17', 'R-18'] as const;
+export type AgeRatingTag = typeof AGE_RATING_WHITELIST[number];
