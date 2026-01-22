@@ -3,6 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { SortOption, SORT_VALUES, isSortOption } from '@/constants/sort';
+import { AGE_RATING_WHITELIST } from '@/lib/constants';
+
+// Sanitize age rating tags to only include whitelisted values
+const sanitizeAgeRatingTags = (tags: string[]): string[] => {
+  return tags.filter(tag => (AGE_RATING_WHITELIST as readonly string[]).includes(tag));
+};
 
 // タグサジェストの型定義
 export interface TagSuggestion {
@@ -177,7 +183,7 @@ export const useProductSearch = ({
     if (urlTags.length > 0 || urlNegativeTags.length > 0 || urlAgeRatingTags.length > 0) {
       setSelectedTags(urlTags);
       setSelectedNegativeTags(urlNegativeTags);
-      setSelectedAgeRatingTags(urlAgeRatingTags);
+      setSelectedAgeRatingTags(sanitizeAgeRatingTags(urlAgeRatingTags));
     } else {
       const savedTags = sessionStorage.getItem('polyseek-search-tags');
       const savedNegativeTags = sessionStorage.getItem('polyseek-search-negative-tags');
@@ -185,7 +191,7 @@ export const useProductSearch = ({
       const savedSortBy = sessionStorage.getItem('polyseek-search-sort');
       if (savedTags) try { setSelectedTags(JSON.parse(savedTags)); } catch (e) { console.error(e); }
       if (savedNegativeTags) try { setSelectedNegativeTags(JSON.parse(savedNegativeTags)); } catch (e) { console.error(e); }
-      if (savedAgeRatingTags) try { setSelectedAgeRatingTags(JSON.parse(savedAgeRatingTags)); } catch (e) { console.error(e); }
+      if (savedAgeRatingTags) try { setSelectedAgeRatingTags(sanitizeAgeRatingTags(JSON.parse(savedAgeRatingTags))); } catch (e) { console.error(e); }
       if (savedSortBy && isSortOption(savedSortBy)) {
         setSortBy(savedSortBy);
       }
