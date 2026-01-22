@@ -62,10 +62,11 @@ async function main() {
   // 新規タグは新しい8カテゴリのいずれかに割り当ててください
 
   // 古いカテゴリの取得（既存タグとの互換性のため）
+  // age_ratingカテゴリもratingと同じ色に更新（移行期間中の互換性のため）
   const ageRatingCategory = await prisma.tagCategory.upsert({
     where: { name: 'age_rating' },
-    update: {},
-    create: { name: 'age_rating', color: '#CCCCCC' },
+    update: { color: '#E74C3C' }, // ratingカテゴリと同じ色に更新
+    create: { name: 'age_rating', color: '#E74C3C' },
   });
 
   const productCategory = await prisma.tagCategory.upsert({
