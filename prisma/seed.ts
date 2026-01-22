@@ -88,17 +88,25 @@ async function main() {
   });
 
   // 対象年齢タグの初期データ
+  // 新しいratingカテゴリを使用（tagCategories.tsで定義、#E74C3C）
+  // seedTagCategories()が先に呼ばれていない場合でも動作するようupsertを使用
+  const ratingCategory = await prisma.tagCategory.upsert({
+    where: { name: 'rating' },
+    update: {},
+    create: { name: 'rating', color: '#E74C3C' },
+  });
+
   const ageRatingTags = [
-    { name: '全年齢', tagCategoryId: ageRatingCategory.id },
-    { name: 'R-15', tagCategoryId: ageRatingCategory.id },
-    { name: 'R-17', tagCategoryId: ageRatingCategory.id },
-    { name: 'R-18', tagCategoryId: ageRatingCategory.id },
+    { name: '全年齢', tagCategoryId: ratingCategory.id },
+    { name: 'R-15', tagCategoryId: ratingCategory.id },
+    { name: 'R-17', tagCategoryId: ratingCategory.id },
+    { name: 'R-18', tagCategoryId: ratingCategory.id },
   ];
 
   for (const tagData of ageRatingTags) {
     await prisma.tag.upsert({
       where: { name: tagData.name },
-      update: {},
+      update: { tagCategoryId: tagData.tagCategoryId }, // 既存タグのカテゴリも更新
       create: { ...tagData, language: 'ja' },
     });
   }
