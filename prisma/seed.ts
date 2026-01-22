@@ -89,13 +89,12 @@ async function main() {
 
   // 対象年齢タグの初期データ
   // 新しいratingカテゴリを使用（tagCategories.tsで定義、#E74C3C）
-  const ratingCategory = await prisma.tagCategory.findUnique({
+  // seedTagCategories()が先に呼ばれていない場合でも動作するようupsertを使用
+  const ratingCategory = await prisma.tagCategory.upsert({
     where: { name: 'rating' },
+    update: {},
+    create: { name: 'rating', color: '#E74C3C' },
   });
-
-  if (!ratingCategory) {
-    throw new Error('rating category not found. Ensure seedTagCategories() was called first.');
-  }
 
   const ageRatingTags = [
     { name: '全年齢', tagCategoryId: ratingCategory.id },
