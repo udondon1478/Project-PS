@@ -1,6 +1,7 @@
 import { PrismaClient, Role } from '@prisma/client';
 import { SYSTEM_USER_EMAIL } from '../src/lib/constants';
 import { seedTagCategories } from './seed-categories';
+import { tagCategories } from '../src/data/guidelines/tagCategories';
 
 const prisma = new PrismaClient();
 
@@ -71,8 +72,9 @@ async function main() {
 
   // レーティングカテゴリを取得（seedTagCategoriesで作成されているはず）
   // IDは自動生成される可能性があるため、nameで検索する
+  const ratingCatDef = tagCategories.find(c => c.id === 'rating');
   let ratingCategory = await prisma.tagCategory.findUnique({
-    where: { name: 'rating' },
+    where: { name: ratingCatDef?.name || 'レーティング' },
   });
 
   if (!ratingCategory) {
