@@ -120,9 +120,10 @@ async function analyze() {
         .sort((a, b) => b.usage - a.usage);
 
       for (const { tag, usage } of sorted.slice(0, 10)) {
-        const currentCat = tag.tagCategory?.name || '(なし)';
-        const marker = currentCat === suggestedCategory ? '✓' : '→';
-        console.log(`  ${marker} ${tag.displayName || tag.name}: ${usage}回 [現在: ${currentCat}]`);
+        const currentCatId = tag.tagCategoryId || '';
+        const currentCatName = tag.tagCategory?.name || '(なし)';
+        const marker = currentCatId === suggestedCategory ? '✓' : '→';
+        console.log(`  ${marker} ${tag.displayName || tag.name}: ${usage}回 [現在: ${currentCatName}]`);
       }
       if (sorted.length > 10) {
         console.log(`  ... 他 ${sorted.length - 10}個`);

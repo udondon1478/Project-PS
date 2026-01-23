@@ -113,6 +113,15 @@ async function main() {
           categoryIdMapping[cat.id] = existingByNameMatch.id;
           console.log(`  ✓ 更新: ${cat.name} (既存ID: ${existingByNameMatch.id})`);
           stats.categoriesUpdated++;
+        } else if (existingByIdMatch) {
+          // IDで見つかった場合は名前と色を更新
+          await prisma.tagCategory.update({
+            where: { id: existingByIdMatch.id },
+            data: { name: cat.name, color: cat.color },
+          });
+          categoryIdMapping[cat.id] = existingByIdMatch.id;
+          console.log(`  ✓ 更新: ${cat.id} → ${cat.name} (名前と色を更新)`);
+          stats.categoriesUpdated++;
         } else {
           // 新規作成
           const created = await prisma.tagCategory.create({

@@ -117,5 +117,4 @@ export const legacyCategoryMapping: Record<string, string> = {
   product_category: 'product_type',
   other: 'general',
   age_rating: 'rating',
-  feature: 'feature',
 };
