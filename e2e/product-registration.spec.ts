@@ -110,7 +110,7 @@ test.describe('Product Registration Flow', () => {
       const url = new URL(route.request().url());
       const categoryNames = url.searchParams.get('categoryNames');
       let data: any[] = [];
-      if (categoryNames === 'age_rating') {
+      if (categoryNames === 'rating') {
         data = MOCK_AGE_RATING_TAGS;
       } else if (categoryNames === 'product_category') {
         data = MOCK_CATEGORY_TAGS;
