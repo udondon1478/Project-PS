@@ -279,9 +279,9 @@ export const useProductSearch = ({
           }))
           .filter((tag: TagSuggestion) => !selectedTags.includes(tag.name) && !selectedNegativeTags.includes(tag.name));
 
-        // セーフサーチ有効時はR-18をサジェストから除外
+        // セーフサーチ有効時はR-18等をサジェストから除外
         const finalSuggestions = isSafeSearchEnabled
-          ? filteredSuggestions.filter((tag: TagSuggestion) => tag.name !== 'R-18')
+          ? filteredSuggestions.filter((tag: TagSuggestion) => !SAFE_SEARCH_EXCLUDED_TAGS.includes(tag.name as typeof SAFE_SEARCH_EXCLUDED_TAGS[number]))
           : filteredSuggestions;
 
         setTagSuggestions(finalSuggestions);

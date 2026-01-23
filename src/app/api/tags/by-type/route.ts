@@ -18,23 +18,18 @@ export async function GET(request: Request) {
       name => categoryMapping[name] || [name]
     );
 
-    const tags = await prisma.tag.findMany({
-      where: {
-        tagCategory: {
-          OR: [
-            {
-              name: {
-                in: expandedCategoryNames.length > 0 ? expandedCategoryNames : undefined,
-              },
-            },
-            {
-              id: {
-                in: expandedCategoryNames.length > 0 ? expandedCategoryNames : undefined,
-              },
-            },
-          ],
-        },
+    // カテゴリ指定がある場合のみフィルタリング条件を作成
+    const whereClause = expandedCategoryNames.length > 0 ? {
+      tagCategory: {
+        OR: [
+          { name: { in: expandedCategoryNames } },
+          { id: { in: expandedCategoryNames } },
+        ],
       },
+    } : {};
+
+    const tags = await prisma.tag.findMany({
+      where: whereClause,
       select: {
         id: true,
         name: true,
