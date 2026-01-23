@@ -21,9 +21,18 @@ export async function GET(request: Request) {
     const tags = await prisma.tag.findMany({
       where: {
         tagCategory: {
-          name: {
-            in: expandedCategoryNames.length > 0 ? expandedCategoryNames : undefined, // categoryNamesが空の場合はフィルタリングしない
-          },
+          OR: [
+            {
+              name: {
+                in: expandedCategoryNames.length > 0 ? expandedCategoryNames : undefined,
+              },
+            },
+            {
+              id: {
+                in: expandedCategoryNames.length > 0 ? expandedCategoryNames : undefined,
+              },
+            },
+          ],
         },
       },
       select: {
