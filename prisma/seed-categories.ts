@@ -12,11 +12,12 @@ import { tagCategories } from '../src/data/guidelines/tagCategories';
 export async function seedTagCategories(prisma: PrismaClient) {
   console.log('Syncing tag categories from tagCategories.ts...');
 
-  // nameはuniqueなので、nameで検索してupsert
+  // idをキーとしてupsertすることで、nameの変更も反映できるようにする
   const promises = tagCategories.map((category) =>
     prisma.tagCategory.upsert({
-      where: { name: category.name },
+      where: { id: category.id },
       update: {
+        name: category.name,
         color: category.color,
       },
       create: {
