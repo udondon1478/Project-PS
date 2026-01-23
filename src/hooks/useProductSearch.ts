@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { SortOption, SORT_VALUES, isSortOption } from '@/constants/sort';
 import { AGE_RATING_WHITELIST } from '@/lib/constants';
+import { SAFE_SEARCH_EXCLUDED_TAGS } from '@/constants/safeSearch';
 
 // Sanitize age rating tags to only include whitelisted values
 const sanitizeAgeRatingTags = (tags: string[]): string[] => {
@@ -120,7 +121,7 @@ export const useProductSearch = ({
   useEffect(() => {
     const fetchTagsByType = async () => {
       try {
-        const ageRatingsResponse = await fetch('/api/tags/by-type?categoryNames=age_rating');
+        const ageRatingsResponse = await fetch('/api/tags/by-type?categoryNames=rating');
         if (ageRatingsResponse.ok) {
           const ageRatingData = await ageRatingsResponse.json();
           setAgeRatingTags(ageRatingData.map((tag: { id: string; name: string; tagCategory?: { id: string; name: string; color: string } | null }) => ({
@@ -533,7 +534,7 @@ export const useProductSearch = ({
     searchContainerRef,
     searchInputRef,
     suggestionsRef,
-    ageRatingTags: isSafeSearchEnabled ? ageRatingTags.filter(tag => tag.name !== 'R-18') : ageRatingTags,
+    ageRatingTags: isSafeSearchEnabled ? ageRatingTags.filter(tag => !SAFE_SEARCH_EXCLUDED_TAGS.includes(tag.name as typeof SAFE_SEARCH_EXCLUDED_TAGS[number])) : ageRatingTags,
     categoryTags,
     featureTags,
     selectedAgeRatingTags,

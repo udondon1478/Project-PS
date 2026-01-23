@@ -44,12 +44,35 @@ describe('searchProducts - Safe Search', () => {
 
   it('should add R-18 to negativeTags when safe search is enabled (default)', async () => {
     mockedAuth.mockResolvedValue({ user: { id: 'test-user', isSafeSearchEnabled: true } } as Session);
-    
+
     await searchProducts({});
 
     const notCondition = getNotCondition();
 
     expect(notCondition).toBeDefined();
+    expect(notCondition.NOT.productTags.some.tag.name.in).toContain('R-18');
+  });
+
+  it('should add R-17 to negativeTags when safe search is enabled', async () => {
+    mockedAuth.mockResolvedValue({ user: { id: 'test-user', isSafeSearchEnabled: true } } as Session);
+
+    await searchProducts({});
+
+    const notCondition = getNotCondition();
+
+    expect(notCondition).toBeDefined();
+    expect(notCondition.NOT.productTags.some.tag.name.in).toContain('R-17');
+  });
+
+  it('should add both R-17 and R-18 to negativeTags when safe search is enabled', async () => {
+    mockedAuth.mockResolvedValue({ user: { id: 'test-user', isSafeSearchEnabled: true } } as Session);
+
+    await searchProducts({});
+
+    const notCondition = getNotCondition();
+
+    expect(notCondition).toBeDefined();
+    expect(notCondition.NOT.productTags.some.tag.name.in).toContain('R-17');
     expect(notCondition.NOT.productTags.some.tag.name.in).toContain('R-18');
   });
 
@@ -121,9 +144,25 @@ describe('searchProducts - Safe Search', () => {
 
   it('should throw a specific error when searching for R-18 via ageRatingTags with safe search enabled', async () => {
     mockedAuth.mockResolvedValue({ user: { id: 'test-user', isSafeSearchEnabled: true } } as Session);
-    
+
     await expect(searchProducts({ ageRatingTags: ['R-18'] }))
       .rejects
       .toThrow('セーフサーチが有効なため、R-18コンテンツは検索できません。');
+  });
+
+  it('should throw a specific error when searching for R-17 with safe search enabled', async () => {
+    mockedAuth.mockResolvedValue({ user: { id: 'test-user', isSafeSearchEnabled: true } } as Session);
+
+    await expect(searchProducts({ tags: ['R-17'] }))
+      .rejects
+      .toThrow('セーフサーチが有効なため、R-17コンテンツは検索できません。');
+  });
+
+  it('should throw a specific error when searching for R-17 via ageRatingTags with safe search enabled', async () => {
+    mockedAuth.mockResolvedValue({ user: { id: 'test-user', isSafeSearchEnabled: true } } as Session);
+
+    await expect(searchProducts({ ageRatingTags: ['R-17'] }))
+      .rejects
+      .toThrow('セーフサーチが有効なため、R-17コンテンツは検索できません。');
   });
 });

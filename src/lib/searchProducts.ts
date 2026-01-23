@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { Product } from '@/types/product';
 import { auth } from '@/auth';
 import { normalizeQueryParam } from './utils';
+import { SAFE_SEARCH_EXCLUDED_TAGS } from '@/constants/safeSearch';
 
 /**
  * 商品検索のパラメータを定義します。
@@ -97,16 +98,24 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
     // セーフサーチが有効（デフォルト）または未ログインの場合の処理
     const isSafeSearchEnabled = session?.user?.isSafeSearchEnabled ?? true;
     if (isSafeSearchEnabled) {
-      // ユーザーが明示的にR-18を検索しようとしているかチェック
-      if (tagNames && tagNames.includes('R-18')) {
-        throw new Error('セーフサーチが有効なため、R-18コンテンツは検索できません。');
+      // ユーザーが明示的にR-17またはR-18を検索しようとしているかチェック
+      const restrictedTag = tagNames?.find(tag =>
+        SAFE_SEARCH_EXCLUDED_TAGS.includes(tag as typeof SAFE_SEARCH_EXCLUDED_TAGS[number])
+      );
+      if (restrictedTag) {
+        throw new Error(`セーフサーチが有効なため、${restrictedTag}コンテンツは検索できません。`);
       }
 
-      // R-18を除外条件に追加 (既存の配列を変更せず、新しい配列を作成)
+      // 除外タグに追加 (既存の配列を変更せず、新しい配列を作成)
       if (!negativeTagNames) {
-        negativeTagNames = ['R-18'];
-      } else if (!negativeTagNames.includes('R-18')) {
-        negativeTagNames = [...negativeTagNames, 'R-18'];
+        negativeTagNames = [...SAFE_SEARCH_EXCLUDED_TAGS];
+      } else {
+        const tagsToAdd = SAFE_SEARCH_EXCLUDED_TAGS.filter(
+          tag => !negativeTagNames!.includes(tag)
+        );
+        if (tagsToAdd.length > 0) {
+          negativeTagNames = [...negativeTagNames, ...tagsToAdd];
+        }
       }
     }
 
