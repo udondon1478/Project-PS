@@ -23,6 +23,7 @@ interface MappingResult {
   displayName: string | null;
   count: number;
   currentCategory: string | null;
+  currentCategoryId: string | null;
   newCategory: string;
   changed: boolean;
 }
@@ -53,16 +54,16 @@ async function main() {
   // マッピング結果を計算
   const results: MappingResult[] = tags.map(tag => {
     const newCategory = determineCategory(tag.name, tag.displayName || undefined);
-    const currentCategory = tag.tagCategory?.name || null;
-    // 旧カテゴリIDと新カテゴリIDの比較（name -> id変換が必要な場合もある）
     const currentCategoryId = tag.tagCategoryId;
+    const currentCategoryName = tag.tagCategory?.name || null;
 
     return {
       tagId: tag.id,
       tagName: tag.name,
       displayName: tag.displayName,
       count: tag.count,
-      currentCategory,
+      currentCategory: currentCategoryName,
+      currentCategoryId: currentCategoryId,
       newCategory,
       changed: currentCategoryId !== newCategory,
     };
