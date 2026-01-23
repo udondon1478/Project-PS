@@ -4,17 +4,19 @@ import { tagCategories } from '../src/data/guidelines/tagCategories';
 /**
  * TagCategoryテーブルをtagCategories.tsの定義と同期させる
  * - 存在しないカテゴリは作成
- * - 既存カテゴリは更新（name, color）
+ * - 既存カテゴリは更新（color）
  * - 不要なカテゴリは削除しない（既存タグとの関連を保持）
+ *
+ * nameをキーとしてupsertし、新規作成時はcategory.idを使用
  */
 export async function seedTagCategories(prisma: PrismaClient) {
   console.log('Syncing tag categories from tagCategories.ts...');
 
+  // nameはuniqueなので、nameで検索してupsert
   const promises = tagCategories.map((category) =>
     prisma.tagCategory.upsert({
-      where: { id: category.id },
+      where: { name: category.name },
       update: {
-        name: category.name,
         color: category.color,
       },
       create: {
