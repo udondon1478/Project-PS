@@ -62,7 +62,7 @@ async function main() {
       tagName: tag.name,
       displayName: tag.displayName,
       count: tag.count,
-      currentCategory: currentCategoryId,
+      currentCategory,
       newCategory,
       changed: currentCategoryId !== newCategory,
     };
