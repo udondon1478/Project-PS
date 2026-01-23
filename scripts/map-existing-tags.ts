@@ -55,14 +55,14 @@ async function main() {
   const results: MappingResult[] = tags.map(tag => {
     const newCategory = determineCategory(tag.name, tag.displayName || undefined);
     const currentCategoryId = tag.tagCategoryId;
-    const currentCategoryName = tag.tagCategory?.name || null;
+    // const currentCategoryName = tag.tagCategory?.name || null;
 
     return {
       tagId: tag.id,
       tagName: tag.name,
       displayName: tag.displayName,
       count: tag.count,
-      currentCategory: currentCategoryName,
+      currentCategory: currentCategoryId,
       currentCategoryId: currentCategoryId,
       newCategory,
       changed: currentCategoryId !== newCategory,
