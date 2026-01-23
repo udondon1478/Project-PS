@@ -1,6 +1,7 @@
 import { PrismaClient, Role } from '@prisma/client';
 import { SYSTEM_USER_EMAIL } from '../src/lib/constants';
 import { seedTagCategories } from './seed-categories';
+import { tagCategories } from '../src/data/guidelines/tagCategories';
 
 const prisma = new PrismaClient();
 
@@ -63,11 +64,22 @@ async function main() {
 
   // 古いカテゴリの取得（既存タグとの互換性のため）
   // age_ratingカテゴリもratingと同じ色に更新（移行期間中の互換性のため）
-  const ageRatingCategory = await prisma.tagCategory.upsert({
+  await prisma.tagCategory.upsert({
     where: { name: 'age_rating' },
     update: { color: '#E74C3C' }, // ratingカテゴリと同じ色に更新
     create: { name: 'age_rating', color: '#E74C3C' },
   });
+
+  // レーティングカテゴリを取得（seedTagCategoriesで作成されているはず）
+  // IDは自動生成される可能性があるため、nameで検索する
+  const ratingCatDef = tagCategories.find(c => c.id === 'rating');
+  let ratingCategory = await prisma.tagCategory.findUnique({
+    where: { name: ratingCatDef?.name || 'レーティング' },
+  });
+
+  if (!ratingCategory) {
+    throw new Error('Rating category not found after seeding tag categories');
+  }
 
   const productCategory = await prisma.tagCategory.upsert({
     where: { name: 'product_category' },
@@ -88,14 +100,6 @@ async function main() {
     create: { name: 'other', color: '#999999' }, // 仮の色を設定
   });
 
-  // 対象年齢タグの初期データ
-  // 新しいratingカテゴリを使用（tagCategories.tsで定義、#E74C3C）
-  // seedTagCategories()が先に呼ばれていない場合でも動作するようupsertを使用
-  const ratingCategory = await prisma.tagCategory.upsert({
-    where: { name: 'rating' },
-    update: {},
-    create: { name: 'rating', color: '#E74C3C' },
-  });
 
   const ageRatingTags = [
     { name: '全年齢', tagCategoryId: ratingCategory.id },

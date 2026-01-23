@@ -328,7 +328,7 @@ export default function RegisterItemPage() {
       setIsDetailsError(false);
       try {
         const responses = await Promise.all([
-          fetch('/api/tags/by-type?categoryNames=age_rating', { signal }),
+          fetch('/api/tags/by-type?categoryNames=rating', { signal }),
           fetch('/api/tags/by-type?categoryNames=product_category', { signal }),
           fetch('/api/tags/by-type?categoryNames=feature', { signal }),
         ]);
