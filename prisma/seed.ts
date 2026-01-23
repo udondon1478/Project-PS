@@ -70,8 +70,9 @@ async function main() {
   });
 
   // レーティングカテゴリを取得（seedTagCategoriesで作成されているはず）
+  // IDは自動生成される可能性があるため、nameで検索する
   let ratingCategory = await prisma.tagCategory.findUnique({
-    where: { id: 'rating' },
+    where: { name: 'rating' },
   });
 
   if (!ratingCategory) {
