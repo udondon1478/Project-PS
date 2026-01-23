@@ -36,6 +36,7 @@ async function main() {
   const dryRun = args.includes('--dry-run');
   const execute = args.includes('--execute');
   const skipBackupCheck = args.includes('--skip-backup-check');
+  const enablePerItemFallback = args.includes('--enable-fallback');
 
   if (!dryRun && !execute) {
     console.log('エラー: --dry-run または --execute オプションを指定してください。');
@@ -43,6 +44,8 @@ async function main() {
     console.log('使用方法:');
     console.log('  npx tsx scripts/migrate-tag-categories.ts --dry-run    # プレビュー');
     console.log('  npx tsx scripts/migrate-tag-categories.ts --execute    # 本番実行');
+    console.log('  オプション:');
+    console.log('    --enable-fallback    # バッチ失敗時に個別更新を試行する');
     process.exit(1);
   }
 
@@ -212,9 +215,29 @@ async function main() {
           processed += batch.length;
           console.log(`    ✓ ${processed}/${tagUpdates.length} 件処理完了`);
         } catch (error) {
-          const message = `バッチ ${i}-${i + BATCH_SIZE} の更新でエラー: ${error}`;
+          const batchIds = batch.map(b => b.tagId).join(', ');
+          const message = `バッチ ${i}-${i + BATCH_SIZE} の更新でエラー (対象ID: ${batchIds}): ${error}`;
           console.error(`    ✗ ${message}`);
           stats.errors.push(message);
+
+          // 個別フォールバック処理
+          if (enablePerItemFallback) {
+            console.log('    ⚠️ フォールバックモード: 個別に更新を試行します...');
+            for (const update of batch) {
+              try {
+                await prisma.tag.update({
+                  where: { id: update.tagId },
+                  data: { tagCategoryId: update.newCategoryId },
+                });
+                processed++;
+                console.log(`      ✓ 個別更新成功: ${update.tagName} (${update.tagId})`);
+              } catch (individualError) {
+                const indMessage = `個別更新失敗: ${update.tagName} (${update.tagId}) - ${individualError}`;
+                console.error(`      ✗ ${indMessage}`);
+                stats.errors.push(indMessage);
+              }
+            }
+          }
         }
       }
 
