@@ -1,0 +1,51 @@
+name: Claude Batch Review Validator
+
+on:
+  issue_comment:  # コマンドコメントでトリガー
+    types: [created]
+  # または pull_request:
+  #   types: [labeled]  # ラベル付与でトリガー（if: contains(github.event.label.name, 'claude-apply')）
+
+jobs:
+  batch-validate-and-apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch CodeRabbit comments (gh使用)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr view ${{ github.event.pull_request.number }} --comments --json author,body > comments.json
+          # jqなどでCodeRabbitのものをフィルタ・抽出
+
+      - name: Call Claude API (統合パッチ生成)
+        # ... (前回同様、全コメントまとめてプロンプト)
+
+      - name: Apply fix and commit (一括1コミット)
+        if: # パッチありの場合
+        run: |
+          git config user.name "Claude Bot"
+          git config user.email "bot@example.com"
+          git apply patched.diff
+          git add .
+          git commit -m "Apply Claude-validated fixes from all CodeRabbit reviews"
+          # (オプション: コミットメッセージにレビュー要約追加)
+
+      - name: Push once
+        run: |
+          git push origin HEAD:${{ github.head_ref }}
+
+      - name: Resolve all CodeRabbit comments (簡単！)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body "@coderabbitai resolve"
+
+      - name: Notify
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body "All CodeRabbit reviews validated, fixes applied, and resolved by Claude."
