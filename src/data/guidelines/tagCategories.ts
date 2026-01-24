@@ -1,76 +1,120 @@
 import { TagCategoryInfo } from './types';
 
+/**
+ * VRChat/メタバース向けに最適化された10カテゴリのタグ分類
+ * 実際の使用タグ分析に基づき、商品種別カテゴリを追加
+ */
 export const tagCategories: TagCategoryInfo[] = [
   {
     id: 'rating',
     name: 'レーティング',
     nameEn: 'Rating',
     color: '#E74C3C',
-    description: '商品の年齢制限や内容の適切性を示します。最も重要なカテゴリです。',
+    description: '商品の年齢制限を示します。最も重要なカテゴリです。',
     examples: ['全年齢', 'R-15', 'R-17', 'R-18'],
     priority: 1
   },
   {
-    id: 'character',
-    name: 'キャラクター',
-    nameEn: 'Character',
+    id: 'avatar',
+    name: 'アバター',
+    nameEn: 'Avatar',
     color: '#3498DB',
-    description: '特定のキャラクター、アバター、種族などを表します。',
-    examples: ['まめひなた', '桔梗', 'マヌカ', 'キプフェル'],
+    description: 'VRChatアバターやキャラクター名を表します。',
+    examples: ['しなの', 'マヌカ', 'ミルティナ', 'ルルネ', 'ショコラ', 'キプフェル'],
     priority: 2
-  },
-  {
-    id: 'clothing',
-    name: '衣服',
-    nameEn: 'Clothing',
-    color: '#9B59B6',
-    description: '着用している衣装、アクセサリー、装備品などを表します。',
-    examples: ['学生服', 'ピアス', 'ゴーグル', 'メイド服'],
-    priority: 3
   },
   {
     id: 'body',
     name: '身体',
     nameEn: 'Body',
     color: '#E67E22',
-    description: '身体的特徴、髪型、瞳の色、体の作りなどを表します。',
-    examples: ['長髪', '青い瞳', '高身長', 'サイボーグ'],
-    priority: 4
+    description: '体型・髪型・瞳・耳・尻尾などの身体的特徴を表します。',
+    examples: ['長髪', '青い瞳', 'ケモミミ', '狐耳', 'ツインテール', '髪型'],
+    priority: 3
   },
   {
-    id: 'scene',
-    name: 'シーン',
-    nameEn: 'Scene',
-    color: '#1ABC9C',
-    description: '背景、場所、環境、小道具などを表します。',
-    examples: ['寝室', '海岸', '椅子', '夜'],
-    priority: 5
+    id: 'outfit',
+    name: '衣装',
+    nameEn: 'Outfit',
+    color: '#9B59B6',
+    description: '衣服・アクセサリー・装飾品などを表します。',
+    examples: ['学生服', 'メイド服', '水着', 'イヤリング・ピアス', 'パーカー'],
+    priority: 4
   },
   {
     id: 'style',
     name: 'スタイル',
     nameEn: 'Style',
     color: '#F39C12',
-    description: '商品全体のジャンル、スタイルなどを表します。',
-    examples: ['サイバーパンク', 'レトロ', '清楚', '近未来'],
+    description: 'アートスタイルやジャンルを表します。',
+    examples: ['アニメ調', 'ケモノ', 'リアル', 'ファンタジー', 'サイバーパンク'],
+    priority: 5
+  },
+  {
+    id: 'platform',
+    name: 'プラットフォーム',
+    nameEn: 'Platform',
+    color: '#1ABC9C',
+    description: '対応環境・プラットフォームを表します。購入判断に重要です。',
+    examples: ['VRChat', 'Quest対応', 'PC専用', 'VRM', 'VRoid'],
     priority: 6
   },
   {
-    id: 'meta',
-    name: 'メタ',
-    nameEn: 'Meta',
-    color: '#95A5A6',
-    description: '商品自体の形式、ライセンス、利用規約、対応プラットフォームなどを表します。',
-    examples: ['Unity_Package', 'FBX', 'クエスト対応', '商用利用可能'],
+    id: 'feature',
+    name: '機能',
+    nameEn: 'Feature',
+    color: '#27AE60',
+    description: 'VRChat機能やカスタマイズ性、対応アバターを表します。',
+    examples: ['PhysBones', 'MA対応', 'マヌカ対応', '着せ替え可能', 'フェイストラッキング'],
     priority: 7
+  },
+  {
+    id: 'product_type',
+    name: '商品種別',
+    nameEn: 'Product Type',
+    color: '#8E44AD',
+    description: '商品の種類を表します。3Dモデル、アニメーション、テクスチャなど。',
+    examples: ['3Dモデル', 'アニメーション', 'テクスチャ', '小道具', 'ギミック', 'ポーズ集'],
+    priority: 8
+  },
+  {
+    id: 'technical',
+    name: '技術仕様',
+    nameEn: 'Technical',
+    color: '#95A5A6',
+    description: 'ファイル形式・シェーダー・性能・Unityバージョンなどの技術情報を表します。',
+    examples: ['FBX', 'lilToon', 'Poiyomi', 'Unity', 'Blender', 'UnityPackage'],
+    priority: 9
   },
   {
     id: 'general',
     name: '一般',
     nameEn: 'General',
     color: '#34495E',
-    description: '上記のどのカテゴリにも当てはまらない、一般的なタグです。大多数のタグはここに属します',
-    examples: ['可愛い', 'クール', 'ネタアバター', '寿司'],
-    priority: 8
+    description: '上記のどのカテゴリにも当てはまらない一般的なタグです。',
+    examples: ['かわいい', 'クール', 'ネタ', '無料', 'おすすめ'],
+    priority: 10
   },
 ];
+
+/**
+ * 旧カテゴリから新カテゴリへのマッピング
+ * マイグレーション時に使用
+ */
+export const legacyCategoryMapping: Record<string, string> = {
+  // 変更なし
+  rating: 'rating',
+  body: 'body',
+  style: 'style',
+  general: 'general',
+  // 名称変更
+  character: 'avatar',
+  clothing: 'outfit',
+  // 統合・分割
+  scene: 'general',
+  meta: 'technical',
+  // 旧カテゴリ
+  product_category: 'product_type',
+  other: 'general',
+  age_rating: 'rating',
+};
