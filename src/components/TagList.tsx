@@ -115,7 +115,15 @@ function groupAndSortTags(
   const sortedCategories = Array.from(groups.entries()).sort((a, b) => {
     const priorityA = getCategoryPriority(a[0]);
     const priorityB = getCategoryPriority(b[0]);
-    return priorityA - priorityB;
+    if (priorityA !== priorityB) return priorityA - priorityB;
+
+    // 同順位の場合、未分類は必ず最後に
+    const isUncatA = a[0] === UNCATEGORIZED_CATEGORY.id;
+    const isUncatB = b[0] === UNCATEGORIZED_CATEGORY.id;
+    if (isUncatA !== isUncatB) return isUncatA ? 1 : -1;
+
+    // それ以外は安定性のためカテゴリIDでソート
+    return a[0].localeCompare(b[0], 'ja');
   });
 
   // 結果を構築

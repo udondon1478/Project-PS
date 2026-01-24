@@ -22,6 +22,7 @@ description: CodeRabbitのレビュー指摘を取得し、AIを使用して自�
 
 `mcp` ツールを使用して、CodeRabbitからのレビュー情報を取得します。
 - ツール: `mcp_coderabbit_get_review_comments`
+- 補助ツール: `mcp_coderabbit_get_comment_details`（必要に応じて）
 - 引数: `owner`, `repo`, `pullNumber`
 
 取得したコメントの中から、未解決（`unresolved`）のものだけを対象とします。
