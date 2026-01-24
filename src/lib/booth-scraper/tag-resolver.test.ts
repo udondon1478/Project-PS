@@ -242,7 +242,7 @@ describe('TagResolver', () => {
         expect(result).toBe('tag-adult');
       });
 
-      it('should link existing tag to category if not linked', async () => {
+      it('should link existing tag to category only if tagCategoryId is null', async () => {
          mockTagCategoryFindUnique.mockResolvedValue({ id: 'cat-age', name: 'age_rating' });
          mockFindUnique.mockResolvedValue({ id: 'tag-r15', name: 'R-15', tagCategoryId: null });
 
@@ -252,6 +252,17 @@ describe('TagResolver', () => {
              where: { id: 'tag-r15' },
              data: { tagCategoryId: 'cat-age' }
          });
+      });
+
+      it('should NOT overwrite existing category if tag already has a category', async () => {
+         // 既に別のカテゴリ（例: rating）が設定されているタグは上書きしない
+         mockTagCategoryFindUnique.mockResolvedValue({ id: 'cat-age', name: 'age_rating' });
+         mockFindUnique.mockResolvedValue({ id: 'tag-all-ages', name: '全年齢', tagCategoryId: 'cat-rating' });
+
+         await resolver.resolveAgeRating('all_ages');
+
+         // updateは呼ばれない（既存カテゴリを維持）
+         expect(mockUpdate).not.toHaveBeenCalled();
       });
 
       it('should throw error if resolveAgeRating creation and fetch both fail', async () => {

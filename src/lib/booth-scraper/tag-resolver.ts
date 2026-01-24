@@ -180,9 +180,9 @@ export class TagResolver {
            }
        }
     } else {
-        // If tag exists but not linked to category, link it?
-        // Use requirement implies we should ensure link.
-        if (tag.tagCategoryId !== category.id) {
+        // 既存タグのカテゴリは維持する（管理者が設定したカテゴリを尊重）
+        // カテゴリが未設定の場合のみ設定する
+        if (tag.tagCategoryId === null) {
             await this.db.tag.update({
                 where: { id: tag.id },
                 data: { tagCategoryId: category.id }
