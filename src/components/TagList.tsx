@@ -9,7 +9,7 @@ import { getTagStyle, hexToRgb } from '@/lib/guidelines/categoryColors';
 import { tagCategories } from '@/data/guidelines/tagCategories';
 
 // タグの型定義
-interface TagWithCategoryInfo {
+export interface TagWithCategoryInfo {
   id: string;
   name: string;
   description?: string | null;
@@ -37,21 +37,14 @@ const UNCATEGORIZED_CATEGORY = {
   priority: 999, // 最後に表示
 };
 
-// カテゴリの優先度マップを作成
+// カテゴリのマップを作成（優先度、色、名前）
 const categoryPriorityMap = new Map<string, number>();
+const categoryColorMap = new Map<string, string>();
+const categoryNameMap = new Map<string, string>();
+
 tagCategories.forEach(cat => {
   categoryPriorityMap.set(cat.id, cat.priority);
-});
-
-// カテゴリの色マップを作成
-const categoryColorMap = new Map<string, string>();
-tagCategories.forEach(cat => {
   categoryColorMap.set(cat.id, cat.color);
-});
-
-// カテゴリの名前マップを作成
-const categoryNameMap = new Map<string, string>();
-tagCategories.forEach(cat => {
   categoryNameMap.set(cat.id, cat.name);
 });
 
@@ -63,7 +56,6 @@ function getCategoryPriority(categoryId: string | undefined): number {
 
 // カテゴリラベルコンポーネント
 interface CategoryLabelProps {
-  categoryId: string;
   categoryName: string;
   color: string;
   isDark: boolean;
@@ -109,10 +101,9 @@ function groupAndSortTags(
 
   tags.forEach(tag => {
     const categoryId = tag.tagCategory?.id || UNCATEGORIZED_CATEGORY.id;
-    if (!groups.has(categoryId)) {
-      groups.set(categoryId, []);
-    }
-    groups.get(categoryId)!.push(tag);
+    const group = groups.get(categoryId) ?? [];
+    group.push(tag);
+    groups.set(categoryId, group);
   });
 
   // 各グループ内をアルファベット/五十音順でソート
@@ -195,7 +186,6 @@ export const TagList: React.FC<TagListProps> = ({
         <div key={group.categoryId}>
           {/* カテゴリラベル */}
           <CategoryLabel
-            categoryId={group.categoryId}
             categoryName={group.categoryName}
             color={group.color}
             isDark={isDark}
@@ -203,7 +193,7 @@ export const TagList: React.FC<TagListProps> = ({
           {/* カテゴリ内のタグ */}
           <div className="space-y-1">
             {group.tags.map((tag) => {
-              const categoryColor = tag.tagCategory?.color || null;
+              const categoryColor = group.color;
               const tagStyle = getTagStyle(categoryColor, isDark);
 
               return (
