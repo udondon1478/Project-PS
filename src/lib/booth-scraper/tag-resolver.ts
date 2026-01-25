@@ -4,7 +4,7 @@ import type { Prisma, PrismaClient } from '@prisma/client';
 type TxClient = Prisma.TransactionClient | PrismaClient;
 
 export class TagResolver {
-  private ageRatingCategoryName = 'age_rating';
+  private ageRatingCategoryName = 'rating';
   private defaultLanguage = 'ja';
   private db: TxClient;
 
