@@ -32,9 +32,9 @@ GitHub CLIを使用して、CodeRabbitからのレビュー情報を取得しま
 # CodeRabbitのレビューコメントを取得（JSONファイルに保存）
 # インラインコメント、レビュー本文、Issueコメント（タイムライン）を全て取得して結合
 {
-  gh api --paginate repos/{owner}/{repo}/pulls/{pullNumber}/comments --jq '.[] | {id, path, line, body, type: "review_comment"}'
-  gh api --paginate repos/{owner}/{repo}/pulls/{pullNumber}/reviews --jq '.[] | {id: .id, path: null, line: null, body, type: "review_summary"}'
-  gh api --paginate repos/{owner}/{repo}/issues/{pullNumber}/comments --jq '.[] | {id, path: null, line: null, body, type: "issue_comment"}'
+  gh api --paginate repos/{owner}/{repo}/pulls/{pullNumber}/comments --jq '.[] | {id, path, line, body, type: "review_comment", user}'
+  gh api --paginate repos/{owner}/{repo}/pulls/{pullNumber}/reviews --jq '.[] | {id: .id, path: null, line: null, body, type: "review_summary", user}'
+  gh api --paginate repos/{owner}/{repo}/issues/{pullNumber}/comments --jq '.[] | {id, path: null, line: null, body, type: "issue_comment", user}'
 } | jq -s '[.[] | select(.user.login == "coderabbitai[bot]") | {id, path, line, body, type}]' > /tmp/coderabbit_comments.json
 ```
 
