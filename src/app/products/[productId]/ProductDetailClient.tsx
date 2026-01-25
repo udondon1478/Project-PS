@@ -232,15 +232,15 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
 
       await fetchProduct();
       setIsTagEditorOpen(false);
-      console.log("Tags updated successfully!");
+      toast.success('タグを更新しました');
 
     } catch (err) {
       console.error("Failed to update tags:", err);
       if (err instanceof Error) {
         const translatedMessage = translateErrorMessage(err.message);
-        alert(translatedMessage);
+        toast.error(translatedMessage);
       } else {
-        alert('タグの更新に失敗しました: 不明なエラーが発生しました。');
+        toast.error('タグの更新に失敗しました: 不明なエラーが発生しました。');
       }
     }
   };
