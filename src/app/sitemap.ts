@@ -23,10 +23,11 @@ export default async function sitemap(params: {
     Number.isFinite(parsedId) && parsedId >= 0 ? Math.floor(parsedId) : 0;
   const skipCount = sitemapId * PRODUCTS_PER_SITEMAP;
 
+  const now = new Date();
   // Static routes only in the first sitemap
   const staticRoutes = sitemapId === 0 ? ['', '/about', '/terms', '/privacy', '/search'].map((route) => ({
     url: `${BASE_URL}${route}`,
-    lastModified: new Date(),
+    lastModified: now,
     changeFrequency: 'daily' as const,
     priority: route === '' ? 1 : 0.8,
   })) : [];

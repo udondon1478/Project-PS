@@ -143,6 +143,10 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
     onSelect();
     api.on("select", onSelect);
     api.on("reInit", onSelect);
+    return () => {
+      api?.off("select", onSelect);
+      api?.off("reInit", onSelect);
+    };
   }, [api, onSelect]);
 
   const handleViewTagDetails = (tagId: string) => {
@@ -335,10 +339,16 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
                 <Carousel setApi={setThumbnailApi} opts={{ containScroll: 'keepSnaps', dragFree: true }} className="w-full mt-4">
                   <CarouselContent className="-ml-2">
                     {product.images.map((image, index) => (
-                      <CarouselItem key={index} onClick={() => onThumbClick(index)} className="pl-2 basis-1/4 md:basis-1/5 lg:basis-1/6">
-                        <div className={`aspect-square rounded-md overflow-hidden cursor-pointer transition-all ${index === selectedIndex ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-950' : 'opacity-60 hover:opacity-100'}`}>
+                      <CarouselItem key={index} className="pl-2 basis-1/4 md:basis-1/5 lg:basis-1/6">
+                        <button
+                          type="button"
+                          onClick={() => onThumbClick(index)}
+                          aria-label={`サムネイル ${index + 1}`}
+                          aria-pressed={index === selectedIndex}
+                          className={`aspect-square w-full rounded-md overflow-hidden transition-all ${index === selectedIndex ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-950' : 'opacity-60 hover:opacity-100'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500`}
+                        >
                           <Image src={image.imageUrl} alt={`サムネイル ${index + 1}`} width={100} height={100} className="w-full h-full object-cover"/>
-                        </div>
+                        </button>
                       </CarouselItem>
                     ))}
                   </CarouselContent>
