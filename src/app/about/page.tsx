@@ -1,8 +1,16 @@
 import type { Metadata } from 'next';
+import { BASE_URL } from '@/lib/constants';
 
 export const metadata: Metadata = {
   title: 'PolySeekについて',
   description: 'PolySeekは、VRChat向けアセットの検索性を向上させるための非公式データベース・検索エンジンです。',
+  robots: {
+    index: true,
+    follow: true,
+  },
+  alternates: {
+    canonical: `${BASE_URL}/about`,
+  },
 };
 
 export default function AboutPage() {

@@ -1,22 +1,33 @@
 import { MetadataRoute } from 'next';
-import { prisma } from '@/lib/prisma'; // Assumes prisma client is available here
-
+import { prisma } from '@/lib/prisma';
 import { BASE_URL } from '@/lib/constants';
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+const PRODUCTS_PER_SITEMAP = 5000;
 
-  // Static routes
-  const routes = ['', '/about', '/terms', '/privacy', '/search'].map((route) => ({
+export async function generateSitemaps() {
+  const productCount = await prisma.product.count().catch(() => 0);
+  const sitemapCount = Math.max(1, Math.ceil(productCount / PRODUCTS_PER_SITEMAP));
+
+  return Array.from({ length: sitemapCount }, (_, i) => ({ id: i }));
+}
+
+export default async function sitemap(params: { id: number }): Promise<MetadataRoute.Sitemap> {
+  // Ensure id has a valid numeric value (fallback to 0 if undefined or invalid)
+  const sitemapId = typeof params?.id === 'number' ? params.id : 0;
+  const skipCount = sitemapId * PRODUCTS_PER_SITEMAP;
+
+  // Static routes only in the first sitemap
+  const staticRoutes = sitemapId === 0 ? ['', '/about', '/terms', '/privacy', '/search'].map((route) => ({
     url: `${BASE_URL}${route}`,
     lastModified: new Date(),
     changeFrequency: 'daily' as const,
     priority: route === '' ? 1 : 0.8,
-  }));
+  })) : [];
 
-  // Dynamic routes (Products)
-  // Performance optimization: Limit to recent 1,000 products or implement pagination strategies for larger sites
+  // Dynamic product routes with pagination
   const products = await prisma.product.findMany({
-    take: 1000,
+    skip: skipCount,
+    take: PRODUCTS_PER_SITEMAP,
     orderBy: { publishedAt: 'desc' },
     select: { id: true, updatedAt: true },
   }).catch((error) => {
@@ -31,5 +42,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...routes, ...productRoutes];
+  return [...staticRoutes, ...productRoutes];
 }

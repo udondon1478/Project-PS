@@ -42,6 +42,9 @@ export async function generateMetadata({ params }: { params: Promise<{ productId
   return {
     title: productTitle,
     description: productDescription,
+    alternates: {
+      canonical: productUrl,
+    },
     openGraph: {
       title: productTitle,
       description: productDescription,
