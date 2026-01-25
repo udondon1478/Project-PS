@@ -82,40 +82,42 @@ async function main() {
   }
 
   // 新しいカテゴリ定義（tagCategories.ts）に基づいてカテゴリを取得
-  const productTypeCategory = await prisma.tagCategory.findUnique({
+  let productTypeCategory = await prisma.tagCategory.findUnique({
     where: { id: 'product_type' },
   });
 
   if (!productTypeCategory) {
     // フォールバック: 名前で検索（万が一IDが一致しない場合）
     const cat = tagCategories.find(c => c.id === 'product_type');
-    if (cat) {
-      await prisma.tagCategory.upsert({
-        where: { id: 'product_type' },
-        update: { name: cat.name, color: cat.color },
-        create: { id: 'product_type', name: cat.name, color: cat.color },
-      });
+    if (!cat) {
+      throw new Error('product_type category definition missing');
     }
+    productTypeCategory = await prisma.tagCategory.upsert({
+      where: { id: 'product_type' },
+      update: { name: cat.name, color: cat.color },
+      create: { id: 'product_type', name: cat.name, color: cat.color },
+    });
   }
 
-  const featureCategoryNew = await prisma.tagCategory.findUnique({
+  let featureCategoryNew = await prisma.tagCategory.findUnique({
     where: { id: 'feature' },
   });
 
   if (!featureCategoryNew) {
      const cat = tagCategories.find(c => c.id === 'feature');
-     if (cat) {
-       await prisma.tagCategory.upsert({
-         where: { id: 'feature' },
-         update: { name: cat.name, color: cat.color },
-         create: { id: 'feature', name: cat.name, color: cat.color },
-       });
+     if (!cat) {
+       throw new Error('feature category definition missing');
      }
+     featureCategoryNew = await prisma.tagCategory.upsert({
+       where: { id: 'feature' },
+       update: { name: cat.name, color: cat.color },
+       create: { id: 'feature', name: cat.name, color: cat.color },
+     });
   }
 
   // 確実に存在するはずのカテゴリIDを取得
-  const targetProductCategoryId = productTypeCategory?.id || 'product_type';
-  const targetFeatureCategoryId = featureCategoryNew?.id || 'feature';
+  const targetProductCategoryId = productTypeCategory.id;
+  const targetFeatureCategoryId = featureCategoryNew.id;
 
 
   const ageRatingTags = [

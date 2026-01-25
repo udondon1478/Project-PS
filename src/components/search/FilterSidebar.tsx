@@ -85,7 +85,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   // Only show tags in AGE_RATING_WHITELIST, in the order defined by the whitelist
   const filteredAgeRatingTags = React.useMemo(() => {
     return AGE_RATING_WHITELIST
-      .map(name => ageRatingTags.find(tag => tag.name === name))
+      .map(name => ageRatingTags.find(tag => tag.name.trim() === name))
       .filter((tag): tag is NonNullable<typeof tag> => tag !== undefined);
   }, [ageRatingTags]);
 

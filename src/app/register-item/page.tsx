@@ -345,14 +345,18 @@ export default function RegisterItemPage() {
 
         if (categoriesResponse.ok) {
           const allCategories = await categoriesResponse.json();
-          console.log('[Debug] All Categories fetched:', allCategories.length, allCategories.map((t: any) => t.name));
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[Debug] All Categories fetched:', allCategories.length, allCategories.map((t: any) => t.name));
+          }
 
           // Filter and sort based on whitelist
           const filteredCategories = PRODUCT_CATEGORY_WHITELIST
             .map(name => allCategories.find((tag: { name: string }) => tag.name.trim() === name))
             .filter((tag): tag is { id: string; name: string } => tag !== undefined);
 
-          console.log('[Debug] Filtered Categories:', filteredCategories.length, filteredCategories.map((t) => t.name));
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[Debug] Filtered Categories:', filteredCategories.length, filteredCategories.map((t) => t.name));
+          }
           setCategoryTags(filteredCategories);
         } else if (categoriesResponse.status !== 404) {
           errorMessages.push(`カテゴリーの取得に失敗しました: ${categoriesResponse.statusText}`);
@@ -360,14 +364,18 @@ export default function RegisterItemPage() {
 
         if (featuresResponse.ok) {
           const allFeatures = await featuresResponse.json();
-          console.log('[Debug] All Features fetched:', allFeatures.length, allFeatures.map((t: any) => t.name));
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[Debug] All Features fetched:', allFeatures.length, allFeatures.map((t: any) => t.name));
+          }
 
           // Filter and sort based on whitelist
           const filteredFeatures = FEATURE_TAG_WHITELIST
             .map(name => allFeatures.find((tag: { name: string }) => tag.name.trim() === name))
             .filter((tag): tag is { id: string; name: string } => tag !== undefined);
 
-          console.log('[Debug] Filtered Features:', filteredFeatures.length, filteredFeatures.map((t) => t.name));
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[Debug] Filtered Features:', filteredFeatures.length, filteredFeatures.map((t) => t.name));
+          }
           setFeatureTags(filteredFeatures);
         } else if (featuresResponse.status !== 404) {
           errorMessages.push(`主要機能の取得に失敗しました: ${featuresResponse.statusText}`);
