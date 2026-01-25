@@ -315,7 +315,7 @@ test.describe('Anonymous User Core Features', () => {
     await expect(page.getByText('フィルター', { exact: true })).toBeVisible();
 
     // カテゴリを選択 (negativeTagを持つ商品に絞る -> prodId2(2,000) と prodId3(50,000))
-    await page.getByLabel('カテゴリを選択').click();
+    await page.getByLabel('商品種別を選択').click();
     await page.getByLabel(negativeTag).click();
 
     // 価格帯スライダーを操作
