@@ -126,6 +126,7 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
 
   const onThumbClick = useCallback(
     (index: number) => {
+      // Both APIs must be ready for synchronized scrolling between main and thumbnail carousels
       if (!api || !thumbnailApi) return;
       api.scrollTo(index);
     },
@@ -383,12 +384,12 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
                     <Check className="mr-2 h-4 w-4" />
                     {isOwned ? '所有済みから外す' : '所有済みにする'}
                   </Button>
-                  <a href={product.boothJpUrl} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" className="w-full justify-start">
+                  <Button variant="outline" className="w-full justify-start" asChild>
+                    <a href={product.boothJpUrl} target="_blank" rel="noopener noreferrer">
                       <FontAwesomeIcon icon={faLink} className="mr-2" />
                       Boothで見る (JP)
-                    </Button>
-                  </a>
+                    </a>
+                  </Button>
                 </div>
               </div>
 
