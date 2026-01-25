@@ -286,7 +286,9 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
     }
   };
 
-  // Normalize productTags to convert null to undefined for compatibility with external components
+  // Normalize productTags for compatibility with external components:
+  // - displayName: null → undefined (optional field)
+  // - tagCategoryId: null → '' (ProductTag type requires string for type safety)
   const normalizeProductTag = (pt: ProductTagData) => ({
     isOfficial: pt.isOfficial,
     tag: {
