@@ -192,11 +192,15 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
   const translateErrorMessage = (message: string): string => {
     if (message.includes('URL-like strings are not allowed')) {
       const tagName = message.match(/Invalid tag "([^"]+)"/)?.[1];
-      return `タグ「${tagName}」の更新に失敗しました: URL形式の文字列は許可されていません。`;
+      return tagName
+        ? `タグ「${tagName}」の更新に失敗しました: URL形式の文字列は許可されていません。`
+        : 'タグの更新に失敗しました: URL形式の文字列は許可されていません。';
     }
     if (message.includes('Input is empty after sanitization')) {
       const tagName = message.match(/Invalid tag "([^"]+)"/)?.[1];
-      return `タグ「${tagName}」の更新に失敗しました: タグ名が空です。`;
+      return tagName
+        ? `タグ「${tagName}」の更新に失敗しました: タグ名が空です。`
+        : 'タグの更新に失敗しました: タグ名が空です。';
     }
     return message;
   };

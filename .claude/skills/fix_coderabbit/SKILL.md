@@ -30,8 +30,10 @@ GitHub CLIを使用して、CodeRabbitからのレビュー情報を取得しま
 
 ```bash
 # CodeRabbitのレビューコメントを取得（JSONファイルに保存）
-gh api repos/{owner}/{repo}/pulls/{pullNumber}/comments \
-  --jq '[.[] | select(.user.login == "coderabbitai[bot]") | {id, path, line, body}]' \
+# --paginate: 全ページを取得（デフォルトは30件まで）
+# --slurp: 複数ページのJSONを1つの配列に統合
+gh api --paginate --slurp repos/{owner}/{repo}/pulls/{pullNumber}/comments \
+  --jq '[.[][] | select(.user.login == "coderabbitai[bot]") | {id, path, line, body}]' \
   > /tmp/coderabbit_comments.json
 ```
 
