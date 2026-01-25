@@ -136,7 +136,7 @@ export class TagResolver {
     });
 
     if (!category) {
-      // Create 'age_rating' category if not exists
+      // Create 'rating' category if not exists
       try {
           category = await this.db.tagCategory.create({
               data: {
@@ -152,7 +152,7 @@ export class TagResolver {
       }
     }
 
-    if (!category) throw new Error('Failed to ensure age_rating category');
+    if (!category) throw new Error('Failed to ensure rating category');
 
     // Find or Create Tag linked to this category
     let tag = await this.db.tag.findUnique({
