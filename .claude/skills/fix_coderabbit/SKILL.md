@@ -24,21 +24,56 @@ description: CodeRabbitのレビュー指摘を取得し、AIを使用して自�
 
 ### 2. レビューコメントの取得
 
-`mcp` ツールを使用して、CodeRabbitからのレビュー情報を取得します。
-- ツール: `mcp_coderabbit_get_review_comments`
-- 補助ツール: `mcp_coderabbit_get_comment_details`（必要に応じて）
-- 引数: `owner`, `repo`, `pullNumber`
+GitHub CLIを使用して、CodeRabbitからのレビュー情報を取得します。
 
-取得したコメントの中から、未解決（`unresolved`）のものだけを対象とします。
+#### コメント取得コマンド
+
+```bash
+# CodeRabbitのレビューコメントを取得（JSONファイルに保存）
+gh api repos/{owner}/{repo}/pulls/{pullNumber}/comments \
+  --jq '[.[] | select(.user.login == "coderabbitai[bot]") | {id, path, line, body}]' \
+  > /tmp/coderabbit_comments.json
+```
+
+#### 重要な技術情報
+
+- **CodeRabbitのユーザー名**: `coderabbitai[bot]`（`coderabbitai`ではない）
+- **対応済みの判定**: コメント本文に `✅ Addressed` が含まれているかどうかで判断
+- **ユーザー確認済みの判定**: コメント本文に `✅ Confirmed as addressed by @{username}` が含まれている場合
+
+#### コメントのフィルタリング
+
+```bash
+# 対応状況を確認するクエリ
+cat /tmp/coderabbit_comments.json | jq '.[] | {
+  id,
+  path,
+  line,
+  addressed: (.body | contains("✅ Addressed")),
+  body_preview: (.body | split("\n")[0:3] | join(" | "))
+}'
+```
+
+取得したコメントの中から、未解決（`addressed: false`）のものだけを対象とします。
 
 ### 3. 指摘の分類と優先度評価
 
 各指摘を重要度で分類し、対応方針を決定します。
 
-| 重要度 | ラベル例 | 対応方針 |
-|--------|----------|----------|
-| **Major/Critical** | `⚠️ Potential issue` | 慎重に検証。修正前に既存コードの動作確認が必要 |
-| **Nitpick/Trivial** | `🧹 Nitpick`, `🔵 Trivial` | 費用対効果を考慮。場合によっては `wont_fix` も選択肢 |
+#### 重要度ラベルの識別
+
+コメント本文の冒頭に以下のパターンで重要度が記載されています：
+
+| パターン | 重要度 | 対応方針 |
+|----------|--------|----------|
+| `_⚠️ Potential issue_ \| _🟠 Major_` | Major | 慎重に検証。修正前に既存コードの動作確認が必要 |
+| `_⚠️ Potential issue_ \| _🟡 Minor_` | Minor | 検証の上で修正を検討 |
+| `_🧹 Nitpick_ \| _🔵 Trivial_` | Nitpick/Trivial | 費用対効果を考慮。`wont_fix` も選択肢 |
+
+#### 特殊なコメントの識別
+
+- **感謝・確認コメント**: `@{username}` で始まり、修正への感謝を述べているコメントは対応不要
+- **Analysis chainコメント**: `<details><summary>🧩 Analysis chain</summary>` を含むコメントは詳細分析結果あり
 
 ### 4. 指摘の批判的評価（各指摘について）
 
@@ -73,12 +108,17 @@ description: CodeRabbitのレビュー指摘を取得し、AIを使用して自�
 
 ### 6. コメントの解決 (Resolve)
 
-- ツール: `mcp_coderabbit_resolve_comment`
-- **修正した場合**: `resolution: "addressed"`
-- **修正不要と判断した場合**:
-  - `resolution: "wont_fix"` - 指摘は正しいが修正のROIが低い
-  - `resolution: "not_applicable"` - 指摘自体が不適切または誤り
-  - 必ず理由を `note` に記載すること
+GitHubのPRレビューコメントは、GitHub UIからのみ解決可能です（APIからの直接解決は制限あり）。
+
+修正をプッシュすることでCodeRabbitが自動的に「✅ Addressed」マークを追加します。
+
+#### 解決状態の記録
+
+処理結果のサマリーで以下の対応状態を記録してください：
+- **addressed**: 修正を実施した
+- **wont_fix**: 指摘は正しいが修正のROIが低い
+- **not_applicable**: 指摘自体が不適切または誤り
+- **already_addressed**: 既に対応済み（コメントに「✅ Addressed」あり）
 
 ### 7. 変更の反映
 
