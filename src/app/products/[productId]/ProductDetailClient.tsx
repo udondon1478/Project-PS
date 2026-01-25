@@ -30,6 +30,7 @@ import { faLink } from '@fortawesome/free-solid-svg-icons';
 import MobileProductActions from '@/components/MobileProductActions';
 import MobileTagSheet from '@/components/MobileTagSheet';
 import { TagList } from "@/components/TagList";
+import { toast } from "sonner";
 
 interface ProductTagData {
   tag: {
@@ -104,6 +105,15 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
   const [isProcessingLike, setIsProcessingLike] = useState(false);
   const [isProcessingOwn, setIsProcessingOwn] = useState(false);
   const [isTagSheetOpen, setIsTagSheetOpen] = useState(false);
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+
+  const handleImageError = useCallback((imageUrl: string) => {
+    setFailedImages((prev) => {
+      const newSet = new Set(prev);
+      newSet.add(imageUrl);
+      return newSet;
+    });
+  }, []);
 
   const fetchProduct = useCallback(async () => {
     try {
@@ -118,6 +128,7 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
       setTagMap(tagIdToNameMap);
     } catch (err: unknown) {
       console.error('Failed to refresh product data:', err);
+      toast.error('商品データの更新に失敗しました。');
     }
   }, [product.id]);
 
@@ -336,7 +347,14 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
                   <CarouselContent>
                     {product.images.map((image, index) => (
                       <CarouselItem key={`${image.imageUrl}-${image.order}`} className="aspect-video flex justify-center items-center bg-gray-100 dark:bg-gray-900">
-                        <Image src={image.imageUrl} alt={`商品画像 ${index + 1}`} width={800} height={450} className="max-w-full h-auto max-h-[70vh] object-contain"/>
+                        <Image
+                          src={failedImages.has(image.imageUrl) ? '/images/PolySeek_10_export_icon.svg' : image.imageUrl}
+                          alt={failedImages.has(image.imageUrl) ? '画像読み込みエラー' : `商品画像 ${index + 1}`}
+                          onError={() => handleImageError(image.imageUrl)}
+                          width={800}
+                          height={450}
+                          className="max-w-full h-auto max-h-[70vh] object-contain"
+                        />
                       </CarouselItem>
                     ))}
                   </CarouselContent>
@@ -354,7 +372,14 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
                           aria-pressed={index === selectedIndex}
                           className={`aspect-square w-full rounded-md overflow-hidden transition-all ${index === selectedIndex ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-950' : 'opacity-60 hover:opacity-100'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500`}
                         >
-                          <Image src={image.imageUrl} alt={`サムネイル ${index + 1}`} width={100} height={100} className="w-full h-full object-cover"/>
+                          <Image
+                            src={failedImages.has(image.imageUrl) ? '/images/PolySeek_10_export_icon.svg' : image.imageUrl}
+                            alt={failedImages.has(image.imageUrl) ? '画像読み込みエラー' : `サムネイル ${index + 1}`}
+                            onError={() => handleImageError(image.imageUrl)}
+                            width={100}
+                            height={100}
+                            className="w-full h-full object-cover"
+                          />
                         </button>
                       </CarouselItem>
                     ))}
