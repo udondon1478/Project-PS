@@ -126,9 +126,11 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
       setIsLiked(productData.isLiked || false);
       setIsOwned(productData.isOwned || false);
       setTagMap(tagIdToNameMap);
+      return true;
     } catch (err: unknown) {
       console.error('Failed to refresh product data:', err);
       toast.error('商品データの更新に失敗しました。');
+      return false;
     }
   }, [product.id]);
 
@@ -230,9 +232,11 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
         throw new Error(errorMessage);
       }
 
-      await fetchProduct();
-      setIsTagEditorOpen(false);
-      toast.success('タグを更新しました');
+      const success = await fetchProduct();
+      if (success) {
+        setIsTagEditorOpen(false);
+        toast.success('タグを更新しました');
+      }
 
     } catch (err) {
       console.error("Failed to update tags:", err);
