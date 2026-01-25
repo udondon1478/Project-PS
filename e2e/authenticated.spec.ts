@@ -109,11 +109,18 @@ test.describe('Authenticated User Features', () => {
 
       // 5. リロード後の状態を検証
       // 重要: リロード時はServer ComponentがDBを参照するため、DBの状態も更新しておく必要がある
-      await prisma.productLike.create({
-        data: {
+      await prisma.productLike.upsert({
+        where: {
+          productId_userId: {
+            productId: LIKE_PRODUCT_ID,
+            userId: MOCK_USER.id,
+          },
+        },
+        create: {
           productId: LIKE_PRODUCT_ID,
           userId: MOCK_USER.id,
-        }
+        },
+        update: {},
       });
 
       // APIモックも念のため更新（クライアントサイドフェッチ対策）
@@ -232,11 +239,18 @@ test.describe('Authenticated User Features', () => {
 
       // 5. リロード後の状態を検証
       // 重要: リロード時はServer ComponentがDBを参照するため、DBの状態も更新しておく必要がある
-      await prisma.productOwner.create({
-        data: {
+      await prisma.productOwner.upsert({
+        where: {
+          userId_productId: {
+            productId: OWN_PRODUCT_ID,
+            userId: MOCK_USER.id,
+          },
+        },
+        create: {
           productId: OWN_PRODUCT_ID,
           userId: MOCK_USER.id,
-        }
+        },
+        update: {},
       });
 
       // APIモックも念のため更新

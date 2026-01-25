@@ -227,7 +227,7 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
       console.error("Failed to update tags:", err);
       if (err instanceof Error) {
         const translatedMessage = translateErrorMessage(err.message);
-        alert(`タグの更新に失敗しました: ${translatedMessage}`);
+        alert(translatedMessage);
       } else {
         alert('タグの更新に失敗しました: 不明なエラーが発生しました。');
       }
@@ -335,7 +335,7 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
                 <Carousel setApi={setApi} className="w-full rounded-lg overflow-hidden border dark:border-gray-800">
                   <CarouselContent>
                     {product.images.map((image, index) => (
-                      <CarouselItem key={index} className="aspect-video flex justify-center items-center bg-gray-100 dark:bg-gray-900">
+                      <CarouselItem key={`${image.imageUrl}-${image.order}`} className="aspect-video flex justify-center items-center bg-gray-100 dark:bg-gray-900">
                         <Image src={image.imageUrl} alt={`商品画像 ${index + 1}`} width={800} height={450} className="max-w-full h-auto max-h-[70vh] object-contain"/>
                       </CarouselItem>
                     ))}
@@ -346,7 +346,7 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
                 <Carousel setApi={setThumbnailApi} opts={{ containScroll: 'keepSnaps', dragFree: true }} className="w-full mt-4">
                   <CarouselContent className="-ml-2">
                     {product.images.map((image, index) => (
-                      <CarouselItem key={index} className="pl-2 basis-1/4 md:basis-1/5 lg:basis-1/6">
+                      <CarouselItem key={`${image.imageUrl}-${image.order}`} className="pl-2 basis-1/4 md:basis-1/5 lg:basis-1/6">
                         <button
                           type="button"
                           onClick={() => onThumbClick(index)}
