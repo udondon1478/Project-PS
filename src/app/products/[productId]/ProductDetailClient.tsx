@@ -96,6 +96,12 @@ interface ProductDetailClientProps {
 const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailClientProps) => {
   const [product, setProduct] = useState<ProductDetailData>(initialProduct);
   const [tagMap, setTagMap] = useState<{ [key: string]: { name: string; displayName: string | null } }>(initialTagMap);
+
+  useEffect(() => {
+    setProduct(initialProduct);
+    setTagMap(initialTagMap);
+  }, [initialProduct, initialTagMap]);
+
   const [api, setApi] = useState<CarouselApi>();
   const [isTagEditorOpen, setIsTagEditorOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
