@@ -151,25 +151,37 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
   };
 
   const updateSearchTagsInSessionStorage = (tags: string[], negativeTags: string[]) => {
-    sessionStorage.setItem('polyseek-search-tags', JSON.stringify(tags));
-    sessionStorage.setItem('polyseek-search-negative-tags', JSON.stringify(negativeTags));
-    window.dispatchEvent(new Event('storage'));
+    try {
+      sessionStorage.setItem('polyseek-search-tags', JSON.stringify(tags));
+      sessionStorage.setItem('polyseek-search-negative-tags', JSON.stringify(negativeTags));
+      window.dispatchEvent(new Event('storage'));
+    } catch (e) {
+      console.warn('Failed to update sessionStorage:', e);
+    }
   };
 
   const addTagToSearch = (tagName: string) => {
-    const currentTags = JSON.parse(sessionStorage.getItem('polyseek-search-tags') || '[]');
-    const currentNegativeTags = JSON.parse(sessionStorage.getItem('polyseek-search-negative-tags') || '[]');
-    const newNegativeTags = currentNegativeTags.filter((t: string) => t !== tagName);
-    const newTags = currentTags.includes(tagName) ? currentTags : [...currentTags, tagName];
-    updateSearchTagsInSessionStorage(newTags, newNegativeTags);
+    try {
+      const currentTags = JSON.parse(sessionStorage.getItem('polyseek-search-tags') || '[]');
+      const currentNegativeTags = JSON.parse(sessionStorage.getItem('polyseek-search-negative-tags') || '[]');
+      const newNegativeTags = currentNegativeTags.filter((t: string) => t !== tagName);
+      const newTags = currentTags.includes(tagName) ? currentTags : [...currentTags, tagName];
+      updateSearchTagsInSessionStorage(newTags, newNegativeTags);
+    } catch (e) {
+      console.warn('Failed to access sessionStorage:', e);
+    }
   };
 
   const addNegativeTagToSearch = (tagName: string) => {
-    const currentTags = JSON.parse(sessionStorage.getItem('polyseek-search-tags') || '[]');
-    const currentNegativeTags = JSON.parse(sessionStorage.getItem('polyseek-search-negative-tags') || '[]');
-    const newTags = currentTags.filter((t: string) => t !== tagName);
-    const newNegativeTags = currentNegativeTags.includes(tagName) ? currentNegativeTags : [...currentNegativeTags, tagName];
-    updateSearchTagsInSessionStorage(newTags, newNegativeTags);
+    try {
+      const currentTags = JSON.parse(sessionStorage.getItem('polyseek-search-tags') || '[]');
+      const currentNegativeTags = JSON.parse(sessionStorage.getItem('polyseek-search-negative-tags') || '[]');
+      const newTags = currentTags.filter((t: string) => t !== tagName);
+      const newNegativeTags = currentNegativeTags.includes(tagName) ? currentNegativeTags : [...currentNegativeTags, tagName];
+      updateSearchTagsInSessionStorage(newTags, newNegativeTags);
+    } catch (e) {
+      console.warn('Failed to access sessionStorage:', e);
+    }
   };
 
   const translateErrorMessage = (message: string): string => {
@@ -259,7 +271,9 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
         }
         return;
       }
-      if (!response.ok) setIsOwned(originalIsOwned);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
     } catch (error) {
       console.error("Failed to toggle owned status:", error);
       setIsOwned(originalIsOwned);

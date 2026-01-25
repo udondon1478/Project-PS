@@ -36,6 +36,9 @@ export default async function ProductPage({ params }: { params: Promise<{ produc
           },
         },
       },
+      // Note: userId ?? '' is intentional for unauthenticated users.
+      // When userId is undefined, filtering with '' returns no matches,
+      // which is the expected behavior (unauthenticated users have no likes/ownership).
       likes: {
         where: { userId: userId ?? '' },
       },
