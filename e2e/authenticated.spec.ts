@@ -65,39 +65,76 @@ test.describe('Authenticated User Features', () => {
   });
 
   test('2.2.1: should allow liking a product and reflect on reload', async ({ page }) => {
-    // 1. 初期状態（いいねしていない）のAPIをモック
-    await page.route(PRODUCT_DETAIL_API_URL(LIKE_PRODUCT_ID), async (route) => {
-      await route.fulfill({ json: { product: { id: LIKE_PRODUCT_ID, title: 'Test', isLiked: false, isOwned: false, images: [], productTags: [], tagEditHistory: [] } } });
+    // 0. DBに必要なデータを直接作成（Server Component対策）
+    await prisma.product.upsert({
+      where: { id: LIKE_PRODUCT_ID },
+      update: { title: 'Test Product', userId: MOCK_USER.id },
+      create: {
+        id: LIKE_PRODUCT_ID,
+        title: 'Test Product',
+        boothJpUrl: `http://example.com/jp/${LIKE_PRODUCT_ID}`,
+        boothEnUrl: `http://example.com/en/${LIKE_PRODUCT_ID}`,
+        lowPrice: 100,
+        highPrice: 100,
+        publishedAt: new Date(),
+        userId: MOCK_USER.id,
+      },
     });
 
-    // 2. いいねAPI（POST）をモック
-    await page.route(PRODUCT_LIKE_API_URL(LIKE_PRODUCT_ID), async (route) => {
-      if (route.request().method() === 'POST') {
-        await route.fulfill({ status: 201, json: { message: 'Product liked successfully' } });
-      } else {
-        await route.continue();
-      }
-    });
+    try {
+      // 1. 初期状態（いいねしていない）のAPIをモック
+      await page.route(PRODUCT_DETAIL_API_URL(LIKE_PRODUCT_ID), async (route) => {
+        await route.fulfill({ json: { product: { id: LIKE_PRODUCT_ID, title: 'Test', isLiked: false, isOwned: false, images: [], productTags: [], tagEditHistory: [] } } });
+      });
 
-    await page.goto(`/products/${LIKE_PRODUCT_ID}`);
+      // 2. いいねAPI（POST）をモック
+      await page.route(PRODUCT_LIKE_API_URL(LIKE_PRODUCT_ID), async (route) => {
+        if (route.request().method() === 'POST') {
+          await route.fulfill({ status: 201, json: { message: 'Product liked successfully' } });
+        } else {
+          await route.continue();
+        }
+      });
 
-    // 3. ボタンをクリック
-    const likeButton = page.getByRole('button', { name: '欲しいものに追加' });
-    const likeApiPromise = page.waitForResponse(PRODUCT_LIKE_API_URL(LIKE_PRODUCT_ID));
-    await likeButton.click();
-    await likeApiPromise;
+      await page.goto(`/products/${LIKE_PRODUCT_ID}`);
 
-    // 4. UIの更新を確認
-    await expect(page.getByRole('button', { name: '欲しいものから外す' })).toBeVisible();
+      // 3. ボタンをクリック
+      const likeButton = page.getByRole('button', { name: '欲しいものに追加' }).filter({ visible: true });
+      const likeApiPromise = page.waitForResponse(PRODUCT_LIKE_API_URL(LIKE_PRODUCT_ID));
+      await likeButton.click();
+      await likeApiPromise;
 
-    // 5. リロード後の状態を検証（APIモックを更新）
-    await page.unroute(PRODUCT_DETAIL_API_URL(LIKE_PRODUCT_ID));
-    await page.route(PRODUCT_DETAIL_API_URL(LIKE_PRODUCT_ID), async (route) => {
-      await route.fulfill({ json: { product: { id: LIKE_PRODUCT_ID, title: 'Test', isLiked: true, isOwned: false, images: [], productTags: [], tagEditHistory: [] } } });
-    });
+      // 4. UIの更新を確認
+      await expect(page.getByRole('button', { name: '欲しいものから外す' }).filter({ visible: true })).toBeVisible();
 
-    await page.reload();
-    await expect(page.getByRole('button', { name: '欲しいものから外す' })).toBeVisible();
+      // 5. リロード後の状態を検証
+      // 重要: リロード時はServer ComponentがDBを参照するため、DBの状態も更新しておく必要がある
+      await prisma.productLike.create({
+        data: {
+          productId: LIKE_PRODUCT_ID,
+          userId: MOCK_USER.id,
+        }
+      });
+
+      // APIモックも念のため更新（クライアントサイドフェッチ対策）
+      await page.unroute(PRODUCT_DETAIL_API_URL(LIKE_PRODUCT_ID));
+      await page.route(PRODUCT_DETAIL_API_URL(LIKE_PRODUCT_ID), async (route) => {
+        await route.fulfill({ json: { product: { id: LIKE_PRODUCT_ID, title: 'Test', isLiked: true, isOwned: false, images: [], productTags: [], tagEditHistory: [] } } });
+      });
+
+      await page.reload();
+      await expect(page.getByRole('button', { name: '欲しいものから外す' }).filter({ visible: true })).toBeVisible();
+
+    } finally {
+      // クリーンアップ
+      await prisma.productLike.deleteMany({
+        where: {
+          productId: LIKE_PRODUCT_ID,
+          userId: MOCK_USER.id,
+        },
+      });
+      await prisma.product.deleteMany({ where: { id: LIKE_PRODUCT_ID } });
+    }
   });
 
   test('2.2.2: should show liked products on profile page', async ({ page }) => {
@@ -151,39 +188,75 @@ test.describe('Authenticated User Features', () => {
 
   // --- テストケース 2.2: 所有済み機能 ---
   test('2.2.3: should allow owning a product and reflect on reload', async ({ page }) => {
-    // 1. 初期状態（所有していない）のAPIをモック
-    await page.route(PRODUCT_DETAIL_API_URL(OWN_PRODUCT_ID), async (route) => {
-      await route.fulfill({ json: { product: { id: OWN_PRODUCT_ID, title: 'Test', isLiked: false, isOwned: false, images: [], productTags: [], tagEditHistory: [] } } });
+    // 0. DBに必要なデータを直接作成（Server Component対策）
+    await prisma.product.upsert({
+      where: { id: OWN_PRODUCT_ID },
+      update: { title: 'Test Product', userId: MOCK_USER.id },
+      create: {
+        id: OWN_PRODUCT_ID,
+        title: 'Test Product',
+        boothJpUrl: `http://example.com/jp/${OWN_PRODUCT_ID}`,
+        boothEnUrl: `http://example.com/en/${OWN_PRODUCT_ID}`,
+        lowPrice: 100,
+        highPrice: 100,
+        publishedAt: new Date(),
+        userId: MOCK_USER.id,
+      },
     });
 
-    // 2. 所有API（POST）をモック
-    await page.route(PRODUCT_OWN_API_URL(OWN_PRODUCT_ID), async (route) => {
-      if (route.request().method() === 'POST') {
-        await route.fulfill({ status: 201, json: { message: 'Added to owned list' } });
-      } else {
-        await route.continue();
-      }
-    });
+    try {
+      // 1. 初期状態（所有していない）のAPIをモック
+      await page.route(PRODUCT_DETAIL_API_URL(OWN_PRODUCT_ID), async (route) => {
+        await route.fulfill({ json: { product: { id: OWN_PRODUCT_ID, title: 'Test', isLiked: false, isOwned: false, images: [], productTags: [], tagEditHistory: [] } } });
+      });
 
-    await page.goto(`/products/${OWN_PRODUCT_ID}`);
+      // 2. 所有API（POST）をモック
+      await page.route(PRODUCT_OWN_API_URL(OWN_PRODUCT_ID), async (route) => {
+        if (route.request().method() === 'POST') {
+          await route.fulfill({ status: 201, json: { message: 'Added to owned list' } });
+        } else {
+          await route.continue();
+        }
+      });
 
-    // 3. ボタンをクリック
-    const ownButton = page.getByRole('button', { name: '所有済みにする' });
-    const ownApiPromise = page.waitForResponse(PRODUCT_OWN_API_URL(OWN_PRODUCT_ID));
-    await ownButton.click();
-    await ownApiPromise;
+      await page.goto(`/products/${OWN_PRODUCT_ID}`);
 
-    // 4. UIの更新を確認
-    await expect(page.getByRole('button', { name: '所有済みから外す' })).toBeVisible();
+      // 3. ボタンをクリック
+      const ownButton = page.getByRole('button', { name: '所有済みにする' }).filter({ visible: true });
+      const ownApiPromise = page.waitForResponse(PRODUCT_OWN_API_URL(OWN_PRODUCT_ID));
+      await ownButton.click();
+      await ownApiPromise;
 
-    // 5. リロード後の状態を検証（APIモックを更新）
-    await page.unroute(PRODUCT_DETAIL_API_URL(OWN_PRODUCT_ID));
-    await page.route(PRODUCT_DETAIL_API_URL(OWN_PRODUCT_ID), async (route) => {
-      await route.fulfill({ json: { product: { id: OWN_PRODUCT_ID, title: 'Test', isLiked: false, isOwned: true, images: [], productTags: [], tagEditHistory: [] } } });
-    });
+      // 4. UIの更新を確認
+      await expect(page.getByRole('button', { name: '所有済みから外す' }).filter({ visible: true })).toBeVisible();
 
-    await page.reload();
-    await expect(page.getByRole('button', { name: '所有済みから外す' })).toBeVisible();
+      // 5. リロード後の状態を検証
+      // 重要: リロード時はServer ComponentがDBを参照するため、DBの状態も更新しておく必要がある
+      await prisma.productOwner.create({
+        data: {
+          productId: OWN_PRODUCT_ID,
+          userId: MOCK_USER.id,
+        }
+      });
+
+      // APIモックも念のため更新
+      await page.unroute(PRODUCT_DETAIL_API_URL(OWN_PRODUCT_ID));
+      await page.route(PRODUCT_DETAIL_API_URL(OWN_PRODUCT_ID), async (route) => {
+        await route.fulfill({ json: { product: { id: OWN_PRODUCT_ID, title: 'Test', isLiked: false, isOwned: true, images: [], productTags: [], tagEditHistory: [] } } });
+      });
+
+      await page.reload();
+      await expect(page.getByRole('button', { name: '所有済みから外す' }).filter({ visible: true })).toBeVisible();
+    } finally {
+      // クリーンアップ
+      await prisma.productOwner.deleteMany({
+        where: {
+          productId: OWN_PRODUCT_ID,
+          userId: MOCK_USER.id,
+        },
+      });
+      await prisma.product.deleteMany({ where: { id: OWN_PRODUCT_ID } });
+    }
   });
 
   test('2.2.4: should show owned products on profile page', async ({ page }) => {
