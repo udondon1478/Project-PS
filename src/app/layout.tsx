@@ -40,6 +40,9 @@ export const metadata: Metadata = {
     ],
     apple: { url: '/images/PolySeek_icon.png', sizes: '180x180' },
   },
+  alternates: {
+    canonical: BASE_URL,
+  },
 };
 
 export default function RootLayout({
