@@ -1,159 +1,201 @@
-# タグ管理画面改善 - 仕様書
+# Google Search Console ソフト404問題 - 修正仕様書
 
 ## 概要
 
-現在のタグ管理画面（`/admin`）に対して、ソート・フィルター・検索機能を大幅に強化する。
+Google Search Console で複数のページが「ソフト404」として報告され、インデックスに登録できない問題を修正する。
 
-## 現状の課題
+## 根本原因分析
 
-- タグ名での検索機能がない
-- ソート機能がない（固定順序のみ）
-- フィルターはカテゴリのみで、言語・使用数・エイリアス状態での絞り込みができない
+### 原因1: robots.txt による API ブロック（トップページに影響）
+
+**重大度: 高**
+
+`robots.txt` が `/api/` パス全体をブロックしているため、Googlebot がクライアントサイドの API リクエストを実行できない。
+
+```
+# 現在の robots.txt
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /profile/
+```
+
+**影響を受けるリクエスト（Google Search Console で確認済み）:**
+- `https://polyseek.jp/api/auth/session` → ブロック
+- `https://polyseek.jp/api/products/latest?page=1&limit=24` → ブロック
+- `https://polyseek.jp/api/tags/by-type?categoryNames=feature` → ブロック
+- `https://polyseek.jp/api/tags/by-type?categoryNames=product_category` → ブロック
+- `https://polyseek.jp/api/tags/by-type?categoryNames=rating` → ブロック
+
+**結果:** トップページ（`/`）は `ClientHome` コンポーネントが `/api/products/latest` から商品データをクライアントサイドで fetch しているため、Googlebot には商品一覧が空の Suspense fallback（スケルトン）しか表示されない。
+
+### 原因2: トップページが完全にクライアントサイドレンダリング（CSR）
+
+**重大度: 高**
+
+```tsx
+// src/app/page.tsx - 現状
+export default function Home() {
+  return (
+    <Suspense fallback={<ProductGridSkeleton count={24} />}>
+      <ClientHome />  // "use client" - API経由で商品をfetch
+    </Suspense>
+  );
+}
+```
+
+- `ClientHome` は `"use client"` コンポーネント
+- `useEffect` で `/api/products/latest` を fetch
+- サーバーサイドでは商品データがHTMLに含まれない
+- robots.txt の API ブロックと組み合わさり、Googlebot は空のスケルトンのみ認識
+
+### 原因3: 削除済み商品のサイトマップ残留
+
+**重大度: 中**
+
+- βテスト時に Google にインデックスされた商品が、正式リリース時のDB初期化で物理削除された
+- サイトマップからは自動除外されるが、Google のインデックスにはまだ残っている
+- 削除済み商品へのアクセスは `notFound()` で 404 を返すため、「ソフト404」ではなく正式な 404 となる
+- 現在のコードでは正しく処理されている（`product` が `null` なら `notFound()` が呼ばれる）
+
+### 原因4: AuthGuard のセッション依存
+
+**重大度: 低**
+
+`AuthGuard` は `useSession()` を使用し、`/api/auth/session` を呼び出す。robots.txt でブロックされているため、セッション取得が失敗する可能性がある。ただし、公開ページ（`/`, `/search`, `/products` 等）は `isPublicPage` 判定で `status === "loading"` 中もコンテンツを表示するため、直接の原因ではない。
 
 ---
 
 ## 決定事項
 
-### 検索機能
-
-| 項目 | 決定 | 理由 |
-|------|------|------|
-| 検索方式 | デバウンス付きリアルタイム（300ms） | パフォーマンスとUXのバランスが良い |
-| 検索対象 | タグ名のみ | シンプルで高速。基本的な検索には十分 |
-
-### ソート機能
-
-| 項目 | 決定 | 理由 |
-|------|------|------|
-| ソート対象 | 全カラム対応 | 柔軟な並び替えが可能 |
-| デフォルトソート | 使用数降順 | よく使われるタグが上に表示され実用的 |
-| ソートUI | テーブルヘッダークリック | shadcn/ui Tableに親和性が高く直感的 |
-
-### フィルター機能
-
-| 項目 | 決定 | 理由 |
-|------|------|------|
-| フィルター項目 | カテゴリ + 言語 + 使用数範囲 + エイリアス状態 | タグの正規化作業に有用 |
-| 使用数フィルター | 未使用(=0) / 1-10 / 11-50 / 50+ | 一般的な選択肢で色々なシーンに対応 |
-
-### UI/UXデザイン
-
-| 項目 | 決定 | 理由 |
-|------|------|------|
-| レイアウト | インライン（テーブル上に横並び） | シンプルで省スペース |
-| フィルター確認 | 適用中フィルターをチップ表示 | クリックで個別解除可能。UXが良い |
-| エイリアス表示 | アイコン + 背景色変更 | 行全体でエイリアスだと分かり視認性が高い |
-| ローディング | スケルトンローダー | 全体がローディング中と分かりやすい |
-
-### その他
-
-| 項目 | 決定 | 理由 |
-|------|------|------|
-| URL永続化 | 検索・フィルターをURLに保存 | ブックマークや共有が可能 |
-| ページネーション | 現状維持（20件/ページ） | 変更不要 |
-| CSVエクスポート | 不要 | スコープを絞る |
-| 一括操作 | 不要 | シンプルで安全 |
+| 項目 | 決定 | 理由 | 備考 |
+|------|------|------|------|
+| トップページ | SSR化 | API依存を解消し、初期HTMLに商品データを含める | robots.txtブロックの影響を完全に排除 |
+| robots.txt | `/api/` ブロック維持 | APIエンドポイントをクローラーに公開すべきでない | SSR化により不要になる |
+| 削除済み商品 | 現状維持（404を返す） | 物理削除済み商品は `notFound()` で正しく404が返る | 将来の論理削除導入時に再検討 |
+| サイトマップ | 改善検討 | 公開中の商品のみをリストする | 現状でも物理削除済みは自動除外 |
 
 ---
 
-## 機能仕様
+## 修正仕様
 
-### 1. 検索ボックス
+### 1. トップページ SSR化（`/src/app/page.tsx`）
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│ 🔍 [タグ名を検索...]              [カテゴリ▼] [言語▼] [使用数▼] [エイリアス▼] │
-└─────────────────────────────────────────────────────────────┘
-```
+#### 変更方針
 
-- プレースホルダー: 「タグ名を検索...」
-- デバウンス: 300ms
-- 部分一致検索（大文字小文字区別なし）
-- 検索アイコン（虫眼鏡）を左端に配置
-- クリアボタン（×）を右端に配置（入力がある場合のみ表示）
+- `page.tsx` を async サーバーコンポーネントに変更
+- サーバーサイドで Prisma を使って商品データを直接取得
+- 既存の `/api/products/latest/route.ts` のロジックを参考に、同等のクエリをサーバーコンポーネント内で実行
+- `ClientHome` を「初期データを受け取って表示するクライアントコンポーネント」に変更
 
-### 2. フィルター
+#### 具体的な変更
 
-#### カテゴリフィルター
-- ドロップダウン選択
-- 「すべてのカテゴリ」がデフォルト
-- 各カテゴリ名の横にカラードット表示
+**`src/app/page.tsx`（サーバーコンポーネント化）:**
 
-#### 言語フィルター
-- ドロップダウン選択
-- 選択肢: すべて / 日本語 / 英語
+```tsx
+import { Metadata } from 'next';
+import { prisma } from '@/lib/prisma';
+import { auth } from '@/auth';
+import { BASE_URL } from '@/lib/constants';
+import HomeClient from '@/app/HomeClient';
 
-#### 使用数フィルター
-- ドロップダウン選択
-- 選択肢:
-  - すべて
-  - 未使用（0件）
-  - 1-10件
-  - 11-50件
-  - 50件以上
+const PAGE_SIZE = 24;
 
-#### エイリアス状態フィルター
-- ドロップダウン選択
-- 選択肢:
-  - すべて
-  - エイリアスのみ
-  - 正規タグのみ
+export const metadata: Metadata = {
+  title: 'PolySeek - VRChatアバター・衣装・ギミック検索',
+  description: 'VRChat向けの3Dアバターやアクセサリーをタグベースで検索できるプラットフォーム。',
+  alternates: { canonical: BASE_URL },
+};
 
-### 3. 適用中フィルターチップ
+export default async function Home({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
+  const resolvedParams = await searchParams;
+  const parsedPage = resolvedParams.page ? parseInt(resolvedParams.page, 10) : 1;
+  const currentPage = (Number.isInteger(parsedPage) && parsedPage > 0) ? parsedPage : 1;
 
-```
-適用中: [カテゴリ: 食品 ×] [言語: 日本語 ×] [使用数: 未使用 ×]  [すべてクリア]
-```
+  // サーバーサイドで直接DBから商品を取得
+  const session = await auth();
+  const userId = session?.user?.id;
 
-- 適用中のフィルターを小さなチップで表示
-- 各チップに×ボタンで個別解除可能
-- 「すべてクリア」リンクで全フィルターをリセット
-- フィルターが何も適用されていない場合は非表示
+  // 全年齢タグでフィルタリング（既存APIロジックと同等）
+  const allAgeTag = await prisma.tag.findFirst({ ... });
+  const where = allAgeTag ? { productTags: { some: { tagId: allAgeTag.id } } } : {};
 
-### 4. ソート
+  const [total, products] = await Promise.all([
+    prisma.product.count({ where }),
+    prisma.product.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: PAGE_SIZE, include: { ... } }),
+  ]);
 
-- テーブルヘッダーをクリックでソート
-- クリックでトグル: なし → 昇順 → 降順 → なし
-- ソート中のカラムにはアイコン表示（↑ or ↓）
-- デフォルト: 使用数降順
+  // Like/Own 状態もサーバーサイドで取得
+  // フォーマットして props として渡す
 
-#### ソート対象カラム
-- タグ名
-- カテゴリ
-- 言語
-- 説明
-- 使用数
-- 作成日（表示はなくてもソート可能にする場合は要検討）
-
-### 5. エイリアスタグの視覚的区別
-
-- エイリアスタグの行は薄い背景色（例: bg-muted/50）
-- タグ名の横に矢印アイコン（→）を表示
-- 正規タグ名をツールチップで表示
-
-### 6. URL永続化
-
-クエリパラメータ形式:
-```
-/admin?q=検索語&category=1&lang=ja&usage=0&alias=true&sort=usageCount&order=desc
+  return (
+    <HomeClient
+      products={formattedProducts}
+      totalPages={Math.ceil(total / PAGE_SIZE)}
+      currentPage={currentPage}
+    />
+  );
+}
 ```
 
-| パラメータ | 説明 | 例 |
-|-----------|------|-----|
-| q | 検索キーワード | q=りんご |
-| category | カテゴリID | category=1 |
-| lang | 言語 | lang=ja, lang=en |
-| usage | 使用数範囲 | usage=0, usage=1-10, usage=11-50, usage=50+ |
-| alias | エイリアス状態 | alias=true, alias=false |
-| sort | ソート対象カラム | sort=name, sort=usageCount |
-| order | ソート方向 | order=asc, order=desc |
-| page | ページ番号 | page=1 |
+**ページネーション方針: 全ページSSR**
+- ページ遷移は `<Link href="/?page=2">` によるサーバーサイドナビゲーション
+- 全ページで `searchParams` の `page` パラメータを読み取り、サーバーサイドでデータ取得
+- Google がすべてのページをインデックス可能
+- `ClientHome` → `HomeClient` にリネーム（旧CSRからの変更を明示）
 
-### 7. ローディング状態
+**`src/app/HomeClient.tsx`（旧 ClientHome.tsx）:**
+- `"use client"` コンポーネントとして維持（`ServiceIntroSection` が `useSession` を使用するため）
+- props で受け取った商品データとページネーション情報を表示
+- クライアントサイドの `useEffect` での fetch を削除
+- `useState` による `products`, `loading`, `error` 状態管理を削除
+- `Pagination` コンポーネントの `baseUrl` は `"/"` のまま
 
-- データ取得中はテーブル部分にスケルトンローダーを表示
-- 検索/フィルター変更時も同様にスケルトン表示
-- フィルターコントロールは操作可能のまま
+**重要な考慮事項:**
+- `ServiceIntroSection` は `"use client"` コンポーネント（`useSession` 使用）→ そのまま維持
+- 全年齢タグフィルターのロジックを維持する
+- `isLiked` / `isOwned` の状態はサーバーサイドセッションで取得可能（`auth()` を使用）
+
+#### SSR時の商品取得ロジック
+
+`/api/products/latest/route.ts` から移植するロジック:
+1. ページパラメータのバリデーション
+2. `auth()` でセッション取得（ユーザーの Like/Own 状態用）
+3. 全年齢タグ（`age_rating` カテゴリの `全年齢` タグ）でフィルタリング
+4. `createdAt` 降順で商品取得
+5. メイン画像、タグ（7件まで）、バリエーション、販売者情報を include
+6. フォーマットして返却
+
+### 2. トップページのメタデータ追加
+
+現在、トップページには `layout.tsx` のデフォルトメタデータのみが適用されている。トップページ専用のメタデータを `page.tsx` に追加する。
+
+```tsx
+export const metadata: Metadata = {
+  title: 'PolySeek - VRChatアバター・衣装・ギミック検索',
+  description: 'VRChat向けの3Dアバターやアクセサリーをタグベースで検索できるプラットフォーム。',
+  alternates: {
+    canonical: BASE_URL,
+  },
+};
+```
+
+### 3. 商品詳細ページの確認（変更不要）
+
+`/src/app/products/[productId]/page.tsx` は既にSSR化済み:
+- サーバーサイドで Prisma から直接データ取得
+- `product` が `null` の場合は `notFound()` で正式な 404 を返す
+- `generateMetadata()` でメタデータを動的生成
+- **変更不要** - 正しく実装されている
+
+### 4. サイトマップの改善（オプション）
+
+現在のサイトマップは全商品をリストしているが、以下を検討:
+- `lastModified` の精度向上（`updatedAt` を使用中 → 適切）
+- 将来の論理削除導入時に `where` 条件を追加
+
+**現時点では変更不要** - 物理削除済み商品は自動的にサイトマップから除外される。
 
 ---
 
@@ -161,30 +203,27 @@
 
 | ファイル | 変更内容 |
 |----------|----------|
-| `/src/components/admin/TagList.tsx` | メイン実装（検索・フィルター・ソートUI追加） |
-| `/src/app/api/admin/tags/route.ts` | API拡張（検索・フィルター・ソートパラメータ対応） |
-| `/src/components/admin/TagSearchFilters.tsx` | 新規：検索・フィルターコンポーネント |
-| `/src/components/admin/ActiveFilterChips.tsx` | 新規：適用中フィルターチップコンポーネント |
-| `/src/hooks/useTagFilters.ts` | 新規：フィルター状態管理フック |
+| `/src/app/page.tsx` | SSR化 - async サーバーコンポーネントに変更、Prisma でデータ取得、メタデータ追加 |
+| `/src/app/ClientHome.tsx` → `/src/app/HomeClient.tsx` | リネーム＆リファクタリング - props で商品データを受け取り表示のみ担当。クライアントサイド fetch を削除 |
 
 ---
 
 ## 実装ステップ
 
-1. **API拡張**: 検索・フィルター・ソートパラメータをAPIで受け取れるように拡張
-2. **フック作成**: URL永続化を含むフィルター状態管理フックを作成
-3. **検索・フィルターUI**: 検索ボックスとフィルタードロップダウンを実装
-4. **フィルターチップ**: 適用中フィルターのチップ表示を実装
-5. **ソート機能**: テーブルヘッダークリックでのソート機能を実装
-6. **エイリアス表示**: エイリアスタグの視覚的区別を実装
-7. **ローディング**: スケルトンローダーの実装
-8. **テスト**: 各機能の動作確認
+1. **トップページ SSR化**: `page.tsx` を async サーバーコンポーネントに変更し、Prisma で直接商品データを取得。メタデータも追加。
+2. **HomeClient 作成**: `ClientHome.tsx` を `HomeClient.tsx` にリネームし、props で商品データを受け取る表示専用コンポーネントに変更。クライアントサイド fetch・useState・useEffect を削除。
+3. **ページネーション SSR化**: `Pagination` コンポーネントの `baseUrl` を `"/"` で維持し、`/?page=N` へのリンクでサーバーサイドナビゲーション。
+4. **テスト**: ローカルで動作確認（全ページで商品データがHTMLに含まれることを確認）
+5. **デプロイ後**: Google Search Console で再クロールをリクエスト
 
 ---
 
 ## 参考: 現在の実装
 
-- ページ: `/src/app/admin/page.tsx`
-- タグ一覧: `/src/components/admin/TagList.tsx`
-- API: `/src/app/api/admin/tags/route.ts`
-- UIライブラリ: shadcn/ui
+- トップページ: `/src/app/page.tsx` → `ClientHome` (CSR)
+- 商品取得API: `/src/app/api/products/latest/route.ts`
+- 商品詳細: `/src/app/products/[productId]/page.tsx` (SSR済み)
+- 検索ページ: `/src/app/search/page.tsx` (SSR済み)
+- robots.txt: `/src/app/robots.ts`
+- サイトマップ: `/src/app/sitemap.ts`
+- 認証ガード: `/src/components/AuthGuard.tsx`
