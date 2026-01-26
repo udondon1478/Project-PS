@@ -24,7 +24,7 @@ import { Slider } from '@/components/ui/slider';
 import { Filter, X } from 'lucide-react';
 import { SortSelector } from './SortSelector';
 import { type SortOption } from '@/constants/sort';
-import { AGE_RATING_WHITELIST } from '@/lib/constants';
+import { AGE_RATING_WHITELIST, PRODUCT_CATEGORY_WHITELIST, FEATURE_TAG_WHITELIST } from '@/lib/constants';
 
 interface FilterSidebarProps {
   isFilterSidebarOpen: boolean;
@@ -85,9 +85,21 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   // Only show tags in AGE_RATING_WHITELIST, in the order defined by the whitelist
   const filteredAgeRatingTags = React.useMemo(() => {
     return AGE_RATING_WHITELIST
-      .map(name => ageRatingTags.find(tag => tag.name === name))
+      .map(name => ageRatingTags.find(tag => tag.name.trim() === name))
       .filter((tag): tag is NonNullable<typeof tag> => tag !== undefined);
   }, [ageRatingTags]);
+
+  const filteredCategoryTags = React.useMemo(() => {
+    return PRODUCT_CATEGORY_WHITELIST
+      .map(name => categoryTags.find(tag => tag.name.trim() === name))
+      .filter((tag): tag is NonNullable<typeof tag> => tag !== undefined);
+  }, [categoryTags]);
+
+  const filteredFeatureTags = React.useMemo(() => {
+    return FEATURE_TAG_WHITELIST
+      .map(name => featureTags.find(tag => tag.name.trim() === name))
+      .filter((tag): tag is NonNullable<typeof tag> => tag !== undefined);
+  }, [featureTags]);
 
   return (
     <Sheet open={isFilterSidebarOpen} onOpenChange={setIsFilterSidebarOpen}>
@@ -161,7 +173,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
               <div>
                 <h4 className="font-medium mb-2 text-sm">主要機能</h4>
                 <div className="flex flex-wrap gap-2">
-                  {featureTags.map(tag => (
+                  {filteredFeatureTags.map(tag => (
                     <Button
                       key={tag.id}
                       variant={isFeatureTagSelected(tag.name) ? 'default' : isNegativeTagSelected(tag.name) ? 'destructive' : 'outline'}
@@ -187,16 +199,16 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
             {/* Detailed Filters (Always in Sheet) */}
             <div>
-              <h4 className="font-medium mb-2 text-sm">カテゴリ</h4>
+              <h4 className="font-medium mb-2 text-sm">商品種別</h4>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-sm" aria-label="カテゴリを選択">
+                  <Button variant="outline" className="w-full justify-start text-sm" aria-label="商品種別を選択">
                     {detailedFilters.category || "選択してください"}
                     {detailedFilters.category && <X size={14} className="ml-auto cursor-pointer" onClick={(e) => { e.stopPropagation(); handleDetailedFilterChange('category', null); }} />}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
-                  {categoryTags.map(tag => (
+                  {filteredCategoryTags.map(tag => (
                     <DropdownMenuItem key={tag.id} onSelect={() => handleDetailedFilterChange('category', tag.name)} className="text-sm" aria-label={tag.displayName || tag.name}>
                       {tag.displayName || tag.name}
                     </DropdownMenuItem>

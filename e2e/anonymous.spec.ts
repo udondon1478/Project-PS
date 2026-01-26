@@ -10,6 +10,7 @@ test.describe('Anonymous User Core Features', () => {
   let uniqueId: string;
   let query: string;
   let negativeTag: string;
+  let categoryTag: string;
   let negativeQuery: string;
   let userId: string;
   let prodId1: string;
@@ -23,6 +24,7 @@ test.describe('Anonymous User Core Features', () => {
     uniqueId = generateUniqueId();
     query = `アバター-${uniqueId}`;
     negativeTag = `衣装-${uniqueId}`;
+    categoryTag = 'その他';
     negativeQuery = `-${negativeTag}`;
     userId = `user_${uniqueId}`;
     prodId1 = `prod_1_${uniqueId}`;
@@ -52,6 +54,21 @@ test.describe('Anonymous User Core Features', () => {
     const tag2 = await prisma.tag.create({
       data: {
         name: negativeTag,
+        language: 'ja',
+        tagCategory: {
+          connectOrCreate: {
+            where: { name: 'product_category' },
+            create: { name: 'product_category', color: 'blue' }
+          }
+        }
+      }
+    });
+
+    const categoryTagRecord = await prisma.tag.upsert({
+      where: { name: categoryTag },
+      update: {},
+      create: {
+        name: categoryTag,
         language: 'ja',
         tagCategory: {
           connectOrCreate: {
@@ -125,6 +142,10 @@ test.describe('Anonymous User Core Features', () => {
               userId: user.id
             },
             {
+              tagId: categoryTagRecord.id,
+              userId: user.id
+            },
+            {
               tagId: allAgeTag.id,
               userId: user.id
             }
@@ -153,6 +174,10 @@ test.describe('Anonymous User Core Features', () => {
           create: [
             {
               tagId: tag2.id,
+              userId: user.id
+            },
+            {
+              tagId: categoryTagRecord.id,
               userId: user.id
             },
             {
@@ -314,9 +339,9 @@ test.describe('Anonymous User Core Features', () => {
     await page.getByLabel('フィルターを開く').click();
     await expect(page.getByText('フィルター', { exact: true })).toBeVisible();
 
-    // カテゴリを選択 (negativeTagを持つ商品に絞る -> prodId2(2,000) と prodId3(50,000))
-    await page.getByLabel('カテゴリを選択').click();
-    await page.getByLabel(negativeTag).click();
+    // カテゴリを選択 (categoryTagを持つ商品に絞る -> prodId2(2,000) と prodId3(50,000))
+    await page.getByLabel('商品種別を選択').click();
+    await page.getByLabel(categoryTag).click();
 
     // 価格帯スライダーを操作
     // 50,000円を除外したいので、最大価格を大幅に下げる
@@ -353,7 +378,7 @@ test.describe('Anonymous User Core Features', () => {
     await page.getByRole('button', { name: 'フィルターを適用' }).click();
 
     // URLパターンの検証
-    const urlPattern = new RegExp(`search\\?.*categoryName=${encodeQuery(negativeTag)}.*&maxPrice=[0-9]+`);
+    const urlPattern = new RegExp(`search\\?.*categoryName=${encodeQuery(categoryTag)}.*&maxPrice=[0-9]+`);
     
     if (process.env.E2E_DEBUG) console.log(`[Test 1.4] Current URL: ${page.url()}`);
     

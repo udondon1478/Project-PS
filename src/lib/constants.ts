@@ -46,3 +46,21 @@ export const MAX_REQUEST_INTERVAL_MS = 60000;
 // Tags not in this list (e.g., R-18G from scraping) will be excluded from UI
 export const AGE_RATING_WHITELIST = ['全年齢', 'R-15', 'R-17', 'R-18'] as const;
 export type AgeRatingTag = typeof AGE_RATING_WHITELIST[number];
+
+// Product Category Whitelist (defines which tags to show in Product Type filter and their display order)
+export const PRODUCT_CATEGORY_WHITELIST = [
+  'アバター',
+  '衣装',
+  'アクセサリー',
+  'プロップ(小道具)',
+  'ワールド',
+  'ツール・ギミック',
+  'その他'
+] as const;
+
+// Feature Tags Whitelist (defines which tags to show in Major Feature filter and their display order)
+export const FEATURE_TAG_WHITELIST = [
+  'Quest対応',
+  'PhysBone対応',
+  'Modular Avatar対応'
+] as const;

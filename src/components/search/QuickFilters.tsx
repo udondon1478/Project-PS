@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { X } from 'lucide-react';
-import { AGE_RATING_WHITELIST } from '@/lib/constants';
+import { AGE_RATING_WHITELIST, FEATURE_TAG_WHITELIST } from '@/lib/constants';
 
 interface QuickFiltersProps {
   ageRatingTags: { id: string; name: string; displayName?: string; color?: string | null }[];
@@ -44,6 +44,12 @@ export const QuickFilters: React.FC<QuickFiltersProps> = ({
       .map(name => ageRatingTags.find(tag => tag.name === name))
       .filter((tag): tag is NonNullable<typeof tag> => tag !== undefined);
   }, [ageRatingTags]);
+
+  const filteredFeatureTags = React.useMemo(() => {
+    return FEATURE_TAG_WHITELIST
+      .map(name => featureTags.find(tag => tag.name === name))
+      .filter((tag): tag is NonNullable<typeof tag> => tag !== undefined);
+  }, [featureTags]);
 
   const label = React.useMemo(() =>
       selectedAgeRatingTags.map(tagName => {
@@ -110,7 +116,7 @@ export const QuickFilters: React.FC<QuickFiltersProps> = ({
         <DropdownMenuContent>
           <DropdownMenuLabel>主要機能を選択/解除</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {featureTags.map(tag => (
+          {filteredFeatureTags.map(tag => (
             <DropdownMenuItem
               key={tag.id}
               onSelect={() => {

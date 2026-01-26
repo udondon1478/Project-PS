@@ -61,10 +61,10 @@ export function TagSearchFilters({
         onValueChange={(value) => onCategoryChange(value === 'all' ? '' : value)}
       >
         <SelectTrigger className="w-[160px]">
-          <SelectValue placeholder="カテゴリ" />
+          <SelectValue placeholder="商品種別" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">すべてのカテゴリ</SelectItem>
+          <SelectItem value="all">すべての商品種別</SelectItem>
           {tagCategories.map((category) => (
             <SelectItem key={category.id} value={category.id}>
               <div className="flex items-center gap-2">

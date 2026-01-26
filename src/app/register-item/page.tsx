@@ -13,6 +13,7 @@ import { GuidelineContainer } from '@/components/guidelines/GuidelineContainer';
 import { useGuidelineFirstVisit } from '@/hooks/useGuidelineFirstVisit';
 import { GuidelineOnboardingModal } from '@/components/guidelines/GuidelineOnboardingModal';
 import { RatingLevel, RATING_TAG_MAPPING } from '@/data/guidelines';
+import { PRODUCT_CATEGORY_WHITELIST, FEATURE_TAG_WHITELIST } from '@/lib/constants';
 
 // 商品情報の型定義 (変更なし)
 interface ProductInfo {
@@ -329,7 +330,7 @@ export default function RegisterItemPage() {
       try {
         const responses = await Promise.all([
           fetch('/api/tags/by-type?categoryNames=rating', { signal }),
-          fetch('/api/tags/by-type?categoryNames=product_category', { signal }),
+          fetch('/api/tags/by-type?categoryNames=product_type', { signal }), // Updated to correct ID
           fetch('/api/tags/by-type?categoryNames=feature', { signal }),
         ]);
 
@@ -343,13 +344,39 @@ export default function RegisterItemPage() {
         }
 
         if (categoriesResponse.ok) {
-          setCategoryTags(await categoriesResponse.json());
+          const allCategories = await categoriesResponse.json();
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[Debug] All Categories fetched:', allCategories.length, allCategories.map((t: any) => t.name));
+          }
+
+          // Filter and sort based on whitelist
+          const filteredCategories = PRODUCT_CATEGORY_WHITELIST
+            .map(name => allCategories.find((tag: { name: string }) => tag.name.trim() === name))
+            .filter((tag): tag is { id: string; name: string } => tag !== undefined);
+
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[Debug] Filtered Categories:', filteredCategories.length, filteredCategories.map((t) => t.name));
+          }
+          setCategoryTags(filteredCategories);
         } else if (categoriesResponse.status !== 404) {
           errorMessages.push(`カテゴリーの取得に失敗しました: ${categoriesResponse.statusText}`);
         }
 
         if (featuresResponse.ok) {
-          setFeatureTags(await featuresResponse.json());
+          const allFeatures = await featuresResponse.json();
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[Debug] All Features fetched:', allFeatures.length, allFeatures.map((t: any) => t.name));
+          }
+
+          // Filter and sort based on whitelist
+          const filteredFeatures = FEATURE_TAG_WHITELIST
+            .map(name => allFeatures.find((tag: { name: string }) => tag.name.trim() === name))
+            .filter((tag): tag is { id: string; name: string } => tag !== undefined);
+
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[Debug] Filtered Features:', filteredFeatures.length, filteredFeatures.map((t) => t.name));
+          }
+          setFeatureTags(filteredFeatures);
         } else if (featuresResponse.status !== 404) {
           errorMessages.push(`主要機能の取得に失敗しました: ${featuresResponse.statusText}`);
         }

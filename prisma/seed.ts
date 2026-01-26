@@ -81,24 +81,43 @@ async function main() {
     throw new Error('Rating category not found after seeding tag categories');
   }
 
-  const productCategory = await prisma.tagCategory.upsert({
-    where: { name: 'product_category' },
-    update: {},
-    create: { name: 'product_category', color: '#00CC99' },
+  // 新しいカテゴリ定義（tagCategories.ts）に基づいてカテゴリを取得
+  let productTypeCategory = await prisma.tagCategory.findUnique({
+    where: { id: 'product_type' },
   });
 
-  const featureCategory = await prisma.tagCategory.upsert({
-    where: { name: 'feature' },
-    update: {},
-    create: { name: 'feature', color: '#33CCFF' },
+  if (!productTypeCategory) {
+    // フォールバック: 名前で検索（万が一IDが一致しない場合）
+    const cat = tagCategories.find(c => c.id === 'product_type');
+    if (!cat) {
+      throw new Error('product_type category definition missing');
+    }
+    productTypeCategory = await prisma.tagCategory.upsert({
+      where: { id: 'product_type' },
+      update: { name: cat.name, color: cat.color },
+      create: { id: 'product_type', name: cat.name, color: cat.color },
+    });
+  }
+
+  let featureCategoryNew = await prisma.tagCategory.findUnique({
+    where: { id: 'feature' },
   });
 
-  // その他のタグカテゴリの初期データ
-  const otherTagCategory = await prisma.tagCategory.upsert({
-    where: { name: 'other' },
-    update: {},
-    create: { name: 'other', color: '#999999' }, // 仮の色を設定
-  });
+  if (!featureCategoryNew) {
+     const cat = tagCategories.find(c => c.id === 'feature');
+     if (!cat) {
+       throw new Error('feature category definition missing');
+     }
+     featureCategoryNew = await prisma.tagCategory.upsert({
+       where: { id: 'feature' },
+       update: { name: cat.name, color: cat.color },
+       create: { id: 'feature', name: cat.name, color: cat.color },
+     });
+  }
+
+  // 確実に存在するはずのカテゴリIDを取得
+  const targetProductCategoryId = productTypeCategory.id;
+  const targetFeatureCategoryId = featureCategoryNew.id;
 
 
   const ageRatingTags = [
@@ -116,36 +135,38 @@ async function main() {
     });
   }
 
-  // カテゴリータグの初期データ
+  // カテゴリータグ（商品種別）のデータ移行・更新
+  // Product Category: アバター, 衣装, アクセサリー, プロップ(小道具), ワールド, ツール・ギミック, その他
   const categoryTags = [
-    { name: 'アバター', tagCategoryId: productCategory.id },
-    { name: '衣装', tagCategoryId: productCategory.id },
-    { name: 'アクセサリー', tagCategoryId: productCategory.id },
-    { name: 'プロップ(小道具)', tagCategoryId: productCategory.id },
-    { name: 'ワールド', tagCategoryId: productCategory.id },
-    { name: 'ツール・ギミック', tagCategoryId: productCategory.id },
-    { name: 'その他', tagCategoryId: productCategory.id },
+    { name: 'アバター', tagCategoryId: targetProductCategoryId },
+    { name: '衣装', tagCategoryId: targetProductCategoryId },
+    { name: 'アクセサリー', tagCategoryId: targetProductCategoryId },
+    { name: 'プロップ(小道具)', tagCategoryId: targetProductCategoryId },
+    { name: 'ワールド', tagCategoryId: targetProductCategoryId },
+    { name: 'ツール・ギミック', tagCategoryId: targetProductCategoryId },
+    { name: 'その他', tagCategoryId: targetProductCategoryId },
   ];
 
   for (const tagData of categoryTags) {
     await prisma.tag.upsert({
       where: { name: tagData.name },
-      update: {},
+      update: { tagCategoryId: tagData.tagCategoryId }, // カテゴリを強制的に更新
       create: { ...tagData, language: 'ja' },
     });
   }
 
-  // 主要機能タグの初期データ
+  // 主要機能タグのデータ移行・更新
+  // Feature: Quest対応, Modular Avatar対応, PhysBone対応
   const featureTags = [
-    { name: 'Quest対応', tagCategoryId: featureCategory.id },
-    { name: 'PhysBone対応', tagCategoryId: featureCategory.id },
-    { name: 'Modular Avatar対応', tagCategoryId: featureCategory.id },
+    { name: 'Quest対応', tagCategoryId: targetFeatureCategoryId },
+    { name: 'PhysBone対応', tagCategoryId: targetFeatureCategoryId }, // 表記揺れ吸収: PhysBone対応
+    { name: 'Modular Avatar対応', tagCategoryId: targetFeatureCategoryId },
   ];
 
   for (const tagData of featureTags) {
     await prisma.tag.upsert({
       where: { name: tagData.name },
-      update: {},
+      update: { tagCategoryId: tagData.tagCategoryId }, // カテゴリを強制的に更新
       create: { ...tagData, language: 'ja' },
     });
   }
