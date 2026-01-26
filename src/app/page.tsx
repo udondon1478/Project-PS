@@ -28,8 +28,6 @@ export default async function Home({
     : 1;
   const currentPage =
     Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
-  const skip = (currentPage - 1) * PAGE_SIZE;
-
   const session = await auth();
   const userId = session?.user?.id;
 
@@ -78,50 +76,52 @@ export default async function Home({
   const where =
     whereConditions.length > 0 ? { AND: whereConditions } : {};
 
-  const [total, products] = await Promise.all([
-    prisma.product.count({ where }),
-    prisma.product.findMany({
-      where,
-      orderBy: {
-        createdAt: 'desc',
-      },
-      skip,
-      take: PAGE_SIZE,
-      include: {
-        images: {
-          where: {
-            isMain: true,
-          },
-          select: {
-            imageUrl: true,
-          },
-          take: 1,
+  const total = await prisma.product.count({ where });
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const safePage = totalPages > 0 ? Math.min(currentPage, totalPages) : 1;
+  const skip = (safePage - 1) * PAGE_SIZE;
+
+  const products = await prisma.product.findMany({
+    where,
+    orderBy: {
+      createdAt: 'desc',
+    },
+    skip,
+    take: PAGE_SIZE,
+    include: {
+      images: {
+        where: {
+          isMain: true,
         },
-        productTags: {
-          include: {
-            tag: {
-              select: {
-                name: true,
-                displayName: true,
-                tagCategory: {
-                  select: {
-                    color: true,
-                  },
+        select: {
+          imageUrl: true,
+        },
+        take: 1,
+      },
+      productTags: {
+        include: {
+          tag: {
+            select: {
+              name: true,
+              displayName: true,
+              tagCategory: {
+                select: {
+                  color: true,
                 },
               },
             },
           },
-          take: 7,
         },
-        variations: {
-          orderBy: {
-            order: 'asc',
-          },
-        },
-        seller: true,
+        take: 7,
       },
-    }),
-  ]);
+      variations: {
+        orderBy: {
+          order: 'asc',
+        },
+      },
+      seller: true,
+    },
+  });
 
   const formattedProducts: Product[] = products.map((product) => ({
     id: product.id,
@@ -154,13 +154,11 @@ export default async function Home({
       : null,
   }));
 
-  const totalPages = Math.ceil(total / PAGE_SIZE);
-
   return (
     <HomeClient
       products={formattedProducts}
       totalPages={totalPages}
-      currentPage={currentPage}
+      currentPage={safePage}
     />
   );
 }

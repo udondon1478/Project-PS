@@ -12,7 +12,7 @@ Google Search Console で複数のページが「ソフト404」として報告�
 
 `robots.txt` が `/api/` パス全体をブロックしているため、Googlebot がクライアントサイドの API リクエストを実行できない。
 
-```
+```txt
 # 現在の robots.txt
 User-agent: *
 Allow: /
