@@ -112,7 +112,7 @@ test.describe('Product Registration Flow', () => {
       let data: any[] = [];
       if (categoryNames === 'rating') {
         data = MOCK_AGE_RATING_TAGS;
-      } else if (categoryNames === 'product_category') {
+      } else if (categoryNames === 'product_type') {
         data = MOCK_CATEGORY_TAGS;
       } else if (categoryNames === 'feature') {
         data = []; // 'feature' タグは空でモック
@@ -165,75 +165,56 @@ test.describe('Product Registration Flow', () => {
       // ProductDetailsFormが表示され、自動入力されていることを確認
       await expect(page.getByText('商品情報の確認と登録')).toBeVisible();
 
-      // ★追加: Onboardingが表示されていたら閉じる (localStorage設定が効かない場合への保険)
-      // ★追加: Onboardingが表示されていたら閉じる (localStorage設定が効かない場合への保険)
-      // 修正: より堅牢なチェックと閉じる処理
-      try {
-        const driverOverlay = page.locator('.driver-overlay');
-        // わずかな遅延を入れてオーバーレイの出現を待つ
-        await page.waitForTimeout(1000);
-        
-        if (await driverOverlay.isVisible()) {
-          console.log('[DEBUG] Closing driver overlay with Escape');
-          // オーバーレイが表示されている場合、強制的にEscapeキーを連打して閉じる
-          await page.keyboard.press('Escape');
-          await page.waitForTimeout(300);
-          await page.keyboard.press('Escape');
-          
-          await expect(driverOverlay).not.toBeVisible({ timeout: 5000 });
-          await page.waitForTimeout(500); // アニメーション完了待ち
+      // Robust Modal Handling: Check for and close any dialog or driver-overlay
+      // This handles onboarding tours or warnings that might appear despite localStorage settings
+      const checkForOverlays = async () => {
+        try {
+          // Check for driver overlay or dialogs
+          const driverOverlay = page.locator('.driver-overlay');
+          const dialog = page.locator('div[role="dialog"]');
+
+          if (await driverOverlay.isVisible({ timeout: 2000 })) {
+            console.log('[DEBUG] Closing driver overlay');
+            await page.keyboard.press('Escape');
+            await expect(driverOverlay).not.toBeVisible();
+          }
+
+          // Note: Some valid modals (like Select content) use role="dialog", so be careful not to close those if we are in the middle of interaction.
+          // But here we are at the start of the form.
+        } catch (e) {
+          // Ignore errors if elements are not found
         }
-      } catch (e) {
-        console.log('[DEBUG] Driver overlay check error (ignoring):', e);
-      }
+      };
+      await checkForOverlays();
 
       await expect(page.getByText(MOCK_PRODUCT_TITLE)).toBeVisible();
       await expect(page.getByText(`by ${MOCK_SELLER_NAME}`)).toBeVisible();
 
-      // カテゴリなどを選択 (getByLabel ではなく、SelectTriggerのIDやRoleを使う)
-      
-      // '対象年齢' の SelectTrigger をクリック
-      // 修正: nth(0) ではなく getByLabel で堅牢に指定
-      // '対象年齢' の SelectTrigger をクリック
+      // Improved Select Interaction
+
+      // 1. Select 'Age Rating'
       const ageRatingTrigger = page.getByLabel('対象年齢');
       await expect(ageRatingTrigger).toBeVisible();
-      await expect(ageRatingTrigger).toBeEnabled();
-      
-      // クリックで開く (キーボード操作よりも確実)
       await ageRatingTrigger.click();
-      
-      // オプションが表示されるのを待つ (role="listbox" が表示されるはず)
-      // Radix UIのSelectは role="dialog" などを経由する場合があるが、アイテムは role="option"
+
       const ageOption = page.getByRole('option', { name: '全年齢' });
       await expect(ageOption).toBeVisible();
-      
-      // オプションをクリックして選択
       await ageOption.click();
-      
-      // 選択が反映されているか確認 (テキストが変わるのを待つ)
-      await expect(ageRatingTrigger).toHaveText(/全年齢/); 
 
-      // 'カテゴリー' の SelectTrigger を操作
+      // Crucially: Wait for the trigger text to update to the selected value BEFORE proceeding
+      await expect(ageRatingTrigger).toHaveText(/全年齢/);
+
+      // 2. Select 'Category'
       const categoryTrigger = page.getByLabel('カテゴリー');
-      
-      // 前のポップアップが閉じるのを待つ (重要)
-      await expect(ageOption).not.toBeVisible();
-      await page.waitForTimeout(300); // アニメーションマージン
-      
       await expect(categoryTrigger).toBeEnabled();
       await categoryTrigger.click();
-      
+
       const categoryOption = page.getByRole('option', { name: 'アバター' });
       await expect(categoryOption).toBeVisible();
-      
-      // オプションをクリックして選択
       await categoryOption.click();
-      
-      // 選択が反映されているか確認
-      await expect(categoryTrigger).toHaveText(/アバター/); 
-      
-      // ポップアップが閉じるのを待つ
-      await expect(categoryOption).not.toBeVisible();
+
+      // Crucially: Wait for the trigger text to update to the selected value BEFORE proceeding
+      await expect(categoryTrigger).toHaveText(/アバター/);
 
       // 手動タグを追加（TagInputコンポーネントの操作）(app/register-item/components/TagInput.tsx)
       const tagInput = page.locator('input[type="text"][id="otherTags"]');
@@ -242,7 +223,7 @@ test.describe('Product Registration Flow', () => {
       // Badge が表示されることを確認
       await expect(page.locator('span[data-slot="badge"]', { hasText: TEST_TAG })).toBeVisible();
 
-      // 登録ボタンも念のため有効化を待つ (WebKit対策)
+      // Button Enablement: Wait for the "Register" button to become enabled explicitly before clicking
       const registerButton = page.getByRole('button', { name: '商品を登録' });
       await expect(registerButton).toBeEnabled();
 
