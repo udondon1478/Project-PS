@@ -263,7 +263,10 @@ export default function RegisterItemPage() {
 
   // 既存の商品情報を編集モードで開くハンドラ
   const handleEditExistingProduct = useCallback(() => {
-    if (!productData || !productData.productTags) return;
+    if (!productData || !productData.productTags) {
+      setMessage('編集に必要な商品データが不足しています。');
+      return;
+    }
 
     let foundAgeRatingId = '';
     let foundCategoryId = '';

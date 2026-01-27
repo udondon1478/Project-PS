@@ -42,6 +42,7 @@ interface ProductInfo {
   sellerUrl: string;
   sellerIconUrl: string;
   images: { imageUrl: string; isMain: boolean; order: number }[];
+  productTags?: { tag: { id: string; name: string }; isOfficial: boolean }[];
   boothTags?: string[];
 }
 
