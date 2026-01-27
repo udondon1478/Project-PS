@@ -21,6 +21,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "認証が必要です。" }, { status: 401 });
   }
 
+  const userId = session.user.id;
+
   try {
     // 'general' カテゴリが存在しない場合は作成し、IDを取得
     const generalTagCategory = await prisma.tagCategory.upsert({
@@ -32,7 +34,7 @@ export async function POST(request: Request) {
       },
     });
 
-    const { productId, ageRatingTagId, categoryTagId, tags } = await request.json();
+    const { productId, ageRatingTagId, categoryTagId, tags, comment } = await request.json();
 
     if (!productId) {
       return NextResponse.json({ message: "商品IDが不足しています。" }, { status: 400 });
@@ -45,6 +47,7 @@ export async function POST(request: Request) {
         productTags: {
           select: {
             tagId: true,
+            isOfficial: true,
           },
         },
         seller: true, // sellerリレーションを含める
@@ -207,16 +210,26 @@ export async function POST(request: Request) {
     // 既存のタグIDを取得
     const existingTagIds = existingProduct.productTags.map(pt => pt.tagId);
 
-    // 更新で受け取った対象年齢タグIDとカテゴリータグIDを既存のタグIDリストに追加
-    const tagIdsToConnect = [...existingTagIds];
-    if (ageRatingTagId && !tagIdsToConnect.includes(ageRatingTagId)) {
-      tagIdsToConnect.push(ageRatingTagId);
-    }
-    if (categoryTagId && !tagIdsToConnect.includes(categoryTagId)) {
-      tagIdsToConnect.push(categoryTagId);
+    // タグ更新モードかどうかを判定 (タグ関連のフィールドがリクエストに含まれているか)
+    // Update Metadataのみの場合はこれらのフィールドはundefinedになる
+    const isTagUpdate = ageRatingTagId !== undefined || categoryTagId !== undefined || tags !== undefined;
+
+    let tagIdsToConnect: string[] = [];
+
+    if (isTagUpdate) {
+      // タグ編集モード: 新しいタグセットで置き換え (既存のタグは引き継がない)
+      if (ageRatingTagId) {
+        tagIdsToConnect.push(ageRatingTagId);
+      }
+      if (categoryTagId) {
+        tagIdsToConnect.push(categoryTagId);
+      }
+    } else {
+      // メタデータ更新モード: 既存のタグを維持
+      tagIdsToConnect = [...existingTagIds];
     }
 
-    // 手動で追加されたタグ名をタグIDに変換し、既存のタグIDリストに追加
+    // 手動で追加されたタグ名をタグIDに変換し、リストに追加
     if (tags && Array.isArray(tags)) {
       for (const tagName of tags) {
         const tag = await prisma.tag.upsert({
@@ -235,63 +248,127 @@ export async function POST(request: Request) {
     }
 
     // データベースの商品情報を更新
-    const updatedProduct = await prisma.product.update({
-      where: { id: productId },
-      data: {
-        title: title,
-        description: description,
-        lowPrice: lowPrice,
-        highPrice: highPrice,
-        // publishedAt, // publishedAtは更新しない
-        seller: sellerName && sellerUrl ? { // sellerNameとsellerUrlが存在する場合のみsellerを更新
-          upsert: {
-            where: { sellerUrl: sellerUrl },
-            update: { name: sellerName, iconUrl: sellerIconUrl },
-            create: { name: sellerName, sellerUrl: sellerUrl, iconUrl: sellerIconUrl },
+    const result = await prisma.$transaction(async (tx) => {
+      const updatedProduct = await tx.product.update({
+        where: { id: productId },
+        data: {
+          title: title,
+          description: description,
+          lowPrice: lowPrice,
+          highPrice: highPrice,
+          // publishedAt, // publishedAtは更新しない
+          seller: sellerName && sellerUrl ? { // sellerNameとsellerUrlが存在する場合のみsellerを更新
+            upsert: {
+              where: { sellerUrl: sellerUrl },
+              update: { name: sellerName, iconUrl: sellerIconUrl },
+              create: { name: sellerName, sellerUrl: sellerUrl, iconUrl: sellerIconUrl },
+            },
+          } : undefined,
+          images: { // 既存の画像を削除し、新しい画像を作成
+            deleteMany: {}, // 既存の関連画像を全て削除
+            create: imageUrls.map((imageUrl, index) => ({
+              imageUrl: imageUrl,
+              isMain: index === 0, // 最初の画像をメイン画像とみなす
+              order: index, // 表示順序を設定
+            })),
           },
-        } : undefined,
-        images: { // 既存の画像を削除し、新しい画像を作成
-          deleteMany: {}, // 既存の関連画像を全て削除
-          create: imageUrls.map((imageUrl, index) => ({
-            imageUrl: imageUrl,
-            isMain: index === 0, // 最初の画像をメイン画像とみなす
-            order: index, // 表示順序を設定
-          })),
+          variations: { // 既存のバリエーションを削除し、新しいバリエーションを作成
+            deleteMany: {}, // 既存の関連バリエーションを全て削除
+            create: variations.map(variation => ({
+              name: variation.name,
+              price: variation.price,
+              type: variation.type,
+              order: variation.order,
+              isMain: variation.isMain,
+            })),
+          },
+          productTags: { // 既存のタグを維持しつつ、新しいタグを追加
+            deleteMany: { // 既存の独自タグ(isOfficial=false)のみ削除し、公式タグは維持する
+              productId: productId,
+              isOfficial: false,
+            },
+            create: tagIdsToConnect.map(tagId => ({ // 更新後のタグリストで再作成（これらは全て独自タグ扱い）
+              tagId: tagId,
+              userId: existingProduct.userId, // タグを付けたユーザーは既存商品の登録ユーザーとする
+              isOfficial: false,
+            })),
+          },
         },
-        variations: { // 既存のバリエーションを削除し、新しいバリエーションを作成
-          deleteMany: {}, // 既存の関連バリエーションを全て削除
-          create: variations.map(variation => ({
-            name: variation.name,
-            price: variation.price,
-            type: variation.type,
-            order: variation.order,
-            isMain: variation.isMain,
-          })),
+        include: {
+          images: true,
+          productTags: {
+            include: {
+              tag: true,
+            },
+          },
+          variations: true, // バリエーション情報もインクルード
         },
-        productTags: { // 既存のタグを維持しつつ、新しいタグを追加
-          deleteMany: { // 既存のタグを全て削除
+      });
+
+      if (isTagUpdate) {
+        const currentManualTagIds = existingProduct.productTags
+          .filter(pt => !pt.isOfficial)
+          .map(pt => pt.tagId);
+
+        const newTagIdSet = new Set(tagIdsToConnect);
+        const currentTagIdSet = new Set(currentManualTagIds);
+
+        const addedTags: string[] = [];
+        const removedTags: string[] = [];
+        const keptTags: string[] = [];
+
+        for (const id of tagIdsToConnect) {
+          if (!currentTagIdSet.has(id)) {
+            addedTags.push(id);
+          } else {
+            keptTags.push(id);
+          }
+        }
+
+        for (const id of currentManualTagIds) {
+          if (!newTagIdSet.has(id)) {
+            removedTags.push(id);
+          }
+        }
+
+        // タグ編集履歴を作成する前にユーザーの存在確認を行う
+        // セッションのユーザーIDがDBに存在しない場合（古いセッションなど）、外部キー制約違反になるため
+        const editor = await tx.user.findUnique({
+          where: { id: userId },
+          select: { id: true }
+        });
+
+        if (!editor) {
+          throw new Error(`User not found: ${userId}`);
+        }
+
+        // 最新のバージョン番号を取得
+        const latestHistory = await tx.tagEditHistory.findFirst({
+          where: { productId: productId },
+          orderBy: { version: 'desc' },
+        });
+        const newVersion = (latestHistory?.version || 0) + 1;
+
+        // TagEditHistoryを作成
+        await tx.tagEditHistory.create({
+          data: {
             productId: productId,
+            editorId: userId,
+            version: newVersion,
+            addedTags: addedTags,
+            removedTags: removedTags,
+            keptTags: keptTags,
+            comment: comment && comment.trim() !== '' ? comment.trim() : null,
           },
-          create: tagIdsToConnect.map(tagId => ({ // 更新後のタグリストで再作成
-            tagId: tagId,
-            userId: existingProduct.userId, // タグを付けたユーザーは既存商品の登録ユーザーとする
-          })),
-        },
-      },
-      include: {
-        images: true,
-        productTags: {
-          include: {
-            tag: true,
-          },
-        },
-        variations: true, // バリエーション情報もインクルード
-      },
+        });
+      }
+
+      return updatedProduct;
     });
 
-    console.log('Product updated:', updatedProduct.id);
+    console.log('Product updated:', result.id);
 
-    return NextResponse.json(updatedProduct, { status: 200 });
+    return NextResponse.json(result, { status: 200 });
   } catch (error) {
     console.error("商品情報更新エラー:", error);
     const errorMessage = error instanceof Error ? error.message : "不明なエラー";

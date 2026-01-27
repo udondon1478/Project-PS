@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Sparkles } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import { TagInput } from './TagInput';
 import {
   AlertDialog,
@@ -41,6 +42,7 @@ interface ProductInfo {
   sellerUrl: string;
   sellerIconUrl: string;
   images: { imageUrl: string; isMain: boolean; order: number }[];
+  productTags?: { tag: { id: string; name: string }; isOfficial: boolean }[];
   boothTags?: string[];
 }
 
@@ -60,6 +62,8 @@ interface ProductDetailsFormProps {
   setSelectedAgeRatingTagId: (id: string) => void;
   selectedCategoryTagId: string;
   setSelectedCategoryTagId: (id: string) => void;
+  comment: string;
+  setComment: (comment: string) => void;
   onSubmit: () => void;
   isLoading: boolean;
   message: string;
@@ -82,6 +86,8 @@ export const ProductDetailsForm = memo(({
   setSelectedAgeRatingTagId,
   selectedCategoryTagId,
   setSelectedCategoryTagId,
+  comment,
+  setComment,
   onSubmit,
   isLoading,
   message,
@@ -280,11 +286,16 @@ export const ProductDetailsForm = memo(({
             </div>
           </div>
 
-          {productData.boothTags && productData.boothTags.length > 0 && (
+          {/* productData.boothTags（新規取得時）または productTags（既存編集時）から公式タグを表示 */}
+          {((productData.boothTags && productData.boothTags.length > 0) || (productData.productTags && productData.productTags.some(pt => pt.isOfficial))) && (
             <div>
               <Label>公式タグ（BOOTH由来）</Label>
               <div className="flex flex-wrap gap-2 mt-2">
-                {productData.boothTags.map((tagName) => (
+                {/* boothTagsがある場合はそれを使用、なければproductTagsからisOfficial=trueのものを抽出 */}
+                {(productData.boothTags && productData.boothTags.length > 0
+                  ? productData.boothTags
+                  : productData.productTags?.filter(pt => pt.isOfficial).map(pt => pt.tag.name) || []
+                ).map((tagName) => (
                   <Button
                     key={tagName}
                     type="button"
@@ -313,6 +324,18 @@ export const ProductDetailsForm = memo(({
               onChange={setManualTags}
               disabled={isLoading}
               onGuidelineClick={onGuidelineOpen ? () => onGuidelineOpen('categories') : undefined}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="comment">編集コメント（任意）</Label>
+            <Textarea
+              id="comment"
+              placeholder="タグの追加・削除の理由などを記入してください"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              disabled={isLoading}
+              className="mt-2 resize-none"
             />
           </div>
         </div>
