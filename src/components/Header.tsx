@@ -244,7 +244,7 @@ export default function Header() {
                 className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-accent"
                 aria-label="公式X（旧Twitter）"
               >
-                <XIcon className="h-4 w-4" />
+                <XIcon className="h-5 w-5" />
               </a>
               <a
                 href={DISCORD_INVITE_URL}

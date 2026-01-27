@@ -47,7 +47,7 @@ export default function Footer() {
               className="text-muted-foreground hover:text-foreground transition-colors"
               aria-label="公式X（旧Twitter）"
             >
-              <XIcon className="h-4 w-4" />
+              <XIcon className="h-5 w-5" />
             </a>
             <a
               href={DISCORD_INVITE_URL}

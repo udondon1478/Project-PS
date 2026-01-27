@@ -13,7 +13,7 @@ export const XIcon = ({ className }: { className?: string }) => (
 
 export const DiscordIcon = ({ className }: { className?: string }) => (
   <svg
-    viewBox="0 0 127.14 96.36"
+    viewBox="0 -15.39 127.14 127.14"
     aria-hidden="true"
     className={className}
     fill="currentColor"
