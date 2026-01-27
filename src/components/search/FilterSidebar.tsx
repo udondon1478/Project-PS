@@ -251,7 +251,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                   <span>
                     {isHighPriceFilterEnabled && priceRange[1] >= 100000
                       ? '100000円以上'
-                      : priceRange[1] >= 10000
+                      : !isHighPriceFilterEnabled && priceRange[1] >= 10000
                       ? '10000円以上'
                       : priceRange[1] + '円'}
                   </span>
