@@ -36,6 +36,8 @@ import { ProductSearchSkeleton } from '@/components/search/ProductSearchSkeleton
 import { AuthDialogNotice } from '@/components/AuthDialogNotice';
 import { HeaderNavigationSkeleton } from '@/components/HeaderNavigationSkeleton';
 import { TRIGGER_SEARCH_SPOTLIGHT } from '@/constants/events';
+import { XIcon, DiscordIcon } from '@/components/SocialIcons';
+import { DISCORD_INVITE_URL, X_ACCOUNT_URL } from '@/lib/constants';
 
 // 認証状態のプレースホルダーは削除
 
@@ -201,6 +203,27 @@ export default function Header() {
                       </>
                     )}
                  </div>
+                  {/* Mobile Social Icons */}
+                  <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 flex justify-center space-x-8">
+                     <a
+                       href={X_ACCOUNT_URL}
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       className="text-muted-foreground hover:text-foreground transition-colors"
+                       aria-label="Official X (Twitter)"
+                     >
+                       <XIcon className="h-6 w-6" />
+                     </a>
+                     <a
+                       href={DISCORD_INVITE_URL}
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       className="text-muted-foreground hover:text-[#5865F2] transition-colors"
+                       aria-label="Official Discord Server"
+                     >
+                       <DiscordIcon className="h-6 w-6" />
+                     </a>
+                  </div>
                </SheetContent>
              </Sheet>
              </div>
@@ -212,6 +235,28 @@ export default function Header() {
             <Image src="/images/PolySeek_logo_type.svg" alt="PolySeek" width={100} height={24} className="h-6 w-auto" />
           </Link>
           <nav className="hidden md:flex items-center space-x-2" suppressHydrationWarning>
+            {/* Desktop Social Icons */}
+            <div className="flex items-center mr-2 pr-4 border-r border-gray-200 dark:border-gray-700 space-x-1">
+              <a
+                href={X_ACCOUNT_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-accent"
+                aria-label="Official X (Twitter)"
+              >
+                <XIcon className="h-4 w-4" />
+              </a>
+              <a
+                href={DISCORD_INVITE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 text-muted-foreground hover:text-[#5865F2] transition-colors rounded-md hover:bg-accent"
+                aria-label="Official Discord Server"
+              >
+                <DiscordIcon className="h-5 w-5" />
+              </a>
+            </div>
+
             {status === "loading" ? (
               <HeaderNavigationSkeleton variant="desktop" />
             ) : status === "authenticated" ? (

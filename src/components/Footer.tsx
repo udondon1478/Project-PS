@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { ExternalLink } from 'lucide-react';
+import { XIcon, DiscordIcon } from '@/components/SocialIcons';
+import { DISCORD_INVITE_URL, X_ACCOUNT_URL } from '@/lib/constants';
 
 export default function Footer() {
   return (
@@ -36,6 +38,27 @@ export default function Footer() {
             お問い合わせ
             <ExternalLink className="h-3 w-3" aria-hidden="true" />
           </a>
+
+          <div className="flex items-center gap-3 pl-4 ml-2 border-l border-gray-200 dark:border-gray-700">
+            <a
+              href={X_ACCOUNT_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Official X (Twitter)"
+            >
+              <XIcon className="h-4 w-4" />
+            </a>
+            <a
+              href={DISCORD_INVITE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-[#5865F2] transition-colors"
+              aria-label="Official Discord Server"
+            >
+              <DiscordIcon className="h-5 w-5" />
+            </a>
+          </div>
         </div>
       </div>
     </footer>
