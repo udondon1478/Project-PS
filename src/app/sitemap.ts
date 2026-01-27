@@ -72,6 +72,21 @@ export default async function sitemap(params: {
   } else {
     // User routes
     const userSitemapId = sitemapId - productSitemapCount;
+    
+    // Validate sitemapId range for users
+    const userCount = await prisma.user.count({
+      where: { status: UserStatus.ACTIVE },
+    }).catch((error) => {
+      console.error('Failed to count users for sitemap:', error);
+      return 0;
+    });
+    
+    const userSitemapCount = Math.ceil(userCount / PRODUCTS_PER_SITEMAP);
+    
+    if (userSitemapId >= userSitemapCount) {
+      return [];
+    }
+
     const skipCount = userSitemapId * PRODUCTS_PER_SITEMAP;
 
     const users = await prisma.user.findMany({
