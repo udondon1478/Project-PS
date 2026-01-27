@@ -8,49 +8,31 @@ import {
   SheetTitle,
   SheetFooter,
 } from "@/components/ui/sheet";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-
-import { TagList } from "@/components/TagList";
-import TagEditor from "@/components/TagEditor";
-import TagEditHistoryItem from "@/components/TagEditHistoryItem";
-import { ProductTag, TagEditHistory } from "@/types/product";
-
-
+import Link from 'next/link';
 
 interface MobileTagSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  productId: string;
   productTags: ProductTag[];
   tagMap: { [key: string]: { name: string; displayName: string | null } };
   tagEditHistory: TagEditHistory[];
   onAddTagToSearch: (tagName: string) => void;
   onAddNegativeTagToSearch: (tagName: string) => void;
   onViewTagDetails: (tagId: string) => void;
-  onTagsUpdate: (data: { tags: { id: string; name: string }[]; comment: string }) => Promise<void>;
 }
 
 const MobileTagSheet: React.FC<MobileTagSheetProps> = ({
   open,
   onOpenChange,
+  productId,
   productTags,
   tagMap,
   tagEditHistory,
   onAddTagToSearch,
   onAddNegativeTagToSearch,
   onViewTagDetails,
-  onTagsUpdate,
 }) => {
-  const [isTagEditorOpen, setIsTagEditorOpen] = useState(false);
-
   const polyseekTags = productTags.filter(pt => !pt.isOfficial);
   const officialTags = productTags.filter(pt => pt.isOfficial);
 
@@ -69,22 +51,11 @@ const MobileTagSheet: React.FC<MobileTagSheetProps> = ({
                 <h3 className="text-sm font-semibold text-blue-700 dark:text-blue-300">
                   PolySeekタグ ({polyseekTags.length})
                 </h3>
-                <Dialog open={isTagEditorOpen} onOpenChange={setIsTagEditorOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">編集</Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader><DialogTitle>タグを編集</DialogTitle></DialogHeader>
-                    {/* productTags && を削除 */}
-                    <TagEditor
-                        initialTags={polyseekTags.map(pt => pt.tag)}
-                        onTagsChange={async (data) => {
-                          await onTagsUpdate(data);
-                          setIsTagEditorOpen(false);
-                        }}
-                      />
-                  </DialogContent>
-                </Dialog>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/register-item?edit_product_id=${productId}`}>
+                    編集
+                  </Link>
+                </Button>
               </div>
 
               {polyseekTags.length > 0 ? (
@@ -101,8 +72,10 @@ const MobileTagSheet: React.FC<MobileTagSheetProps> = ({
               ) : (
                 <div className="text-center py-4 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-lg text-sm text-blue-600 dark:text-blue-400">
                   <p>PolySeekタグはまだありません。</p>
-                  <Button variant="link" className="text-blue-600 dark:text-blue-400" onClick={() => setIsTagEditorOpen(true)}>
-                    タグを追加する
+                  <Button variant="link" className="text-blue-600 dark:text-blue-400" asChild>
+                    <Link href={`/register-item?edit_product_id=${productId}`}>
+                      タグを追加する
+                    </Link>
                   </Button>
                 </div>
               )}

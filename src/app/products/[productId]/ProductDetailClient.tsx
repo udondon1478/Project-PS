@@ -19,7 +19,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import TagEditor from "@/components/TagEditor";
 import TagEditHistoryItem from "@/components/TagEditHistoryItem";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Heart, Check } from 'lucide-react';
@@ -31,6 +30,7 @@ import MobileProductActions from '@/components/MobileProductActions';
 import MobileTagSheet from '@/components/MobileTagSheet';
 import { TagList } from "@/components/TagList";
 import { toast } from "sonner";
+import Link from 'next/link';
 
 interface ProductTagData {
   tag: {
@@ -103,7 +103,6 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
   }, [initialProduct, initialTagMap]);
 
   const [api, setApi] = useState<CarouselApi>();
-  const [isTagEditorOpen, setIsTagEditorOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
   const [isLiked, setIsLiked] = useState(initialProduct.isLiked || false);
@@ -225,6 +224,9 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
   };
 
   const handleTagsUpdate = async (data: { tags: { id: string; name: string; }[], comment: string }) => {
+    // This function is kept for MobileTagSheet compatibility if needed,
+    // but the main editing flow is now redirected to /register-item page.
+    // Ideally MobileTagSheet should also be updated to redirect.
     try {
       const response = await fetch(`/api/products/${product.id}/tags`, {
         method: 'PUT',
@@ -240,7 +242,6 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
 
       const success = await fetchProduct();
       if (success) {
-        setIsTagEditorOpen(false);
         toast.success('タグを更新しました');
       }
 
@@ -436,19 +437,11 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
               <div className="p-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold text-blue-700 dark:text-blue-300">PolySeekタグ</h2>
-                  <Dialog open={isTagEditorOpen} onOpenChange={setIsTagEditorOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm">編集</Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
-                      <DialogHeader><DialogTitle>タグを編集</DialogTitle></DialogHeader>
-                      <TagEditor initialTags={polyseekTags.map(pt => ({
-                        id: pt.tag.id,
-                        name: pt.tag.name,
-                        displayName: pt.tag.displayName ?? undefined,
-                      }))} onTagsChange={handleTagsUpdate} />
-                    </DialogContent>
-                  </Dialog>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href={`/register-item?edit_product_id=${product.id}`}>
+                      編集
+                    </Link>
+                  </Button>
                 </div>
                 <TooltipProvider>
                   {polyseekTags.length > 0 ? (
@@ -465,7 +458,11 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
                   ) : (
                     <div className="text-center py-6 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-lg text-sm text-blue-600 dark:text-blue-400">
                       <p>PolySeekタグはまだありません。</p>
-                      <Button variant="link" className="text-blue-600 dark:text-blue-400" onClick={() => setIsTagEditorOpen(true)}>タグを追加する</Button>
+                      <Button variant="link" className="text-blue-600 dark:text-blue-400" asChild>
+                        <Link href={`/register-item?edit_product_id=${product.id}`}>
+                          タグを追加する
+                        </Link>
+                      </Button>
                     </div>
                   )}
                 </TooltipProvider>
@@ -537,13 +534,13 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
       <MobileTagSheet
         open={isTagSheetOpen}
         onOpenChange={setIsTagSheetOpen}
+        productId={product.id}
         productTags={normalizedProductTags}
         tagMap={tagMap}
         tagEditHistory={product.tagEditHistory || []}
         onAddTagToSearch={addTagToSearch}
         onAddNegativeTagToSearch={addNegativeTagToSearch}
         onViewTagDetails={handleViewTagDetails}
-        onTagsUpdate={handleTagsUpdate}
       />
     </>
   );
