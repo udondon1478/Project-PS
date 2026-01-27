@@ -66,5 +66,5 @@ export const FEATURE_TAG_WHITELIST = [
 ] as const;
 
 // Social Links
-export const DISCORD_INVITE_URL = 'https://discord.gg/placeholder';
+export const DISCORD_INVITE_URL = 'https://discord.gg/DaS7VfZg2j';
 export const X_ACCOUNT_URL = 'https://x.com/PolySeek_dev';
