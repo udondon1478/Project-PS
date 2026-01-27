@@ -21,6 +21,8 @@ import {
 } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Slider } from '@/components/ui/slider';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import { Filter, X } from 'lucide-react';
 import { SortSelector } from './SortSelector';
 import { type SortOption } from '@/constants/sort';
@@ -100,6 +102,50 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
       .map(name => featureTags.find(tag => tag.name.trim() === name))
       .filter((tag): tag is NonNullable<typeof tag> => tag !== undefined);
   }, [featureTags]);
+
+  const [isPriceTransitioning, setIsPriceTransitioning] = React.useState(false);
+  const priceToggleTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const priceTransitionTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (priceToggleTimeoutRef.current) clearTimeout(priceToggleTimeoutRef.current);
+      if (priceTransitionTimeoutRef.current) clearTimeout(priceTransitionTimeoutRef.current);
+    };
+  }, []);
+
+  const handleHighPriceChange = (checked: boolean) => {
+    setIsPriceTransitioning(true);
+    if (priceToggleTimeoutRef.current) clearTimeout(priceToggleTimeoutRef.current);
+    if (priceTransitionTimeoutRef.current) clearTimeout(priceTransitionTimeoutRef.current);
+
+    if (checked) {
+      toast.success("高額商品フィルターを有効にしました", {
+        description: "10,000円以上の商品を表示します"
+      });
+    } else {
+      toast("通常価格フィルターに戻りました", {
+        description: "0〜10,000円の商品を表示します"
+      });
+    }
+
+    // Change filter state after a short delay to ensure transition classes are applied first
+    priceToggleTimeoutRef.current = setTimeout(() => {
+      setIsHighPriceFilterEnabled(checked);
+      // Reset price range to default for the selected mode to ensure smooth transition
+      // and prevent visual glitches where values might be out of new min/max bounds
+      if (checked) {
+        setPriceRange([10000, 100000]);
+      } else {
+        setPriceRange([0, 10000]);
+      }
+    }, 50);
+
+    // End transition state after animation completes
+    priceTransitionTimeoutRef.current = setTimeout(() => {
+      setIsPriceTransitioning(false);
+    }, 400);
+  };
 
   return (
     <Sheet open={isFilterSidebarOpen} onOpenChange={setIsFilterSidebarOpen}>
@@ -229,7 +275,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                 <Checkbox
                   id="high-price-filter"
                   checked={isHighPriceFilterEnabled}
-                  onCheckedChange={(checked) => setIsHighPriceFilterEnabled(!!checked)}
+                  onCheckedChange={(checked) => handleHighPriceChange(!!checked)}
                 />
                 <label htmlFor="high-price-filter" className="text-sm font-medium">
                   高額商品のみ (10000円以上)
@@ -243,7 +289,14 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                   value={priceRange}
                   onValueChange={setPriceRange}
                   className="w-full"
-
+                  rangeClassName={cn(
+                    isHighPriceFilterEnabled ? "bg-amber-500" : undefined,
+                    isPriceTransitioning && "!transition-all !duration-300 !ease-in-out"
+                  )}
+                  thumbClassName={cn(
+                    isHighPriceFilterEnabled ? "border-amber-500 focus-visible:ring-amber-500" : undefined,
+                    isPriceTransitioning && "!transition-all !duration-300 !ease-in-out pointer-events-none"
+                  )}
                   thumbLabels={["最小額", "最大額"]}
                 />
                 <div className="flex justify-between text-xs mt-2">
@@ -251,7 +304,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                   <span>
                     {isHighPriceFilterEnabled && priceRange[1] >= 100000
                       ? '100000円以上'
-                      : priceRange[1] >= 10000
+                      : !isHighPriceFilterEnabled && priceRange[1] >= 10000
                       ? '10000円以上'
                       : priceRange[1] + '円'}
                   </span>
