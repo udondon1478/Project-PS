@@ -31,7 +31,7 @@ interface ProductInfo {
   images: { imageUrl: string; isMain: boolean; order: number }[];
   ageRatingId?: string;
   categoryId?: string;
-  productTags?: { tag: { id: string; name: string } }[];
+  productTags?: { tag: { id: string; name: string }; isOfficial: boolean }[];
   boothTags?: string[];
 }
 
@@ -49,6 +49,7 @@ export default function RegisterItemPage() {
   const [isDetailsError, setIsDetailsError] = useState(false);
   const [productData, setProductData] = useState<ProductInfo | null>(null);
   const [manualTags, setManualTags] = useState<string[]>([]);
+  const [comment, setComment] = useState('');
   const [selectedAgeRatingTagId, setSelectedAgeRatingTagId] = useState<string>('');
   const [selectedCategoryTagId, setSelectedCategoryTagId] = useState<string>('');
   const [ageRatingTags, setAgeRatingTags] = useState<{ id: string; name: string }[]>([]);
@@ -260,8 +261,57 @@ export default function RegisterItemPage() {
     }
   }, [productData]);
 
-  // 新規商品を作成するハンドラ
-  const handleCreateProduct = useCallback(async () => {
+  // 既存の商品情報を編集モードで開くハンドラ
+  const handleEditExistingProduct = useCallback(() => {
+    if (!productData || !productData.productTags) return;
+
+    let foundAgeRatingId = '';
+    let foundCategoryId = '';
+    const otherTags: string[] = [];
+
+    // productData.productTags は { tag: { id, name }, isOfficial: boolean }[] の形状
+    productData.productTags.forEach((productTag) => {
+      // 公式タグは「その他のタグ」欄（manualTags）には含めない
+      // (ProductDetailsFormで productData.boothTags または productData.productTags から別途表示される想定)
+      if (productTag.isOfficial) {
+        return;
+      }
+
+      const { tag } = productTag;
+
+      // Check if it matches an age rating tag
+      const ageRatingMatch = ageRatingTags.find(t => t.id === tag.id);
+      if (ageRatingMatch) {
+        foundAgeRatingId = tag.id;
+        return;
+      }
+
+      // Check if it matches a category tag
+      const categoryMatch = categoryTags.find(t => t.id === tag.id);
+      if (categoryMatch) {
+        foundCategoryId = tag.id;
+        return;
+      }
+
+      // Otherwise add to manual tags (names)
+      otherTags.push(tag.name);
+    });
+
+    setSelectedAgeRatingTagId(foundAgeRatingId);
+    setSelectedCategoryTagId(foundCategoryId);
+    setManualTags(otherTags);
+
+    // Clear any previous messages
+    setMessage('');
+    setIsDetailsError(false);
+    setComment(''); // コメントをリセット
+
+    // Move to details form
+    setStep('details_confirmation');
+  }, [productData, ageRatingTags, categoryTags]);
+
+  // 新規商品登録・既存商品更新を行うハンドラ
+  const handleSubmitProduct = useCallback(async () => {
     if (!productData) {
       setMessage('商品情報がありません。');
       setStep('error');
@@ -275,19 +325,35 @@ export default function RegisterItemPage() {
     fetchControllerRef.current = controller;
 
     setIsLoading(true);
-    setMessage('商品を登録中...');
     setIsDetailsError(false);
 
+    const isUpdate = !!productData.id;
+    const url = isUpdate ? '/api/items/update' : '/api/items/create';
+    const actionName = isUpdate ? '更新' : '登録';
+
+    setMessage(`商品を${actionName}中...`);
+
     try {
-      const response = await fetch('/api/items/create', {
+      const body = isUpdate
+        ? {
+            productId: productData.id,
+            ageRatingTagId: selectedAgeRatingTagId,
+            categoryTagId: selectedCategoryTagId,
+            tags: manualTags,
+            comment: comment
+          }
+        : {
+            productInfo: productData,
+            tags: manualTags,
+            ageRatingTagId: selectedAgeRatingTagId,
+            categoryTagId: selectedCategoryTagId,
+            comment: comment
+          };
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          productInfo: productData,
-          tags: manualTags,
-          ageRatingTagId: selectedAgeRatingTagId,
-          categoryTagId: selectedCategoryTagId,
-        }),
+        body: JSON.stringify(body),
         signal: controller.signal,
       });
 
@@ -295,13 +361,14 @@ export default function RegisterItemPage() {
       if (response.ok) {
         await response.json();
         setStep('complete');
-        setMessage('商品が正常に登録されました。');
+        setMessage(`商品が正常に${actionName}されました。`);
         setProductData(null);
         setManualTags([]);
+        setComment('');
       } else {
         const errorMsg = await getErrorMessage(response);
         setStep('details_confirmation');
-        setMessage(`登録に失敗しました: ${errorMsg}`);
+        setMessage(`${actionName}に失敗しました: ${errorMsg}`);
         setIsDetailsError(true);
       }
     } catch (error: unknown) {
@@ -310,7 +377,7 @@ export default function RegisterItemPage() {
       }
       setStep('details_confirmation');
       const errorMessage = error instanceof Error ? error.message : "不明なエラー";
-      setMessage(`登録中にエラーが発生しました: ${errorMessage}`);
+      setMessage(`${actionName}中にエラーが発生しました: ${errorMessage}`);
       setIsDetailsError(true);
     } finally {
       if (fetchControllerRef.current === controller) {
@@ -318,7 +385,7 @@ export default function RegisterItemPage() {
       }
       setIsLoading(false);
     }
-  }, [productData, manualTags, selectedAgeRatingTagId, selectedCategoryTagId]);
+  }, [productData, manualTags, selectedAgeRatingTagId, selectedCategoryTagId, comment]);
 
   // タグ選択肢をフェッチ & unmount時のクリーンアップ
   useEffect(() => {
@@ -410,6 +477,7 @@ export default function RegisterItemPage() {
     setProductData(null);
     setMessage('');
     setManualTags([]);
+    setComment('');
     setIsUrlInputError(false);
     setIsDetailsError(false);
     setSelectedAgeRatingTagId('');
@@ -455,7 +523,9 @@ export default function RegisterItemPage() {
             setSelectedAgeRatingTagId={handleManualAgeRatingChange}
             selectedCategoryTagId={selectedCategoryTagId}
             setSelectedCategoryTagId={setSelectedCategoryTagId}
-            onSubmit={handleCreateProduct}
+            comment={comment}
+            setComment={setComment}
+            onSubmit={handleSubmitProduct}
             isLoading={isLoading}
             message={message}
             isError={isDetailsError}
@@ -485,20 +555,25 @@ export default function RegisterItemPage() {
                 </div>
               )}
             </CardContent>
-            <CardFooter className="flex justify-between">
+            <CardFooter className="flex justify-between flex-wrap gap-2">
               <Button variant="outline" onClick={resetFlow} disabled={isLoading}>
                 キャンセル
               </Button>
-              <Button onClick={handleUpdateProduct} disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    更新中...
-                  </>
-                ) : (
-                  '最新情報に更新'
-                )}
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="secondary" onClick={handleEditExistingProduct} disabled={isLoading}>
+                   タグを編集して更新
+                </Button>
+                <Button onClick={handleUpdateProduct} disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      更新中...
+                    </>
+                  ) : (
+                    '最新情報に更新'
+                  )}
+                </Button>
+              </div>
             </CardFooter>
           </Card>
         );

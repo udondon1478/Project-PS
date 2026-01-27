@@ -60,7 +60,14 @@ export async function POST(request: Request) {
 
     const existingProduct = await prisma.product.findUnique({
       where: { boothJpUrl: boothJpUrl },
-      include: { images: true },
+      include: {
+        images: true,
+        productTags: {
+          include: {
+            tag: true
+          }
+        }
+      },
     });
 
     if (existingProduct) {
