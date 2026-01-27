@@ -40,7 +40,10 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - sitemap.xml (root sitemap)
+     * - sitemap-index.xml (sitemap index)
+     * - sitemap/ (sitemap sub-paths)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|sitemap-index.xml|sitemap/).*)',
   ],
 };
