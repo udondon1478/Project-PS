@@ -104,9 +104,20 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   }, [featureTags]);
 
   const [isPriceTransitioning, setIsPriceTransitioning] = React.useState(false);
+  const priceToggleTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const priceTransitionTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (priceToggleTimeoutRef.current) clearTimeout(priceToggleTimeoutRef.current);
+      if (priceTransitionTimeoutRef.current) clearTimeout(priceTransitionTimeoutRef.current);
+    };
+  }, []);
 
   const handleHighPriceChange = (checked: boolean) => {
     setIsPriceTransitioning(true);
+    if (priceToggleTimeoutRef.current) clearTimeout(priceToggleTimeoutRef.current);
+    if (priceTransitionTimeoutRef.current) clearTimeout(priceTransitionTimeoutRef.current);
 
     if (checked) {
       toast.success("高額商品フィルターを有効にしました", {
@@ -119,7 +130,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
     }
 
     // Change filter state after a short delay to ensure transition classes are applied first
-    setTimeout(() => {
+    priceToggleTimeoutRef.current = setTimeout(() => {
       setIsHighPriceFilterEnabled(checked);
       // Reset price range to default for the selected mode to ensure smooth transition
       // and prevent visual glitches where values might be out of new min/max bounds
@@ -131,7 +142,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
     }, 50);
 
     // End transition state after animation completes
-    setTimeout(() => {
+    priceTransitionTimeoutRef.current = setTimeout(() => {
       setIsPriceTransitioning(false);
     }, 400);
   };
