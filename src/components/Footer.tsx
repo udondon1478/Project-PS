@@ -45,7 +45,7 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Official X (Twitter)"
+              aria-label="公式X（旧Twitter）"
             >
               <XIcon className="h-4 w-4" />
             </a>
@@ -54,7 +54,7 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-[#5865F2] transition-colors"
-              aria-label="Official Discord Server"
+              aria-label="公式Discordサーバー"
             >
               <DiscordIcon className="h-5 w-5" />
             </a>
