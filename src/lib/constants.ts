@@ -64,3 +64,7 @@ export const FEATURE_TAG_WHITELIST = [
   'PhysBone対応',
   'Modular Avatar対応'
 ] as const;
+
+// Social Links
+export const DISCORD_INVITE_URL = 'https://discord.gg/DaS7VfZg2j';
+export const X_ACCOUNT_URL = 'https://x.com/PolySeek_dev';
