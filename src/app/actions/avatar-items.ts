@@ -1,8 +1,21 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { revalidateAvatarDefinitions } from '@/lib/avatars';
+import { revalidateAvatarDefinitions, getAvatarDefinitions } from '@/lib/avatars';
 import { TagResolver } from '@/lib/booth-scraper/tag-resolver';
+
+/**
+ * アバター定義マップを取得します（クライアントサイド検知用）
+ */
+export async function getAvatarDefinitionsMap() {
+  try {
+    const definitions = await getAvatarDefinitions();
+    return { success: true, data: definitions };
+  } catch (error) {
+    console.error('Failed to fetch avatar definitions map:', error);
+    return { success: false, error: 'Failed to fetch avatar definitions map' };
+  }
+}
 
 /**
  * アバター定義一覧を取得します
