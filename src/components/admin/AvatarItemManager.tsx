@@ -18,7 +18,11 @@ interface AvatarItem {
   createdAt: Date;
 }
 
-export default function AvatarItemManager() {
+interface AvatarItemManagerProps {
+  isAdmin: boolean;
+}
+
+export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
   const [items, setItems] = useState<AvatarItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -112,6 +116,10 @@ export default function AvatarItemManager() {
   };
 
   const handleRescan = async (id: string, name: string) => {
+    if (!isAdmin) {
+      alert('権限がありません');
+      return;
+    }
     if (!confirm(`${name} の定義に基づいて既存商品を再スキャンしますか？\nこの処理には時間がかかる場合があります。`)) return;
 
     setRescanStatus({ id, loading: true });
@@ -271,19 +279,21 @@ export default function AvatarItemManager() {
                       <div className="flex items-center justify-end space-x-2">
                         {/* Rescan Button */}
                         <div className="relative">
-                          <button
-                            type="button"
-                            onClick={() => handleRescan(item.id, item.avatarName)}
-                            disabled={rescanStatus?.id === item.id && rescanStatus.loading}
-                            className="text-orange-600 hover:text-orange-900 p-1 disabled:opacity-50"
-                            title="既存商品を再スキャン"
-                          >
-                            {rescanStatus?.id === item.id && rescanStatus.loading ? (
-                              <Loader2 className="h-5 w-5 animate-spin" />
-                            ) : (
-                              <RefreshCw className="h-5 w-5" />
-                            )}
-                          </button>
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              onClick={() => handleRescan(item.id, item.avatarName)}
+                              disabled={rescanStatus?.id === item.id && rescanStatus.loading}
+                              className="text-orange-600 hover:text-orange-900 p-1 disabled:opacity-50"
+                              title="既存商品を再スキャン"
+                            >
+                              {rescanStatus?.id === item.id && rescanStatus.loading ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                              ) : (
+                                <RefreshCw className="h-5 w-5" />
+                              )}
+                            </button>
+                          )}
                           {rescanStatus?.id === item.id && rescanStatus.message && (
                             <div className="absolute right-0 top-8 z-10 w-64 p-2 bg-gray-800 text-white text-xs rounded shadow-lg">
                               {rescanStatus.message}

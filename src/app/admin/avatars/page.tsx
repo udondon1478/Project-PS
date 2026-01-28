@@ -21,7 +21,7 @@ export default async function AvatarAdminPage() {
           BOOTH商品IDに基づいて自動付与されるタグの定義を管理します。
         </p>
       </div>
-      <AvatarItemManager />
+      <AvatarItemManager isAdmin={userIsAdmin} />
     </div>
   );
 }
