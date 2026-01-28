@@ -8,7 +8,20 @@ import {
   SheetTitle,
   SheetFooter,
 } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import Link from 'next/link';
+import { TagList } from "@/components/TagList";
+import TagEditHistoryItem from "@/components/TagEditHistoryItem";
+import { ProductTag, TagEditHistory } from "@/types/product";
 
 interface MobileTagSheetProps {
   open: boolean;
