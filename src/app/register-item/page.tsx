@@ -121,13 +121,14 @@ function RegisterItemContent() {
   useEffect(() => {
     if (editProductId && productData && tagsLoaded && step === 'url_input') {
        // handleEditExistingProduct と同等のロジックを実行
-       if (!productData.productTags) return;
+       // productTagsはoptionalなので、存在しない場合は空配列として扱う
+       const tags = productData.productTags || [];
 
        let foundAgeRatingId = '';
        let foundCategoryId = '';
        const otherTags: string[] = [];
 
-       productData.productTags.forEach((productTag) => {
+       tags.forEach((productTag) => {
          if (productTag.isOfficial) return;
 
          const { tag } = productTag;
@@ -354,7 +355,7 @@ function RegisterItemContent() {
 
   // 既存の商品情報を編集モードで開くハンドラ
   const handleEditExistingProduct = useCallback(() => {
-    if (!productData || !productData.productTags) {
+    if (!productData) {
       setMessage('編集に必要な商品データが不足しています。');
       return;
     }
@@ -362,9 +363,10 @@ function RegisterItemContent() {
     let foundAgeRatingId = '';
     let foundCategoryId = '';
     const otherTags: string[] = [];
+    const tags = productData.productTags || [];
 
     // productData.productTags は { tag: { id, name }, isOfficial: boolean }[] の形状
-    productData.productTags.forEach((productTag) => {
+    tags.forEach((productTag) => {
       // 公式タグは「その他のタグ」欄（manualTags）には含めない
       // (ProductDetailsFormで productData.boothTags または productData.productTags から別途表示される想定)
       if (productTag.isOfficial) {
@@ -586,7 +588,7 @@ function RegisterItemContent() {
 
     // URLパラメータがある場合はそれを取り除く
     if (editProductId) {
-       router.push('/register-item');
+       router.replace('/register-item');
     }
   }, [editProductId, router]);
 
