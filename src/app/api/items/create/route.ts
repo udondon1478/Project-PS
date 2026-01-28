@@ -49,18 +49,15 @@ export async function POST(request: Request) {
         // 公式タグ（boothTags）のリストを作成
         const officialTagNames: string[] = boothTags && Array.isArray(boothTags) ? boothTags : [];
 
-        // タグカテゴリ 'other' を検索
-        const otherTagCategory = await prisma.tagCategory.findUnique({
+        // タグカテゴリ 'other' を検索または作成
+        const otherTagCategory = await prisma.tagCategory.upsert({
           where: { name: 'other' },
+          update: {},
+          create: {
+            name: 'other',
+            color: '#808080', // デフォルト色としてグレーを設定
+          },
         });
-
-        if (!otherTagCategory) {
-          console.error('TagCategory "other" not found');
-          return new Response(JSON.stringify({ error: 'TagCategory "other" not found' }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' },
-          });
-        }
 
         // 独自タグのIDを取得・作成
         const manualTagIds: string[] = [];

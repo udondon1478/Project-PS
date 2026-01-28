@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { TagResolver } from './tag-resolver';
 import { sendDiscordNotification } from '../discord/webhook';
 import { validateUserExists } from '@/lib/user-validation';
+import { getAvatarDefinitions } from '@/lib/avatars';
 
 export interface ScrapedProductData {
   boothJpUrl: string;
@@ -74,8 +75,22 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
       // Initialize TagResolver with transaction client
       const tagResolver = new TagResolver(tx);
 
+      // --- Avatar Auto-Tagging Start ---
+      const avatarDefinitions = await getAvatarDefinitions();
+      const detectedAvatarTags: string[] = [];
+      if (description) {
+        for (const [itemId, avatarName] of Object.entries(avatarDefinitions)) {
+          if (description.includes(itemId)) {
+            // 自動付与は「アバター名」単体とする（関連性を示すため）
+            // 「対応」タグはユーザーが選択できるようにサジェストに回す
+            detectedAvatarTags.push(avatarName);
+          }
+        }
+      }
+      // --- Avatar Auto-Tagging End ---
+
       // 1. Resolve Tags
-      const tagIds = await tagResolver.resolveTags(tags);
+      const tagIds = await tagResolver.resolveTags([...tags, ...detectedAvatarTags]);
 
       // 2. Resolve Age Rating
       // Default to 'all_ages' (-> '全年齢') if not specified
