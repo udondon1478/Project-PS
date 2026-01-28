@@ -42,6 +42,7 @@ LocalStorageを使用してカラム数を管理するフックを作成しま�
 - `src/components/search/SearchResults.tsx` (検索結果ページ)
 
 ## 確認事項
+
 - [ ] LocalStorageへの保存と読み出しが正しく行われるか
 - [ ] ページリロード後も設定が維持されるか
 - [ ] モバイル画面では設定UIが非表示になり、標準のレスポンシブ挙動となるか
