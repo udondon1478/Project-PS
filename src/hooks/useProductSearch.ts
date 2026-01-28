@@ -275,7 +275,7 @@ export const useProductSearch = ({
 
         const filteredSuggestions = data
           .filter(isValidTagSuggestion)
-          .map((tag: any) => ({
+          .map((tag) => ({
             name: tag.name,
             displayName: tag.displayName,
             count: typeof tag.count === 'number' ? tag.count : undefined
