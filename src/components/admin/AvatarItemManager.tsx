@@ -8,7 +8,7 @@ import {
   deleteAvatarItem,
   rescanProductsForAvatar
 } from '@/app/actions/avatar-items';
-import { Loader2, Plus, Trash2, Edit2, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
+import { Loader2, Plus, Trash2, Edit2, RefreshCw, AlertCircle } from 'lucide-react';
 
 interface AvatarItem {
   id: string;
@@ -114,10 +114,15 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
   const handleDelete = async (id: string) => {
     if (!confirm('本当に削除しますか？')) return;
 
-    const result = await deleteAvatarItem(id);
-    if (result.success) {
-      setItems(prev => prev.filter(item => item.id !== id));
-    } else {
+    try {
+      const result = await deleteAvatarItem(id);
+      if (result.success) {
+        setItems(prev => prev.filter(item => item.id !== id));
+      } else {
+        alert('削除に失敗しました');
+      }
+    } catch (err) {
+      console.error('Delete failed:', err);
       alert('削除に失敗しました');
     }
   };
