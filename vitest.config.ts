@@ -15,6 +15,6 @@ export default defineConfig({
       'src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
       'tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'
     ],
-    // setupFiles: './vitest.setup.ts', // Optional setup file
+    setupFiles: ['./vitest.setup.ts'],
   },
 });

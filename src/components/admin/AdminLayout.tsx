@@ -16,6 +16,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const navItems = [
     { href: '/admin', label: '🏷️ タグ管理', exact: true },
     { href: '/admin/reports', label: '📢 通報管理' },
+    { href: '/admin/avatars', label: '🤖 アバター管理' },
     { href: '/admin/users', label: '👥 ユーザー管理' },
     { href: '/admin/booth-scraper', label: '🔄 BOOTHスクレイパー' },
   ];

@@ -27,6 +27,7 @@ import { GuidelineButton } from '@/components/guidelines/GuidelineButton';
 import { GuidelineContainer } from '@/components/guidelines/GuidelineContainer';
 
 import { RatingPolicyDialog } from './RatingPolicyDialog';
+import { useAvatarDetection } from '@/hooks/useAvatarDetection';
 
 // 商品情報の型定義 (page.tsxから移動・再利用)
 interface ProductInfo {
@@ -151,6 +152,16 @@ export const ProductDetailsForm = memo(({
     setIsOfficialTagWarningOpen(false);
     setPendingOfficialTagName(null);
   }, []);
+
+  // アバター自動検出フック
+  const { suggestedTags } = useAvatarDetection({
+    description: productData.description || '',
+    currentTags: manualTags,
+  });
+
+  const handleAddSuggestedTag = useCallback((tagName: string) => {
+    setManualTags((prev) => (prev.includes(tagName) ? prev : [...prev, tagName]));
+  }, [setManualTags]);
 
   return (
     <Card className="w-full">
@@ -318,6 +329,35 @@ export const ProductDetailsForm = memo(({
 
           <div>
             <Label htmlFor="otherTags">その他のタグ</Label>
+
+            {/* アバター自動検出の提案表示 */}
+            {suggestedTags.length > 0 && (
+              <div className="mb-2 p-3 bg-blue-50/50 dark:bg-blue-900/10 rounded-md border border-blue-100 dark:border-blue-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-3 h-3 text-blue-500" />
+                  <Label className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                    説明文から検出されたアバター（クリックで追加）
+                  </Label>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {suggestedTags.map((tag) => (
+                    <Button
+                      key={tag}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleAddSuggestedTag(tag)}
+                      disabled={isLoading}
+                      className="h-7 text-xs bg-white dark:bg-slate-950 border-blue-200 dark:border-blue-800 hover:border-blue-400 hover:bg-blue-50 text-blue-700 dark:text-blue-300"
+                    >
+                      {tag}
+                      <span className="ml-1 text-blue-400 opacity-60 text-[10px]">+</span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <TagInput
               id="otherTags"
               value={manualTags}

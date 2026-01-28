@@ -34,6 +34,9 @@ vi.mock('../prisma', () => ({
     user: {
         findUnique: vi.fn(),
     },
+    avatarItem: {
+        findMany: vi.fn().mockResolvedValue([]),
+    },
     $transaction: vi.fn((callback) => callback(prisma)),
   },
 }));

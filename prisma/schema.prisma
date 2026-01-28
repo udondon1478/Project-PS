@@ -516,3 +516,13 @@ model ScraperConfig {
   lastUpdatedBy   String?
   updatedAt       DateTime @updatedAt
 }
+
+// アバター自動タグ付け定義テーブル
+model AvatarItem {
+  id          String   @id @default(cuid())
+  itemUrl     String?  // 管理用メモ（入力補助用）
+  itemId      String   @unique // BOOTH商品ID (例: "5058077")
+  avatarName  String   // アバター名 (例: "マヌカ")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
