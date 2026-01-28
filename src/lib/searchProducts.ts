@@ -215,8 +215,11 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
     }
 
     // ユーザーフレンドリーなソートパラメータマッピング
-    const SORT_MAPPINGS: Record<string, { field: 'createdAt' | 'lowPrice' | 'highPrice'; order: 'asc' | 'desc' }> = {
+    const SORT_MAPPINGS: Record<string, { field: 'createdAt' | 'lowPrice' | 'highPrice' | 'publishedAt'; order: 'asc' | 'desc' }> = {
       'newest': { field: 'createdAt', order: 'desc' },
+      'oldest': { field: 'createdAt', order: 'asc' },
+      'published-new': { field: 'publishedAt', order: 'desc' },
+      'published-old': { field: 'publishedAt', order: 'asc' },
       'price-low': { field: 'lowPrice', order: 'asc' },
       'price-high': { field: 'highPrice', order: 'desc' },
     };
