@@ -124,8 +124,10 @@ function RegisterItemContent() {
        // productTagsはoptionalなので、存在しない場合は空配列として扱う
        const tags = productData.productTags || [];
 
-       let foundAgeRatingId = '';
-       let foundCategoryId = '';
+       const fallbackAgeRatingId = productData.ageRatingId || '';
+       const fallbackCategoryId = productData.categoryId || '';
+       let foundAgeRatingId = fallbackAgeRatingId;
+       let foundCategoryId = fallbackCategoryId;
        const otherTags: string[] = [];
 
        tags.forEach((productTag) => {
@@ -146,6 +148,9 @@ function RegisterItemContent() {
            foundCategoryId = tag.id;
            return;
          }
+
+         // タグ一覧が空/失敗でも既存選択を保持
+         if (tag.id === fallbackAgeRatingId || tag.id === fallbackCategoryId) return;
 
          // Otherwise add to manual tags (names)
          otherTags.push(tag.name);
@@ -360,8 +365,10 @@ function RegisterItemContent() {
       return;
     }
 
-    let foundAgeRatingId = '';
-    let foundCategoryId = '';
+    const fallbackAgeRatingId = productData.ageRatingId || '';
+    const fallbackCategoryId = productData.categoryId || '';
+    let foundAgeRatingId = fallbackAgeRatingId;
+    let foundCategoryId = fallbackCategoryId;
     const otherTags: string[] = [];
     const tags = productData.productTags || [];
 
@@ -388,6 +395,9 @@ function RegisterItemContent() {
         foundCategoryId = tag.id;
         return;
       }
+
+      // タグ一覧が空/失敗でも既存選択を保持
+      if (tag.id === fallbackAgeRatingId || tag.id === fallbackCategoryId) return;
 
       // Otherwise add to manual tags (names)
       otherTags.push(tag.name);
