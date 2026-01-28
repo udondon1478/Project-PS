@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { URLInputForm } from './components/URLInputForm';
 import { ProductDetailsForm } from './components/ProductDetailsForm';
 import { CompletionScreen } from './components/CompletionScreen';
@@ -38,9 +39,11 @@ interface ProductInfo {
 // 画面の状態を示す型
 type RegisterStep = 'url_input' | 'details_confirmation' | 'existing_product' | 'complete' | 'error';
 
+function RegisterItemContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const editProductId = searchParams.get('edit_product_id');
 
-
-export default function RegisterItemPage() {
   const [step, setStep] = useState<RegisterStep>('url_input');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -55,6 +58,7 @@ export default function RegisterItemPage() {
   const [ageRatingTags, setAgeRatingTags] = useState<{ id: string; name: string }[]>([]);
   const [categoryTags, setCategoryTags] = useState<{ id: string; name: string }[]>([]);
   const [featureTags, setFeatureTags] = useState<{ id: string; name: string }[]>([]);
+  const [tagsLoaded, setTagsLoaded] = useState(false);
   const fetchControllerRef = useRef<AbortController | null>(null);
   const hasShownOnboardingRef = useRef(false);
 
@@ -72,6 +76,97 @@ export default function RegisterItemPage() {
 
   // レーティング保留状態 (タグ読み込み完了待ち)
   const [pendingRating, setPendingRating] = useState<RatingLevel | null>(null);
+
+  // 初期化エフェクト：編集モードの場合
+  useEffect(() => {
+    if (editProductId) {
+      const controller = new AbortController();
+      const fetchProductForEdit = async () => {
+        setIsLoading(true);
+        setMessage('編集する商品情報を取得中...');
+
+        try {
+          const response = await fetch(`/api/items/${editProductId}`, { signal: controller.signal });
+          if (response.ok) {
+            const data = await response.json();
+            setProductData(data.product);
+            // 商品データセット後にタグのマッピング処理を行うために一度待つ
+            // 実際のタグマッピングは productData がセットされた後の useEffect (handleEditExistingProduct相当) で行う
+          } else {
+            const errorMsg = await getErrorMessage(response);
+            setMessage(`商品情報の取得に失敗しました: ${errorMsg}`);
+            setStep('error');
+          }
+        } catch (error) {
+          if (error instanceof Error && error.name === 'AbortError') return;
+          console.error("Error fetching product for edit:", error);
+          setMessage('商品情報の取得中にエラーが発生しました。');
+          setStep('error');
+        } finally {
+          if (!controller.signal.aborted) {
+            setIsLoading(false);
+          }
+        }
+      };
+
+      fetchProductForEdit();
+
+      return () => {
+        controller.abort();
+      };
+    }
+  }, [editProductId]);
+
+  // 商品データがロードされ、かつタグ情報が揃ったら編集モードへ移行して値をセットする
+  useEffect(() => {
+    if (editProductId && productData && tagsLoaded && step === 'url_input') {
+       // handleEditExistingProduct と同等のロジックを実行
+       // productTagsはoptionalなので、存在しない場合は空配列として扱う
+       const tags = productData.productTags || [];
+
+       const fallbackAgeRatingId = productData.ageRatingId || '';
+       const fallbackCategoryId = productData.categoryId || '';
+       let foundAgeRatingId = fallbackAgeRatingId;
+       let foundCategoryId = fallbackCategoryId;
+       const otherTags: string[] = [];
+
+       tags.forEach((productTag) => {
+         if (productTag.isOfficial) return;
+
+         const { tag } = productTag;
+
+         // Check if it matches an age rating tag
+         const ageRatingMatch = ageRatingTags.find(t => t.id === tag.id);
+         if (ageRatingMatch) {
+           foundAgeRatingId = tag.id;
+           return;
+         }
+
+         // Check if it matches a category tag
+         const categoryMatch = categoryTags.find(t => t.id === tag.id);
+         if (categoryMatch) {
+           foundCategoryId = tag.id;
+           return;
+         }
+
+         // タグ一覧が空/失敗でも既存選択を保持
+         if (tag.id === fallbackAgeRatingId || tag.id === fallbackCategoryId) return;
+
+         // Otherwise add to manual tags (names)
+         otherTags.push(tag.name);
+       });
+
+       setSelectedAgeRatingTagId(foundAgeRatingId);
+       setSelectedCategoryTagId(foundCategoryId);
+       setManualTags(otherTags);
+
+       setMessage('');
+       setIsDetailsError(false);
+       setComment('');
+
+       setStep('details_confirmation');
+    }
+  }, [editProductId, productData, ageRatingTags, categoryTags, step, tagsLoaded]);
 
   // ガイドラインを開く処理
   const handleOpenGuideline = useCallback((tab: 'rating' | 'categories', ratingFlow = false) => {
@@ -133,17 +228,19 @@ export default function RegisterItemPage() {
   }, [ageRatingTags, pendingRating, resolveAndApplyRating]);
 
   // details_confirmationステップでオンボーディングを表示（1回のみ）
+  // 編集モード(editProductIdがある場合)はオンボーディングを表示しない
   useEffect(() => {
     if (
       step === 'details_confirmation' &&
       isFirstVisit &&
-      !hasShownOnboardingRef.current
+      !hasShownOnboardingRef.current &&
+      !editProductId
     ) {
       setShowOnboardingModal(true);
       markAsVisited(); // ここで「表示した」とマークする
       hasShownOnboardingRef.current = true;
     }
-  }, [step, isFirstVisit, markAsVisited]);
+  }, [step, isFirstVisit, markAsVisited, editProductId]);
 
   // 手動で年齢レーティングが変更された場合、保留中の自動適用を無効化する
   const handleManualAgeRatingChange = useCallback((id: string) => {
@@ -263,17 +360,20 @@ export default function RegisterItemPage() {
 
   // 既存の商品情報を編集モードで開くハンドラ
   const handleEditExistingProduct = useCallback(() => {
-    if (!productData || !productData.productTags) {
+    if (!productData) {
       setMessage('編集に必要な商品データが不足しています。');
       return;
     }
 
-    let foundAgeRatingId = '';
-    let foundCategoryId = '';
+    const fallbackAgeRatingId = productData.ageRatingId || '';
+    const fallbackCategoryId = productData.categoryId || '';
+    let foundAgeRatingId = fallbackAgeRatingId;
+    let foundCategoryId = fallbackCategoryId;
     const otherTags: string[] = [];
+    const tags = productData.productTags || [];
 
     // productData.productTags は { tag: { id, name }, isOfficial: boolean }[] の形状
-    productData.productTags.forEach((productTag) => {
+    tags.forEach((productTag) => {
       // 公式タグは「その他のタグ」欄（manualTags）には含めない
       // (ProductDetailsFormで productData.boothTags または productData.productTags から別途表示される想定)
       if (productTag.isOfficial) {
@@ -295,6 +395,9 @@ export default function RegisterItemPage() {
         foundCategoryId = tag.id;
         return;
       }
+
+      // タグ一覧が空/失敗でも既存選択を保持
+      if (tag.id === fallbackAgeRatingId || tag.id === fallbackCategoryId) return;
 
       // Otherwise add to manual tags (names)
       otherTags.push(tag.name);
@@ -363,6 +466,9 @@ export default function RegisterItemPage() {
 
       if (response.ok) {
         await response.json();
+
+        // 編集モードからの更新だった場合、完了画面ではなく元のページに戻すなどの分岐も可能だが、
+        // 今回は完了画面を表示し、そこに詳細ページへのリンクを表示するのが親切
         setStep('complete');
         setMessage(`商品が正常に${actionName}されました。`);
         setProductData(null);
@@ -463,6 +569,10 @@ export default function RegisterItemPage() {
         console.error('Error fetching tags by type:', error);
         setMessage('タグ情報の取得中にネットワークエラーが発生しました。');
         setIsDetailsError(true);
+      } finally {
+        if (!signal.aborted) {
+          setTagsLoaded(true);
+        }
       }
     };
     fetchTagsByType();
@@ -485,7 +595,12 @@ export default function RegisterItemPage() {
     setIsDetailsError(false);
     setSelectedAgeRatingTagId('');
     setSelectedCategoryTagId('');
-  }, []);
+
+    // URLパラメータがある場合はそれを取り除く
+    if (editProductId) {
+       router.replace('/register-item');
+    }
+  }, [editProductId, router]);
 
   const renderStep = () => {
     switch (step) {
@@ -593,7 +708,7 @@ export default function RegisterItemPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8 text-center">商品登録</h1>
+      <h1 className="text-3xl font-bold mb-8 text-center">{editProductId ? '商品タグの編集' : '商品登録'}</h1>
       {renderStep()}
 
       {/* オンボーディングモーダル */}
@@ -617,5 +732,17 @@ export default function RegisterItemPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function RegisterItemPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 py-8 flex justify-center">
+         <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    }>
+      <RegisterItemContent />
+    </Suspense>
   );
 }

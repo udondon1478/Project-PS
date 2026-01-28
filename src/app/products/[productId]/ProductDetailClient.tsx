@@ -19,7 +19,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import TagEditor from "@/components/TagEditor";
 import TagEditHistoryItem from "@/components/TagEditHistoryItem";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Heart, Check } from 'lucide-react';
@@ -30,7 +29,7 @@ import { faLink } from '@fortawesome/free-solid-svg-icons';
 import MobileProductActions from '@/components/MobileProductActions';
 import MobileTagSheet from '@/components/MobileTagSheet';
 import { TagList } from "@/components/TagList";
-import { toast } from "sonner";
+import Link from 'next/link';
 
 interface ProductTagData {
   tag: {
@@ -103,7 +102,6 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
   }, [initialProduct, initialTagMap]);
 
   const [api, setApi] = useState<CarouselApi>();
-  const [isTagEditorOpen, setIsTagEditorOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
   const [isLiked, setIsLiked] = useState(initialProduct.isLiked || false);
@@ -120,25 +118,6 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
       return newSet;
     });
   }, []);
-
-  const fetchProduct = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/products/${product.id}`);
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-      const { product: productData, tagIdToNameMap } = await response.json();
-      setProduct(productData);
-      setIsLiked(productData.isLiked || false);
-      setIsOwned(productData.isOwned || false);
-      setTagMap(tagIdToNameMap);
-      return true;
-    } catch (err: unknown) {
-      console.error('Failed to refresh product data:', err);
-      toast.error('商品データの更新に失敗しました。');
-      return false;
-    }
-  }, [product.id]);
 
   const [thumbnailApi, setThumbnailApi] = useState<CarouselApi>();
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -205,53 +184,6 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
       updateSearchTagsInSessionStorage(newTags, newNegativeTags);
     } catch (e) {
       console.warn('Failed to access sessionStorage:', e);
-    }
-  };
-
-  const translateErrorMessage = (message: string): string => {
-    if (message.includes('URL-like strings are not allowed')) {
-      const tagName = message.match(/Invalid tag "([^"]+)"/)?.[1];
-      return tagName
-        ? `タグ「${tagName}」の更新に失敗しました: URL形式の文字列は許可されていません。`
-        : 'タグの更新に失敗しました: URL形式の文字列は許可されていません。';
-    }
-    if (message.includes('Input is empty after sanitization')) {
-      const tagName = message.match(/Invalid tag "([^"]+)"/)?.[1];
-      return tagName
-        ? `タグ「${tagName}」の更新に失敗しました: タグ名が空です。`
-        : 'タグの更新に失敗しました: タグ名が空です。';
-    }
-    return message;
-  };
-
-  const handleTagsUpdate = async (data: { tags: { id: string; name: string; }[], comment: string }) => {
-    try {
-      const response = await fetch(`/api/products/${product.id}/tags`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tags: data.tags, comment: data.comment }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        const errorMessage = errorData.error || `HTTP error! status: ${response.status}`;
-        throw new Error(errorMessage);
-      }
-
-      const success = await fetchProduct();
-      if (success) {
-        setIsTagEditorOpen(false);
-        toast.success('タグを更新しました');
-      }
-
-    } catch (err) {
-      console.error("Failed to update tags:", err);
-      if (err instanceof Error) {
-        const translatedMessage = translateErrorMessage(err.message);
-        toast.error(translatedMessage);
-      } else {
-        toast.error('タグの更新に失敗しました: 不明なエラーが発生しました。');
-      }
     }
   };
 
@@ -436,19 +368,11 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
               <div className="p-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold text-blue-700 dark:text-blue-300">PolySeekタグ</h2>
-                  <Dialog open={isTagEditorOpen} onOpenChange={setIsTagEditorOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm">編集</Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
-                      <DialogHeader><DialogTitle>タグを編集</DialogTitle></DialogHeader>
-                      <TagEditor initialTags={polyseekTags.map(pt => ({
-                        id: pt.tag.id,
-                        name: pt.tag.name,
-                        displayName: pt.tag.displayName ?? undefined,
-                      }))} onTagsChange={handleTagsUpdate} />
-                    </DialogContent>
-                  </Dialog>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href={`/register-item?edit_product_id=${product.id}`}>
+                      編集
+                    </Link>
+                  </Button>
                 </div>
                 <TooltipProvider>
                   {polyseekTags.length > 0 ? (
@@ -465,7 +389,11 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
                   ) : (
                     <div className="text-center py-6 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-lg text-sm text-blue-600 dark:text-blue-400">
                       <p>PolySeekタグはまだありません。</p>
-                      <Button variant="link" className="text-blue-600 dark:text-blue-400" onClick={() => setIsTagEditorOpen(true)}>タグを追加する</Button>
+                      <Button variant="link" className="text-blue-600 dark:text-blue-400" asChild>
+                        <Link href={`/register-item?edit_product_id=${product.id}`}>
+                          タグを追加する
+                        </Link>
+                      </Button>
                     </div>
                   )}
                 </TooltipProvider>
@@ -537,13 +465,13 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
       <MobileTagSheet
         open={isTagSheetOpen}
         onOpenChange={setIsTagSheetOpen}
+        productId={product.id}
         productTags={normalizedProductTags}
         tagMap={tagMap}
         tagEditHistory={product.tagEditHistory || []}
         onAddTagToSearch={addTagToSearch}
         onAddNegativeTagToSearch={addNegativeTagToSearch}
         onViewTagDetails={handleViewTagDetails}
-        onTagsUpdate={handleTagsUpdate}
       />
     </>
   );
