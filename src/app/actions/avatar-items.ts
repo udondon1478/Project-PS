@@ -111,6 +111,22 @@ export async function deleteAvatarItem(id: string) {
  */
 export async function rescanProductsForAvatar(avatarId: string) {
   try {
+    const { auth } = require("@/auth"); // Dynamic import for server action
+    const session = await auth();
+
+    // 管理者権限チェックを最優先で行う
+    if (!(await isAdmin())) {
+      return { success: false, error: 'Unauthorized: Admin privileges required' };
+    }
+
+    const sessionUserId = session?.user?.id;
+    // タグ付けに使用するユーザーID: 実行ユーザー（管理者）
+    const taggerUserId = sessionUserId;
+
+    if (!taggerUserId) {
+        return { success: false, error: 'Unauthorized: Session ID not found' };
+    }
+
     // アバター定義を取得
     const avatarItem = await prisma.avatarItem.findUnique({
       where: { id: avatarId },
@@ -139,22 +155,6 @@ export async function rescanProductsForAvatar(avatarId: string) {
         },
       },
     });
-
-    const { auth } = require("@/auth"); // Dynamic import for server action
-    const session = await auth();
-    const sessionUserId = session?.user?.id;
-
-    // 管理者権限チェック
-    if (!(await isAdmin())) {
-      return { success: false, error: 'Unauthorized: Admin privileges required' };
-    }
-
-    // タグ付けに使用するユーザーID: 実行ユーザー（管理者）
-    const taggerUserId = sessionUserId;
-
-    if (!taggerUserId) {
-        return { success: false, error: 'Unauthorized: Session ID not found' };
-    }
 
     let updatedCount = 0;
     const tagResolver = new TagResolver();
