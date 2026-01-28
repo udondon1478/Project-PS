@@ -24,8 +24,14 @@ export function ColumnSelector({
         <span>表示列数: {columns}</span>
       </div>
       <Slider
+        aria-label="表示列数"
         value={[columns]}
-        onValueChange={(values) => onColumnsChange(values[0])}
+        onValueChange={(values) => {
+          const next = values[0];
+          if (typeof next !== "number") return;
+          const clamped = Math.min(max, Math.max(min, next));
+          onColumnsChange(clamped);
+        }}
         min={min}
         max={max}
         step={1}

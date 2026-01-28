@@ -10,20 +10,28 @@ export function useColumnSettings() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    // Load from LocalStorage on mount
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const parsed = parseInt(saved, 10);
-      if (!isNaN(parsed) && parsed >= 2 && parsed <= 6) {
-        setColumns(parsed);
+    try {
+      // Load from LocalStorage on mount
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed) && parsed >= 2 && parsed <= 6) {
+          setColumns(parsed);
+        }
       }
+    } finally {
+      setIsLoaded(true);
     }
-    setIsLoaded(true);
   }, []);
 
   const updateColumns = (newColumns: number) => {
-    setColumns(newColumns);
-    localStorage.setItem(STORAGE_KEY, newColumns.toString());
+    const clamped = Math.min(6, Math.max(2, newColumns));
+    setColumns(clamped);
+    try {
+      localStorage.setItem(STORAGE_KEY, clamped.toString());
+    } catch {
+      // noop
+    }
   };
 
   return {

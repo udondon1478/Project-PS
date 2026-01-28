@@ -35,7 +35,7 @@ export default function HomeClient({
         products={products}
         showLikeButton={true}
         showOwnButton={true}
-        isLoading={false}
+        isLoading={!isLoaded}
         maxTags={7}
         columns={columns}
       />
