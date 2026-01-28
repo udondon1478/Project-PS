@@ -15,9 +15,10 @@ const sanitizeAgeRatingTags = (tags: string[]): string[] => {
 export interface TagSuggestion {
   name: string;
   displayName: string | null;
+  count?: number;
 }
 
-function isValidTagSuggestion(item: any): item is { name: string; displayName: string | null } {
+function isValidTagSuggestion(item: any): item is { name: string; displayName: string | null; count?: number } {
   return (
     item &&
     typeof item === 'object' &&
@@ -273,9 +274,10 @@ export const useProductSearch = ({
 
         const filteredSuggestions = data
           .filter(isValidTagSuggestion)
-          .map((tag) => ({
+          .map((tag: any) => ({
             name: tag.name,
-            displayName: tag.displayName
+            displayName: tag.displayName,
+            count: tag.count
           }))
           .filter((tag: TagSuggestion) => !selectedTags.includes(tag.name) && !selectedNegativeTags.includes(tag.name));
 

@@ -153,6 +153,7 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
                 }`}
             >
               {tag.displayName ?? tag.name}
+              {tag.count !== undefined && tag.count > 0 && <span className="ml-1 text-xs text-gray-500">({tag.count}件)</span>}
             </div>
           ))}
         </div>
