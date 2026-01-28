@@ -1,46 +1,43 @@
-# ソーシャルリンク（Discord, X）の追加計画
+# カラム数変更機能の実装計画
 
-## 概要
+ユーザーが商品一覧のカラム数を自由に設定できる機能を実装します。
 
-ユーザーの流入を促すため、サイトのヘッダーとフッターにX（旧Twitter）とDiscordへのリンクを追加します。
-
-## 詳細仕様
-
-### 1. 定数定義
-
-- `src/lib/constants.ts` に以下のURL定数を追加します。
-  - `DISCORD_INVITE_URL`: `https://discord.gg/placeholder`
-  - `X_ACCOUNT_URL`: `https://x.com/PolySeek_dev`
-
-### 2. アイコンコンポーネントの作成
-
-- 再利用性を高めるため、`src/components/SocialIcons.tsx` を作成し、XとDiscordのSVGアイコンコンポーネントを定義します。
-- **実装方針**: インラインSVGを使用（ユーザー選択）
-- Tailwind CSSクラスを受け取れるように設計します。
-
-### 3. ヘッダーへの追加 (`src/components/Header.tsx`)
-
-- **デスクトップ表示**:
-  - ナビゲーションバー（`nav`タグ内）の左側、または右側のボタングループの近くにアイコンを追加します。
-  - 視認性を確保しつつ、操作の邪魔にならないように配置します。
-- **モバイル表示（ハンバーガーメニュー）**:
-  - `Sheet` 内のメニュー下部、または上部にソーシャルリンクの行を追加します。
-
-### 4. フッターへの追加 (`src/components/Footer.tsx`)
-
-- 既存のリンク（About, FAQ, Terms, etc.）の並び、またはその近くにアイコンリンクとして追加します。
-- スマホ表示でも押しやすいサイズと間隔を確保します。
+## 決定事項
+- **保存方法**: LocalStorage (キー: `product-grid-columns`)
+- **UI配置**: 商品グリッドの直上
+- **モバイル対応**: 設定はPCサイズ（lgブレークポイント以上）のみに適用し、モバイルでは既存のレスポンシブ挙動を維持
+- **設定値**: 初期値 5、範囲 2〜6
 
 ## 実装ステップ
 
-1. **定数の追加**: `src/lib/constants.ts` を編集。
-2. **アイコンコンポーネント作成**: `src/components/SocialIcons.tsx` を作成。
-3. **ヘッダー修正**: `src/components/Header.tsx` にリンクを追加。
-4. **フッター修正**: `src/components/Footer.tsx` にリンクを追加。
-5. **動作確認**: リンクが正しく機能し、レスポンシブ表示が崩れていないか確認。
+### 1. カスタムフックの作成 (`src/hooks/useColumnSettings.ts`)
+LocalStorageを使用してカラム数を管理するフックを作成します。
+- 状態管理: `columns` (number)
+- 初期化時にLocalStorageから読み込み、ない場合はデフォルト値(5)を使用
+- 値の変更時にLocalStorageへ保存
+- SSR時のハイドレーション不一致を防ぐため、マウント後に値を適用するロジックを含める（初期値はサーバーサイドと合わせるか、ロード完了までプレースホルダーを表示）
 
-## 検証方法
+### 2. UIコンポーネントの作成 (`src/components/ColumnSelector.tsx`)
+カラム数を変更するためのUIコンポーネントを作成します。
+- `src/components/ui/slider.tsx` を使用
+- ラベル（例: "表示列数: 5"）とスライダーを配置
+- モバイルデバイスでは非表示 (`hidden lg:flex`)
 
-- `npm run dev` でローカルサーバーを起動。
-- ヘッダー（PC/SP）とフッターにアイコンが表示されていることを確認。
-- アイコンをクリックして、正しいURL（Discordはプレースホルダー、Xは公式アカウント）に遷移することを確認。
+### 3. ProductGridの改修 (`src/components/ProductGrid.tsx`)
+カラム数を受け取れるように改修し、動的にクラスを適用します。
+- Propsに `columns` (optional) を追加
+- Tailwind CSSのクラスを動的に切り替えるためのマッピングを定義
+  - PC表示時 (`lg:` プレフィックス) のみ指定されたカラム数を適用
+  - `lg:grid-cols-2` 〜 `lg:grid-cols-6`
+  - モバイル〜タブレットは既存の `grid-cols-1 sm:grid-cols-2 md:grid-cols-3` を維持
+
+### 4. ページへの組み込み
+以下のコンポーネントでフックを使用し、SelectorとGridを配置します。
+- `src/app/HomeClient.tsx` (トップページ)
+- `src/components/search/SearchResults.tsx` (検索結果ページ)
+
+## 確認事項
+- [ ] LocalStorageへの保存と読み出しが正しく行われるか
+- [ ] ページリロード後も設定が維持されるか
+- [ ] モバイル画面では設定UIが非表示になり、標準のレスポンシブ挙動となるか
+- [ ] 検索結果ページとトップページの両方で設定が共有されるか
