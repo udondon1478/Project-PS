@@ -41,13 +41,20 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
 
   const fetchItems = async () => {
     setLoading(true);
-    const result = await getAvatarItems();
-    if (result.success && result.data) {
-      setItems(result.data);
-    } else {
-      setError(result.error || 'Failed to fetch items');
+    setError(null);
+    try {
+      const result = await getAvatarItems();
+      if (result.success && result.data) {
+        setItems(result.data);
+      } else {
+        setError(result.error || 'Failed to fetch items');
+      }
+    } catch (err) {
+      setError('Failed to fetch items');
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -127,7 +134,7 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
       const result = await rescanProductsForAvatar(id);
       if (result.success) {
         setRescanStatus({ id, loading: false, message: `完了: ${result.count}件の商品を更新しました` });
-        // Clear message after 3 seconds
+        // Clear message after 5 seconds
         setTimeout(() => setRescanStatus(null), 5000);
       } else {
         setRescanStatus({ id, loading: false, message: `エラー: ${result.error}` });

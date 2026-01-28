@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { revalidateAvatarDefinitions, getAvatarDefinitions } from '@/lib/avatars';
 import { TagResolver } from '@/lib/booth-scraper/tag-resolver';
 import { isAdmin } from '@/lib/auth';
+import { auth } from "@/auth";
 
 /**
  * アバター定義マップを取得します（クライアントサイド検知用）
@@ -111,7 +112,6 @@ export async function deleteAvatarItem(id: string) {
  */
 export async function rescanProductsForAvatar(avatarId: string) {
   try {
-    const { auth } = require("@/auth"); // Dynamic import for server action
     const session = await auth();
 
     // 管理者権限チェックを最優先で行う
@@ -168,6 +168,8 @@ export async function rescanProductsForAvatar(avatarId: string) {
          return { success: false, error: 'Failed to resolve tag ID' };
     }
 
+    const tagsToCreate = [];
+
     for (const product of products) {
       // 既に「独自タグ（isOfficial: false）」として該当タグが付いているか確認
       const hasUnofficialTag = product.productTags.some(
@@ -175,26 +177,21 @@ export async function rescanProductsForAvatar(avatarId: string) {
       );
 
       if (!hasUnofficialTag) {
-        // ProductTagを作成
-        try {
-          await prisma.productTag.create({
-            data: {
-              productId: product.id,
-              tagId: tagId,
-              userId: taggerUserId, // 管理者ユーザーIDを使用
-              isOfficial: false, // PolySeek独自タグとして登録
-            },
-          });
-          updatedCount++;
-        } catch (e) {
-            // ユニーク制約等で失敗した場合はスキップ（念のため）
-            console.warn(`Failed to add unofficial tag to product ${product.id}:`, e);
-        }
-
-        // 変更履歴を追加（オプション）
-        // NOTE: 大量更新時のパフォーマンスを考慮し、今回は履歴作成を省略するか、必要なら追加する
-        // ここでは簡易実装として履歴作成はスキップし、タグ付与のみを行う
+        tagsToCreate.push({
+          productId: product.id,
+          tagId: tagId,
+          userId: taggerUserId, // 管理者ユーザーIDを使用
+          isOfficial: false, // PolySeek独自タグとして登録
+        });
       }
+    }
+
+    if (tagsToCreate.length > 0) {
+      const result = await prisma.productTag.createMany({
+        data: tagsToCreate,
+        skipDuplicates: true,
+      });
+      updatedCount = result.count;
     }
 
     return { success: true, count: updatedCount };
