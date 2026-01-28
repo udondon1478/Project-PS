@@ -23,7 +23,8 @@ function isValidTagSuggestion(item: any): item is { name: string; displayName: s
     item &&
     typeof item === 'object' &&
     typeof item.name === 'string' &&
-    (item.displayName === null || typeof item.displayName === 'string')
+    (item.displayName === null || typeof item.displayName === 'string') &&
+    (item.count === undefined || typeof item.count === 'number')
   );
 }
 
@@ -277,14 +278,18 @@ export const useProductSearch = ({
           .map((tag: any) => ({
             name: tag.name,
             displayName: tag.displayName,
-            count: tag.count
+            count: typeof tag.count === 'number' ? tag.count : undefined
           }))
           .filter((tag: TagSuggestion) => !selectedTags.includes(tag.name) && !selectedNegativeTags.includes(tag.name));
 
+        const sortedSuggestions = [...filteredSuggestions].sort(
+          (a, b) => (b.count ?? 0) - (a.count ?? 0)
+        );
+
         // セーフサーチ有効時はR-18等をサジェストから除外
         const finalSuggestions = isSafeSearchEnabled
-          ? filteredSuggestions.filter((tag: TagSuggestion) => !SAFE_SEARCH_EXCLUDED_TAGS.includes(tag.name as typeof SAFE_SEARCH_EXCLUDED_TAGS[number]))
-          : filteredSuggestions;
+          ? sortedSuggestions.filter((tag: TagSuggestion) => !SAFE_SEARCH_EXCLUDED_TAGS.includes(tag.name as typeof SAFE_SEARCH_EXCLUDED_TAGS[number]))
+          : sortedSuggestions;
 
         setTagSuggestions(finalSuggestions);
         setIsSuggestionsVisible(finalSuggestions.length > 0);

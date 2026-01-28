@@ -6,32 +6,42 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Starting tag count update...');
 
-  // 1. Fetch all tags
+  // 1. Get product counts per tag using groupBy (avoiding N+1)
+  const tagCounts = await prisma.productTag.groupBy({
+    by: ['tagId'],
+    _count: {
+      tagId: true,
+    },
+  });
+
+  console.log(`Found counts for ${tagCounts.length} tags.`);
+
+  // Create a map for easy lookup
+  const countMap = new Map<string, number>();
+  tagCounts.forEach((item) => {
+    countMap.set(item.tagId, item._count.tagId);
+  });
+
+  // 2. Fetch all tags to check current counts
   const tags = await prisma.tag.findMany();
-  console.log(`Found ${tags.length} tags.`);
+  console.log(`Checking ${tags.length} total tags.`);
 
   let updatedCount = 0;
 
+  // 3. Update tags where count differs
   for (const tag of tags) {
-    // 2. Count associated products
-    const count = await prisma.productTag.count({
-      where: {
-        tagId: tag.id,
-      },
-    });
+    const correctCount = countMap.get(tag.id) || 0;
 
-    // 3. Update tag count if different
-    if (tag.count !== count) {
+    if (tag.count !== correctCount) {
       await prisma.tag.update({
         where: { id: tag.id },
-        data: { count },
+        data: { count: correctCount },
       });
       updatedCount++;
-    }
 
-    // Log progress every 100 tags
-    if (updatedCount % 100 === 0 && updatedCount > 0) {
+      if (updatedCount % 100 === 0) {
         process.stdout.write('.');
+      }
     }
   }
 
@@ -41,7 +51,7 @@ async function main() {
 main()
   .catch((e) => {
     console.error(e);
-    process.exit(1);
+    process.exitCode = 1;
   })
   .finally(async () => {
     await prisma.$disconnect();
