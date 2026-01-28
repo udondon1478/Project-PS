@@ -58,6 +58,7 @@ function RegisterItemContent() {
   const [ageRatingTags, setAgeRatingTags] = useState<{ id: string; name: string }[]>([]);
   const [categoryTags, setCategoryTags] = useState<{ id: string; name: string }[]>([]);
   const [featureTags, setFeatureTags] = useState<{ id: string; name: string }[]>([]);
+  const [tagsLoaded, setTagsLoaded] = useState(false);
   const fetchControllerRef = useRef<AbortController | null>(null);
   const hasShownOnboardingRef = useRef(false);
 
@@ -79,12 +80,13 @@ function RegisterItemContent() {
   // 初期化エフェクト：編集モードの場合
   useEffect(() => {
     if (editProductId) {
+      const controller = new AbortController();
       const fetchProductForEdit = async () => {
         setIsLoading(true);
         setMessage('編集する商品情報を取得中...');
 
         try {
-          const response = await fetch(`/api/items/${editProductId}`);
+          const response = await fetch(`/api/items/${editProductId}`, { signal: controller.signal });
           if (response.ok) {
             const data = await response.json();
             setProductData(data.product);
@@ -96,21 +98,28 @@ function RegisterItemContent() {
             setStep('error');
           }
         } catch (error) {
+          if (error instanceof Error && error.name === 'AbortError') return;
           console.error("Error fetching product for edit:", error);
           setMessage('商品情報の取得中にエラーが発生しました。');
           setStep('error');
         } finally {
-          setIsLoading(false);
+          if (!controller.signal.aborted) {
+            setIsLoading(false);
+          }
         }
       };
 
       fetchProductForEdit();
+
+      return () => {
+        controller.abort();
+      };
     }
   }, [editProductId]);
 
   // 商品データがロードされ、かつタグ情報が揃ったら編集モードへ移行して値をセットする
   useEffect(() => {
-    if (editProductId && productData && ageRatingTags.length > 0 && categoryTags.length > 0 && step === 'url_input') {
+    if (editProductId && productData && tagsLoaded && step === 'url_input') {
        // handleEditExistingProduct と同等のロジックを実行
        if (!productData.productTags) return;
 
@@ -151,7 +160,7 @@ function RegisterItemContent() {
 
        setStep('details_confirmation');
     }
-  }, [editProductId, productData, ageRatingTags, categoryTags, step]);
+  }, [editProductId, productData, ageRatingTags, categoryTags, step, tagsLoaded]);
 
   // ガイドラインを開く処理
   const handleOpenGuideline = useCallback((tab: 'rating' | 'categories', ratingFlow = false) => {
@@ -548,6 +557,10 @@ function RegisterItemContent() {
         console.error('Error fetching tags by type:', error);
         setMessage('タグ情報の取得中にネットワークエラーが発生しました。');
         setIsDetailsError(true);
+      } finally {
+        if (!signal.aborted) {
+          setTagsLoaded(true);
+        }
       }
     };
     fetchTagsByType();

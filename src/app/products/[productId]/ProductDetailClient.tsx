@@ -29,7 +29,6 @@ import { faLink } from '@fortawesome/free-solid-svg-icons';
 import MobileProductActions from '@/components/MobileProductActions';
 import MobileTagSheet from '@/components/MobileTagSheet';
 import { TagList } from "@/components/TagList";
-import { toast } from "sonner";
 import Link from 'next/link';
 
 interface ProductTagData {
@@ -120,25 +119,6 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
     });
   }, []);
 
-  const fetchProduct = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/products/${product.id}`);
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-      const { product: productData, tagIdToNameMap } = await response.json();
-      setProduct(productData);
-      setIsLiked(productData.isLiked || false);
-      setIsOwned(productData.isOwned || false);
-      setTagMap(tagIdToNameMap);
-      return true;
-    } catch (err: unknown) {
-      console.error('Failed to refresh product data:', err);
-      toast.error('商品データの更新に失敗しました。');
-      return false;
-    }
-  }, [product.id]);
-
   const [thumbnailApi, setThumbnailApi] = useState<CarouselApi>();
   const [selectedIndex, setSelectedIndex] = useState(0);
 
@@ -204,55 +184,6 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
       updateSearchTagsInSessionStorage(newTags, newNegativeTags);
     } catch (e) {
       console.warn('Failed to access sessionStorage:', e);
-    }
-  };
-
-  const translateErrorMessage = (message: string): string => {
-    if (message.includes('URL-like strings are not allowed')) {
-      const tagName = message.match(/Invalid tag "([^"]+)"/)?.[1];
-      return tagName
-        ? `タグ「${tagName}」の更新に失敗しました: URL形式の文字列は許可されていません。`
-        : 'タグの更新に失敗しました: URL形式の文字列は許可されていません。';
-    }
-    if (message.includes('Input is empty after sanitization')) {
-      const tagName = message.match(/Invalid tag "([^"]+)"/)?.[1];
-      return tagName
-        ? `タグ「${tagName}」の更新に失敗しました: タグ名が空です。`
-        : 'タグの更新に失敗しました: タグ名が空です。';
-    }
-    return message;
-  };
-
-  const handleTagsUpdate = async (data: { tags: { id: string; name: string; }[], comment: string }) => {
-    // This function is kept for MobileTagSheet compatibility if needed,
-    // but the main editing flow is now redirected to /register-item page.
-    // Ideally MobileTagSheet should also be updated to redirect.
-    try {
-      const response = await fetch(`/api/products/${product.id}/tags`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tags: data.tags, comment: data.comment }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        const errorMessage = errorData.error || `HTTP error! status: ${response.status}`;
-        throw new Error(errorMessage);
-      }
-
-      const success = await fetchProduct();
-      if (success) {
-        toast.success('タグを更新しました');
-      }
-
-    } catch (err) {
-      console.error("Failed to update tags:", err);
-      if (err instanceof Error) {
-        const translatedMessage = translateErrorMessage(err.message);
-        toast.error(translatedMessage);
-      } else {
-        toast.error('タグの更新に失敗しました: 不明なエラーが発生しました。');
-      }
     }
   };
 
