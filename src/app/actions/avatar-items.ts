@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { revalidateAvatarDefinitions, getAvatarDefinitions } from '@/lib/avatars';
 import { TagResolver } from '@/lib/booth-scraper/tag-resolver';
+import { isAdmin } from '@/lib/auth';
 
 /**
  * アバター定義マップを取得します（クライアントサイド検知用）
@@ -41,6 +42,9 @@ export async function createAvatarItem(data: {
   itemUrl?: string;
 }) {
   try {
+    if (!(await isAdmin())) {
+      return { success: false, error: 'Unauthorized' };
+    }
     const item = await prisma.avatarItem.create({
       data: {
         itemId: data.itemId,
@@ -64,6 +68,9 @@ export async function updateAvatarItem(
   data: { itemId: string; avatarName: string; itemUrl?: string }
 ) {
   try {
+    if (!(await isAdmin())) {
+      return { success: false, error: 'Unauthorized' };
+    }
     const item = await prisma.avatarItem.update({
       where: { id },
       data: {
@@ -85,6 +92,9 @@ export async function updateAvatarItem(
  */
 export async function deleteAvatarItem(id: string) {
   try {
+    if (!(await isAdmin())) {
+      return { success: false, error: 'Unauthorized' };
+    }
     await prisma.avatarItem.delete({
       where: { id },
     });
@@ -134,39 +144,37 @@ export async function rescanProductsForAvatar(avatarId: string) {
     const session = await auth();
     const sessionUserId = session?.user?.id;
 
-    // シードの管理者ユーザーを取得
-    const adminUser = await prisma.user.findUnique({
-      where: { email: 'admin@example.com' },
-      select: { id: true }
-    });
+    // 管理者権限チェック
+    if (!(await isAdmin())) {
+      return { success: false, error: 'Unauthorized: Admin privileges required' };
+    }
 
-    // タグ付けに使用するユーザーID: シード管理者を優先、なければ実行ユーザー
-    const taggerUserId = adminUser?.id || sessionUserId;
+    // タグ付けに使用するユーザーID: 実行ユーザー（管理者）
+    const taggerUserId = sessionUserId;
 
     if (!taggerUserId) {
-        return { success: false, error: 'Unauthorized: Admin user or Session ID not found' };
+        return { success: false, error: 'Unauthorized: Session ID not found' };
     }
 
     let updatedCount = 0;
     const tagResolver = new TagResolver();
 
+    // N+1解消: ループ外でタグIDを解決
+    const tagIds = await tagResolver.resolveTags([tagName]);
+    const tagId = tagIds[0];
+
+    if (!tagId) {
+         console.warn(`Failed to resolve tag ID for ${tagName}`);
+         return { success: false, error: 'Failed to resolve tag ID' };
+    }
+
     for (const product of products) {
       // 既に「独自タグ（isOfficial: false）」として該当タグが付いているか確認
       const hasUnofficialTag = product.productTags.some(
-        (pt) => (pt.tag.name === tagName.toLowerCase() || pt.tag.name === tagName) && pt.isOfficial === false
+        (pt) => pt.tagId === tagId && pt.isOfficial === false
       );
 
       if (!hasUnofficialTag) {
-        // タグを解決（存在しなければ作成）
-        // resolveTagIdが存在しないためresolveTagsを使用
-        const tagIds = await tagResolver.resolveTags([tagName]);
-        const tagId = tagIds[0];
-
-        if (!tagId) {
-             console.warn(`Failed to resolve tag ID for ${tagName}`);
-             continue;
-        }
-
         // ProductTagを作成
         try {
           await prisma.productTag.create({

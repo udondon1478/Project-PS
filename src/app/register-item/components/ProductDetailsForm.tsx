@@ -347,6 +347,7 @@ export const ProductDetailsForm = memo(({
                       variant="outline"
                       size="sm"
                       onClick={() => handleAddSuggestedTag(tag)}
+                      disabled={isLoading}
                       className="h-7 text-xs bg-white dark:bg-slate-950 border-blue-200 dark:border-blue-800 hover:border-blue-400 hover:bg-blue-50 text-blue-700 dark:text-blue-300"
                     >
                       {tag}

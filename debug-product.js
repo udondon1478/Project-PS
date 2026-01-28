@@ -1,4 +1,12 @@
 const { PrismaClient } = require('@prisma/client');
+
+// Production execution guard
+if (process.env.NODE_ENV === 'production' && !process.env.ALLOW_DEBUG_SCRIPT) {
+  console.error('ERROR: debug-product.js is disabled in production.');
+  console.error('Set ALLOW_DEBUG_SCRIPT=1 to force execution (NOT RECOMMENDED).');
+  process.exit(1);
+}
+
 const prisma = new PrismaClient();
 
 async function checkRecentProduct() {

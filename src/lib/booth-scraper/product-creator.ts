@@ -90,7 +90,8 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
       // --- Avatar Auto-Tagging End ---
 
       // 1. Resolve Tags
-      const tagIds = await tagResolver.resolveTags([...tags, ...detectedAvatarTags]);
+      const tagIds = await tagResolver.resolveTags(tags);
+      const detectedAvatarTagIds = await tagResolver.resolveTags(detectedAvatarTags);
 
       // 2. Resolve Age Rating
       // Default to 'all_ages' (-> '全年齢') if not specified
@@ -163,6 +164,12 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
                   userId: systemUserId,
                   isOfficial: true,
                 })),
+              // 1.5 Detected Avatar Tags -> Unofficial (Proprietary)
+              ...detectedAvatarTagIds.map(tagId => ({
+                tagId,
+                userId: systemUserId,
+                isOfficial: false,
+              })),
               // 2. Age Rating -> Both Official AND Proprietary
               ...(ageTagId ? [
                 {
@@ -191,7 +198,10 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
             create: {
               editorId: systemUserId,
               version: 1,
-              addedTags: ageTagId && !tagIds.includes(ageTagId) ? [...tagIds, ageTagId] : tagIds,
+              addedTags: (() => {
+                const baseTags = ageTagId && !tagIds.includes(ageTagId) ? [...tagIds, ageTagId] : tagIds;
+                return [...baseTags, ...detectedAvatarTagIds];
+              })(),
               removedTags: [],
               keptTags: [],
               comment: 'Scraper Auto-Import',

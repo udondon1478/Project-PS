@@ -151,10 +151,11 @@ export default function AvatarItemManager() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="itemUrl" className="block text-sm font-medium text-gray-700 mb-1">
                 BOOTH 商品URL (任意・ID抽出用)
               </label>
               <input
+                id="itemUrl"
                 type="text"
                 value={formData.itemUrl}
                 onChange={handleUrlChange}
@@ -165,10 +166,11 @@ export default function AvatarItemManager() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="itemId" className="block text-sm font-medium text-gray-700 mb-1">
                   商品ID <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="itemId"
                   type="text"
                   value={formData.itemId}
                   onChange={(e) => setFormData(prev => ({ ...prev, itemId: e.target.value }))}
@@ -178,10 +180,11 @@ export default function AvatarItemManager() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="avatarName" className="block text-sm font-medium text-gray-700 mb-1">
                   アバター名 <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="avatarName"
                   type="text"
                   value={formData.avatarName}
                   onChange={(e) => setFormData(prev => ({ ...prev, avatarName: e.target.value }))}
@@ -269,6 +272,7 @@ export default function AvatarItemManager() {
                         {/* Rescan Button */}
                         <div className="relative">
                           <button
+                            type="button"
                             onClick={() => handleRescan(item.id, item.avatarName)}
                             disabled={rescanStatus?.id === item.id && rescanStatus.loading}
                             className="text-orange-600 hover:text-orange-900 p-1 disabled:opacity-50"
@@ -288,6 +292,7 @@ export default function AvatarItemManager() {
                         </div>
 
                         <button
+                          type="button"
                           onClick={() => handleEdit(item)}
                           className="text-indigo-600 hover:text-indigo-900 p-1"
                           title="編集"
@@ -295,6 +300,7 @@ export default function AvatarItemManager() {
                           <Edit2 className="h-5 w-5" />
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleDelete(item.id)}
                           className="text-red-600 hover:text-red-900 p-1"
                           title="削除"
