@@ -15,7 +15,10 @@ import { SORT_VALUES, type SortOption } from '@/constants/sort';
  * ソートオプションのラベル定義
  */
 const SORT_LABELS: Record<SortOption, string> = {
-  'newest': '新着順',
+  'newest': '登録が新しい順',
+  'oldest': '登録が古い順',
+  'published-new': '公開日が新しい順',
+  'published-old': '公開日が古い順',
   'price-low': '価格の安い順',
   'price-high': '価格の高い順',
 };
