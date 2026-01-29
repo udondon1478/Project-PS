@@ -1,83 +1,60 @@
-# アバター自動タグ付け機能 実装計画
+# カラム数変更機能の実装計画
 
-## 概要
-
-BOOTHの商品説明に含まれるアバター商品ID（例：5058077）を検知し、対応するアバター名（例：「マヌカ」）のタグをユーザーに提案する機能を実装します。
-また、定義の管理と過去商品への適用を行うための管理者機能を実装します。
+ユーザーが商品一覧のカラム数を自由に設定できる機能を実装します。
 
 ## 決定事項
 
-| 項目 | 決定内容 | 理由・詳細 |
-|------|--------|--------|
-| **判定ロジック** | 単純なID包含チェック | 商品説明文にID（例: `5058077`）が含まれていれば対象とする。 |
-| **UI/UX** | **候補提案方式** | 入力欄付近に「検出されたアバタータグ」を表示し、クリックで追加する形式。勝手に追加されるのを防ぐ。 |
-| **検知場所** | **クライアントサイド** | 定義リストをクライアントにロードし、リアルタイムでdescriptionを解析する。レスポンス重視。 |
-| **タグ形式** | `${AvatarName}` | 統一されたフォーマットを採用 (接尾辞「対応」などはつけず、アバター名そのものを使用)。 |
-| **既存データ** | 管理者再スキャン機能 | 既存商品への適用は、管理画面から任意のアバターに対して手動で「再スキャン」を実行することで対応する。 |
-| **キャッシュ** | インメモリ/Next.js Cache | アバター定義は頻繁に変更されないためキャッシュを活用する。 |
-
-## 詳細仕様
-
-### 1. データベース (Prisma Schema)
-
-`prisma/schema.prisma` に新しいモデルを追加します（既存コードで実装済み）。
-
-```prisma
-model AvatarItem {
-  id          String   @id @default(cuid())
-  itemUrl     String?  // 管理用メモ
-  itemId      String   @unique // BOOTH商品ID (例: "5058077")
-  avatarName  String   // アバター名 (例: "マヌカ")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-```
-
-### 2. バックエンドロジック
-
-#### 2.1 データアクセス (`src/app/actions/avatar-items.ts`)
-
-既存のServer Actionに加え、クライアントサイド検知用に軽量なデータ取得関数を追加します。
-
-- `getAvatarDefinitionsMap()`:
-  - `itemId` -> `avatarName` のマップオブジェクトを返す。
-  - `unstable_cache` でキャッシュし、DB負荷を低減。
-  - フロントエンドの `useAvatarDetection` フックから呼び出される。
-
-### 3. フロントエンドロジック
-
-#### 3.1 検知フック (`src/hooks/useAvatarDetection.ts`)
-
-- **役割**: 商品説明文を監視し、含まれるアバターIDに対応するタグ名を提案する。
-- **入力**: `description` (string), `currentTags` (string[])
-- **処理**:
-  1. 初回マウント時に `getAvatarDefinitionsMap` を呼び出して定義辞書をメモリに保持。
-  2. `description` が変更されるたびに、辞書のキー(`itemId`)が含まれているか検索。
-  3. ヒットした `avatarName` のうち、`currentTags` にまだ含まれていないものを `suggestedTags` として返す。
-
-### 4. UI実装
-
-#### 4.1 商品登録・編集フォーム (`src/app/register-item/components/ProductDetailsForm.tsx`)
-
-- `useAvatarDetection` フックを使用。
-- `TagInput` コンポーネントの上部または下部に、提案タグ表示エリアを追加。
-- **表示内容**: 「以下のタグが検出されました: [マヌカ(+)]」
-- **アクション**: タグをクリックすると `manualTags` に追加され、提案リストからは消える。
-
-#### 4.2 管理者画面 (`src/components/admin/AvatarItemManager.tsx`)
-
-- 既存実装済み。
-- アバター定義のCRUDと、サーバーサイドでの一括再スキャン機能を提供する。
+- **保存方法**: LocalStorage (キー: `product-grid-columns`)
+- **UI配置**: 商品グリッドの直上
+- **モバイル対応**: 設定はPCサイズ（lgブレークポイント以上）のみに適用し、モバイルでは既存のレスポンシブ挙動を維持
+- **設定値**: 初期値 5、範囲 2〜6
 
 ## 実装ステップ
 
-1. **バックエンド整備**:
-   - `src/app/actions/avatar-items.ts` に `getAvatarDefinitionsMap` を追加。
-2. **フック実装**:
-   - `src/hooks/useAvatarDetection.ts` を作成。
-3. **UI統合**:
-   - `src/app/register-item/components/ProductDetailsForm.tsx` に提案UIを追加。
-4. **検証**:
-   - 商品説明文にIDを入力し、即座にタグ候補が表示されるか確認。
-   - タグ追加・削除の動作確認。
+### 1. カスタムフックの作成 (`src/hooks/useColumnSettings.ts`)
 
+LocalStorageを使用してカラム数を管理するフックを作成します。
+- 状態管理: `columns` (number)
+- 初期化時にLocalStorageから読み込み、ない場合はデフォルト値(5)を使用
+- 値の変更時にLocalStorageへ保存
+- SSR時のハイドレーション不一致を防ぐため、マウント後に値を適用するロジックを含める。`isLoaded`状態を提供し、ロード完了までコンポーネントの表示を遅延させることで対応
+
+### 2. UIコンポーネントの作成 (`src/components/ColumnSelector.tsx`)
+
+カラム数を変更するためのUIコンポーネントを作成します。
+- `src/components/ui/slider.tsx` を使用
+- ラベル（例: "表示列数: 5"）とスライダーを配置
+- モバイルデバイスでは非表示 (`hidden lg:flex`)
+
+### 3. ProductGridの改修 (`src/components/ProductGrid.tsx`)
+
+カラム数を受け取れるように改修し、動的にクラスを適用します。
+- Propsに `columns` (optional) を追加
+- Tailwind CSSのクラスを動的に切り替えるためのマッピングを定義
+  - マッピング定義は `src/constants/grid.ts` に `GRID_COLS_CLASSES` として切り出す
+  - PC表示時 (`lg:` プレフィックス) のみ指定されたカラム数を適用
+  - `lg:grid-cols-2` 〜 `lg:grid-cols-6`
+  - モバイル〜タブレットは既存の `grid-cols-1 sm:grid-cols-2 md:grid-cols-3` を維持
+- `src/components/ProductGridSkeleton.tsx` も同様に `columns` プロップを受け取り、同じマッピングロジックを使用してレイアウトシフトを防ぐ
+
+### 4. ページへの組み込み
+
+以下のコンポーネントでフックを使用し、SelectorとGridを配置します。
+- `src/app/HomeClient.tsx` (トップページ)
+- `src/components/search/SearchResults.tsx` (検索結果ページ)
+
+**実装詳細:**
+- `useColumnSettings`から`columns`, `setColumns`, `isLoaded`を取得
+- `isLoaded`に基づく`ColumnSelector`の条件付きレンダリング
+- `ProductGrid`への`columns`プロップの受け渡し
+- ヘッダーレイアウトの調整（ColumnSelectorを配置）
+
+## 確認事項
+
+- [ ] LocalStorageへの保存と読み出しが正しく行われるか
+- [ ] ページリロード後も設定が維持されるか
+- [ ] モバイル画面では設定UIが非表示になり、標準のレスポンシブ挙動となるか
+- [ ] 検索結果ページとトップページの両方で設定が共有されるか
+- [ ] デフォルト値が5になっているか（初回訪問時）
+- [ ] 設定値の範囲（2〜6）が正しく制限されているか
+- [ ] スライダー変更時にレイアウトが即座に更新されるか

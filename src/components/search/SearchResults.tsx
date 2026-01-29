@@ -4,6 +4,8 @@ import React, { useState, useMemo } from 'react';
 import { Product } from '@/types/product';
 import ProductGrid from '@/components/ProductGrid';
 import { ReelsContainer, ReelsToggle } from './Reels';
+import { useColumnSettings } from "@/hooks/useColumnSettings";
+import { ColumnSelector } from "@/components/ColumnSelector";
 
 interface SearchResultsProps {
   products: Product[];
@@ -23,6 +25,7 @@ export function SearchResults({
   maxTags,
 }: SearchResultsProps) {
   const [isReelsMode, setIsReelsMode] = useState(false);
+  const { columns, setColumns, isLoaded } = useColumnSettings();
 
   const searchParams = useMemo(() => new URLSearchParams(searchParamsString), [searchParamsString]);
 
@@ -46,11 +49,17 @@ export function SearchResults({
 
   return (
     <>
+      <div className="flex justify-end mb-4">
+        {isLoaded && (
+          <ColumnSelector columns={columns} onColumnsChange={setColumns} />
+        )}
+      </div>
       <ProductGrid
         products={products}
         showLikeButton={showLikeButton}
         showOwnButton={showOwnButton}
         maxTags={maxTags}
+        columns={columns}
       />
 
       {products.length > 0 && (
