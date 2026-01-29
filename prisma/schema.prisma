@@ -523,6 +523,7 @@ model AvatarItem {
   itemUrl     String?  // 管理用メモ（入力補助用）
   itemId      String   @unique // BOOTH商品ID (例: "5058077")
   avatarName  String   // アバター名 (例: "マヌカ")
+  aliases     String[] @default([]) // エイリアス (例: ["Manuka", "manuka"])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

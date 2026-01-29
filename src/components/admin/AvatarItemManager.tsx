@@ -15,6 +15,7 @@ interface AvatarItem {
   itemId: string;
   avatarName: string;
   itemUrl?: string | null;
+  aliases: string[];
   createdAt: Date;
 }
 
@@ -28,7 +29,7 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
   const [error, setError] = useState<string | null>(null);
 
   // Form states
-  const [formData, setFormData] = useState({ itemId: '', avatarName: '', itemUrl: '' });
+  const [formData, setFormData] = useState({ itemId: '', avatarName: '', itemUrl: '', aliases: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -77,8 +78,13 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
     setError(null);
 
     try {
+      const submissionData = {
+        ...formData,
+        aliases: formData.aliases ? formData.aliases.split(',').map(s => s.trim()).filter(Boolean) : []
+      };
+
       if (editingId) {
-        const result = await updateAvatarItem(editingId, formData);
+        const result = await updateAvatarItem(editingId, submissionData);
         if (result.success) {
           setItems(prev => prev.map(item => item.id === editingId ? result.data : item) as AvatarItem[]);
           resetForm();
@@ -86,7 +92,7 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
           setError(result.error || 'Failed to update item');
         }
       } else {
-        const result = await createAvatarItem(formData);
+        const result = await createAvatarItem(submissionData);
         if (result.success) {
           setItems(prev => [result.data as AvatarItem, ...prev]);
           resetForm();
@@ -108,6 +114,7 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
       itemId: item.itemId,
       avatarName: item.avatarName,
       itemUrl: item.itemUrl || '',
+      aliases: item.aliases ? item.aliases.join(', ') : '',
     });
   };
 
@@ -151,7 +158,7 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
   };
 
   const resetForm = () => {
-    setFormData({ itemId: '', avatarName: '', itemUrl: '' });
+    setFormData({ itemId: '', avatarName: '', itemUrl: '', aliases: '' });
     setEditingId(null);
   };
 
@@ -213,6 +220,23 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+            </div>
+
+            <div>
+              <label htmlFor="aliases" className="block text-sm font-medium text-gray-700 mb-1">
+                エイリアス (カンマ区切り)
+              </label>
+              <input
+                id="aliases"
+                type="text"
+                value={formData.aliases}
+                onChange={(e) => setFormData(prev => ({ ...prev, aliases: e.target.value }))}
+                placeholder="Manuka, manuka, ﾏﾇｶ"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                商品ID、アバター名に加えて、これらのキーワードが説明文に含まれる場合も自動タグ付けの対象となります。
+              </p>
             </div>
           </div>
 
@@ -277,6 +301,15 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
                         <a href={item.itemUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline">
                           BOOTHを見る ↗
                         </a>
+                      )}
+                      {item.aliases && item.aliases.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {item.aliases.map((alias, i) => (
+                            <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                              {alias}
+                            </span>
+                          ))}
+                        </div>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">

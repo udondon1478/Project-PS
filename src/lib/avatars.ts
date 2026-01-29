@@ -18,15 +18,11 @@ export const getAvatarDefinitions = unstable_cache(
       select: {
         itemId: true,
         avatarName: true,
+        aliases: true,
       },
     });
 
-    const definitions: Record<string, string> = {};
-    for (const avatar of avatars) {
-      definitions[avatar.itemId] = avatar.avatarName;
-    }
-
-    return definitions;
+    return avatars;
   },
   [AVATAR_DEFINITIONS_TAG],
   {
