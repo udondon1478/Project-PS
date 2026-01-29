@@ -97,13 +97,13 @@ const ProductCard = ({ product, showLikeButton = false, showOwnButton = false, m
 
   return (
     <div className="border rounded-lg overflow-hidden shadow-lg" data-testid="product-card">
-      <a href={`/products/${product.id}`} className="block relative w-full h-89">
+      <a href={`/products/${product.id}`} className="block relative w-full aspect-square bg-gray-100">
         {product.mainImageUrl ? (
           <Image
             src={product.mainImageUrl}
             alt={product.title}
-            layout="fill"
-            objectFit="cover"
+            fill
+            style={{ objectFit: 'contain' }}
           />
         ) : (
           <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">
