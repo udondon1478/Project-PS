@@ -174,7 +174,7 @@ export const useProductSearch = ({
     const handleStorageChange = () => {
       const savedTags = JSON.parse(sessionStorage.getItem('polyseek-search-tags') || '[]');
       const savedNegativeTags = JSON.parse(sessionStorage.getItem('polyseek-search-negative-tags') || '[]');
-      const savedPolySeekTagsOnly = sessionStorage.getItem('polyseek-search-only-official') === 'true';
+      const savedPolySeekTagsOnly = sessionStorage.getItem('polyseek-search-polyseek-tags-only') === 'true';
       setSelectedTags(savedTags);
       setSelectedNegativeTags(savedNegativeTags);
       setIsSearchPolySeekTagsOnly(savedPolySeekTagsOnly);
@@ -203,6 +203,10 @@ export const useProductSearch = ({
       if (savedAgeRatingTags) try { setSelectedAgeRatingTags(sanitizeAgeRatingTags(JSON.parse(savedAgeRatingTags))); } catch (e) { console.error(e); }
       if (savedSortBy && isSortOption(savedSortBy)) {
         setSortBy(savedSortBy);
+      }
+      const savedPolySeekTagsOnly = sessionStorage.getItem('polyseek-search-polyseek-tags-only');
+      if (savedPolySeekTagsOnly) {
+        setIsSearchPolySeekTagsOnly(savedPolySeekTagsOnly === 'true');
       }
     }
     const urlMinPriceStr = urlSearchParams.get("minPrice");
@@ -330,7 +334,7 @@ export const useProductSearch = ({
       sessionStorage.setItem('polyseek-search-negative-tags', JSON.stringify(selectedNegativeTags));
       sessionStorage.setItem('polyseek-search-age-rating-tags', JSON.stringify(selectedAgeRatingTags));
       sessionStorage.setItem('polyseek-search-sort', sortBy);
-      sessionStorage.setItem('polyseek-search-only-official', String(isSearchPolySeekTagsOnly));
+      sessionStorage.setItem('polyseek-search-polyseek-tags-only', String(isSearchPolySeekTagsOnly));
     }
   }, [selectedTags, selectedNegativeTags, selectedAgeRatingTags, sortBy, isSearchPolySeekTagsOnly, pathname]);
 

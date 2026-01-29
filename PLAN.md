@@ -8,7 +8,7 @@
 - **機能**: 検索対象をPolySeek独自タグのみに限定するフィルタリング機能
 - **UI**: 検索バーの近くに「PolySeekタグのみで検索する」というチェックボックス/スイッチを配置
 - **デフォルト動作**: チェックなし（OFF） = 全てのタグ（BOOTH公式タグ含む）を検索対象とする
-- **URLパラメータ**: `polySeekTagsOnly=true` の場合のみフィルタリング有効
+- **URLパラメータ**: `searchPolySeekTagsOnly=true` の場合のみフィルタリング有効
 
 ## 実装ステップ
 
@@ -19,7 +19,7 @@
 
 2.  **フックの修正 (`src/hooks/useProductSearch.ts`)**
     - `isSearchPolySeekTagsOnly` ステートを追加
-    - URLクエリパラメータ `polySeekTagsOnly` の読み込み・保存ロジックを追加
+    - URLクエリパラメータ `searchPolySeekTagsOnly` の読み込み・保存ロジックを追加
     - `buildSearchQueryParams` 関数を更新してパラメータを含めるように変更
     - UIコンポーネントに渡す返り値にステートとセッターを追加
 
