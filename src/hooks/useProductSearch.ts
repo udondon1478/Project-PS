@@ -40,6 +40,7 @@ const buildSearchQueryParams = ({
   isOwned,
   sortBy,
   overrideSortBy,
+  isSearchPolySeekTagsOnly,
 }: {
   selectedTags: string[];
   selectedNegativeTags: string[];
@@ -51,6 +52,7 @@ const buildSearchQueryParams = ({
   isOwned: boolean;
   sortBy: SortOption;
   overrideSortBy?: SortOption;
+  isSearchPolySeekTagsOnly: boolean;
 }) => {
   const queryParams = new URLSearchParams();
   if (selectedTags.length > 0) queryParams.append("tags", selectedTags.join(','));
@@ -65,7 +67,8 @@ const buildSearchQueryParams = ({
   if (isHighPriceFilterEnabled) queryParams.append("isHighPrice", "true");
   if (isLiked) queryParams.append("liked", "true");
   if (isOwned) queryParams.append("owned", "true");
-  
+  if (isSearchPolySeekTagsOnly) queryParams.append("searchPolySeekTagsOnly", "true");
+
   const finalSort = overrideSortBy || sortBy;
   if (finalSort && finalSort !== 'newest') queryParams.append("sort", finalSort);
 
@@ -106,6 +109,7 @@ export const useProductSearch = ({
   const [isHighPriceFilterEnabled, setIsHighPriceFilterEnabled] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isOwned, setIsOwned] = useState(false);
+  const [isSearchPolySeekTagsOnly, setIsSearchPolySeekTagsOnly] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('newest');
 
@@ -170,8 +174,10 @@ export const useProductSearch = ({
     const handleStorageChange = () => {
       const savedTags = JSON.parse(sessionStorage.getItem('polyseek-search-tags') || '[]');
       const savedNegativeTags = JSON.parse(sessionStorage.getItem('polyseek-search-negative-tags') || '[]');
+      const savedPolySeekTagsOnly = sessionStorage.getItem('polyseek-search-only-official') === 'true';
       setSelectedTags(savedTags);
       setSelectedNegativeTags(savedNegativeTags);
+      setIsSearchPolySeekTagsOnly(savedPolySeekTagsOnly);
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -204,9 +210,11 @@ export const useProductSearch = ({
     const urlIsHighPrice = urlSearchParams.get("isHighPrice") === 'true';
     const urlIsLiked = urlSearchParams.get("liked") === 'true';
     const urlIsOwned = urlSearchParams.get("owned") === 'true';
+    const urlIsSearchPolySeekTagsOnly = urlSearchParams.get("searchPolySeekTagsOnly") === 'true';
 
     setIsLiked(urlIsLiked);
     setIsOwned(urlIsOwned);
+    setIsSearchPolySeekTagsOnly(urlIsSearchPolySeekTagsOnly);
 
     // URLからsortパラメータを読み込み
     const urlSort = urlSearchParams.get("sort");
@@ -322,8 +330,9 @@ export const useProductSearch = ({
       sessionStorage.setItem('polyseek-search-negative-tags', JSON.stringify(selectedNegativeTags));
       sessionStorage.setItem('polyseek-search-age-rating-tags', JSON.stringify(selectedAgeRatingTags));
       sessionStorage.setItem('polyseek-search-sort', sortBy);
+      sessionStorage.setItem('polyseek-search-only-official', String(isSearchPolySeekTagsOnly));
     }
-  }, [selectedTags, selectedNegativeTags, selectedAgeRatingTags, sortBy, pathname]);
+  }, [selectedTags, selectedNegativeTags, selectedAgeRatingTags, sortBy, isSearchPolySeekTagsOnly, pathname]);
 
   useEffect(() => {
     setPriceRange(currentPriceRange => {
@@ -449,17 +458,18 @@ export const useProductSearch = ({
       isHighPriceFilterEnabled,
       isLiked,
       isOwned,
-      sortBy
+      sortBy,
+      isSearchPolySeekTagsOnly
     });
-    
+
     router.replace(`/search?${queryParams.toString()}`);
-  }, [selectedTags, selectedNegativeTags, selectedAgeRatingTags, detailedFilters, priceRange, isHighPriceFilterEnabled, router, isLiked, isOwned, sortBy]);
+  }, [selectedTags, selectedNegativeTags, selectedAgeRatingTags, detailedFilters, priceRange, isHighPriceFilterEnabled, router, isLiked, isOwned, sortBy, isSearchPolySeekTagsOnly]);
 
   // ソート変更時に新しい値を直接受け取ってURLを更新するハンドラー
   const handleSortChange = useCallback((value: SortOption) => {
     setSortBy(value);
     setIsFilterSidebarOpen(false);
-    
+
     const queryParams = buildSearchQueryParams({
       selectedTags,
       selectedNegativeTags,
@@ -470,9 +480,10 @@ export const useProductSearch = ({
       isLiked,
       isOwned,
       sortBy,
-      overrideSortBy: value
+      overrideSortBy: value,
+      isSearchPolySeekTagsOnly
     });
-    
+
     router.replace(`/search?${queryParams.toString()}`);
   }, [
     selectedTags,
@@ -484,6 +495,7 @@ export const useProductSearch = ({
     isLiked,
     isOwned,
     sortBy,
+    isSearchPolySeekTagsOnly,
     buildSearchQueryParams,
     router,
     setSortBy,
@@ -504,6 +516,7 @@ export const useProductSearch = ({
     setPriceRange([0, 10000]);
     setIsHighPriceFilterEnabled(false);
     setSortBy('newest');
+    setIsSearchPolySeekTagsOnly(false);
   };
 
   const applyFiltersAndSearch = () => {
@@ -538,6 +551,8 @@ export const useProductSearch = ({
     setIsLiked,
     isOwned,
     setIsOwned,
+    isSearchPolySeekTagsOnly,
+    setIsSearchPolySeekTagsOnly,
     searchContainerRef,
     searchInputRef,
     suggestionsRef,

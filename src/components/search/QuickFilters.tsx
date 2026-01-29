@@ -23,6 +23,8 @@ interface QuickFiltersProps {
   isNegativeTagSelected: (tag: string) => boolean;
   handleAddTag: (tag: string) => void;
   handleRemoveTag: (tag: string, isNegative?: boolean) => void;
+  isSearchPolySeekTagsOnly: boolean;
+  setIsSearchPolySeekTagsOnly: (enabled: boolean) => void;
 }
 
 export const QuickFilters: React.FC<QuickFiltersProps> = ({
@@ -34,6 +36,8 @@ export const QuickFilters: React.FC<QuickFiltersProps> = ({
   isNegativeTagSelected,
   handleAddTag,
   handleRemoveTag,
+  isSearchPolySeekTagsOnly,
+  setIsSearchPolySeekTagsOnly,
 }) => {
   const ageRatingLookup = React.useMemo(() => new Map(ageRatingTags.map(t => [t.name, t])), [ageRatingTags]);
 
@@ -135,6 +139,21 @@ export const QuickFilters: React.FC<QuickFiltersProps> = ({
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <div className="flex items-center space-x-2 ml-2">
+        <Checkbox
+          id="quick-polyseek-tags-only"
+          checked={isSearchPolySeekTagsOnly}
+          onCheckedChange={(checked) => setIsSearchPolySeekTagsOnly(!!checked)}
+          className="border-gray-400"
+        />
+        <label
+          htmlFor="quick-polyseek-tags-only"
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer select-none whitespace-nowrap text-gray-700 dark:text-gray-300"
+        >
+          PolySeekタグのみ
+        </label>
+      </div>
     </div>
   );
 };

@@ -71,6 +71,8 @@ export default function ProductSearch({
     setIsComposing,
     sortBy,
     handleSortChange,
+    isSearchPolySeekTagsOnly,
+    setIsSearchPolySeekTagsOnly,
   } = useProductSearch({
     initialSearchQuery,
     initialSelectedTags,
@@ -123,6 +125,8 @@ export default function ProductSearch({
           isNegativeTagSelected={isNegativeTagSelected}
           handleAddTag={handleAddTag}
           handleRemoveTag={handleRemoveTag}
+          isSearchPolySeekTagsOnly={isSearchPolySeekTagsOnly}
+          setIsSearchPolySeekTagsOnly={setIsSearchPolySeekTagsOnly}
         />
 
         <FilterSidebar
@@ -151,6 +155,8 @@ export default function ProductSearch({
           applyFiltersAndSearch={applyFiltersAndSearch}
           sortBy={sortBy}
           onSortChange={handleSortChange}
+          isSearchPolySeekTagsOnly={isSearchPolySeekTagsOnly}
+          setIsSearchPolySeekTagsOnly={setIsSearchPolySeekTagsOnly}
         />
 
         <Button
