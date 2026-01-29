@@ -111,7 +111,7 @@ export async function deleteAvatarItem(id: string) {
  */
 export async function rescanProductsForAvatar(avatarId: string) {
   try {
-    const { auth } = require("@/auth"); // Dynamic import for server action
+    const { auth } = await import("@/auth"); // Dynamic import for server action
     const session = await auth();
 
     // 管理者権限チェックを最優先で行う
