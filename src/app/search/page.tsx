@@ -109,6 +109,7 @@ export async function generateMetadata({ searchParams }: SearchPageProps): Promi
 const SearchPage = async ({ searchParams }: SearchPageProps) => {
   const resolvedSearchParams = await searchParams;
   const page = parsePageParam(resolvedSearchParams.page);
+  const searchPolySeekTagsOnly = String(resolvedSearchParams.searchPolySeekTagsOnly) === 'true';
   let products: Product[] = [];
   let total = 0;
   let error: string | null = null;
@@ -116,6 +117,7 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
   try {
     const result = await searchProducts({
       ...resolvedSearchParams,
+      searchPolySeekTagsOnly,
       page,
       pageSize: PAGE_SIZE,
     });

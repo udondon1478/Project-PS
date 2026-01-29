@@ -58,6 +58,8 @@ export interface SearchParams {
   page?: number;
   /** 1ページあたりの件数。デフォルト: 24 */
   pageSize?: number;
+  /** PolySeek独自のタグのみを検索対象にするかどうか */
+  searchPolySeekTagsOnly?: boolean;
 }
 
 /**
@@ -151,6 +153,8 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
               tag: {
                 name: tagName,
               },
+              // PolySeekタグのみで検索する場合、公式タグを除外
+              ...(params.searchPolySeekTagsOnly ? { isOfficial: false } : {}),
             },
           },
         })),

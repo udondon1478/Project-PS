@@ -1,60 +1,38 @@
-# カラム数変更機能の実装計画
+# Plan: BOOTH公式タグ検索対象切り替え機能の実装
 
-ユーザーが商品一覧のカラム数を自由に設定できる機能を実装します。
+ユーザーの要望により、検索時にBOOTH公式タグを検索対象に含めるかどうかを切り替える機能を追加します。
+デフォルトではBOOTH公式タグを含みますが、スイッチをONにすることで「PolySeekタグのみ」で検索できるようになります。
 
-## 決定事項
+## 仕様
 
-- **保存方法**: LocalStorage (キー: `product-grid-columns`)
-- **UI配置**: 商品グリッドの直上
-- **モバイル対応**: 設定はPCサイズ（lgブレークポイント以上）のみに適用し、モバイルでは既存のレスポンシブ挙動を維持
-- **設定値**: 初期値 5、範囲 2〜6
+- **機能**: 検索対象をPolySeek独自タグのみに限定するフィルタリング機能
+- **UI**: 検索バーの近くに「PolySeekタグのみで検索する」というチェックボックス/スイッチを配置
+- **デフォルト動作**: チェックなし（OFF） = 全てのタグ（BOOTH公式タグ含む）を検索対象とする
+- **URLパラメータ**: `searchPolySeekTagsOnly=true` の場合のみフィルタリング有効
 
 ## 実装ステップ
 
-### 1. カスタムフックの作成 (`src/hooks/useColumnSettings.ts`)
+1.  **バックエンドロジックの修正 (`src/lib/searchProducts.ts`)**
+    - `SearchParams` インターフェースに `searchPolySeekTagsOnly` (boolean) を追加
+    - `searchProducts` 関数内で、`searchPolySeekTagsOnly` が `true` の場合、タグ検索条件に `isOfficial: false` を追加
+    - `ProductTag` モデルの `isOfficial` フィールドを利用してフィルタリングを行う
 
-LocalStorageを使用してカラム数を管理するフックを作成します。
-- 状態管理: `columns` (number)
-- 初期化時にLocalStorageから読み込み、ない場合はデフォルト値(5)を使用
-- 値の変更時にLocalStorageへ保存
-- SSR時のハイドレーション不一致を防ぐため、マウント後に値を適用するロジックを含める。`isLoaded`状態を提供し、ロード完了までコンポーネントの表示を遅延させることで対応
+2.  **フックの修正 (`src/hooks/useProductSearch.ts`)**
+    - `isSearchPolySeekTagsOnly` ステートを追加
+    - URLクエリパラメータ `searchPolySeekTagsOnly` の読み込み・保存ロジックを追加
+    - `buildSearchQueryParams` 関数を更新してパラメータを含めるように変更
+    - UIコンポーネントに渡す返り値にステートとセッターを追加
 
-### 2. UIコンポーネントの作成 (`src/components/ColumnSelector.tsx`)
+3.  **UIコンポーネントの修正 (`src/components/search/ProductSearch.tsx`)**
+    - `TagSearchBar` のコンテナ内、またはその直下にチェックボックスを配置
+    - ラベル「PolySeekタグのみで検索する」を表示
+    - チェックボックスの変更イベントで `useProductSearch` のセッターを呼び出す
 
-カラム数を変更するためのUIコンポーネントを作成します。
-- `src/components/ui/slider.tsx` を使用
-- ラベル（例: "表示列数: 5"）とスライダーを配置
-- モバイルデバイスでは非表示 (`hidden lg:flex`)
+4.  **動作確認**
+    - `npm run build` でビルドエラーがないか確認
+    - 実際に検索を行い、BOOTHタグが含まれる商品がフィルタリングされるか確認
 
-### 3. ProductGridの改修 (`src/components/ProductGrid.tsx`)
+## 備考
 
-カラム数を受け取れるように改修し、動的にクラスを適用します。
-- Propsに `columns` (optional) を追加
-- Tailwind CSSのクラスを動的に切り替えるためのマッピングを定義
-  - マッピング定義は `src/constants/grid.ts` に `GRID_COLS_CLASSES` として切り出す
-  - PC表示時 (`lg:` プレフィックス) のみ指定されたカラム数を適用
-  - `lg:grid-cols-2` 〜 `lg:grid-cols-6`
-  - モバイル〜タブレットは既存の `grid-cols-1 sm:grid-cols-2 md:grid-cols-3` を維持
-- `src/components/ProductGridSkeleton.tsx` も同様に `columns` プロップを受け取り、同じマッピングロジックを使用してレイアウトシフトを防ぐ
-
-### 4. ページへの組み込み
-
-以下のコンポーネントでフックを使用し、SelectorとGridを配置します。
-- `src/app/HomeClient.tsx` (トップページ)
-- `src/components/search/SearchResults.tsx` (検索結果ページ)
-
-**実装詳細:**
-- `useColumnSettings`から`columns`, `setColumns`, `isLoaded`を取得
-- `isLoaded`に基づく`ColumnSelector`の条件付きレンダリング
-- `ProductGrid`への`columns`プロップの受け渡し
-- ヘッダーレイアウトの調整（ColumnSelectorを配置）
-
-## 確認事項
-
-- [ ] LocalStorageへの保存と読み出しが正しく行われるか
-- [ ] ページリロード後も設定が維持されるか
-- [ ] モバイル画面では設定UIが非表示になり、標準のレスポンシブ挙動となるか
-- [ ] 検索結果ページとトップページの両方で設定が共有されるか
-- [ ] デフォルト値が5になっているか（初回訪問時）
-- [ ] 設定値の範囲（2〜6）が正しく制限されているか
-- [ ] スライダー変更時にレイアウトが即座に更新されるか
+- `ProductTag` モデルには `isOfficial` フィールドが存在し、BOOTH由来のタグは `true`、PolySeek独自タグは `false` となっている。
+- 既存の検索ロジックへの影響を最小限に抑えるため、オプショナルなパラメータとして追加する。

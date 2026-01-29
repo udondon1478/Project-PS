@@ -50,6 +50,8 @@ interface FilterSidebarProps {
   setIsLiked: (isLiked: boolean) => void;
   isOwned: boolean;
   setIsOwned: (isOwned: boolean) => void;
+  isSearchPolySeekTagsOnly: boolean;
+  setIsSearchPolySeekTagsOnly: (enabled: boolean) => void;
   clearAllTagsAndFilters: () => void;
   applyFiltersAndSearch: () => void;
   sortBy: SortOption;
@@ -78,6 +80,8 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   setIsLiked,
   isOwned,
   setIsOwned,
+  isSearchPolySeekTagsOnly,
+  setIsSearchPolySeekTagsOnly,
   clearAllTagsAndFilters,
   applyFiltersAndSearch,
   sortBy,
@@ -332,6 +336,16 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                 />
                 <label htmlFor="owned-filter" className="text-sm font-medium">
                   所有済み
+                </label>
+              </div>
+              <div className="flex items-center space-x-2 px-2 mt-3">
+                <Checkbox
+                  id="polyseek-tags-only-filter"
+                  checked={isSearchPolySeekTagsOnly}
+                  onCheckedChange={(checked) => setIsSearchPolySeekTagsOnly(!!checked)}
+                />
+                <label htmlFor="polyseek-tags-only-filter" className="text-sm font-medium">
+                  PolySeekタグのみで検索
                 </label>
               </div>
             </div>
