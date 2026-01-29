@@ -4,7 +4,6 @@ import { prisma } from '@/lib/prisma';
 import { revalidateAvatarDefinitions, getAvatarDefinitions } from '@/lib/avatars';
 import { TagResolver } from '@/lib/booth-scraper/tag-resolver';
 import { isAdmin } from '@/lib/auth';
-import { auth } from "@/auth";
 
 /**
  * アバター定義マップを取得します（クライアントサイド検知用）
@@ -112,6 +111,7 @@ export async function deleteAvatarItem(id: string) {
  */
 export async function rescanProductsForAvatar(avatarId: string) {
   try {
+    const { auth } = await import("@/auth"); // Dynamic import for server action
     const session = await auth();
 
     // 管理者権限チェックを最優先で行う
