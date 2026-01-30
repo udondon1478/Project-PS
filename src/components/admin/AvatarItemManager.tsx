@@ -272,7 +272,7 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
 
           <div>
             <label htmlFor="suggestedTags" className="block text-sm font-medium text-gray-700 mb-1">
-              自動付与・提案するタグ (カンマ区切り) <span className="text-red-500">*</span>
+              自動付与・提案するタグ (カンマ区切り)
             </label>
             <input
               id="suggestedTags"

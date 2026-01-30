@@ -155,10 +155,6 @@ export async function rescanProductsForAvatar(avatarId: string) {
       ? suggestedTags
       : [avatarName];
 
-    if (targetTagNames.length === 0) {
-        return { success: true, count: 0, message: 'No tags configured to be suggested' };
-    }
-
     // ID、アバター名、エイリアスのいずれかが説明文に含まれる商品を検索
     const searchTerms = [itemId, avatarName, ...aliases].filter(Boolean);
 

@@ -28,7 +28,7 @@ export function useAvatarDetection({
     const loadDefinitions = async () => {
       const result = await getAvatarDefinitionsMap();
       if (result.success && result.data) {
-        setDefinitions(result.data as unknown as AvatarDefinition[]);
+        setDefinitions(result.data as AvatarDefinition[]);
       }
       setIsLoaded(true);
     };
