@@ -188,7 +188,7 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
   };
 
   const resetForm = () => {
-    setFormData({ itemId: '', avatarName: '', itemUrl: '', aliases: '' });
+    setFormData({ itemId: '', avatarName: '', itemUrl: '', aliases: '', suggestedTags: '' });
     setEditingId(null);
   };
 
