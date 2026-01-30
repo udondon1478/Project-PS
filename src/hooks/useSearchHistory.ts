@@ -87,16 +87,18 @@ export function useSearchHistory() {
         }
       } else if (status === 'unauthenticated') {
         // 2. 未ログイン時はLocalStorageから取得
-        const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (localData) {
-          try {
-            setHistory(JSON.parse(localData));
-          } catch (e) {
-            console.error('Failed to parse local history:', e);
+        if (typeof window !== 'undefined') {
+          const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
+          if (localData) {
+            try {
+              setHistory(JSON.parse(localData));
+            } catch (e) {
+              console.error('Failed to parse local history:', e);
+              setHistory([]);
+            }
+          } else {
             setHistory([]);
           }
-        } else {
-          setHistory([]);
         }
       }
 

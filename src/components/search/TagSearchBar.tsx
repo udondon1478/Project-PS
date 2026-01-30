@@ -104,7 +104,7 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
   // Reset active index when suggestions change or visibility changes
   React.useEffect(() => {
     setActiveIndex(-1);
-  }, [tagSuggestions, isSuggestionsVisible, searchQuery]);
+  }, [tagSuggestions, isSuggestionsVisible, searchQuery, searchHistory]);
 
   const showHistory = isSuggestionsVisible && searchQuery.length === 0 && searchHistory.length > 0;
   const showSuggestions = isSuggestionsVisible && searchQuery.length > 0 && tagSuggestions.length > 0;

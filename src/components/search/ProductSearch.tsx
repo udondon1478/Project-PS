@@ -178,10 +178,19 @@ export default function ProductSearch({
 
     // detailedFiltersの復元
     if (q.detailedFilters) {
-      // detailedFiltersオブジェクトがある場合はそれを使用
       const df = q.detailedFilters;
-      if (df.category) params.append('categoryName', df.category);
-      // 他のdetailedFilter項目があればここに追加
+      // カテゴリの復元（URLパラメータ名はcategoryName）
+      if (df.category) {
+        params.append('categoryName', df.category);
+      }
+
+      // その他の詳細フィルターを復元
+      Object.entries(df).forEach(([key, value]) => {
+        // categoryは既に処理済み、値が存在するもののみ追加
+        if (key !== 'category' && value !== undefined && value !== null && value !== '') {
+          params.append(key, String(value));
+        }
+      });
     } else if (q.category) {
       // 後方互換性
       params.append('categoryName', q.category);
