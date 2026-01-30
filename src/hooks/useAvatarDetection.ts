@@ -1,11 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAvatarDefinitionsMap } from '@/app/actions/avatar-items';
-
-interface AvatarDefinition {
-  itemId: string;
-  avatarName: string;
-  aliases: string[];
-}
+import type { AvatarDefinition } from '@/lib/avatars';
 
 interface UseAvatarDetectionProps {
   description: string;
@@ -22,7 +17,6 @@ export function useAvatarDetection({ description, currentTags }: UseAvatarDetect
     const loadDefinitions = async () => {
       const result = await getAvatarDefinitionsMap();
       if (result.success && result.data) {
-        // @ts-ignore - The server action returns the array now
         setDefinitions(result.data);
       }
       setIsLoaded(true);

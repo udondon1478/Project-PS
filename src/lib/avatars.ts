@@ -7,9 +7,15 @@ import { revalidateTag } from 'next/cache';
  */
 const AVATAR_DEFINITIONS_TAG = 'avatar-definitions';
 
+export interface AvatarDefinition {
+  itemId: string;
+  avatarName: string;
+  aliases: string[];
+}
+
 /**
  * 全アバター定義を取得します。
- * itemId (BOOTH商品ID) をキー、avatarName (アバター名) を値とするMap形式のオブジェクトを返します。
+ * itemId (BOOTH商品ID)、avatarName (アバター名)、aliases (エイリアス配列) を含むオブジェクトの配列を返します。
  * パフォーマンスのため、結果はキャッシュされます。
  */
 export const getAvatarDefinitions = unstable_cache(
