@@ -1,9 +1,11 @@
 "use client";
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useProductSearch } from '@/hooks/useProductSearch';
+import { useSearchHistory, SearchHistoryItem } from '@/hooks/useSearchHistory';
 import { TagSearchBar } from './TagSearchBar';
 import { QuickFilters } from './QuickFilters';
 import { FilterSidebar } from './FilterSidebar';
@@ -32,6 +34,9 @@ export default function ProductSearch({
   isSpotlightActive?: boolean;
   onSpotlightDismiss?: () => void;
 }) {
+  const router = useRouter();
+  const { history, addHistory, removeHistory } = useSearchHistory();
+
   const {
     searchQuery,
     selectedTags,
@@ -62,10 +67,10 @@ export default function ProductSearch({
     handleAddTag,
     handleRemoveTag,
     handleKeyDown,
-    handleSearch,
+    handleSearch: originalHandleSearch,
     handleDetailedFilterChange,
     clearAllTagsAndFilters,
-    applyFiltersAndSearch,
+    applyFiltersAndSearch: originalApplyFiltersAndSearch,
     isFeatureTagSelected,
     isNegativeTagSelected,
     setIsComposing,
@@ -83,10 +88,96 @@ export default function ProductSearch({
     isSafeSearchEnabled,
   });
 
+  // 検索実行時に履歴を保存するラッパー関数
+  const handleSearchWithHistory = useCallback(() => {
+    // 履歴データの構築 (URLパラメータと互換性のあるキーを使用)
+    // 注意: TagSearchBarのformatHistoryQueryで使用しているキーと合わせる必要がある
+    // formatHistoryQuery: q, tags, ntags, min_price, max_price...
+    // ここでは分かりやすさのため、formatHistoryQuery側をこの構造に合わせて修正する方針で、
+    // まずは保存データを構築する
+    const historyData: Record<string, any> = {};
 
+    if (searchQuery) historyData.q = searchQuery;
+    if (selectedTags.length > 0) historyData.tags = selectedTags;
+    if (selectedNegativeTags.length > 0) historyData.ntags = selectedNegativeTags;
+    if (selectedAgeRatingTags.length > 0) historyData.age_tags = selectedAgeRatingTags;
+    if (detailedFilters.category) historyData.category = detailedFilters.category;
+
+    // 価格
+    if (priceRange[0] > 0) historyData.min_price = priceRange[0];
+    if (isHighPriceFilterEnabled || priceRange[1] < 10000) {
+       // 上限なし(10000かつHighPrice無効)以外の場合は保存
+       // 正確なロジックは buildSearchQueryParams 参照
+       if (!((priceRange[1] === 10000 && !isHighPriceFilterEnabled) || (isHighPriceFilterEnabled && priceRange[1] === 100000))) {
+          historyData.max_price = priceRange[1];
+       }
+    }
+    if (isHighPriceFilterEnabled) historyData.high_price = true;
+
+    if (isLiked) historyData.liked = true;
+    if (isOwned) historyData.owned = true;
+    if (isSearchPolySeekTagsOnly) historyData.poly_tags = true;
+    if (sortBy !== 'newest') historyData.sort = sortBy;
+
+    // 条件が一つでもあれば保存
+    if (Object.keys(historyData).length > 0) {
+      addHistory(historyData);
+    }
+
+    originalHandleSearch();
+  }, [
+    searchQuery, selectedTags, selectedNegativeTags, selectedAgeRatingTags,
+    detailedFilters, priceRange, isHighPriceFilterEnabled, isLiked, isOwned,
+    isSearchPolySeekTagsOnly, sortBy, addHistory, originalHandleSearch
+  ]);
+
+  // Apply Filters時のラッパー
+  const applyFiltersAndSearchWithHistory = useCallback(() => {
+    handleSearchWithHistory();
+    setIsFilterSidebarOpen(false);
+  }, [handleSearchWithHistory, setIsFilterSidebarOpen]);
+
+
+  // 履歴選択時のハンドラ
+  const handleHistorySelect = useCallback((item: SearchHistoryItem) => {
+    const q = item.query;
+    const params = new URLSearchParams();
+
+    // URLパラメータの構築 (useProductSearchのbuildSearchQueryParamsと同様のキーを使用)
+    if (q.tags) {
+      const tags = Array.isArray(q.tags) ? q.tags.join(',') : q.tags;
+      params.append('tags', tags);
+    }
+    if (q.ntags) {
+      const ntags = Array.isArray(q.ntags) ? q.ntags.join(',') : q.ntags;
+      params.append('negativeTags', ntags);
+    }
+    if (q.age_tags) {
+      const ageTags = Array.isArray(q.age_tags) ? q.age_tags.join(',') : q.age_tags;
+      params.append('ageRatingTags', ageTags);
+    }
+    if (q.category) params.append('categoryName', q.category);
+    if (q.min_price) params.append('minPrice', String(q.min_price));
+    if (q.max_price) params.append('maxPrice', String(q.max_price));
+    if (q.high_price) params.append('isHighPrice', 'true');
+    if (q.liked) params.append('liked', 'true');
+    if (q.owned) params.append('owned', 'true');
+    if (q.poly_tags) params.append('searchPolySeekTagsOnly', 'true');
+    if (q.sort) params.append('sort', q.sort);
+
+    // 検索実行（遷移）
+    router.replace(`/search?${params.toString()}`);
+    // サジェストを閉じる
+    setIsSuggestionsVisible(false);
+  }, [router, setIsSuggestionsVisible]);
+
+  const handleHistoryDelete = useCallback((itemId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    removeHistory(itemId);
+  }, [removeHistory]);
 
   return (
-    <div 
+    <div
       className={`p-4 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-all duration-500 ease-in-out ${
         isSpotlightActive ? 'ring-4 ring-primary/50 shadow-2xl relative z-50 bg-white dark:bg-gray-700' : ''
       }`}
@@ -114,6 +205,10 @@ export default function ProductSearch({
           handleAddTag={handleAddTag}
           handleRemoveTag={handleRemoveTag}
           setIsSuggestionsVisible={setIsSuggestionsVisible}
+          // 履歴機能Props
+          searchHistory={history}
+          onHistorySelect={handleHistorySelect}
+          onHistoryDelete={handleHistoryDelete}
         />
 
         <QuickFilters
@@ -152,7 +247,7 @@ export default function ProductSearch({
           isOwned={isOwned}
           setIsOwned={setIsOwned}
           clearAllTagsAndFilters={clearAllTagsAndFilters}
-          applyFiltersAndSearch={applyFiltersAndSearch}
+          applyFiltersAndSearch={applyFiltersAndSearchWithHistory}
           sortBy={sortBy}
           onSortChange={handleSortChange}
           isSearchPolySeekTagsOnly={isSearchPolySeekTagsOnly}
@@ -163,7 +258,7 @@ export default function ProductSearch({
           variant="outline"
           size="icon"
           className="md:hidden h-9 w-9 flex-shrink-0"
-          onClick={handleSearch}
+          onClick={handleSearchWithHistory}
           aria-label="検索"
         >
           <Search className="h-4 w-4" />
@@ -175,7 +270,7 @@ export default function ProductSearch({
           className="hidden md:flex"
         />
 
-        <Button onClick={handleSearch} size="sm" className="hidden md:inline-flex">
+        <Button onClick={handleSearchWithHistory} size="sm" className="hidden md:inline-flex">
           検索
         </Button>
       </div>

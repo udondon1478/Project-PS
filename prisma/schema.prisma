@@ -48,6 +48,7 @@ model User {
   productOwners ProductOwner[]
   tagMetadataEdits TagMetadataHistory[] // ユーザーが行ったタグメタデータ編集
   reports       Report[]         // ユーザーが行った通報
+  searchHistories SearchHistory[] // 検索履歴
 
   @@index([name])
   @@index([email])
@@ -517,6 +518,21 @@ model ScraperConfig {
   updatedAt       DateTime @updatedAt
 }
 
+// 検索履歴テーブル
+model SearchHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  query     Json     // 検索条件 (SearchParamsの内容) をJSONとして保存
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt // 重複時の更新用
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  // ユーザーごとの重複チェックを効率化するためのインデックスは、JSON型には作成できないためアプリ層で制御
+}
+
 // アバター自動タグ付け定義テーブル
 model AvatarItem {
   id          String   @id @default(cuid())
@@ -524,6 +540,9 @@ model AvatarItem {
   itemId      String   @unique // BOOTH商品ID (例: "5058077")
   avatarName  String   // アバター名 (例: "マヌカ")
   aliases     String[] @default([]) // エイリアス (例: ["Manuka", "manuka"])
+  suggestAliases    Boolean @default(false)
+  suggestAvatarName Boolean @default(true)
+  suggestItemId     Boolean @default(false)
   suggestedTags     String[] @default([])   // 提案・自動付与するタグのリスト (例: ["マヌカ", "マヌカ対応"])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
