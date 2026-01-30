@@ -38,12 +38,20 @@ export async function saveSearchHistory(params: Record<string, any>) {
       });
 
       // キーをソートして比較するヘルパー関数
-      const normalizeForComparison = (obj: Record<string, any>): string => {
-        return JSON.stringify(obj, Object.keys(obj).sort());
+      const normalizeForComparison = (obj: any): string => {
+        if (obj === null || typeof obj !== 'object') {
+          return JSON.stringify(obj);
+        }
+        if (Array.isArray(obj)) {
+          return '[' + obj.map(item => normalizeForComparison(item)).join(',') + ']';
+        }
+        const keys = Object.keys(obj).sort();
+        const parts = keys.map(key => JSON.stringify(key) + ':' + normalizeForComparison(obj[key]));
+        return '{' + parts.join(',') + '}';
       };
 
       const existingHistory = recentHistories.find((h) =>
-        normalizeForComparison(h.query as Record<string, any>) === normalizeForComparison(params)
+        normalizeForComparison(h.query) === normalizeForComparison(params)
       );
 
       if (existingHistory) {

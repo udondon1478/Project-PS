@@ -105,13 +105,18 @@ export default function ProductSearch({
 
     // 価格
     if (priceRange[0] > 0) historyData.min_price = priceRange[0];
-    if (isHighPriceFilterEnabled || priceRange[1] < 10000) {
-       // 上限なし(10000かつHighPrice無効)以外の場合は保存
-       // 正確なロジックは buildSearchQueryParams 参照
-       if (!((priceRange[1] === 10000 && !isHighPriceFilterEnabled) || (isHighPriceFilterEnabled && priceRange[1] === 100000))) {
-          historyData.max_price = priceRange[1];
-       }
+
+    // 上限価格の保存条件:
+    // 1. HighPriceフィルタ無効時に上限がデフォルト(10000)でない場合
+    // 2. HighPriceフィルタ有効時に上限が上限キャップ(100000)でない場合
+    // つまり、現在の状態における「デフォルトの上限値」から変更されている場合のみ保存する
+    const isDefaultMaxPrice = (priceRange[1] === 10000 && !isHighPriceFilterEnabled) ||
+                              (isHighPriceFilterEnabled && priceRange[1] === 100000);
+
+    if (!isDefaultMaxPrice) {
+       historyData.max_price = priceRange[1];
     }
+
     if (isHighPriceFilterEnabled) historyData.high_price = true;
 
     if (isLiked) historyData.liked = true;

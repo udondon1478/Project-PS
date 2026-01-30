@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Input } from '@/components/ui/input';
-import { X, Clock, Search } from 'lucide-react';
+import { X, Clock } from 'lucide-react';
 
 import { useTypewriter } from '@/hooks/useTypewriter';
 import { TagSuggestion } from '@/hooks/useProductSearch';
@@ -178,7 +178,7 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
         {selectedTags.map(tag => (
           <span key={tag} className="flex items-center bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded whitespace-nowrap">
             {tag}
-            <button onClick={() => handleRemoveTag(tag)} className="ml-1 text-blue-600 hover:text-blue-800">
+            <button onClick={() => handleRemoveTag(tag)} className="ml-1 text-blue-600 hover:text-blue-800" aria-label={`${tag}を削除`}>
               <X size={12} />
             </button>
           </span>
@@ -186,7 +186,7 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
         {selectedNegativeTags.map(tag => (
           <span key={`negative-${tag}`} className="flex items-center bg-red-100 text-red-800 text-xs font-medium px-2 py-0.5 rounded whitespace-nowrap">
             -{tag}
-            <button onClick={() => handleRemoveTag(tag, true)} className="ml-1 text-red-600 hover:text-red-800">
+            <button onClick={() => handleRemoveTag(tag, true)} className="ml-1 text-red-600 hover:text-red-800" aria-label={`除外タグ ${tag}を削除`}>
               <X size={12} />
             </button>
           </span>
@@ -281,6 +281,7 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
                 }}
                 className="text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity"
                 title="履歴から削除"
+                aria-label="履歴から削除"
               >
                 <X size={14} />
               </button>

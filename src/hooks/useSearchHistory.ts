@@ -44,7 +44,8 @@ export function useSearchHistory() {
                 const queries = localHistories.map(h => h.query);
                 const result = await syncLocalHistory(queries);
                 // 同期成功時のみローカルストレージをクリア
-                if (result.success) {
+                // 部分的な失敗がある場合はクリアせず、次回再試行する
+                if (result.success && result.failCount === 0) {
                   localStorage.removeItem(LOCAL_STORAGE_KEY);
                 }
               }
@@ -107,7 +108,9 @@ export function useSearchHistory() {
           const formattedHistory: SearchHistoryItem[] = result.data.map(item => ({
             id: item.id,
             query: item.query as Record<string, any>,
-            createdAt: item.createdAt.toISOString(),
+            createdAt: typeof item.createdAt === 'string'
+              ? item.createdAt
+              : item.createdAt.toISOString(),
           }));
           setHistory(formattedHistory);
         }
