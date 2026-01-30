@@ -143,8 +143,10 @@ export default function ProductSearch({
     const q = item.query;
     const params = new URLSearchParams();
 
+    // キーワード
+    if (q.q) params.append('q', String(q.q));
+
     // URLパラメータの構築 (useProductSearchのbuildSearchQueryParamsと同様のキーを使用)
-    if (q.q) params.append('q', q.q);
     if (q.tags) {
       const tags = Array.isArray(q.tags) ? q.tags.join(',') : q.tags;
       params.append('tags', tags);

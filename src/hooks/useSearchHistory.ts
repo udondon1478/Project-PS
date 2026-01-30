@@ -60,7 +60,9 @@ export function useSearchHistory() {
             const formattedHistory: SearchHistoryItem[] = result.data.map(item => ({
               id: item.id,
               query: item.query as Record<string, any>,
-              createdAt: item.createdAt.toISOString(),
+              createdAt: typeof item.createdAt === 'string'
+                ? item.createdAt
+                : item.createdAt.toISOString(),
             }));
             setHistory(formattedHistory);
           }

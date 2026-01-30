@@ -255,6 +255,13 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
               key={item.id}
               role="option"
               aria-selected={index === activeIndex}
+              tabIndex={index === activeIndex ? 0 : -1}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onHistorySelect?.(item);
+                }
+              }}
               onClick={() => onHistorySelect?.(item)}
               onMouseEnter={() => setActiveIndex(index)}
               className={`px-3 py-2 text-sm cursor-pointer flex justify-between items-center group ${

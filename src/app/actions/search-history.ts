@@ -37,8 +37,13 @@ export async function saveSearchHistory(params: Record<string, any>) {
         take: MAX_HISTORY_COUNT,
       });
 
+      // キーをソートして比較するヘルパー関数
+      const normalizeForComparison = (obj: Record<string, any>): string => {
+        return JSON.stringify(obj, Object.keys(obj).sort());
+      };
+
       const existingHistory = recentHistories.find((h) =>
-        JSON.stringify(h.query) === JSON.stringify(params)
+        normalizeForComparison(h.query as Record<string, any>) === normalizeForComparison(params)
       );
 
       if (existingHistory) {
@@ -125,12 +130,16 @@ export async function deleteSearchHistory(id: string) {
       return { success: false, error: 'Unauthorized' };
     }
 
-    await prisma.searchHistory.delete({
+    const result = await prisma.searchHistory.deleteMany({
       where: {
         id,
         userId: session.user.id, // 所有者チェック
       },
     });
+
+    if (result.count === 0) {
+      return { success: false, error: 'Failed to delete search history' };
+    }
 
     return { success: true };
   } catch (error) {
