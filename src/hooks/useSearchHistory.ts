@@ -19,6 +19,19 @@ export interface SearchHistoryItem {
 const LOCAL_STORAGE_KEY = 'polyseek_search_history';
 const MAX_HISTORY_COUNT = 50;
 
+// キーをソートして比較するヘルパー関数 (サーバー側とロジックを統一)
+const normalizeForComparison = (obj: any): string => {
+  if (obj === null || typeof obj !== 'object') {
+    return JSON.stringify(obj);
+  }
+  if (Array.isArray(obj)) {
+    return '[' + obj.map(item => normalizeForComparison(item)).join(',') + ']';
+  }
+  const keys = Object.keys(obj).sort();
+  const parts = keys.map(key => JSON.stringify(key) + ':' + normalizeForComparison(obj[key]));
+  return '{' + parts.join(',') + '}';
+};
+
 export function useSearchHistory() {
   const { data: session, status } = useSession();
   const [history, setHistory] = useState<SearchHistoryItem[]>([]);
@@ -121,9 +134,9 @@ export function useSearchHistory() {
       // ローカルストレージに保存
       setHistory(prev => {
         // 重複チェック: 同じクエリがある場合は削除して先頭に追加するための準備
-        // 完全一致比較 (JSON文字列化で比較)
-        const paramsString = JSON.stringify(params);
-        const filtered = prev.filter(item => JSON.stringify(item.query) !== paramsString);
+        // 完全一致比較 (キーソート付き正規化文字列で比較)
+        const paramsString = normalizeForComparison(params);
+        const filtered = prev.filter(item => normalizeForComparison(item.query) !== paramsString);
 
         const newItem: SearchHistoryItem = {
           id: crypto.randomUUID(),

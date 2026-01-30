@@ -178,7 +178,7 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
         {selectedTags.map(tag => (
           <span key={tag} className="flex items-center bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded whitespace-nowrap">
             {tag}
-            <button onClick={() => handleRemoveTag(tag)} className="ml-1 text-blue-600 hover:text-blue-800" aria-label={`${tag}を削除`}>
+            <button type="button" onClick={() => handleRemoveTag(tag)} className="ml-1 text-blue-600 hover:text-blue-800" aria-label={`${tag}を削除`}>
               <X size={12} />
             </button>
           </span>
@@ -186,7 +186,7 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
         {selectedNegativeTags.map(tag => (
           <span key={`negative-${tag}`} className="flex items-center bg-red-100 text-red-800 text-xs font-medium px-2 py-0.5 rounded whitespace-nowrap">
             -{tag}
-            <button onClick={() => handleRemoveTag(tag, true)} className="ml-1 text-red-600 hover:text-red-800" aria-label={`除外タグ ${tag}を削除`}>
+            <button type="button" onClick={() => handleRemoveTag(tag, true)} className="ml-1 text-red-600 hover:text-red-800" aria-label={`除外タグ ${tag}を削除`}>
               <X size={12} />
             </button>
           </span>
@@ -275,6 +275,7 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
                 </span>
               </div>
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation(); // 親のonClickを発火させない
                   onHistoryDelete?.(item.id, e);
