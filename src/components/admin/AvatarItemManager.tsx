@@ -16,9 +16,7 @@ interface AvatarItem {
   avatarName: string;
   itemUrl?: string | null;
   aliases: string[];
-  suggestAvatarName: boolean;
-  suggestItemId: boolean;
-  suggestAliases: boolean;
+  suggestedTags: string[];
   createdAt: Date;
 }
 
@@ -37,9 +35,7 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
     avatarName: '',
     itemUrl: '',
     aliases: '',
-    suggestAvatarName: true,
-    suggestItemId: false,
-    suggestAliases: false,
+    suggestedTags: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -81,6 +77,27 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
     }
   };
 
+  // アバター名が変更されたら、提案タグのデフォルト値をセット（新規登録時のみ、かつ空の場合または自動生成値のままの場合）
+  const handleAvatarNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newName = e.target.value;
+    setFormData(prev => {
+      const oldName = prev.avatarName;
+      let newTags = prev.suggestedTags;
+
+      // 新規登録モードの時のみ自動補完を行う
+      if (!editingId) {
+        // 直前の状態が「空」または「以前のアバター名に基づくデフォルト値」であれば更新する
+        const oldDefault = oldName ? `${oldName}, ${oldName}対応` : '';
+
+        if (!newTags || newTags === oldDefault) {
+          newTags = newName ? `${newName}, ${newName}対応` : '';
+        }
+      }
+
+      return { ...prev, avatarName: newName, suggestedTags: newTags };
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.itemId || !formData.avatarName) return;
@@ -91,7 +108,8 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
     try {
       const submissionData = {
         ...formData,
-        aliases: formData.aliases ? formData.aliases.split(',').map(s => s.trim()).filter(Boolean) : []
+        aliases: formData.aliases ? formData.aliases.split(',').map(s => s.trim()).filter(Boolean) : [],
+        suggestedTags: formData.suggestedTags ? formData.suggestedTags.split(',').map(s => s.trim()).filter(Boolean) : []
       };
 
       if (editingId) {
@@ -126,9 +144,7 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
       avatarName: item.avatarName,
       itemUrl: item.itemUrl || '',
       aliases: item.aliases ? item.aliases.join(', ') : '',
-      suggestAvatarName: item.suggestAvatarName ?? true,
-      suggestItemId: item.suggestItemId ?? false,
-      suggestAliases: item.suggestAliases ?? false,
+      suggestedTags: item.suggestedTags ? item.suggestedTags.join(', ') : '',
     });
   };
 
@@ -228,7 +244,7 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
                   id="avatarName"
                   type="text"
                   value={formData.avatarName}
-                  onChange={(e) => setFormData(prev => ({ ...prev, avatarName: e.target.value }))}
+                  onChange={handleAvatarNameChange}
                   placeholder="マヌカ"
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -254,39 +270,20 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
             </div>
           </div>
 
-          <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">自動付与・提案するタグの設定</h3>
-            <div className="flex flex-wrap gap-4">
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.suggestAvatarName}
-                  onChange={(e) => setFormData(prev => ({ ...prev, suggestAvatarName: e.target.checked }))}
-                  className="rounded text-blue-600 focus:ring-blue-500 h-4 w-4"
-                />
-                <span className="text-sm text-gray-700">アバター名 (例: マヌカ)</span>
-              </label>
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.suggestItemId}
-                  onChange={(e) => setFormData(prev => ({ ...prev, suggestItemId: e.target.checked }))}
-                  className="rounded text-blue-600 focus:ring-blue-500 h-4 w-4"
-                />
-                <span className="text-sm text-gray-700">商品ID (例: 5058077)</span>
-              </label>
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.suggestAliases}
-                  onChange={(e) => setFormData(prev => ({ ...prev, suggestAliases: e.target.checked }))}
-                  className="rounded text-blue-600 focus:ring-blue-500 h-4 w-4"
-                />
-                <span className="text-sm text-gray-700">エイリアス全て</span>
-              </label>
-            </div>
-            <p className="mt-2 text-xs text-gray-500">
-              チェックを入れた項目のタグが、商品詳細ページでの提案やスクレイピング時の自動付与の対象になります。
+          <div>
+            <label htmlFor="suggestedTags" className="block text-sm font-medium text-gray-700 mb-1">
+              自動付与・提案するタグ (カンマ区切り) <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="suggestedTags"
+              type="text"
+              value={formData.suggestedTags}
+              onChange={(e) => setFormData(prev => ({ ...prev, suggestedTags: e.target.value }))}
+              placeholder="マヌカ, マヌカ対応"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              アバターが検知された際に、自動的に付与または提案されるタグのリストです。デフォルトでは「アバター名, アバター名対応」が推奨されます。
             </p>
           </div>
 
@@ -365,10 +362,18 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
                       {item.itemId}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        {item.avatarName}
-                      </span>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {item.suggestedTags && item.suggestedTags.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {item.suggestedTags.map((tag, i) => (
+                            <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 italic">デフォルト設定を使用</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">

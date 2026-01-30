@@ -97,14 +97,12 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
 
           if (hasId || hasName || hasAlias) {
             // 設定に基づいてタグを自動付与リストに追加
-            if (def.suggestAvatarName) {
+            // DBに設定されたタグリストがあればそれを使用
+            if (def.suggestedTags && def.suggestedTags.length > 0) {
+                detectedAvatarTags.push(...def.suggestedTags);
+            } else {
+                // 設定がない場合は従来通り「アバター名」単体を付与
                 detectedAvatarTags.push(avatarName);
-            }
-            if (def.suggestItemId) {
-                detectedAvatarTags.push(itemId);
-            }
-            if (def.suggestAliases && aliases.length > 0) {
-                detectedAvatarTags.push(...aliases);
             }
           }
         }

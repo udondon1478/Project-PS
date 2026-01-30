@@ -41,9 +41,7 @@ export async function createAvatarItem(data: {
   avatarName: string;
   itemUrl?: string;
   aliases?: string[];
-  suggestAvatarName?: boolean;
-  suggestItemId?: boolean;
-  suggestAliases?: boolean;
+  suggestedTags?: string[];
 }) {
   try {
     if (!(await isAdmin())) {
@@ -55,9 +53,7 @@ export async function createAvatarItem(data: {
         avatarName: data.avatarName,
         itemUrl: data.itemUrl,
         aliases: data.aliases || [],
-        suggestAvatarName: data.suggestAvatarName ?? true,
-        suggestItemId: data.suggestItemId ?? false,
-        suggestAliases: data.suggestAliases ?? false,
+        suggestedTags: data.suggestedTags || [],
       },
     });
     revalidateAvatarDefinitions();
@@ -78,9 +74,7 @@ export async function updateAvatarItem(
     avatarName: string;
     itemUrl?: string;
     aliases?: string[];
-    suggestAvatarName?: boolean;
-    suggestItemId?: boolean;
-    suggestAliases?: boolean;
+    suggestedTags?: string[];
   }
 ) {
   try {
@@ -94,9 +88,7 @@ export async function updateAvatarItem(
         avatarName: data.avatarName,
         itemUrl: data.itemUrl,
         aliases: data.aliases || [],
-        suggestAvatarName: data.suggestAvatarName,
-        suggestItemId: data.suggestItemId,
-        suggestAliases: data.suggestAliases,
+        suggestedTags: data.suggestedTags || [],
       },
     });
     revalidateAvatarDefinitions();
@@ -156,13 +148,12 @@ export async function rescanProductsForAvatar(avatarId: string) {
       return { success: false, error: 'Avatar item not found' };
     }
 
-    const { itemId, avatarName, aliases, suggestAvatarName, suggestItemId, suggestAliases } = avatarItem;
+    const { itemId, avatarName, aliases, suggestedTags } = avatarItem;
 
-    // 付与対象のタグ名を決定
-    const targetTagNames: string[] = [];
-    if (suggestAvatarName) targetTagNames.push(avatarName);
-    if (suggestItemId) targetTagNames.push(itemId);
-    if (suggestAliases && aliases.length > 0) targetTagNames.push(...aliases);
+    // 付与対象のタグ名: suggestedTags が空の場合はアバター名をデフォルトとする（後方互換性のため）
+    const targetTagNames: string[] = (suggestedTags && suggestedTags.length > 0)
+      ? suggestedTags
+      : [avatarName];
 
     if (targetTagNames.length === 0) {
         return { success: true, count: 0, message: 'No tags configured to be suggested' };
