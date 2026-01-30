@@ -209,7 +209,11 @@ export function useSearchHistory() {
       }
     } else {
       setHistory([]);
-      localStorage.removeItem(LOCAL_STORAGE_KEY);
+      try {
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+      } catch (e) {
+        console.error('Failed to clear local history:', e);
+      }
     }
   }, [status]);
 
