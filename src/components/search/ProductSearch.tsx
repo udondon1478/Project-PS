@@ -88,8 +88,15 @@ export default function ProductSearch({
     isSafeSearchEnabled,
   });
 
+  // 価格上限を保存すべきかどうかを判定するヘルパー
+  const shouldSaveMaxPrice = (maxPrice: number, isHighPrice: boolean): boolean => {
+    // デフォルト上限（通常10000、高価格有効時100000）の場合は保存しない
+    const defaultMax = isHighPrice ? 100000 : 10000;
+    return maxPrice !== defaultMax;
+  };
+
   // 検索実行時に履歴を保存するラッパー関数
-  const handleSearchWithHistory = useCallback(() => {
+  const handleSearchWithHistory = useCallback(async () => {
     // 履歴データの構築 (URLパラメータと互換性のあるキーを使用)
     // 注意: TagSearchBarのformatHistoryQueryで使用しているキーと合わせる必要がある
     // formatHistoryQuery: q, tags, ntags, min_price, max_price...
@@ -101,15 +108,19 @@ export default function ProductSearch({
     if (selectedTags.length > 0) historyData.tags = selectedTags;
     if (selectedNegativeTags.length > 0) historyData.ntags = selectedNegativeTags;
     if (selectedAgeRatingTags.length > 0) historyData.age_tags = selectedAgeRatingTags;
-    if (detailedFilters.category) historyData.category = detailedFilters.category;
+
+    // detailedFilters全体を保存 (category以外も含まれる可能性があるため)
+    if (detailedFilters && Object.keys(detailedFilters).length > 0) {
+      historyData.detailedFilters = detailedFilters;
+      // 後方互換性やformatHistoryQueryのためにcategoryはトップレベルにも入れておく（重複するが安全）
+      if (detailedFilters.category) historyData.category = detailedFilters.category;
+    }
 
     // 価格
     if (priceRange[0] > 0) historyData.min_price = priceRange[0];
 
-    // 上限価格の保存条件:
-    // HighPriceフィルタの状態に応じたデフォルト上限値以外の場合に保存する
-    const defaultMaxPrice = isHighPriceFilterEnabled ? 100000 : 10000;
-    if (priceRange[1] !== defaultMaxPrice) {
+    // 上限価格の保存条件
+    if (shouldSaveMaxPrice(priceRange[1], isHighPriceFilterEnabled)) {
        historyData.max_price = priceRange[1];
     }
 
@@ -122,7 +133,11 @@ export default function ProductSearch({
 
     // 条件が一つでもあれば保存
     if (Object.keys(historyData).length > 0) {
-      addHistory(historyData);
+      try {
+        await addHistory(historyData);
+      } catch (e) {
+        console.error('Failed to add history:', e);
+      }
     }
 
     originalHandleSearch();
@@ -160,7 +175,18 @@ export default function ProductSearch({
       const ageTags = Array.isArray(q.age_tags) ? q.age_tags.join(',') : q.age_tags;
       params.append('ageRatingTags', ageTags);
     }
-    if (q.category) params.append('categoryName', q.category);
+
+    // detailedFiltersの復元
+    if (q.detailedFilters) {
+      // detailedFiltersオブジェクトがある場合はそれを使用
+      const df = q.detailedFilters;
+      if (df.category) params.append('categoryName', df.category);
+      // 他のdetailedFilter項目があればここに追加
+    } else if (q.category) {
+      // 後方互換性
+      params.append('categoryName', q.category);
+    }
+
     if (q.min_price) params.append('minPrice', String(q.min_price));
     if (q.max_price) params.append('maxPrice', String(q.max_price));
     if (q.high_price) params.append('isHighPrice', 'true');

@@ -48,22 +48,24 @@ export function useSearchHistory() {
           // まずローカルストレージに未同期の履歴がないか確認
           // ※ 本来は同期フラグなどで管理すべきだが、簡易的に
           // ログイン直後にローカルストレージがあれば同期を試みる
-          const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
-          if (localData) {
-            try {
-              const localHistories = JSON.parse(localData);
-              if (Array.isArray(localHistories) && localHistories.length > 0) {
-                // query部分だけ抽出して同期
-                const queries = localHistories.map(h => h.query);
-                const result = await syncLocalHistory(queries);
-                // 同期成功時のみローカルストレージをクリア
-                // 部分的な失敗がある場合はクリアせず、次回再試行する
-                if (result.success && result.failCount === 0) {
-                  localStorage.removeItem(LOCAL_STORAGE_KEY);
+          if (typeof window !== 'undefined') {
+            const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (localData) {
+              try {
+                const localHistories = JSON.parse(localData);
+                if (Array.isArray(localHistories) && localHistories.length > 0) {
+                  // query部分だけ抽出して同期
+                  const queries = localHistories.map(h => h.query);
+                  const result = await syncLocalHistory(queries);
+                  // 同期成功時のみローカルストレージをクリア
+                  // 部分的な失敗がある場合はクリアせず、次回再試行する
+                  if (result.success && result.failCount === 0) {
+                    localStorage.removeItem(LOCAL_STORAGE_KEY);
+                  }
                 }
+              } catch (e) {
+                console.error('Failed to parse local history for sync:', e);
               }
-            } catch (e) {
-              console.error('Failed to parse local history for sync:', e);
             }
           }
 

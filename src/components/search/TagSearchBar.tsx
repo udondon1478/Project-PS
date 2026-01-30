@@ -54,9 +54,13 @@ const formatHistoryQuery = (query: Record<string, any>): string => {
 
   // 価格
   if (query.min_price || query.max_price) {
-    const min = query.min_price ? `¥${query.min_price}` : '';
-    const max = query.max_price ? `¥${query.max_price}` : '';
-    parts.push(`価格: ${min}~${max}`);
+    if (query.min_price && query.max_price) {
+      parts.push(`価格: ¥${query.min_price}~¥${query.max_price}`);
+    } else if (query.min_price) {
+      parts.push(`価格: ¥${query.min_price}以上`);
+    } else {
+      parts.push(`価格: ¥${query.max_price}以下`);
+    }
   }
 
   return parts.join(' / ') || '条件なし';
@@ -83,6 +87,7 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
   onHistoryDelete,
 }) => {
   const [activeIndex, setActiveIndex] = React.useState<number>(-1);
+  const historyListRef = React.useRef<HTMLDivElement>(null);
 
   const placeholderText = useTypewriter({
     texts: [
@@ -164,13 +169,24 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
 
   // Scroll active item into view
   React.useEffect(() => {
-    if (activeIndex >= 0 && suggestionsRef && 'current' in suggestionsRef && suggestionsRef.current) {
-      const activeItem = suggestionsRef.current.children[activeIndex] as HTMLElement;
-      if (activeItem) {
-        activeItem.scrollIntoView({ block: 'nearest' });
+    if (activeIndex >= 0) {
+      // サジェスト表示時
+      if (showSuggestions && suggestionsRef && 'current' in suggestionsRef && suggestionsRef.current) {
+        const activeItem = suggestionsRef.current.children[activeIndex] as HTMLElement;
+        if (activeItem) {
+          activeItem.scrollIntoView({ block: 'nearest' });
+        }
+      }
+      // 履歴表示時
+      else if (showHistory && historyListRef.current) {
+        const targetIndex = activeIndex + 1; // ヘッダー分+1
+        const targetItem = historyListRef.current.children[targetIndex] as HTMLElement;
+        if (targetItem) {
+          targetItem.scrollIntoView({ block: 'nearest' });
+        }
       }
     }
-  }, [activeIndex, suggestionsRef]);
+  }, [activeIndex, showSuggestions, showHistory, suggestionsRef]);
 
   return (
     <div className="relative flex-grow max-w-full" ref={searchContainerRef} id="tour-search-bar">
@@ -241,7 +257,7 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
       {/* 履歴表示 */}
       {showHistory && (
         <div
-          ref={suggestionsRef}
+          ref={historyListRef}
           id="search-history-list"
           role="listbox"
           tabIndex={-1}
