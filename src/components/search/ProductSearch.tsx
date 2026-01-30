@@ -144,6 +144,7 @@ export default function ProductSearch({
     const params = new URLSearchParams();
 
     // URLパラメータの構築 (useProductSearchのbuildSearchQueryParamsと同様のキーを使用)
+    if (q.q) params.append('q', q.q);
     if (q.tags) {
       const tags = Array.isArray(q.tags) ? q.tags.join(',') : q.tags;
       params.append('tags', tags);
@@ -171,7 +172,7 @@ export default function ProductSearch({
     setIsSuggestionsVisible(false);
   }, [router, setIsSuggestionsVisible]);
 
-  const handleHistoryDelete = useCallback((itemId: string, e: React.MouseEvent) => {
+  const handleHistoryDelete = useCallback((itemId: string, e: React.SyntheticEvent) => {
     e.stopPropagation();
     removeHistory(itemId);
   }, [removeHistory]);

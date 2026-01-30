@@ -177,11 +177,24 @@ export async function syncLocalHistory(localHistories: Record<string, any>[]) {
     // 並列実行するとデッドロックのリスクがあるかもしれない点に注意。
     // 直列で実行します。
 
+    let successCount = 0;
+    let failCount = 0;
+
     for (const params of localHistories) {
-      await saveSearchHistory(params);
+      const result = await saveSearchHistory(params);
+      if (result.success) {
+        successCount++;
+      } else {
+        failCount++;
+      }
     }
 
-    return { success: true };
+    if (failCount > 0) {
+      console.warn(`Sync completed with errors: ${successCount} succeeded, ${failCount} failed`);
+      return { success: failCount === 0, count: successCount, failCount };
+    }
+
+    return { success: true, count: successCount, failCount };
   } catch (error) {
     console.error('Failed to sync local history:', error);
     return { success: false, error: 'Failed to sync local history' };

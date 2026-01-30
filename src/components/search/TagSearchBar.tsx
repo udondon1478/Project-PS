@@ -28,7 +28,7 @@ interface TagSearchBarProps {
   // 履歴機能用Props
   searchHistory?: SearchHistoryItem[];
   onHistorySelect?: (item: SearchHistoryItem) => void;
-  onHistoryDelete?: (itemId: string, e: React.MouseEvent) => void;
+  onHistoryDelete?: (itemId: string, e: React.SyntheticEvent) => void;
 }
 
 // 履歴の内容を文字列に整形するヘルパー
@@ -146,6 +146,12 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
           onHistorySelect?.(searchHistory[activeIndex]);
         } else {
           handleKeyDown(e);
+        }
+      } else if ((e.key === 'Delete' || e.key === 'Backspace') && e.shiftKey) {
+        // Shift+Delete/Backspaceで履歴削除
+        if (activeIndex >= 0 && activeIndex < searchHistory.length) {
+          e.preventDefault();
+          onHistoryDelete?.(searchHistory[activeIndex].id, e);
         }
       } else {
         handleKeyDown(e);

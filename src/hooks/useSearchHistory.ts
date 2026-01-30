@@ -42,9 +42,11 @@ export function useSearchHistory() {
               if (Array.isArray(localHistories) && localHistories.length > 0) {
                 // query部分だけ抽出して同期
                 const queries = localHistories.map(h => h.query);
-                await syncLocalHistory(queries);
-                // 同期完了後はローカルストレージをクリア
-                localStorage.removeItem(LOCAL_STORAGE_KEY);
+                const result = await syncLocalHistory(queries);
+                // 同期成功時のみローカルストレージをクリア
+                if (result.success) {
+                  localStorage.removeItem(LOCAL_STORAGE_KEY);
+                }
               }
             } catch (e) {
               console.error('Failed to parse local history for sync:', e);
