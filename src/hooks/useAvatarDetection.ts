@@ -38,7 +38,7 @@ export function useAvatarDetection({ description, currentTags }: UseAvatarDetect
     for (const def of definitions) {
       const { itemId, avatarName, aliases } = def;
 
-      // ID check (exact match usually required for IDs, but checking inclusion is standard here)
+      // ID check (case sensitive inclusion match for numeric BOOTH item IDs)
       const hasId = description.includes(itemId);
 
       // Name check (case insensitive)
