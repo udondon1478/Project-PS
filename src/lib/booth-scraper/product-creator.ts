@@ -78,9 +78,24 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
       // --- Avatar Auto-Tagging Start ---
       const avatarDefinitions = await getAvatarDefinitions();
       const detectedAvatarTags: string[] = [];
+      const normalizedDescription = description ? description.toLowerCase() : '';
+
       if (description) {
-        for (const [itemId, avatarName] of Object.entries(avatarDefinitions)) {
-          if (description.includes(itemId)) {
+        for (const def of avatarDefinitions) {
+          const { itemId, avatarName, aliases } = def;
+
+          // ID check (exact or contained)
+          const hasId = description.includes(itemId);
+
+          // Name check (case insensitive)
+          const hasName = normalizedDescription.includes(avatarName.toLowerCase());
+
+          // Alias check (case insensitive)
+          const hasAlias = aliases.some(alias =>
+            normalizedDescription.includes(alias.toLowerCase())
+          );
+
+          if (hasId || hasName || hasAlias) {
             // 自動付与は「アバター名」単体とする（関連性を示すため）
             // 「対応」タグはユーザーが選択できるようにサジェストに回す
             detectedAvatarTags.push(avatarName);

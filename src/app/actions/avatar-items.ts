@@ -40,6 +40,7 @@ export async function createAvatarItem(data: {
   itemId: string;
   avatarName: string;
   itemUrl?: string;
+  aliases?: string[];
 }) {
   try {
     if (!(await isAdmin())) {
@@ -50,6 +51,7 @@ export async function createAvatarItem(data: {
         itemId: data.itemId,
         avatarName: data.avatarName,
         itemUrl: data.itemUrl,
+        aliases: data.aliases || [],
       },
     });
     revalidateAvatarDefinitions();
@@ -65,7 +67,7 @@ export async function createAvatarItem(data: {
  */
 export async function updateAvatarItem(
   id: string,
-  data: { itemId: string; avatarName: string; itemUrl?: string }
+  data: { itemId: string; avatarName: string; itemUrl?: string; aliases?: string[] }
 ) {
   try {
     if (!(await isAdmin())) {
@@ -77,6 +79,7 @@ export async function updateAvatarItem(
         itemId: data.itemId,
         avatarName: data.avatarName,
         itemUrl: data.itemUrl,
+        aliases: data.aliases || [],
       },
     });
     revalidateAvatarDefinitions();
@@ -136,16 +139,21 @@ export async function rescanProductsForAvatar(avatarId: string) {
       return { success: false, error: 'Avatar item not found' };
     }
 
-    const { itemId, avatarName } = avatarItem;
+    const { itemId, avatarName, aliases } = avatarItem;
     // 自動付与は「アバター名」単体とする
     const tagName = avatarName;
 
-    // 説明文にIDが含まれる商品を検索
+    // ID、アバター名、エイリアスのいずれかが説明文に含まれる商品を検索
+    const searchTerms = [itemId, avatarName, ...aliases].filter(Boolean);
+
     const products = await prisma.product.findMany({
       where: {
-        description: {
-          contains: itemId,
-        },
+        OR: searchTerms.map(term => ({
+          description: {
+            contains: term,
+            mode: 'insensitive',
+          },
+        })),
       },
       include: {
         productTags: {
