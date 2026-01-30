@@ -63,6 +63,33 @@ const formatHistoryQuery = (query: Record<string, any>): string => {
     }
   }
 
+  // 年齢制限
+  if (Array.isArray(query.age_tags) && query.age_tags.length > 0) {
+    parts.push(`年齢層: ${query.age_tags.join(', ')}`);
+  } else if (typeof query.age_tags === 'string' && query.age_tags) {
+    parts.push(`年齢層: ${query.age_tags}`);
+  }
+
+  // カテゴリ
+  if (query.category || query.detailedFilters?.category) {
+    parts.push(`カテゴリ: ${query.category || query.detailedFilters?.category}`);
+  }
+
+  // その他のフィルター
+  const filters = [];
+  if (query.liked) filters.push('いいね済み');
+  if (query.owned) filters.push('所有');
+  if (query.poly_tags) filters.push('PolySeekタグのみ');
+
+  if (query.sort) {
+    const sortLabel = query.sort === 'newest' ? '新着順' :
+                      query.sort === 'price_asc' ? '価格が安い順' :
+                      query.sort === 'price_desc' ? '価格が高い順' : query.sort;
+    filters.push(`並び順: ${sortLabel}`);
+  }
+
+  if (filters.length > 0) parts.push(filters.join(', '));
+
   return parts.join(' / ') || '条件なし';
 };
 

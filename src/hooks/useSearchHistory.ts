@@ -116,23 +116,44 @@ export function useSearchHistory() {
     if (Object.keys(params).length === 0) return;
 
     if (status === 'authenticated') {
-      // サーバーに保存
+      // 楽観的更新 (Optimistic Update)
+      // 1. 仮のIDで即座にUIを更新
+      const tempId = crypto.randomUUID();
+      const tempItem: SearchHistoryItem = {
+        id: tempId,
+        query: params,
+        createdAt: new Date().toISOString(),
+      };
+
+      setHistory(prev => {
+        // 同じクエリがある場合は除去
+        const paramsString = normalizeForComparison(params);
+        const filtered = prev.filter(item => normalizeForComparison(item.query) !== paramsString);
+        return [tempItem, ...filtered].slice(0, MAX_HISTORY_COUNT);
+      });
+
+      // 2. サーバーに保存
       try {
-        await saveHistoryApi(params);
-        // 保存後にリストを再取得して更新
-        const result = await getHistoryApi();
+        const result = await saveHistoryApi(params);
         if (result.success && result.data) {
-          const formattedHistory: SearchHistoryItem[] = result.data.map(item => ({
-            id: item.id,
-            query: item.query as Record<string, any>,
-            createdAt: typeof item.createdAt === 'string'
-              ? item.createdAt
-              : item.createdAt.toISOString(),
-          }));
-          setHistory(formattedHistory);
+          // 3. 保存成功後、仮IDを正規のIDに置き換え
+          // サーバーから返されたデータで更新（createdAtなども正確なものに）
+          const serverItem: SearchHistoryItem = {
+            id: result.data.id, // IDのみ更新（または全データをサーバー側で正規化されたものに）
+            query: result.data.query as Record<string, any>,
+            createdAt: typeof result.data.createdAt === 'string'
+              ? result.data.createdAt
+              : result.data.createdAt.toISOString(),
+          };
+
+          setHistory(prev => prev.map(item =>
+            item.id === tempId ? serverItem : item
+          ));
         }
       } catch (error) {
         console.error('Failed to save history to server:', error);
+        // エラー時はロールバック（仮アイテムを削除）
+        setHistory(prev => prev.filter(item => item.id !== tempId));
       }
     } else {
       // ローカルストレージに保存
@@ -149,7 +170,11 @@ export function useSearchHistory() {
         };
 
         const newHistory = [newItem, ...filtered].slice(0, MAX_HISTORY_COUNT);
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newHistory));
+        try {
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newHistory));
+        } catch (e) {
+          console.error('Failed to save local history:', e);
+        }
         return newHistory;
       });
     }

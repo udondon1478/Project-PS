@@ -23,7 +23,7 @@ export async function saveSearchHistory(params: Record<string, any>) {
     const queryJson = params as Prisma.InputJsonValue;
 
     // トランザクションで実行
-    await prisma.$transaction(async (tx) => {
+    const savedItem = await prisma.$transaction(async (tx) => {
       // 1. 既存の同じクエリがあるか確認
       // JSON型の完全一致検索はデータベース依存度が高いため、
       // アプリケーション側で重複排除ロジックを組むか、
@@ -54,15 +54,17 @@ export async function saveSearchHistory(params: Record<string, any>) {
         normalizeForComparison(h.query) === normalizeForComparison(params)
       );
 
+      let result;
+
       if (existingHistory) {
         // 重複があれば日時を更新
-        await tx.searchHistory.update({
+        result = await tx.searchHistory.update({
           where: { id: existingHistory.id },
           data: { createdAt: new Date() }, // updatedAtがあればそちらだが、スキーマ上はcreatedAt/updatedAt両方ある
         });
       } else {
         // 新規作成
-        await tx.searchHistory.create({
+        result = await tx.searchHistory.create({
           data: {
             userId,
             query: queryJson,
@@ -96,9 +98,11 @@ export async function saveSearchHistory(params: Record<string, any>) {
           }
         }
       }
+
+      return result;
     });
 
-    return { success: true };
+    return { success: true, data: savedItem };
   } catch (error) {
     console.error('Failed to save search history:', error);
     return { success: false, error: 'Failed to save search history' };
