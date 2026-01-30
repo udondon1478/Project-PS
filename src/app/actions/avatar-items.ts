@@ -41,6 +41,7 @@ export async function createAvatarItem(data: {
   avatarName: string;
   itemUrl?: string;
   aliases?: string[];
+  suggestedTags?: string[];
 }) {
   try {
     if (!(await isAdmin())) {
@@ -52,6 +53,7 @@ export async function createAvatarItem(data: {
         avatarName: data.avatarName,
         itemUrl: data.itemUrl,
         aliases: data.aliases || [],
+        suggestedTags: data.suggestedTags || [],
       },
     });
     revalidateAvatarDefinitions();
@@ -67,7 +69,13 @@ export async function createAvatarItem(data: {
  */
 export async function updateAvatarItem(
   id: string,
-  data: { itemId: string; avatarName: string; itemUrl?: string; aliases?: string[] }
+  data: {
+    itemId: string;
+    avatarName: string;
+    itemUrl?: string;
+    aliases?: string[];
+    suggestedTags?: string[];
+  }
 ) {
   try {
     if (!(await isAdmin())) {
@@ -80,6 +88,7 @@ export async function updateAvatarItem(
         avatarName: data.avatarName,
         itemUrl: data.itemUrl,
         aliases: data.aliases || [],
+        suggestedTags: data.suggestedTags || [],
       },
     });
     revalidateAvatarDefinitions();
@@ -139,9 +148,12 @@ export async function rescanProductsForAvatar(avatarId: string) {
       return { success: false, error: 'Avatar item not found' };
     }
 
-    const { itemId, avatarName, aliases } = avatarItem;
-    // 自動付与は「アバター名」単体とする
-    const tagName = avatarName;
+    const { itemId, avatarName, aliases, suggestedTags } = avatarItem;
+
+    // 付与対象のタグ名: suggestedTags が空の場合はアバター名をデフォルトとする（後方互換性のため）
+    const targetTagNames: string[] = (suggestedTags && suggestedTags.length > 0)
+      ? suggestedTags
+      : [avatarName];
 
     // ID、アバター名、エイリアスのいずれかが説明文に含まれる商品を検索
     const searchTerms = [itemId, avatarName, ...aliases].filter(Boolean);
@@ -168,29 +180,30 @@ export async function rescanProductsForAvatar(avatarId: string) {
     const tagResolver = new TagResolver();
 
     // N+1解消: ループ外でタグIDを解決
-    const tagIds = await tagResolver.resolveTags([tagName]);
-    const tagId = tagIds[0];
+    const tagIds = await tagResolver.resolveTags(targetTagNames);
 
-    if (!tagId) {
-         console.warn(`Failed to resolve tag ID for ${tagName}`);
-         return { success: false, error: 'Failed to resolve tag ID' };
+    if (tagIds.length === 0) {
+         console.warn(`Failed to resolve tag IDs for ${targetTagNames.join(', ')}`);
+         return { success: false, error: 'Failed to resolve tag IDs' };
     }
 
     const tagsToCreate = [];
 
     for (const product of products) {
-      // 既に「独自タグ（isOfficial: false）」として該当タグが付いているか確認
-      const hasUnofficialTag = product.productTags.some(
-        (pt) => pt.tagId === tagId && pt.isOfficial === false
-      );
+      for (const tagId of tagIds) {
+          // 既に「独自タグ（isOfficial: false）」として該当タグが付いているか確認
+          const hasUnofficialTag = product.productTags.some(
+            (pt) => pt.tagId === tagId && pt.isOfficial === false
+          );
 
-      if (!hasUnofficialTag) {
-        tagsToCreate.push({
-          productId: product.id,
-          tagId: tagId,
-          userId: taggerUserId, // 管理者ユーザーIDを使用
-          isOfficial: false, // PolySeek独自タグとして登録
-        });
+          if (!hasUnofficialTag) {
+            tagsToCreate.push({
+              productId: product.id,
+              tagId: tagId,
+              userId: taggerUserId, // 管理者ユーザーIDを使用
+              isOfficial: false, // PolySeek独自タグとして登録
+            });
+          }
       }
     }
 

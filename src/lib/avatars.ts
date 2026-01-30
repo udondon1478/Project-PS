@@ -11,6 +11,7 @@ export interface AvatarDefinition {
   itemId: string;
   avatarName: string;
   aliases: string[];
+  suggestedTags: string[];
 }
 
 /**
@@ -25,6 +26,7 @@ export const getAvatarDefinitions = unstable_cache(
         itemId: true,
         avatarName: true,
         aliases: true,
+        suggestedTags: true,
       },
     });
 

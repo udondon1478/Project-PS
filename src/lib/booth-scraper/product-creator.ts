@@ -96,9 +96,14 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
           );
 
           if (hasId || hasName || hasAlias) {
-            // 自動付与は「アバター名」単体とする（関連性を示すため）
-            // 「対応」タグはユーザーが選択できるようにサジェストに回す
-            detectedAvatarTags.push(avatarName);
+            // 設定に基づいてタグを自動付与リストに追加
+            // DBに設定されたタグリストがあればそれを使用
+            if (def.suggestedTags && def.suggestedTags.length > 0) {
+                detectedAvatarTags.push(...def.suggestedTags);
+            } else {
+                // 設定がない場合は従来通り「アバター名」単体を付与
+                detectedAvatarTags.push(avatarName);
+            }
           }
         }
       }

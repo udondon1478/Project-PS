@@ -5,9 +5,20 @@ import type { AvatarDefinition } from '@/lib/avatars';
 interface UseAvatarDetectionProps {
   description: string;
   currentTags: string[];
+  /**
+   * 提案するタグのサフィックスリスト
+   * デフォルト: ['', '対応'] (アバター名そのものと、"対応"付き)
+   */
+  suffixes?: string[];
 }
 
-export function useAvatarDetection({ description, currentTags }: UseAvatarDetectionProps) {
+const DEFAULT_SUFFIXES = ['', '対応'];
+
+export function useAvatarDetection({
+  description,
+  currentTags,
+  suffixes = DEFAULT_SUFFIXES,
+}: UseAvatarDetectionProps) {
   const [definitions, setDefinitions] = useState<AvatarDefinition[]>([]);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -17,7 +28,7 @@ export function useAvatarDetection({ description, currentTags }: UseAvatarDetect
     const loadDefinitions = async () => {
       const result = await getAvatarDefinitionsMap();
       if (result.success && result.data) {
-        setDefinitions(result.data);
+        setDefinitions(result.data as AvatarDefinition[]);
       }
       setIsLoaded(true);
     };
@@ -36,7 +47,7 @@ export function useAvatarDetection({ description, currentTags }: UseAvatarDetect
 
     // 定義をループして、ID、名前、エイリアスが説明文に含まれているかチェック
     for (const def of definitions) {
-      const { itemId, avatarName, aliases } = def;
+      const { itemId, avatarName, aliases, suggestedTags } = def;
 
       // ID check (case sensitive inclusion match for numeric BOOTH item IDs)
       const hasId = description.includes(itemId);
@@ -50,14 +61,27 @@ export function useAvatarDetection({ description, currentTags }: UseAvatarDetect
       );
 
       if (hasId || hasName || hasAlias) {
-        if (!currentTags.includes(avatarName)) {
-            foundTags.add(avatarName);
+        // DBに設定されたタグリストがあればそれを使用
+        if (suggestedTags && suggestedTags.length > 0) {
+          for (const tagName of suggestedTags) {
+            if (!currentTags.includes(tagName)) {
+              foundTags.add(tagName);
+            }
+          }
+        } else {
+          // 設定がない場合は従来通り suffixes を使用して生成 (デフォルト: ["", "対応"])
+          for (const suffix of suffixes) {
+            const tagName = `${avatarName}${suffix}`;
+            if (!currentTags.includes(tagName)) {
+              foundTags.add(tagName);
+            }
+          }
         }
       }
     }
 
     setSuggestedTags(Array.from(foundTags));
-  }, [description, definitions, isLoaded, currentTags]);
+  }, [description, definitions, isLoaded, currentTags, suffixes]);
 
   return { suggestedTags, isLoaded };
 }
