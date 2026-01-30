@@ -5,9 +5,20 @@ import type { AvatarDefinition } from '@/lib/avatars';
 interface UseAvatarDetectionProps {
   description: string;
   currentTags: string[];
+  /**
+   * 提案するタグのサフィックスリスト
+   * デフォルト: ['', '対応'] (アバター名そのものと、"対応"付き)
+   */
+  suffixes?: string[];
 }
 
-export function useAvatarDetection({ description, currentTags }: UseAvatarDetectionProps) {
+const DEFAULT_SUFFIXES = ['', '対応'];
+
+export function useAvatarDetection({
+  description,
+  currentTags,
+  suffixes = DEFAULT_SUFFIXES,
+}: UseAvatarDetectionProps) {
   const [definitions, setDefinitions] = useState<AvatarDefinition[]>([]);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -50,14 +61,17 @@ export function useAvatarDetection({ description, currentTags }: UseAvatarDetect
       );
 
       if (hasId || hasName || hasAlias) {
-        if (!currentTags.includes(avatarName)) {
-            foundTags.add(avatarName);
+        for (const suffix of suffixes) {
+            const tagName = `${avatarName}${suffix}`;
+            if (!currentTags.includes(tagName)) {
+                foundTags.add(tagName);
+            }
         }
       }
     }
 
     setSuggestedTags(Array.from(foundTags));
-  }, [description, definitions, isLoaded, currentTags]);
+  }, [description, definitions, isLoaded, currentTags, suffixes]);
 
   return { suggestedTags, isLoaded };
 }
