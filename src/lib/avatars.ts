@@ -11,6 +11,9 @@ export interface AvatarDefinition {
   itemId: string;
   avatarName: string;
   aliases: string[];
+  suggestAvatarName: boolean;
+  suggestItemId: boolean;
+  suggestAliases: boolean;
 }
 
 /**
@@ -25,6 +28,9 @@ export const getAvatarDefinitions = unstable_cache(
         itemId: true,
         avatarName: true,
         aliases: true,
+        suggestAvatarName: true,
+        suggestItemId: true,
+        suggestAliases: true,
       },
     });
 

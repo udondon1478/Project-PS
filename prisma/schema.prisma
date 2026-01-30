@@ -524,6 +524,9 @@ model AvatarItem {
   itemId      String   @unique // BOOTH商品ID (例: "5058077")
   avatarName  String   // アバター名 (例: "マヌカ")
   aliases     String[] @default([]) // エイリアス (例: ["Manuka", "manuka"])
+  suggestAvatarName Boolean @default(true)  // アバター名のタグを提案/付与するか
+  suggestItemId     Boolean @default(false) // 商品IDのタグを提案/付与するか
+  suggestAliases    Boolean @default(false) // エイリアスのタグを提案/付与するか
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

@@ -16,6 +16,9 @@ interface AvatarItem {
   avatarName: string;
   itemUrl?: string | null;
   aliases: string[];
+  suggestAvatarName: boolean;
+  suggestItemId: boolean;
+  suggestAliases: boolean;
   createdAt: Date;
 }
 
@@ -29,7 +32,15 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
   const [error, setError] = useState<string | null>(null);
 
   // Form states
-  const [formData, setFormData] = useState({ itemId: '', avatarName: '', itemUrl: '', aliases: '' });
+  const [formData, setFormData] = useState({
+    itemId: '',
+    avatarName: '',
+    itemUrl: '',
+    aliases: '',
+    suggestAvatarName: true,
+    suggestItemId: false,
+    suggestAliases: false,
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -115,6 +126,9 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
       avatarName: item.avatarName,
       itemUrl: item.itemUrl || '',
       aliases: item.aliases ? item.aliases.join(', ') : '',
+      suggestAvatarName: item.suggestAvatarName ?? true,
+      suggestItemId: item.suggestItemId ?? false,
+      suggestAliases: item.suggestAliases ?? false,
     });
   };
 
@@ -238,6 +252,42 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
                 商品ID、アバター名に加えて、これらのキーワードが説明文に含まれる場合も自動タグ付けの対象となります。
               </p>
             </div>
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">自動付与・提案するタグの設定</h3>
+            <div className="flex flex-wrap gap-4">
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.suggestAvatarName}
+                  onChange={(e) => setFormData(prev => ({ ...prev, suggestAvatarName: e.target.checked }))}
+                  className="rounded text-blue-600 focus:ring-blue-500 h-4 w-4"
+                />
+                <span className="text-sm text-gray-700">アバター名 (例: マヌカ)</span>
+              </label>
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.suggestItemId}
+                  onChange={(e) => setFormData(prev => ({ ...prev, suggestItemId: e.target.checked }))}
+                  className="rounded text-blue-600 focus:ring-blue-500 h-4 w-4"
+                />
+                <span className="text-sm text-gray-700">商品ID (例: 5058077)</span>
+              </label>
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.suggestAliases}
+                  onChange={(e) => setFormData(prev => ({ ...prev, suggestAliases: e.target.checked }))}
+                  className="rounded text-blue-600 focus:ring-blue-500 h-4 w-4"
+                />
+                <span className="text-sm text-gray-700">エイリアス全て</span>
+              </label>
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
+              チェックを入れた項目のタグが、商品詳細ページでの提案やスクレイピング時の自動付与の対象になります。
+            </p>
           </div>
 
           <div className="flex items-center justify-end space-x-3 pt-2">
