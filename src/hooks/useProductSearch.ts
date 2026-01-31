@@ -215,10 +215,15 @@ export const useProductSearch = ({
     const urlIsLiked = urlSearchParams.get("liked") === 'true';
     const urlIsOwned = urlSearchParams.get("owned") === 'true';
     const urlIsSearchPolySeekTagsOnly = urlSearchParams.get("searchPolySeekTagsOnly") === 'true';
+    const urlCategoryName = urlSearchParams.get("categoryName");
 
     setIsLiked(urlIsLiked);
     setIsOwned(urlIsOwned);
     setIsSearchPolySeekTagsOnly(urlIsSearchPolySeekTagsOnly);
+
+    if (urlCategoryName) {
+      setDetailedFilters(prev => ({ ...prev, category: urlCategoryName }));
+    }
 
     // URLからsortパラメータを読み込み
     const urlSort = urlSearchParams.get("sort");

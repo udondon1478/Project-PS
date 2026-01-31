@@ -2,10 +2,11 @@
 
 import React from 'react';
 import { Input } from '@/components/ui/input';
-import { X } from 'lucide-react';
+import { X, Clock } from 'lucide-react';
 
 import { useTypewriter } from '@/hooks/useTypewriter';
 import { TagSuggestion } from '@/hooks/useProductSearch';
+import { SearchHistoryItem } from '@/hooks/useSearchHistory';
 
 interface TagSearchBarProps {
   searchQuery: string;
@@ -23,7 +24,74 @@ interface TagSearchBarProps {
   handleAddTag: (tag: string) => void;
   handleRemoveTag: (tag: string, isNegative?: boolean) => void;
   setIsSuggestionsVisible: (isVisible: boolean) => void;
+
+  // 履歴機能用Props
+  searchHistory?: SearchHistoryItem[];
+  onHistorySelect?: (item: SearchHistoryItem) => void;
+  onHistoryDelete?: (itemId: string, e: React.SyntheticEvent) => void;
 }
+
+// 履歴の内容を文字列に整形するヘルパー
+const formatHistoryQuery = (query: Record<string, any>): string => {
+  const parts = [];
+
+  // キーワード
+  if (query.q) parts.push(`${query.q}`);
+
+  // タグ
+  if (Array.isArray(query.tags) && query.tags.length > 0) {
+    parts.push(`タグ: ${query.tags.join(', ')}`);
+  } else if (typeof query.tags === 'string' && query.tags) {
+    parts.push(`タグ: ${query.tags}`);
+  }
+
+  // 除外タグ
+  if (Array.isArray(query.ntags) && query.ntags.length > 0) {
+    parts.push(`除外: ${query.ntags.join(', ')}`);
+  } else if (typeof query.ntags === 'string' && query.ntags) {
+    parts.push(`除外: ${query.ntags}`);
+  }
+
+  // 価格
+  if (query.min_price || query.max_price) {
+    if (query.min_price && query.max_price) {
+      parts.push(`価格: ¥${query.min_price}~¥${query.max_price}`);
+    } else if (query.min_price) {
+      parts.push(`価格: ¥${query.min_price}以上`);
+    } else {
+      parts.push(`価格: ¥${query.max_price}以下`);
+    }
+  }
+
+  // 年齢制限
+  if (Array.isArray(query.age_tags) && query.age_tags.length > 0) {
+    parts.push(`年齢層: ${query.age_tags.join(', ')}`);
+  } else if (typeof query.age_tags === 'string' && query.age_tags) {
+    parts.push(`年齢層: ${query.age_tags}`);
+  }
+
+  // カテゴリ
+  if (query.category || query.detailedFilters?.category) {
+    parts.push(`カテゴリ: ${query.category || query.detailedFilters?.category}`);
+  }
+
+  // その他のフィルター
+  const filters = [];
+  if (query.liked) filters.push('いいね済み');
+  if (query.owned) filters.push('所有');
+  if (query.poly_tags) filters.push('PolySeekタグのみ');
+
+  if (query.sort) {
+    const sortLabel = query.sort === 'newest' ? '新着順' :
+                      query.sort === 'price_asc' ? '価格が安い順' :
+                      query.sort === 'price_desc' ? '価格が高い順' : query.sort;
+    filters.push(`並び順: ${sortLabel}`);
+  }
+
+  if (filters.length > 0) parts.push(filters.join(', '));
+
+  return parts.join(' / ') || '条件なし';
+};
 
 export const TagSearchBar: React.FC<TagSearchBarProps> = ({
   searchQuery,
@@ -41,8 +109,12 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
   handleAddTag,
   handleRemoveTag,
   setIsSuggestionsVisible,
+  searchHistory = [],
+  onHistorySelect,
+  onHistoryDelete,
 }) => {
   const [activeIndex, setActiveIndex] = React.useState<number>(-1);
+  const historyListRef = React.useRef<HTMLDivElement>(null);
 
   const placeholderText = useTypewriter({
     texts: [
@@ -59,42 +131,89 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
   // Reset active index when suggestions change or visibility changes
   React.useEffect(() => {
     setActiveIndex(-1);
-  }, [tagSuggestions, isSuggestionsVisible]);
+  }, [tagSuggestions, isSuggestionsVisible, searchQuery, searchHistory]);
+
+  const showHistory = isSuggestionsVisible && searchQuery.length === 0 && searchHistory.length > 0;
+  const showSuggestions = isSuggestionsVisible && searchQuery.length > 0 && tagSuggestions.length > 0;
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!isSuggestionsVisible || tagSuggestions.length === 0) {
+    if (!isSuggestionsVisible) {
       handleKeyDown(e);
       return;
     }
 
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setActiveIndex(prev => (prev + 1) % tagSuggestions.length);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setActiveIndex(prev => (prev - 1 + tagSuggestions.length) % tagSuggestions.length);
-    } else if (e.key === 'Enter') {
-      if (activeIndex >= 0 && activeIndex < tagSuggestions.length) {
+    // サジェスト表示時のキー操作
+    if (showSuggestions) {
+      if (e.key === 'ArrowDown') {
         e.preventDefault();
-        const tag = tagSuggestions[activeIndex];
-        handleAddTag(searchQuery.startsWith('-') ? `-${tag.name}` : tag.name);
+        setActiveIndex(prev => (prev + 1) % tagSuggestions.length);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setActiveIndex(prev => (prev - 1 + tagSuggestions.length) % tagSuggestions.length);
+      } else if (e.key === 'Enter') {
+        if (activeIndex >= 0 && activeIndex < tagSuggestions.length) {
+          e.preventDefault();
+          const tag = tagSuggestions[activeIndex];
+          handleAddTag(searchQuery.startsWith('-') ? `-${tag.name}` : tag.name);
+        } else {
+          handleKeyDown(e);
+        }
       } else {
         handleKeyDown(e);
       }
-    } else {
-      handleKeyDown(e);
+      return;
     }
+
+    // 履歴表示時のキー操作
+    if (showHistory) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setActiveIndex(prev => (prev + 1) % searchHistory.length);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setActiveIndex(prev => (prev - 1 + searchHistory.length) % searchHistory.length);
+      } else if (e.key === 'Enter') {
+        if (activeIndex >= 0 && activeIndex < searchHistory.length) {
+          e.preventDefault();
+          onHistorySelect?.(searchHistory[activeIndex]);
+        } else {
+          handleKeyDown(e);
+        }
+      } else if ((e.key === 'Delete' || e.key === 'Backspace') && e.shiftKey) {
+        // Shift+Delete/Backspaceで履歴削除
+        if (activeIndex >= 0 && activeIndex < searchHistory.length) {
+          e.preventDefault();
+          onHistoryDelete?.(searchHistory[activeIndex].id, e);
+        }
+      } else {
+        handleKeyDown(e);
+      }
+      return;
+    }
+
+    handleKeyDown(e);
   };
 
   // Scroll active item into view
   React.useEffect(() => {
-    if (activeIndex >= 0 && suggestionsRef && 'current' in suggestionsRef && suggestionsRef.current) {
-      const activeItem = suggestionsRef.current.children[activeIndex] as HTMLElement;
-      if (activeItem) {
-        activeItem.scrollIntoView({ block: 'nearest' });
+    if (activeIndex >= 0) {
+      // サジェスト表示時
+      if (showSuggestions && suggestionsRef && 'current' in suggestionsRef && suggestionsRef.current) {
+        const activeItem = suggestionsRef.current.children[activeIndex] as HTMLElement;
+        if (activeItem) {
+          activeItem.scrollIntoView({ block: 'nearest' });
+        }
+      }
+      // 履歴表示時
+      else if (showHistory && historyListRef.current) {
+        const targetIndex = activeIndex + 1; // ヘッダー分+1
+        const targetItem = historyListRef.current.children[targetIndex] as HTMLElement;
+        if (targetItem) {
+          targetItem.scrollIntoView({ block: 'nearest' });
+        }
       }
     }
-  }, [activeIndex, suggestionsRef]);
+  }, [activeIndex, showSuggestions, showHistory, suggestionsRef]);
 
   return (
     <div className="relative flex-grow max-w-full" ref={searchContainerRef} id="tour-search-bar">
@@ -102,7 +221,7 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
         {selectedTags.map(tag => (
           <span key={tag} className="flex items-center bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded whitespace-nowrap">
             {tag}
-            <button onClick={() => handleRemoveTag(tag)} className="ml-1 text-blue-600 hover:text-blue-800">
+            <button type="button" onClick={() => handleRemoveTag(tag)} className="ml-1 text-blue-600 hover:text-blue-800" aria-label={`${tag}を削除`}>
               <X size={12} />
             </button>
           </span>
@@ -110,7 +229,7 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
         {selectedNegativeTags.map(tag => (
           <span key={`negative-${tag}`} className="flex items-center bg-red-100 text-red-800 text-xs font-medium px-2 py-0.5 rounded whitespace-nowrap">
             -{tag}
-            <button onClick={() => handleRemoveTag(tag, true)} className="ml-1 text-red-600 hover:text-red-800">
+            <button type="button" onClick={() => handleRemoveTag(tag, true)} className="ml-1 text-red-600 hover:text-red-800" aria-label={`除外タグ ${tag}を削除`}>
               <X size={12} />
             </button>
           </span>
@@ -124,20 +243,21 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
           onKeyDown={onKeyDown}
           onCompositionStart={handleCompositionStart}
           onCompositionEnd={handleCompositionEnd}
-          onFocus={() => searchQuery.length > 0 && setIsSuggestionsVisible(true)}
+          onFocus={() => setIsSuggestionsVisible(true)}
           className="flex-grow border-none focus:ring-0 focus:outline-none p-1 h-auto text-sm min-w-[80px] md:min-w-[100px]"
           role="combobox"
           aria-controls="tag-suggestions-list"
-          aria-expanded={isSuggestionsVisible && tagSuggestions.length > 0}
-          aria-activedescendant={activeIndex >= 0 && activeIndex < tagSuggestions.length ? `tag-suggestion-${tagSuggestions[activeIndex].name}` : undefined}
+          aria-expanded={isSuggestionsVisible}
         />
       </div>
-      {isSuggestionsVisible && tagSuggestions.length > 0 && (
+
+      {/* サジェスト表示 */}
+      {showSuggestions && (
         <div
           ref={suggestionsRef}
           id="tag-suggestions-list"
           role="listbox"
-          tabIndex={-1} // Ensure it's focusable if needed, or stick to aria-activedescendant
+          tabIndex={-1}
           className="absolute z-20 w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg"
         >
           {tagSuggestions.map((tag, index) => (
@@ -149,11 +269,66 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
               data-testid={`tag-suggestion-${tag.name}`}
               onClick={() => handleAddTag(searchQuery.startsWith('-') ? `-${tag.name}` : tag.name)}
               onMouseEnter={() => setActiveIndex(index)}
-              className={`px-3 py-2 text-sm cursor-pointer ${index === activeIndex ? 'bg-gray-100 dark:bg-gray-800' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+              className={`px-3 py-2 text-sm cursor-pointer flex justify-between items-center ${index === activeIndex ? 'bg-gray-100 dark:bg-gray-800' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
                 }`}
             >
-              {tag.displayName ?? tag.name}
-              {tag.count !== undefined && tag.count > 0 && <span className="ml-1 text-xs text-gray-500">({tag.count}件)</span>}
+              <span>
+                {tag.displayName ?? tag.name}
+                {tag.count !== undefined && tag.count > 0 && <span className="ml-1 text-xs text-gray-500">({tag.count}件)</span>}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 履歴表示 */}
+      {showHistory && (
+        <div
+          ref={historyListRef}
+          id="search-history-list"
+          role="listbox"
+          tabIndex={-1}
+          className="absolute z-20 w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg"
+        >
+          <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+            検索履歴
+          </div>
+          {searchHistory.map((item, index) => (
+            <div
+              key={item.id}
+              role="option"
+              aria-selected={index === activeIndex}
+              tabIndex={index === activeIndex ? 0 : -1}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onHistorySelect?.(item);
+                }
+              }}
+              onClick={() => onHistorySelect?.(item)}
+              onMouseEnter={() => setActiveIndex(index)}
+              className={`px-3 py-2 text-sm cursor-pointer flex justify-between items-center group ${
+                index === activeIndex ? 'bg-gray-100 dark:bg-gray-800' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
+            >
+              <div className="flex items-center gap-2 overflow-hidden">
+                <Clock size={14} className="text-gray-400 flex-shrink-0" />
+                <span className="truncate text-gray-700 dark:text-gray-300">
+                  {formatHistoryQuery(item.query)}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation(); // 親のonClickを発火させない
+                  onHistoryDelete?.(item.id, e);
+                }}
+                className="text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                title="履歴から削除"
+                aria-label="履歴から削除"
+              >
+                <X size={14} />
+              </button>
             </div>
           ))}
         </div>
