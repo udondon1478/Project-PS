@@ -192,7 +192,11 @@ export function useSearchHistory() {
     } else {
       setHistory(prev => {
         const newHistory = prev.filter(item => item.id !== id);
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newHistory));
+        try {
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newHistory));
+        } catch (e) {
+          console.error('Failed to save local history:', e);
+        }
         return newHistory;
       });
     }
