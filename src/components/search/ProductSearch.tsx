@@ -109,41 +109,65 @@ export default function ProductSearch({
     return maxPrice !== defaultMax;
   };
 
-  // 検索実行時に履歴を保存するラッパー関数
-  const handleSearchWithHistory = useCallback(async () => {
-    // 履歴データの構築 (URLパラメータと互換性のあるキーを使用)
-    // 注意: TagSearchBarのformatHistoryQueryで使用しているキーと合わせる必要がある
-    // formatHistoryQuery: q, tags, ntags, min_price, max_price...
-    // ここでは分かりやすさのため、formatHistoryQuery側をこの構造に合わせて修正する方針で、
-    // まずは保存データを構築する
-    const historyData: Record<string, any> = {};
+  // 現在の検索条件オブジェクトを生成する（保存・比較用）
+  const getCurrentQueryObject = useCallback(() => {
+    const query: Record<string, any> = {};
 
-    if (searchQuery) historyData.q = searchQuery;
-    if (selectedTags.length > 0) historyData.tags = selectedTags;
-    if (selectedNegativeTags.length > 0) historyData.ntags = selectedNegativeTags;
-    if (selectedAgeRatingTags.length > 0) historyData.age_tags = selectedAgeRatingTags;
+    if (searchQuery) query.q = searchQuery;
+    if (selectedTags.length > 0) query.tags = [...selectedTags].sort();
+    if (selectedNegativeTags.length > 0) query.ntags = [...selectedNegativeTags].sort();
+    if (selectedAgeRatingTags.length > 0) query.age_tags = [...selectedAgeRatingTags].sort();
 
-    // detailedFilters全体を保存 (category以外も含まれる可能性があるため)
+    // detailedFilters
     if (detailedFilters && Object.keys(detailedFilters).length > 0) {
-      historyData.detailedFilters = detailedFilters;
-      // 後方互換性やformatHistoryQueryのためにcategoryはトップレベルにも入れておく（重複するが安全）
-      if (detailedFilters.category) historyData.category = detailedFilters.category;
+      const cleanFilters: Record<string, any> = {};
+      Object.keys(detailedFilters).sort().forEach(key => {
+        if (detailedFilters[key]) cleanFilters[key] = detailedFilters[key];
+      });
+      if (Object.keys(cleanFilters).length > 0) {
+        query.detailedFilters = cleanFilters;
+        if (cleanFilters.category) query.category = cleanFilters.category;
+      }
     }
 
     // 価格
-    if (priceRange[0] > 0) historyData.min_price = priceRange[0];
-
-    // 上限価格の保存条件
+    if (priceRange[0] > 0) query.min_price = priceRange[0];
     if (shouldSaveMaxPrice(priceRange[1], isHighPriceFilterEnabled)) {
-       historyData.max_price = priceRange[1];
+       query.max_price = priceRange[1];
     }
 
-    if (isHighPriceFilterEnabled) historyData.high_price = true;
+    if (isHighPriceFilterEnabled) query.high_price = true;
+    if (isLiked) query.liked = true;
+    if (isOwned) query.owned = true;
+    if (isSearchPolySeekTagsOnly) query.poly_tags = true;
+    if (sortBy !== 'newest') query.sort = sortBy;
 
-    if (isLiked) historyData.liked = true;
-    if (isOwned) historyData.owned = true;
-    if (isSearchPolySeekTagsOnly) historyData.poly_tags = true;
-    if (sortBy !== 'newest') historyData.sort = sortBy;
+    return query;
+  }, [
+    searchQuery, selectedTags, selectedNegativeTags, selectedAgeRatingTags,
+    detailedFilters, priceRange, isHighPriceFilterEnabled, isLiked, isOwned,
+    isSearchPolySeekTagsOnly, sortBy
+  ]);
+
+  // 現在の条件が保存済みかどうかを判定
+  const isCurrentConditionFavorited = React.useMemo(() => {
+    const currentQuery = getCurrentQueryObject();
+    const normalize = (obj: any): string => {
+      if (obj === null || typeof obj !== 'object') return JSON.stringify(obj);
+      if (Array.isArray(obj)) return JSON.stringify(obj.sort());
+      return JSON.stringify(Object.keys(obj).sort().reduce((result: any, key: string) => {
+        result[key] = obj[key];
+        return result;
+      }, {}));
+    };
+
+    const currentJson = normalize(currentQuery);
+    return favorites.some(f => normalize(f.query) === currentJson);
+  }, [getCurrentQueryObject, favorites]);
+
+  // 検索実行時に履歴を保存するラッパー関数
+  const handleSearchWithHistory = useCallback(async () => {
+    const historyData = getCurrentQueryObject();
 
     // 条件が一つでもあれば保存
     if (Object.keys(historyData).length > 0) {
@@ -155,18 +179,13 @@ export default function ProductSearch({
     }
 
     originalHandleSearch();
-  }, [
-    searchQuery, selectedTags, selectedNegativeTags, selectedAgeRatingTags,
-    detailedFilters, priceRange, isHighPriceFilterEnabled, isLiked, isOwned,
-    isSearchPolySeekTagsOnly, sortBy, addHistory, originalHandleSearch
-  ]);
+  }, [getCurrentQueryObject, addHistory, originalHandleSearch]);
 
   // Apply Filters時のラッパー
   const applyFiltersAndSearchWithHistory = useCallback(() => {
     handleSearchWithHistory();
     setIsFilterSidebarOpen(false);
   }, [handleSearchWithHistory, setIsFilterSidebarOpen]);
-
 
   // 履歴選択時のハンドラ
   const handleHistorySelect = useCallback((item: SearchHistoryItem) => {
@@ -285,40 +304,18 @@ export default function ProductSearch({
 
   const handleOpenSaveModal = () => {
     // 現在の検索条件からデフォルト名を生成
-    const query: Record<string, any> = {};
-    if (searchQuery) query.keyword = searchQuery; // generateDefaultNameはkeywordを期待
-    // tagsはオブジェクト配列を期待している実装になっているが、ここでは文字列配列
-    if (selectedTags.length > 0) query.tags = selectedTags;
+    const query = getCurrentQueryObject();
+    // generateDefaultNameはフラットな構造を期待している部分があるため調整
+    // (useSearchFavorite側でtagsが配列であることを想定済みなのでそのまま渡す)
+    const nameData: Record<string, any> = { ...query };
+    if (query.q) nameData.keyword = query.q; // generateDefaultNameの互換性
 
-    setDefaultFavoriteName(generateDefaultName(query));
+    setDefaultFavoriteName(generateDefaultName(nameData));
     setIsSaveModalOpen(true);
   };
 
   const handleSaveFavorite = async (name: string) => {
-    // 現在の検索条件を構築 (handleSearchWithHistoryと同じロジック)
-    const historyData: Record<string, any> = {};
-
-    if (searchQuery) historyData.q = searchQuery;
-    if (selectedTags.length > 0) historyData.tags = selectedTags;
-    if (selectedNegativeTags.length > 0) historyData.ntags = selectedNegativeTags;
-    if (selectedAgeRatingTags.length > 0) historyData.age_tags = selectedAgeRatingTags;
-
-    if (detailedFilters && Object.keys(detailedFilters).length > 0) {
-      historyData.detailedFilters = detailedFilters;
-      if (detailedFilters.category) historyData.category = detailedFilters.category;
-    }
-
-    if (priceRange[0] > 0) historyData.min_price = priceRange[0];
-    if (shouldSaveMaxPrice(priceRange[1], isHighPriceFilterEnabled)) {
-       historyData.max_price = priceRange[1];
-    }
-
-    if (isHighPriceFilterEnabled) historyData.high_price = true;
-    if (isLiked) historyData.liked = true;
-    if (isOwned) historyData.owned = true;
-    if (isSearchPolySeekTagsOnly) historyData.poly_tags = true;
-    if (sortBy !== 'newest') historyData.sort = sortBy;
-
+    const historyData = getCurrentQueryObject();
     return await addFavorite(name, historyData);
   };
 
@@ -359,8 +356,21 @@ export default function ProductSearch({
           favorites={favorites}
           onFavoriteSelect={handleFavoriteSelect}
           onFavoriteDelete={handleFavoriteDelete}
-          onFavoriteRename={(item) => renameFavorite(item.id, item.name)} // 名前変更はダイアログ等が必要だが、一旦簡易実装または後回し。ここでは型合わせ
+          onFavoriteRename={(item) => renameFavorite(item.id, item.name)}
         />
+
+        {/* お気に入りボタン: 検索バーの直後に配置 */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleOpenSaveModal}
+          title={isCurrentConditionFavorited ? "この条件は保存済みです" : "現在の検索条件をお気に入りに保存"}
+          className="flex-shrink-0 text-gray-400 hover:text-amber-400 hover:bg-transparent"
+        >
+          <Star
+            className={`h-5 w-5 ${isCurrentConditionFavorited ? "fill-amber-400 text-amber-400" : ""}`}
+          />
+        </Button>
 
         <QuickFilters
           ageRatingTags={ageRatingTags}
@@ -420,16 +430,6 @@ export default function ProductSearch({
           onChange={handleSortChange}
           className="hidden md:flex"
         />
-
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={handleOpenSaveModal}
-          title="検索条件をお気に入りに保存"
-          className="flex-shrink-0"
-        >
-          <Star className={`h-4 w-4 ${favorites.some(f => JSON.stringify(f.query) === JSON.stringify({ ...f.query /* 厳密な比較は難しいが、簡易的に */ })) ? "fill-amber-400 text-amber-400" : "text-gray-500"}`} />
-        </Button>
 
         <Button onClick={handleSearchWithHistory} size="sm" className="hidden md:inline-flex">
           検索
