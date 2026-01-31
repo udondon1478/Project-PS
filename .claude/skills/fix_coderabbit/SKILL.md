@@ -35,11 +35,12 @@ GitHub CLIを使用して、CodeRabbitからのレビュー情報を取得しま
   gh api --paginate repos/{owner}/{repo}/pulls/{pullNumber}/comments --jq '.[] | {id, path, line, body, type: "review_comment", user}'
   gh api --paginate repos/{owner}/{repo}/pulls/{pullNumber}/reviews --jq '.[] | {id: .id, path: null, line: null, body, type: "review_summary", user}'
   gh api --paginate repos/{owner}/{repo}/issues/{pullNumber}/comments --jq '.[] | {id, path: null, line: null, body, type: "issue_comment", user}'
-} | jq -s '[.[] | select(.user.login == "coderabbitai[bot]") | {id, path, line, body, type}]' > /tmp/coderabbit_comments.json
+} | jq -s '[.[] | select(.user.login == "coderabbitai[bot]") | {id, path, line, body, type}]' > .coderabbit_comments.json
 ```
 
 #### 重要な技術情報
 
+- **一時ファイル**: `.coderabbit_comments.json` を使用（処理完了後に削除すること）
 - **CodeRabbitのユーザー名**: `coderabbitai[bot]`（`coderabbitai`ではない）
 - **対応済みの判定**: コメント本文に `✅ Addressed` が含まれているかどうかで判断
 - **ユーザー確認済みの判定**: コメント本文に `✅ Confirmed as addressed by @{username}` が含まれている場合
@@ -48,7 +49,7 @@ GitHub CLIを使用して、CodeRabbitからのレビュー情報を取得しま
 
 ```bash
 # 対応状況を確認するクエリ
-cat /tmp/coderabbit_comments.json | jq '.[] | {
+cat .coderabbit_comments.json | jq '.[] | {
   id,
   path,
   line,
