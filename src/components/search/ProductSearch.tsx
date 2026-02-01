@@ -325,6 +325,15 @@ export default function ProductSearch({
     renameFavorite(item.id, trimmed);
   }, [renameFavorite]);
 
+  const handleSaveFavorite = useCallback(async (name: string) => {
+    const query = getCurrentQueryObject();
+    const result = await addFavorite(name, query);
+    if (result.success) {
+      setIsSaveModalOpen(false);
+    }
+    return result;
+  }, [getCurrentQueryObject, addFavorite]);
+
   return (
     <div
       className={`p-4 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-all duration-500 ease-in-out ${

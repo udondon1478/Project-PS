@@ -20,7 +20,8 @@ export async function saveSearchFavorite(name: string, query: Record<string, any
     const queryJson = query as Prisma.InputJsonValue;
 
     // 名前が空でないかチェック
-    if (!name || name.trim() === '') {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
       return { success: false, error: 'Name is required' };
     }
 
@@ -34,7 +35,7 @@ export async function saveSearchFavorite(name: string, query: Record<string, any
         where: {
           userId_name: {
             userId,
-            name,
+            name: trimmedName,
           },
         },
       });
@@ -61,7 +62,7 @@ export async function saveSearchFavorite(name: string, query: Record<string, any
         return await tx.searchFavorite.create({
           data: {
             userId,
-            name,
+            name: trimmedName,
             query: queryJson,
           },
         });
@@ -138,7 +139,8 @@ export async function renameSearchFavorite(id: string, newName: string) {
       return { success: false, error: 'Unauthorized' };
     }
 
-    if (!newName || newName.trim() === '') {
+    const trimmedName = newName.trim();
+    if (!trimmedName) {
       return { success: false, error: 'Name is required' };
     }
 
@@ -149,7 +151,7 @@ export async function renameSearchFavorite(id: string, newName: string) {
       where: {
         userId_name: {
           userId: session.user.id,
-          name: newName,
+          name: trimmedName,
         },
       },
     });
@@ -164,7 +166,7 @@ export async function renameSearchFavorite(id: string, newName: string) {
         userId: session.user.id,
       },
       data: {
-        name: newName,
+        name: trimmedName,
       },
     });
 

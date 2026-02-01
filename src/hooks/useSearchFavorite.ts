@@ -70,7 +70,9 @@ export function useSearchFavorite() {
           id: result.data.id,
           name: result.data.name,
           query: result.data.query as Record<string, any>,
-          createdAt: new Date().toISOString(), // サーバーの時間と少しずれる可能性あり
+          createdAt: typeof result.data.createdAt === 'string'
+            ? result.data.createdAt
+            : new Date(result.data.createdAt).toISOString(),
         };
 
         setFavorites(prev => {
@@ -136,7 +138,8 @@ export function useSearchFavorite() {
   // クエリからデフォルト名を生成するヘルパー
   const generateDefaultName = useCallback((query: Record<string, any>) => {
     const parts = [];
-    if (query.keyword) parts.push(query.keyword);
+    if (query.q) parts.push(query.q);
+    if (query.keyword && !query.q) parts.push(query.keyword);
 
     // タグ情報の抽出（実装依存：queryの構造に合わせて調整が必要）
     // 例: tags: [{id: '...', name: '...'}, ...] のような構造を想定
