@@ -13,7 +13,7 @@ export async function saveSearchFavorite(name: string, query: Record<string, any
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return { success: false, error: 'Unauthorized' };
+      return { success: false, error: 'ログインが必要です' };
     }
 
     const userId = session.user.id;
@@ -22,7 +22,7 @@ export async function saveSearchFavorite(name: string, query: Record<string, any
     // 名前が空でないかチェック
     const trimmedName = name.trim();
     if (!trimmedName) {
-      return { success: false, error: 'Name is required' };
+      return { success: false, error: '名前を入力してください' };
     }
 
     // トランザクションで実行
@@ -75,7 +75,7 @@ export async function saveSearchFavorite(name: string, query: Record<string, any
       return { success: false, error: `お気に入りの登録上限（${MAX_FAVORITE_COUNT}件）に達しています。不要な項目を削除してください。` };
     }
     console.error('Failed to save search favorite:', error);
-    return { success: false, error: 'Failed to save search favorite' };
+    return { success: false, error: 'お気に入りの保存に失敗しました' };
   }
 }
 
@@ -86,7 +86,7 @@ export async function getSearchFavorites() {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return { success: false, error: 'Unauthorized' };
+      return { success: false, error: 'ログインが必要です' };
     }
 
     const favorites = await prisma.searchFavorite.findMany({
@@ -97,7 +97,7 @@ export async function getSearchFavorites() {
     return { success: true, data: favorites };
   } catch (error) {
     console.error('Failed to fetch search favorites:', error);
-    return { success: false, error: 'Failed to fetch search favorites' };
+    return { success: false, error: 'お気に入り一覧の取得に失敗しました' };
   }
 }
 
@@ -108,7 +108,7 @@ export async function deleteSearchFavorite(id: string) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return { success: false, error: 'Unauthorized' };
+      return { success: false, error: 'ログインが必要です' };
     }
 
     const result = await prisma.searchFavorite.deleteMany({
@@ -119,13 +119,13 @@ export async function deleteSearchFavorite(id: string) {
     });
 
     if (result.count === 0) {
-      return { success: false, error: 'Favorite not found or unauthorized' };
+      return { success: false, error: 'お気に入りが見つかりませんでした' };
     }
 
     return { success: true };
   } catch (error) {
     console.error('Failed to delete search favorite:', error);
-    return { success: false, error: 'Failed to delete search favorite' };
+    return { success: false, error: 'お気に入りの削除に失敗しました' };
   }
 }
 
@@ -136,12 +136,12 @@ export async function renameSearchFavorite(id: string, newName: string) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return { success: false, error: 'Unauthorized' };
+      return { success: false, error: 'ログインが必要です' };
     }
 
     const trimmedName = newName.trim();
     if (!trimmedName) {
-      return { success: false, error: 'Name is required' };
+      return { success: false, error: '名前を入力してください' };
     }
 
     // 名前が重複していないかチェック（自分自身の更新は除く）
@@ -157,7 +157,7 @@ export async function renameSearchFavorite(id: string, newName: string) {
     });
 
     if (existingWithName && existingWithName.id !== id) {
-      return { success: false, error: 'Name already exists' };
+      return { success: false, error: 'この名前は既に使用されています' };
     }
 
     const result = await prisma.searchFavorite.updateMany({
@@ -171,15 +171,15 @@ export async function renameSearchFavorite(id: string, newName: string) {
     });
 
     if (result.count === 0) {
-      return { success: false, error: 'Favorite not found or unauthorized' };
+      return { success: false, error: 'お気に入りが見つかりませんでした' };
     }
 
     return { success: true };
   } catch (error: any) {
     if (error?.code === 'P2002') {
-      return { success: false, error: 'Name already exists' };
+      return { success: false, error: 'この名前は既に使用されています' };
     }
     console.error('Failed to rename search favorite:', error);
-    return { success: false, error: 'Failed to rename search favorite' };
+    return { success: false, error: '名前の変更に失敗しました' };
   }
 }
