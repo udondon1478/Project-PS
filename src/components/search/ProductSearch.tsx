@@ -122,7 +122,7 @@ export default function ProductSearch({
     if (detailedFilters && Object.keys(detailedFilters).length > 0) {
       const cleanFilters: Record<string, any> = {};
       Object.keys(detailedFilters).sort().forEach(key => {
-        const value = detailedFilters[key];
+        const value = (detailedFilters as Record<string, any>)[key];
         if (value !== undefined && value !== null && value !== '') {
           cleanFilters[key] = value;
         }
