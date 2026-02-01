@@ -7,6 +7,9 @@ import { X, Clock } from 'lucide-react';
 import { useTypewriter } from '@/hooks/useTypewriter';
 import { TagSuggestion } from '@/hooks/useProductSearch';
 import { SearchHistoryItem } from '@/hooks/useSearchHistory';
+import { SearchFavoriteItem } from '@/hooks/useSearchFavorite';
+import { cn } from '@/lib/utils';
+import { Star, History, Trash2, Edit2 } from 'lucide-react';
 
 interface TagSearchBarProps {
   searchQuery: string;
@@ -29,6 +32,12 @@ interface TagSearchBarProps {
   searchHistory?: SearchHistoryItem[];
   onHistorySelect?: (item: SearchHistoryItem) => void;
   onHistoryDelete?: (itemId: string, e: React.SyntheticEvent) => void;
+
+  // お気に入り機能用Props
+  favorites?: SearchFavoriteItem[];
+  onFavoriteSelect?: (item: SearchFavoriteItem) => void;
+  onFavoriteDelete?: (itemId: string, e: React.SyntheticEvent) => void;
+  onFavoriteRename?: (item: SearchFavoriteItem) => void;
 }
 
 // 履歴の内容を文字列に整形するヘルパー
@@ -112,8 +121,13 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
   searchHistory = [],
   onHistorySelect,
   onHistoryDelete,
+  favorites = [],
+  onFavoriteSelect,
+  onFavoriteDelete,
+  onFavoriteRename,
 }) => {
   const [activeIndex, setActiveIndex] = React.useState<number>(-1);
+  const [activeTab, setActiveTab] = React.useState<'history' | 'favorites'>('history');
   const historyListRef = React.useRef<HTMLDivElement>(null);
 
   const placeholderText = useTypewriter({
@@ -131,10 +145,25 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
   // Reset active index when suggestions change or visibility changes
   React.useEffect(() => {
     setActiveIndex(-1);
-  }, [tagSuggestions, isSuggestionsVisible, searchQuery, searchHistory]);
+  }, [tagSuggestions, isSuggestionsVisible, searchQuery, searchHistory, favorites, activeTab]);
 
-  const showHistory = isSuggestionsVisible && searchQuery.length === 0 && searchHistory.length > 0;
   const showSuggestions = isSuggestionsVisible && searchQuery.length > 0 && tagSuggestions.length > 0;
+  // 履歴またはお気に入りを表示する条件: 入力が空で、フォーカスがあり、どちらかのデータが存在する
+  const showHistoryOrFavorites = isSuggestionsVisible && searchQuery.length === 0 && (searchHistory.length > 0 || favorites.length > 0);
+
+  // 表示するリストを決定
+  const currentList = activeTab === 'history' ? searchHistory : favorites;
+  // 履歴が空でお気に入りがある場合は自動的にお気に入りタブを表示（初期表示時のみ）
+  React.useEffect(() => {
+    if (isSuggestionsVisible && searchQuery.length === 0) {
+      if (searchHistory.length === 0 && favorites.length > 0) {
+        setActiveTab('favorites');
+      } else if (searchHistory.length > 0 && favorites.length === 0) {
+        setActiveTab('history');
+      }
+      // 両方ある、あるいは両方ない場合は維持（デフォルトはhistory）
+    }
+  }, [isSuggestionsVisible, searchQuery, searchHistory.length, favorites.length]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!isSuggestionsVisible) {
@@ -164,26 +193,50 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
       return;
     }
 
-    // 履歴表示時のキー操作
-    if (showHistory) {
+    // 履歴/お気に入り表示時のキー操作
+    if (showHistoryOrFavorites) {
+      const listLength = currentList.length;
+
+      if (e.key === 'Tab') {
+        // Tabキーでタブ切り替え
+        if (searchHistory.length > 0 && favorites.length > 0) {
+          e.preventDefault();
+          setActiveTab(prev => prev === 'history' ? 'favorites' : 'history');
+        }
+        return;
+      }
+
+      if (listLength === 0) {
+         handleKeyDown(e);
+         return;
+      }
+
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        setActiveIndex(prev => (prev + 1) % searchHistory.length);
+        setActiveIndex(prev => (prev + 1) % listLength);
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
-        setActiveIndex(prev => (prev - 1 + searchHistory.length) % searchHistory.length);
+        setActiveIndex(prev => (prev - 1 + listLength) % listLength);
       } else if (e.key === 'Enter') {
-        if (activeIndex >= 0 && activeIndex < searchHistory.length) {
+        if (activeIndex >= 0 && activeIndex < listLength) {
           e.preventDefault();
-          onHistorySelect?.(searchHistory[activeIndex]);
+          if (activeTab === 'history') {
+            onHistorySelect?.(currentList[activeIndex] as SearchHistoryItem);
+          } else {
+            onFavoriteSelect?.(currentList[activeIndex] as SearchFavoriteItem);
+          }
         } else {
           handleKeyDown(e);
         }
       } else if ((e.key === 'Delete' || e.key === 'Backspace') && e.shiftKey) {
-        // Shift+Delete/Backspaceで履歴削除
-        if (activeIndex >= 0 && activeIndex < searchHistory.length) {
+        // Shift+Delete/Backspaceで削除
+        if (activeIndex >= 0 && activeIndex < listLength) {
           e.preventDefault();
-          onHistoryDelete?.(searchHistory[activeIndex].id, e);
+          if (activeTab === 'history') {
+            onHistoryDelete?.(currentList[activeIndex].id, e);
+          } else {
+            onFavoriteDelete?.(currentList[activeIndex].id, e);
+          }
         }
       } else {
         handleKeyDown(e);
@@ -204,16 +257,18 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
           activeItem.scrollIntoView({ block: 'nearest' });
         }
       }
-      // 履歴表示時
-      else if (showHistory && historyListRef.current) {
-        const targetIndex = activeIndex + 1; // ヘッダー分+1
+      // 履歴/お気に入り表示時
+      else if (showHistoryOrFavorites && historyListRef.current) {
+        // ヘッダーがある場合はインデックスをずらす（タブヘッダー分）
+        // タブヘッダーは1つ目の要素
+        const targetIndex = activeIndex + 1;
         const targetItem = historyListRef.current.children[targetIndex] as HTMLElement;
         if (targetItem) {
           targetItem.scrollIntoView({ block: 'nearest' });
         }
       }
     }
-  }, [activeIndex, showSuggestions, showHistory, suggestionsRef]);
+  }, [activeIndex, showSuggestions, showHistoryOrFavorites, suggestionsRef]);
 
   return (
     <div className="relative flex-grow max-w-full" ref={searchContainerRef} id="tour-search-bar">
@@ -281,8 +336,8 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
         </div>
       )}
 
-      {/* 履歴表示 */}
-      {showHistory && (
+      {/* 履歴・お気に入り表示 */}
+      {showHistoryOrFavorites && (
         <div
           ref={historyListRef}
           id="search-history-list"
@@ -290,47 +345,127 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
           tabIndex={-1}
           className="absolute z-20 w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg"
         >
-          <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-            検索履歴
-          </div>
-          {searchHistory.map((item, index) => (
-            <div
-              key={item.id}
-              role="option"
-              aria-selected={index === activeIndex}
-              tabIndex={index === activeIndex ? 0 : -1}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onHistorySelect?.(item);
-                }
-              }}
-              onClick={() => onHistorySelect?.(item)}
-              onMouseEnter={() => setActiveIndex(index)}
-              className={`px-3 py-2 text-sm cursor-pointer flex justify-between items-center group ${
-                index === activeIndex ? 'bg-gray-100 dark:bg-gray-800' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-              }`}
+          {/* タブ切り替えヘッダー */}
+          <div role="presentation" aria-hidden="true" className="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 sticky top-0 z-10">
+            <button
+              type="button"
+              onClick={() => setActiveTab('history')}
+              className={cn(
+                "flex-1 px-3 py-2 text-xs font-semibold text-center transition-colors",
+                activeTab === 'history'
+                  ? "text-blue-600 border-b-2 border-blue-600 bg-white dark:bg-gray-900"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
+              )}
             >
-              <div className="flex items-center gap-2 overflow-hidden">
-                <Clock size={14} className="text-gray-400 flex-shrink-0" />
-                <span className="truncate text-gray-700 dark:text-gray-300">
-                  {formatHistoryQuery(item.query)}
-                </span>
+              <div className="flex items-center justify-center gap-1">
+                <History size={12} />
+                <span>履歴</span>
               </div>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation(); // 親のonClickを発火させない
-                  onHistoryDelete?.(item.id, e);
-                }}
-                className="text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity"
-                title="履歴から削除"
-                aria-label="履歴から削除"
-              >
-                <X size={14} />
-              </button>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('favorites')}
+              className={cn(
+                "flex-1 px-3 py-2 text-xs font-semibold text-center transition-colors",
+                activeTab === 'favorites'
+                  ? "text-amber-600 border-b-2 border-amber-600 bg-white dark:bg-gray-900"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
+              )}
+            >
+              <div className="flex items-center justify-center gap-1">
+                <Star size={12} />
+                <span>お気に入り</span>
+              </div>
+            </button>
+          </div>
+
+          {currentList.length === 0 ? (
+            <div className="px-3 py-4 text-center text-gray-400 text-sm">
+              {activeTab === 'history' ? '検索履歴はありません' : 'お気に入りは登録されていません'}
             </div>
-          ))}
+          ) : (
+            currentList.map((item, index) => (
+              <div
+                key={item.id}
+                role="option"
+                aria-selected={index === activeIndex}
+                tabIndex={index === activeIndex ? 0 : -1}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (activeTab === 'history') {
+                      onHistorySelect?.(item as SearchHistoryItem);
+                    } else {
+                      onFavoriteSelect?.(item as SearchFavoriteItem);
+                    }
+                  }
+                }}
+                onClick={() => {
+                  if (activeTab === 'history') {
+                    onHistorySelect?.(item as SearchHistoryItem);
+                  } else {
+                    onFavoriteSelect?.(item as SearchFavoriteItem);
+                  }
+                }}
+                onMouseEnter={() => setActiveIndex(index)}
+                className={`px-3 py-2 text-sm cursor-pointer flex justify-between items-center group ${
+                  index === activeIndex ? 'bg-gray-100 dark:bg-gray-800' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                <div className="flex items-center gap-2 overflow-hidden flex-grow">
+                  {activeTab === 'history' ? (
+                    <Clock size={14} className="text-gray-400 flex-shrink-0" />
+                  ) : (
+                    <Star size={14} className="text-amber-400 flex-shrink-0 fill-amber-400" />
+                  )}
+                  <span className="truncate text-gray-700 dark:text-gray-300">
+                    {activeTab === 'history'
+                      ? formatHistoryQuery((item as SearchHistoryItem).query)
+                      : (
+                        <span className="flex flex-col">
+                          <span className="font-medium">{(item as SearchFavoriteItem).name}</span>
+                          <span className="text-xs text-gray-400 truncate">
+                            {formatHistoryQuery((item as SearchFavoriteItem).query)}
+                          </span>
+                        </span>
+                      )
+                    }
+                  </span>
+                </div>
+
+                <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  {activeTab === 'favorites' && onFavoriteRename && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onFavoriteRename(item as SearchFavoriteItem);
+                      }}
+                      className="text-gray-400 hover:text-blue-500 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 mr-1"
+                      title="名前を変更"
+                    >
+                      <Edit2 size={14} />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (activeTab === 'history') {
+                        onHistoryDelete?.(item.id, e);
+                      } else {
+                        onFavoriteDelete?.(item.id, e);
+                      }
+                    }}
+                    className="text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                    title={activeTab === 'history' ? "履歴から削除" : "お気に入りから削除"}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       )}
     </div>

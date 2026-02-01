@@ -49,6 +49,7 @@ model User {
   tagMetadataEdits TagMetadataHistory[] // ユーザーが行ったタグメタデータ編集
   reports       Report[]         // ユーザーが行った通報
   searchHistories SearchHistory[] // 検索履歴
+  favorites       SearchFavorite[] // お気に入り検索
 
   @@index([name])
   @@index([email])
@@ -531,6 +532,21 @@ model SearchHistory {
   @@index([userId])
   @@index([createdAt])
   // ユーザーごとの重複チェックを効率化するためのインデックスは、JSON型には作成できないためアプリ層で制御
+}
+
+// お気に入り検索テーブル
+model SearchFavorite {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  query     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@index([createdAt])
 }
 
 // アバター自動タグ付け定義テーブル

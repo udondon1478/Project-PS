@@ -1,15 +1,18 @@
 "use client";
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
+import { Search, Star } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useProductSearch } from '@/hooks/useProductSearch';
 import { useSearchHistory, SearchHistoryItem } from '@/hooks/useSearchHistory';
+import { useSearchFavorite, SearchFavoriteItem } from '@/hooks/useSearchFavorite';
 import { TagSearchBar } from './TagSearchBar';
 import { QuickFilters } from './QuickFilters';
 import { FilterSidebar } from './FilterSidebar';
 import { SortSelector } from './SortSelector';
+import { SaveFavoriteModal } from './SaveFavoriteModal';
+import { useSession } from 'next-auth/react';
 
 import OnboardingTour from '@/components/onboarding/OnboardingTour';
 
@@ -36,6 +39,17 @@ export default function ProductSearch({
 }) {
   const router = useRouter();
   const { history, addHistory, removeHistory } = useSearchHistory();
+  const {
+    favorites,
+    addFavorite,
+    removeFavorite,
+    renameFavorite,
+    generateDefaultName
+  } = useSearchFavorite();
+  const { status } = useSession();
+
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [defaultFavoriteName, setDefaultFavoriteName] = useState('');
 
   const {
     searchQuery,
@@ -95,41 +109,68 @@ export default function ProductSearch({
     return maxPrice !== defaultMax;
   };
 
-  // 検索実行時に履歴を保存するラッパー関数
-  const handleSearchWithHistory = useCallback(async () => {
-    // 履歴データの構築 (URLパラメータと互換性のあるキーを使用)
-    // 注意: TagSearchBarのformatHistoryQueryで使用しているキーと合わせる必要がある
-    // formatHistoryQuery: q, tags, ntags, min_price, max_price...
-    // ここでは分かりやすさのため、formatHistoryQuery側をこの構造に合わせて修正する方針で、
-    // まずは保存データを構築する
-    const historyData: Record<string, any> = {};
+  // 現在の検索条件オブジェクトを生成する（保存・比較用）
+  const getCurrentQueryObject = useCallback(() => {
+    const query: Record<string, any> = {};
 
-    if (searchQuery) historyData.q = searchQuery;
-    if (selectedTags.length > 0) historyData.tags = selectedTags;
-    if (selectedNegativeTags.length > 0) historyData.ntags = selectedNegativeTags;
-    if (selectedAgeRatingTags.length > 0) historyData.age_tags = selectedAgeRatingTags;
+    if (searchQuery) query.q = searchQuery;
+    if (selectedTags.length > 0) query.tags = [...selectedTags].sort();
+    if (selectedNegativeTags.length > 0) query.ntags = [...selectedNegativeTags].sort();
+    if (selectedAgeRatingTags.length > 0) query.age_tags = [...selectedAgeRatingTags].sort();
 
-    // detailedFilters全体を保存 (category以外も含まれる可能性があるため)
+    // detailedFilters
     if (detailedFilters && Object.keys(detailedFilters).length > 0) {
-      historyData.detailedFilters = detailedFilters;
-      // 後方互換性やformatHistoryQueryのためにcategoryはトップレベルにも入れておく（重複するが安全）
-      if (detailedFilters.category) historyData.category = detailedFilters.category;
+      const cleanFilters: Record<string, any> = {};
+      Object.keys(detailedFilters).sort().forEach(key => {
+        const value = (detailedFilters as Record<string, any>)[key];
+        if (value !== undefined && value !== null && value !== '') {
+          cleanFilters[key] = value;
+        }
+      });
+      if (Object.keys(cleanFilters).length > 0) {
+        query.detailedFilters = cleanFilters;
+        if (cleanFilters.category) query.category = cleanFilters.category;
+      }
     }
 
     // 価格
-    if (priceRange[0] > 0) historyData.min_price = priceRange[0];
-
-    // 上限価格の保存条件
+    if (priceRange[0] > 0) query.min_price = priceRange[0];
     if (shouldSaveMaxPrice(priceRange[1], isHighPriceFilterEnabled)) {
-       historyData.max_price = priceRange[1];
+       query.max_price = priceRange[1];
     }
 
-    if (isHighPriceFilterEnabled) historyData.high_price = true;
+    if (isHighPriceFilterEnabled) query.high_price = true;
+    if (isLiked) query.liked = true;
+    if (isOwned) query.owned = true;
+    if (isSearchPolySeekTagsOnly) query.poly_tags = true;
+    if (sortBy !== 'newest') query.sort = sortBy;
 
-    if (isLiked) historyData.liked = true;
-    if (isOwned) historyData.owned = true;
-    if (isSearchPolySeekTagsOnly) historyData.poly_tags = true;
-    if (sortBy !== 'newest') historyData.sort = sortBy;
+    return query;
+  }, [
+    searchQuery, selectedTags, selectedNegativeTags, selectedAgeRatingTags,
+    detailedFilters, priceRange, isHighPriceFilterEnabled, isLiked, isOwned,
+    isSearchPolySeekTagsOnly, sortBy
+  ]);
+
+  // 現在の条件が保存済みかどうかを判定
+  const isCurrentConditionFavorited = React.useMemo(() => {
+    const currentQuery = getCurrentQueryObject();
+    const normalize = (value: any): any => {
+      if (value === null || typeof value !== 'object') return value;
+      if (Array.isArray(value)) return [...value].sort().map(normalize);
+      return Object.keys(value).sort().reduce((result: any, key: string) => {
+        result[key] = normalize(value[key]);
+        return result;
+      }, {});
+    };
+
+    const currentJson = JSON.stringify(normalize(currentQuery));
+    return favorites.some(f => JSON.stringify(normalize(f.query)) === currentJson);
+  }, [getCurrentQueryObject, favorites]);
+
+  // 検索実行時に履歴を保存するラッパー関数
+  const handleSearchWithHistory = useCallback(async () => {
+    const historyData = getCurrentQueryObject();
 
     // 条件が一つでもあれば保存
     if (Object.keys(historyData).length > 0) {
@@ -141,18 +182,13 @@ export default function ProductSearch({
     }
 
     originalHandleSearch();
-  }, [
-    searchQuery, selectedTags, selectedNegativeTags, selectedAgeRatingTags,
-    detailedFilters, priceRange, isHighPriceFilterEnabled, isLiked, isOwned,
-    isSearchPolySeekTagsOnly, sortBy, addHistory, originalHandleSearch
-  ]);
+  }, [getCurrentQueryObject, addHistory, originalHandleSearch]);
 
   // Apply Filters時のラッパー
   const applyFiltersAndSearchWithHistory = useCallback(() => {
     handleSearchWithHistory();
     setIsFilterSidebarOpen(false);
   }, [handleSearchWithHistory, setIsFilterSidebarOpen]);
-
 
   // 履歴選択時のハンドラ
   const handleHistorySelect = useCallback((item: SearchHistoryItem) => {
@@ -215,6 +251,89 @@ export default function ProductSearch({
     removeHistory(itemId);
   }, [removeHistory]);
 
+  // お気に入り選択時のハンドラ
+  const handleFavoriteSelect = useCallback((item: SearchFavoriteItem) => {
+    const q = item.query;
+    const params = new URLSearchParams();
+
+    // キーワード
+    if (q.q) params.append('q', String(q.q));
+
+    // URLパラメータの構築
+    if (q.tags) {
+      const tags = Array.isArray(q.tags) ? q.tags.join(',') : q.tags;
+      params.append('tags', tags);
+    }
+    if (q.ntags) {
+      const ntags = Array.isArray(q.ntags) ? q.ntags.join(',') : q.ntags;
+      params.append('negativeTags', ntags);
+    }
+    if (q.age_tags) {
+      const ageTags = Array.isArray(q.age_tags) ? q.age_tags.join(',') : q.age_tags;
+      params.append('ageRatingTags', ageTags);
+    }
+
+    // detailedFiltersの復元
+    if (q.detailedFilters) {
+      const df = q.detailedFilters;
+      if (df.category) {
+        params.append('categoryName', df.category);
+      }
+      Object.entries(df).forEach(([key, value]) => {
+        if (key !== 'category' && value !== undefined && value !== null && value !== '') {
+          params.append(key, String(value));
+        }
+      });
+    } else if (q.category) {
+      params.append('categoryName', q.category);
+    }
+
+    if (q.min_price) params.append('minPrice', String(q.min_price));
+    if (q.max_price) params.append('maxPrice', String(q.max_price));
+    if (q.high_price) params.append('isHighPrice', 'true');
+    if (q.liked) params.append('liked', 'true');
+    if (q.owned) params.append('owned', 'true');
+    if (q.poly_tags) params.append('searchPolySeekTagsOnly', 'true');
+    if (q.sort) params.append('sort', q.sort);
+
+    router.replace(`/search?${params.toString()}`);
+    setIsSuggestionsVisible(false);
+  }, [router, setIsSuggestionsVisible]);
+
+  const handleFavoriteDelete = useCallback((itemId: string, e: React.SyntheticEvent) => {
+    e.stopPropagation();
+    removeFavorite(itemId);
+  }, [removeFavorite]);
+
+  const handleOpenSaveModal = () => {
+    // 現在の検索条件からデフォルト名を生成
+    const query = getCurrentQueryObject();
+    // generateDefaultNameはフラットな構造を期待している部分があるため調整
+    // (useSearchFavorite側でtagsが配列であることを想定済みなのでそのまま渡す)
+    const nameData: Record<string, any> = { ...query };
+    if (query.q) nameData.keyword = query.q; // generateDefaultNameの互換性
+
+    setDefaultFavoriteName(generateDefaultName(nameData));
+    setIsSaveModalOpen(true);
+  };
+
+  const handleFavoriteRename = useCallback((item: SearchFavoriteItem) => {
+    const newName = window.prompt('新しい名前を入力してください', item.name);
+    if (!newName) return;
+    const trimmed = newName.trim();
+    if (!trimmed || trimmed === item.name) return;
+    renameFavorite(item.id, trimmed);
+  }, [renameFavorite]);
+
+  const handleSaveFavorite = useCallback(async (name: string) => {
+    const query = getCurrentQueryObject();
+    const result = await addFavorite(name, query);
+    if (result.success) {
+      setIsSaveModalOpen(false);
+    }
+    return result;
+  }, [getCurrentQueryObject, addFavorite]);
+
   return (
     <div
       className={`p-4 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-all duration-500 ease-in-out ${
@@ -248,7 +367,25 @@ export default function ProductSearch({
           searchHistory={history}
           onHistorySelect={handleHistorySelect}
           onHistoryDelete={handleHistoryDelete}
+          // お気に入り機能Props
+          favorites={favorites}
+          onFavoriteSelect={handleFavoriteSelect}
+          onFavoriteDelete={handleFavoriteDelete}
+          onFavoriteRename={handleFavoriteRename}
         />
+
+        {/* お気に入りボタン: 検索バーの直後に配置 */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleOpenSaveModal}
+          title={isCurrentConditionFavorited ? "この条件は保存済みです" : "現在の検索条件をお気に入りに保存"}
+          className="flex-shrink-0 text-gray-400 hover:text-amber-400 hover:bg-transparent"
+        >
+          <Star
+            className={`h-5 w-5 ${isCurrentConditionFavorited ? "fill-amber-400 text-amber-400" : ""}`}
+          />
+        </Button>
 
         <QuickFilters
           ageRatingTags={ageRatingTags}
@@ -313,6 +450,13 @@ export default function ProductSearch({
           検索
         </Button>
       </div>
+
+      <SaveFavoriteModal
+        isOpen={isSaveModalOpen}
+        onClose={() => setIsSaveModalOpen(false)}
+        onSave={handleSaveFavorite}
+        defaultName={defaultFavoriteName}
+      />
     </div>
   );
 }
