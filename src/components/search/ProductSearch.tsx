@@ -122,7 +122,10 @@ export default function ProductSearch({
     if (detailedFilters && Object.keys(detailedFilters).length > 0) {
       const cleanFilters: Record<string, any> = {};
       Object.keys(detailedFilters).sort().forEach(key => {
-        if (detailedFilters[key]) cleanFilters[key] = detailedFilters[key];
+        const value = detailedFilters[key];
+        if (value !== undefined && value !== null && value !== '') {
+          cleanFilters[key] = value;
+        }
       });
       if (Object.keys(cleanFilters).length > 0) {
         query.detailedFilters = cleanFilters;
@@ -152,17 +155,17 @@ export default function ProductSearch({
   // 現在の条件が保存済みかどうかを判定
   const isCurrentConditionFavorited = React.useMemo(() => {
     const currentQuery = getCurrentQueryObject();
-    const normalize = (obj: any): string => {
-      if (obj === null || typeof obj !== 'object') return JSON.stringify(obj);
-      if (Array.isArray(obj)) return JSON.stringify(obj.sort());
-      return JSON.stringify(Object.keys(obj).sort().reduce((result: any, key: string) => {
-        result[key] = obj[key];
+    const normalize = (value: any): any => {
+      if (value === null || typeof value !== 'object') return value;
+      if (Array.isArray(value)) return [...value].sort().map(normalize);
+      return Object.keys(value).sort().reduce((result: any, key: string) => {
+        result[key] = normalize(value[key]);
         return result;
-      }, {}));
+      }, {});
     };
 
-    const currentJson = normalize(currentQuery);
-    return favorites.some(f => normalize(f.query) === currentJson);
+    const currentJson = JSON.stringify(normalize(currentQuery));
+    return favorites.some(f => JSON.stringify(normalize(f.query)) === currentJson);
   }, [getCurrentQueryObject, favorites]);
 
   // 検索実行時に履歴を保存するラッパー関数
@@ -314,10 +317,13 @@ export default function ProductSearch({
     setIsSaveModalOpen(true);
   };
 
-  const handleSaveFavorite = async (name: string) => {
-    const historyData = getCurrentQueryObject();
-    return await addFavorite(name, historyData);
-  };
+  const handleFavoriteRename = useCallback((item: SearchFavoriteItem) => {
+    const newName = window.prompt('新しい名前を入力してください', item.name);
+    if (!newName) return;
+    const trimmed = newName.trim();
+    if (!trimmed || trimmed === item.name) return;
+    renameFavorite(item.id, trimmed);
+  }, [renameFavorite]);
 
   return (
     <div
@@ -356,7 +362,7 @@ export default function ProductSearch({
           favorites={favorites}
           onFavoriteSelect={handleFavoriteSelect}
           onFavoriteDelete={handleFavoriteDelete}
-          onFavoriteRename={(item) => renameFavorite(item.id, item.name)}
+          onFavoriteRename={handleFavoriteRename}
         />
 
         {/* お気に入りボタン: 検索バーの直後に配置 */}

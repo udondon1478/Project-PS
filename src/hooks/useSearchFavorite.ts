@@ -97,6 +97,7 @@ export function useSearchFavorite() {
   const removeFavorite = useCallback(async (id: string) => {
     if (status !== 'authenticated') return;
 
+    const prevFavorites = favorites;
     try {
       // 楽観的更新
       setFavorites(prev => prev.filter(item => item.id !== id));
@@ -105,12 +106,13 @@ export function useSearchFavorite() {
       if (!result.success) {
         // 失敗したら戻すなどの処理が必要だが、ここではエラーログのみ
         console.error('Failed to delete favorite on server');
-        // 必要ならリロード処理を入れる
+        setFavorites(prevFavorites);
       }
     } catch (error) {
       console.error('Failed to delete favorite:', error);
+      setFavorites(prevFavorites);
     }
-  }, [status]);
+  }, [status, favorites]);
 
   // お気に入りの名前変更
   const renameFavorite = useCallback(async (id: string, newName: string) => {

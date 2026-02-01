@@ -26,6 +26,9 @@ export async function saveSearchFavorite(name: string, query: Record<string, any
 
     // トランザクションで実行
     const result = await prisma.$transaction(async (tx) => {
+      // 同一ユーザーの同時保存を直列化
+      await tx.$executeRaw`SELECT 1 FROM "User" WHERE id = ${userId} FOR UPDATE`;
+
       // 同じ名前のお気に入りが既に存在するか確認
       const existingFavorite = await tx.searchFavorite.findUnique({
         where: {

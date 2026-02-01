@@ -346,7 +346,7 @@ export const TagSearchBar: React.FC<TagSearchBarProps> = ({
           className="absolute z-20 w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg"
         >
           {/* タブ切り替えヘッダー */}
-          <div className="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 sticky top-0 z-10">
+          <div role="presentation" aria-hidden="true" className="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 sticky top-0 z-10">
             <button
               type="button"
               onClick={() => setActiveTab('history')}
