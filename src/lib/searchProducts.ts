@@ -289,6 +289,7 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
           productOwners: {
             where: { userId },
           },
+          seller: true,
         },
       }),
       prisma.product.count({ where: whereClause }),
@@ -312,6 +313,11 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
         })),
         isLiked: product.likes.length > 0,
         isOwned: product.productOwners.length > 0,
+        seller: product.seller ? {
+          name: product.seller.name,
+          iconUrl: product.seller.iconUrl,
+          sellerUrl: product.seller.sellerUrl,
+        } : null,
       })),
       total,
     };
