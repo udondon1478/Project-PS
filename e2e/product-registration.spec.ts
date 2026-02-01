@@ -268,7 +268,7 @@ test.describe('Product Registration Flow', () => {
       await expect(page.locator('span', { hasText: TEST_TAG }).filter({ has: page.locator('button') })).toBeVisible();
 
       // 検索ボタンをクリック (★ ここで実際のDBが検索されます)
-      await page.getByRole('button', { name: '検索' }).click();
+      await page.getByRole('button', { name: '検索', exact: true }).click();
 
       // 検索結果ページへの遷移と結果の確認
       await page.waitForURL(`**/search?tags=${ENCODED_TEST_TAG}`);

@@ -285,7 +285,7 @@ test.describe('Anonymous User Core Features', () => {
     await expect(searchInput).toHaveValue('');
     await expect(page.locator('span', { hasText: query }).filter({ has: page.locator('button') })).toBeVisible();
 
-    await page.getByRole('button', { name: '検索' }).click();
+    await page.getByRole('button', { name: '検索', exact: true }).click();
 
     await expect(page).toHaveTitle(`タグ: ${query} - PolySeek`);
     
@@ -316,7 +316,7 @@ test.describe('Anonymous User Core Features', () => {
     await expect(searchInput).toHaveValue('');
     await expect(page.locator('span', { hasText: negativeTag }).filter({ has: page.locator('button') })).toBeVisible();
 
-    await page.getByRole('button', { name: '検索' }).click();
+    await page.getByRole('button', { name: '検索', exact: true }).click();
 
     await expect(page).toHaveTitle(`タグ: ${query} -${negativeTag} - PolySeek`);
 
