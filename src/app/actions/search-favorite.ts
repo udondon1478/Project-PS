@@ -175,7 +175,10 @@ export async function renameSearchFavorite(id: string, newName: string) {
     }
 
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === 'P2002') {
+      return { success: false, error: 'Name already exists' };
+    }
     console.error('Failed to rename search favorite:', error);
     return { success: false, error: 'Failed to rename search favorite' };
   }
