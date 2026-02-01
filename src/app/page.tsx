@@ -1,10 +1,7 @@
 import type { Metadata } from 'next';
-import { Prisma } from '@prisma/client';
-import { prisma } from '@/lib/prisma';
-import { auth } from '@/auth';
 import { BASE_URL } from '@/lib/constants';
 import HomeClient from '@/app/HomeClient';
-import type { Product } from '@/types/product';
+import { searchProducts } from '@/lib/searchProducts';
 
 const PAGE_SIZE = 24;
 
@@ -28,137 +25,32 @@ export default async function Home({
     : 1;
   const currentPage =
     Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
-  const session = await auth();
-  const userId = session?.user?.id;
 
-  let userLikedProducts: string[] = [];
-  let userOwnedProducts: string[] = [];
-
-  if (userId) {
-    const [liked, owned] = await Promise.all([
-      prisma.productLike.findMany({
-        where: { userId },
-        select: { productId: true },
-      }),
-      prisma.productOwner.findMany({
-        where: { userId },
-        select: { productId: true },
-      }),
-    ]);
-    userLikedProducts = liked.map((p) => p.productId);
-    userOwnedProducts = owned.map((p) => p.productId);
-  }
-
-  const allAgeTag = await prisma.tag.findFirst({
-    where: {
-      name: '全年齢',
-      tagCategory: {
-        name: 'age_rating',
-      },
-    },
-    select: {
-      id: true,
-    },
-  });
-
-  const whereConditions: Prisma.ProductWhereInput[] = [];
-
-  if (allAgeTag) {
-    whereConditions.push({
-      productTags: {
-        some: {
-          tagId: allAgeTag.id,
-        },
-      },
+  try {
+    const { products: formattedProducts, total } = await searchProducts({
+      page: currentPage,
+      pageSize: PAGE_SIZE,
+      sort: 'newest',
     });
+
+    const totalPages = Math.ceil(total / PAGE_SIZE);
+
+    return (
+      <HomeClient
+        products={formattedProducts}
+        totalPages={totalPages}
+        currentPage={currentPage}
+      />
+    );
+  } catch (error) {
+    console.error('Top page fetch error:', error);
+    // エラー時は空の状態を表示（またはエラー用コンポーネントがあればそれを使用）
+    return (
+      <HomeClient
+        products={[]}
+        totalPages={0}
+        currentPage={1}
+      />
+    );
   }
-
-  const where =
-    whereConditions.length > 0 ? { AND: whereConditions } : {};
-
-  const total = await prisma.product.count({ where });
-  const totalPages = Math.ceil(total / PAGE_SIZE);
-  const safePage = totalPages > 0 ? Math.min(currentPage, totalPages) : 1;
-  const skip = (safePage - 1) * PAGE_SIZE;
-
-  const products = await prisma.product.findMany({
-    where,
-    orderBy: {
-      createdAt: 'desc',
-    },
-    skip,
-    take: PAGE_SIZE,
-    include: {
-      images: {
-        where: {
-          isMain: true,
-        },
-        select: {
-          imageUrl: true,
-        },
-        take: 1,
-      },
-      productTags: {
-        include: {
-          tag: {
-            select: {
-              name: true,
-              displayName: true,
-              tagCategory: {
-                select: {
-                  color: true,
-                },
-              },
-            },
-          },
-        },
-        take: 7,
-      },
-      variations: {
-        orderBy: {
-          order: 'asc',
-        },
-      },
-      seller: true,
-    },
-  });
-
-  const formattedProducts: Product[] = products.map((product) => ({
-    id: product.id,
-    title: product.title,
-    lowPrice: product.lowPrice,
-    highPrice: product.highPrice,
-    mainImageUrl:
-      product.images.length > 0 ? product.images[0].imageUrl : null,
-    tags: product.productTags.map((pt) => ({
-      name: pt.tag.displayName || pt.tag.name,
-      categoryColor: pt.tag.tagCategory?.color || null,
-    })),
-    variations: product.variations.map((v) => ({
-      id: v.id,
-      name: v.name,
-      price: v.price,
-    })),
-    isLiked: userId
-      ? userLikedProducts.includes(product.id)
-      : false,
-    isOwned: userId
-      ? userOwnedProducts.includes(product.id)
-      : false,
-    seller: product.seller
-      ? {
-          name: product.seller.name,
-          iconUrl: product.seller.iconUrl,
-          sellerUrl: product.seller.sellerUrl,
-        }
-      : null,
-  }));
-
-  return (
-    <HomeClient
-      products={formattedProducts}
-      totalPages={totalPages}
-      currentPage={safePage}
-    />
-  );
 }
