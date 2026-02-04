@@ -183,7 +183,34 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
               {showWikiPreview ? (
                 <div className="prose prose-sm dark:prose-invert max-w-none border rounded-md p-4 min-h-[200px]">
                   {wikiContent ? (
-                    <ReactMarkdown>{DOMPurify.sanitize(wikiContent)}</ReactMarkdown>
+                    <ReactMarkdown
+                      components={{
+                        // Override link rendering to only allow http/https protocols
+                        a: ({ href, children }) => {
+                          if (!href) return <a href="#">{children}</a>;
+                          try {
+                            const url = new URL(href);
+                            if (url.protocol === 'http:' || url.protocol === 'https:') {
+                              return (
+                                <a
+                                  href={href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 dark:text-blue-400 hover:underline"
+                                >
+                                  {children}
+                                </a>
+                              );
+                            }
+                          } catch {
+                            // Invalid URL
+                          }
+                          return <a href="#">{children}</a>;
+                        },
+                      }}
+                    >
+                      {wikiContent}
+                    </ReactMarkdown>
                   ) : (
                     <p className="text-muted-foreground">コンテンツがありません</p>
                   )}
