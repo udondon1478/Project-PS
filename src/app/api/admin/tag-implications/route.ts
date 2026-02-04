@@ -2,6 +2,45 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 
+/**
+ * Check if targetId is reachable from startId via tag implications using BFS
+ * @param startId - The starting tag ID
+ * @param targetId - The target tag ID to reach
+ * @returns true if targetId is reachable from startId, false otherwise
+ */
+async function checkReachability(startId: string, targetId: string): Promise<boolean> {
+  const visited = new Set<string>();
+  const queue: string[] = [startId];
+
+  while (queue.length > 0) {
+    const currentId = queue.shift()!;
+
+    if (currentId === targetId) {
+      return true;
+    }
+
+    if (visited.has(currentId)) {
+      continue;
+    }
+
+    visited.add(currentId);
+
+    // Get all tags that are implied by the current tag
+    const implications = await prisma.tagImplication.findMany({
+      where: { implyingTagId: currentId },
+      select: { impliedTagId: true },
+    });
+
+    for (const implication of implications) {
+      if (!visited.has(implication.impliedTagId)) {
+        queue.push(implication.impliedTagId);
+      }
+    }
+  }
+
+  return false;
+}
+
 export async function GET(req: NextRequest) {
   const session = await auth();
   if (session?.user?.role !== 'ADMIN') {
@@ -56,23 +95,25 @@ export async function POST(req: NextRequest) {
       }, { status: 404 });
     }
 
-    // Check for circular dependency (simple check: reverse implication exists?)
-    const reverse = await prisma.tagImplication.findUnique({
+    // Check if the implication already exists
+    const existing = await prisma.tagImplication.findFirst({
       where: {
-        implyingTagId_impliedTagId: {
-          implyingTagId: impliedTag.id,
-          impliedTagId: implyingTag.id,
-        },
+        implyingTagId: implyingTag.id,
+        impliedTagId: impliedTag.id,
       },
     });
 
-    if (reverse) {
-      return NextResponse.json({ error: 'Circular implication detected (direct reverse)' }, { status: 400 });
+    if (existing) {
+      return NextResponse.json({ error: 'Implication already exists' }, { status: 409 });
     }
-    
-    // Note: Deep circular dependency check is expensive. We rely on logic to handle it, 
-    // but ideally we should prevent it here.
-    // For now, allow simple creation.
+
+    // Check for transitive circular dependency using BFS
+    // If implyingTag.id is reachable from impliedTag.id, creating this would form a cycle
+    const isReachable = await checkReachability(impliedTag.id, implyingTag.id);
+
+    if (isReachable) {
+      return NextResponse.json({ error: 'Circular implication detected (transitive)' }, { status: 400 });
+    }
 
     const implication = await prisma.tagImplication.create({
       data: {

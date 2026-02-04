@@ -47,20 +47,17 @@ export async function PUT(
 
       // 1. ユーザー入力タグの解決（名前 -> ID）
       const userIntentTagIds: string[] = [];
-      
+
       for (const tagData of sanitizedTags) {
-        let tag = await tx.tag.findUnique({
+        const tag = await tx.tag.upsert({
           where: { name: tagData.name },
+          update: {},
+          create: {
+            name: tagData.name,
+            language: 'ja',
+          },
         });
 
-        if (!tag) {
-          tag = await tx.tag.create({
-            data: {
-              name: tagData.name,
-              language: 'ja',
-            },
-          });
-        }
         // 重複を除外してリストに追加
         if (!userIntentTagIds.includes(tag.id)) {
             userIntentTagIds.push(tag.id);
