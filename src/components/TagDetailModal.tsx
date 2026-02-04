@@ -2,6 +2,8 @@
 
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import DOMPurify from 'dompurify';
 import {
   Dialog,
   DialogContent,
@@ -22,11 +24,17 @@ import { Tag, TagMetadataHistory } from '@prisma/client';
 import { REPORT_TARGET_TAG } from '@/lib/constants';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Flag } from 'lucide-react';
+import { Flag, ExternalLink, CheckCircle } from 'lucide-react';
 import { ReportDialog } from './reports/ReportDialog';
 
 // Extend Tag type to include API-returned displayName
 type TagWithDisplayName = Tag & { displayName?: string };
+
+// External link type
+interface ExternalLinkData {
+  name: string;
+  url: string;
+}
 
 // Define the shape of the data expected from the API
 interface TagDetails extends Tag {
@@ -39,6 +47,10 @@ interface TagDetails extends Tag {
   }[];
   history: (TagMetadataHistory & { editor: { id: string; name: string | null; image: string | null; }})[];
   hasReported?: boolean;
+  // Wiki fields (Issue #252)
+  wikiContent?: string | null;
+  externalLinks?: ExternalLinkData[] | null;
+  distinguishingFeatures?: string[] | null;
 }
 
 interface TagDetailModalProps {
@@ -149,6 +161,72 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
                 </div>
                 {showHistory && <div className="mt-4"><TagDescriptionHistory history={details.history} /></div>}
               </section>
+
+              {/* Wiki Content Section (Issue #252) */}
+              {details.wikiContent && (
+                <section>
+                  <h3 className="text-lg font-semibold border-b mb-2">詳細Wiki</h3>
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <ReactMarkdown
+                      components={{
+                        // Sanitize links to prevent XSS
+                        a: ({ href, children }) => {
+                          const sanitizedHref = href ? DOMPurify.sanitize(href) : '#';
+                          return (
+                            <a
+                              href={sanitizedHref}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 dark:text-blue-400 hover:underline"
+                            >
+                              {children}
+                            </a>
+                          );
+                        },
+                      }}
+                    >
+                      {DOMPurify.sanitize(details.wikiContent)}
+                    </ReactMarkdown>
+                  </div>
+                </section>
+              )}
+
+              {/* Distinguishing Features Section (Issue #252) */}
+              {details.distinguishingFeatures && details.distinguishingFeatures.length > 0 && (
+                <section>
+                  <h3 className="text-lg font-semibold border-b mb-2">識別要素</h3>
+                  <ul className="space-y-1">
+                    {details.distinguishingFeatures.map((feature, index) => (
+                      <li key={index} className="flex items-center gap-2 text-sm">
+                        <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {/* External Links Section (Issue #252) */}
+              {details.externalLinks && details.externalLinks.length > 0 && (
+                <section>
+                  <h3 className="text-lg font-semibold border-b mb-2">外部リンク</h3>
+                  <ul className="space-y-2">
+                    {details.externalLinks.map((link, index) => (
+                      <li key={index}>
+                        <a
+                          href={DOMPurify.sanitize(link.url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          <ExternalLink className="h-4 w-4 flex-shrink-0" />
+                          <span>{link.name}</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
 
               {/* Tag Hierarchy Section */}
               {(details.parentTags.length > 0 || details.childTags.length > 0) && (

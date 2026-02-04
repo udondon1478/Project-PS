@@ -224,6 +224,12 @@ model Tag {
   name         String           @unique // タグ名は一意とする (正規化済み、小文字)
   displayName  String?          // 元の表示名（最初に登録された形式を保持）
   description  String?          // タグの解説文
+  
+  // Wiki機能 (Issue #252)
+  wikiContent            String?  @db.Text  // Markdown形式のWikiコンテンツ
+  externalLinks          Json?              // 外部リンク [{name: string, url: string}]
+  distinguishingFeatures String[]           // 識別要素リスト
+  
   isAlias      Boolean          @default(false) // エイリアスフラグ
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt

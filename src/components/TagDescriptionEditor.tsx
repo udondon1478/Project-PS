@@ -1,17 +1,31 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Trash2, Eye, Edit } from 'lucide-react';
+
+/**
+ * 外部リンクの型定義
+ */
+interface ExternalLink {
+  name: string;
+  url: string;
+}
 
 interface Tag {
   id: string;
   name: string;
   displayName?: string | null;
   description: string | null;
+  wikiContent?: string | null;
+  externalLinks?: ExternalLink[] | null;
+  distinguishingFeatures?: string[] | null;
 }
 
 interface TagDescriptionEditorProps {
@@ -23,15 +37,51 @@ interface TagDescriptionEditorProps {
 
 export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: TagDescriptionEditorProps) {
   const [description, setDescription] = useState('');
+  const [wikiContent, setWikiContent] = useState('');
+  const [externalLinks, setExternalLinks] = useState<ExternalLink[]>([]);
+  const [distinguishingFeatures, setDistinguishingFeatures] = useState<string[]>([]);
   const [comment, setComment] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('basic');
+  const [showWikiPreview, setShowWikiPreview] = useState(false);
 
   useEffect(() => {
     if (tag) {
       setDescription(tag.description || '');
+      setWikiContent(tag.wikiContent || '');
+      setExternalLinks(tag.externalLinks || []);
+      setDistinguishingFeatures(tag.distinguishingFeatures || []);
     }
   }, [tag]);
+
+  const handleAddLink = () => {
+    setExternalLinks([...externalLinks, { name: '', url: '' }]);
+  };
+
+  const handleRemoveLink = (index: number) => {
+    setExternalLinks(externalLinks.filter((_, i) => i !== index));
+  };
+
+  const handleLinkChange = (index: number, field: 'name' | 'url', value: string) => {
+    const updated = [...externalLinks];
+    updated[index][field] = value;
+    setExternalLinks(updated);
+  };
+
+  const handleAddFeature = () => {
+    setDistinguishingFeatures([...distinguishingFeatures, '']);
+  };
+
+  const handleRemoveFeature = (index: number) => {
+    setDistinguishingFeatures(distinguishingFeatures.filter((_, i) => i !== index));
+  };
+
+  const handleFeatureChange = (index: number, value: string) => {
+    const updated = [...distinguishingFeatures];
+    updated[index] = value;
+    setDistinguishingFeatures(updated);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,16 +90,26 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
     setIsSaving(true);
     setError(null);
 
+    // Filter out empty links and features
+    const validLinks = externalLinks.filter(link => link.name.trim() && link.url.trim());
+    const validFeatures = distinguishingFeatures.filter(f => f.trim());
+
     try {
       const response = await fetch(`/api/tags/${tag.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ description, comment }),
+        body: JSON.stringify({
+          description,
+          wikiContent: wikiContent || null,
+          externalLinks: validLinks.length > 0 ? validLinks : null,
+          distinguishingFeatures: validFeatures.length > 0 ? validFeatures : null,
+          comment,
+        }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || '説明の保存に失敗しました');
+        throw new Error(errorData.error || '保存に失敗しました');
       }
 
       onSuccess();
@@ -67,34 +127,156 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>タグ説明の編集: {tag.displayName || tag.name}</DialogTitle>
+            <DialogTitle>タグ編集: {tag.displayName || tag.name}</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid w-full gap-1.5">
-              <Label htmlFor="description">説明</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="タグの説明を入力..."
-                rows={5}
-              />
-            </div>
-            <div className="grid w-full gap-1.5">
-              <Label htmlFor="comment">コメント (任意)</Label>
-              <Input
-                id="comment"
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="変更の理由を入力してください"
-              />
-            </div>
-            {error && <p className="text-sm text-red-500">{error}</p>}
+          
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="basic">基本情報</TabsTrigger>
+              <TabsTrigger value="wiki">Wiki</TabsTrigger>
+              <TabsTrigger value="links">リンク・要素</TabsTrigger>
+            </TabsList>
+            
+            {/* Basic Info Tab */}
+            <TabsContent value="basic" className="space-y-4">
+              <div className="grid w-full gap-1.5">
+                <Label htmlFor="description">説明</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="タグの説明を入力..."
+                  rows={5}
+                />
+              </div>
+            </TabsContent>
+            
+            {/* Wiki Tab */}
+            <TabsContent value="wiki" className="space-y-4">
+              <div className="flex justify-between items-center">
+                <Label htmlFor="wikiContent">Wikiコンテンツ (Markdown)</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowWikiPreview(!showWikiPreview)}
+                >
+                  {showWikiPreview ? <Edit className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
+                  {showWikiPreview ? '編集' : 'プレビュー'}
+                </Button>
+              </div>
+              
+              {showWikiPreview ? (
+                <div className="prose prose-sm dark:prose-invert max-w-none border rounded-md p-4 min-h-[200px]">
+                  {wikiContent ? (
+                    <ReactMarkdown>{wikiContent}</ReactMarkdown>
+                  ) : (
+                    <p className="text-muted-foreground">コンテンツがありません</p>
+                  )}
+                </div>
+              ) : (
+                <Textarea
+                  id="wikiContent"
+                  value={wikiContent}
+                  onChange={(e) => setWikiContent(e.target.value)}
+                  placeholder="## 特徴&#10;- 項目1&#10;- 項目2&#10;&#10;詳細な説明をMarkdown形式で記述..."
+                  rows={10}
+                  className="font-mono text-sm"
+                />
+              )}
+            </TabsContent>
+            
+            {/* Links & Features Tab */}
+            <TabsContent value="links" className="space-y-6">
+              {/* External Links */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <Label>外部リンク</Label>
+                  <Button type="button" variant="outline" size="sm" onClick={handleAddLink}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    追加
+                  </Button>
+                </div>
+                {externalLinks.map((link, index) => (
+                  <div key={index} className="flex gap-2 items-start">
+                    <Input
+                      placeholder="リンク名"
+                      value={link.name}
+                      onChange={(e) => handleLinkChange(index, 'name', e.target.value)}
+                      className="flex-1"
+                    />
+                    <Input
+                      placeholder="URL"
+                      value={link.url}
+                      onChange={(e) => handleLinkChange(index, 'url', e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveLink(index)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+                {externalLinks.length === 0 && (
+                  <p className="text-sm text-muted-foreground">外部リンクがありません</p>
+                )}
+              </div>
+              
+              {/* Distinguishing Features */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <Label>識別要素</Label>
+                  <Button type="button" variant="outline" size="sm" onClick={handleAddFeature}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    追加
+                  </Button>
+                </div>
+                {distinguishingFeatures.map((feature, index) => (
+                  <div key={index} className="flex gap-2 items-center">
+                    <Input
+                      placeholder="識別要素を入力..."
+                      value={feature}
+                      onChange={(e) => handleFeatureChange(index, e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveFeature(index)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+                {distinguishingFeatures.length === 0 && (
+                  <p className="text-sm text-muted-foreground">識別要素がありません</p>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+          
+          {/* Comment field (always visible) */}
+          <div className="grid w-full gap-1.5 mt-4">
+            <Label htmlFor="comment">編集コメント (任意)</Label>
+            <Input
+              id="comment"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="変更の理由を入力してください"
+            />
           </div>
-          <DialogFooter>
+          
+          {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
+          
+          <DialogFooter className="mt-4">
             <DialogClose asChild>
               <Button type="button" variant="secondary">
                 キャンセル

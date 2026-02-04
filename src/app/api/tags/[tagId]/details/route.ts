@@ -12,7 +12,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
     }
 
     const [tag, parentTagRelations, childTagRelations, productRelations, history] = await prisma.$transaction([
-      // 1. Fetch the tag itself
+      // 1. Fetch the tag itself (including Wiki fields - Issue #252)
       prisma.tag.findUnique({
         where: { id: tagId },
         select: {
@@ -20,6 +20,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
           name: true,
           displayName: true,
           description: true,
+          wikiContent: true,
+          externalLinks: true,
+          distinguishingFeatures: true,
           count: true,
           language: true,
           isAlias: true,
@@ -86,11 +89,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
         },
       }),
 
-      // 5. Fetch description edit history
+      // 5. Fetch metadata edit history (including Wiki changes - Issue #252)
       prisma.tagMetadataHistory.findMany({
         where: {
           tagId: tagId,
-          changeType: 'description_update',
+          changeType: {
+            in: [
+              'description_update',
+              'wiki_content_update',
+              'external_links_update',
+              'distinguishing_features_update',
+            ],
+          },
         },
         include: {
           editor: {
