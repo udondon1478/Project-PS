@@ -76,6 +76,20 @@ export interface SearchResult {
   total: number;
 }
 
+/**
+ * 検索条件に基づいて商品を検索します。
+ * 
+ * 主な機能:
+ * - キーワード、カテゴリ、タグによるフィルタリング
+ * - いいね済み/所有済みフィルタリング (要ログイン)
+ * - セーフサーチ (未ログインまたは設定有効時に特定のタグを除外)
+ * - 価格範囲フィルタリング
+ * - ページネーションとソート
+ * 
+ * @param params - 検索パラメータオブジェクト
+ * @returns 検索結果オブジェクト (商品リスト、総件数)
+ * @throws 検索条件に矛盾がある場合や、セーフサーチ制限に抵触した場合、ログインが必要な機能に未認証でアクセスした場合にエラーをスローします。
+ */
 export async function searchProducts(params: SearchParams): Promise<SearchResult> {
   try {
     const session = await auth();

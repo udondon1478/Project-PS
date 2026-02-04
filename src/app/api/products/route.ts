@@ -2,6 +2,15 @@ import { NextResponse } from 'next/server';
 import { searchProducts, type SearchParams } from '@/lib/searchProducts';
 import { normalizeQueryParam } from '@/lib/utils';
 
+/**
+ * GET Handler for product search API.
+ * 
+ * Parses query parameters from the URL and delegates to `searchProducts`.
+ * Handles numeric parsing and validation for price and pagination fields.
+ * 
+ * @param request - The incoming HTTP request.
+ * @returns JSON response containing the search results or error object.
+ */
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
