@@ -196,6 +196,30 @@ export class TagResolver {
   async resolveCreatorTag(creatorName: string): Promise<string> {
     const normalized = this.normalizeTagName(creatorName);
     
+    // Ensure 'creator' category exists
+    const categoryName = 'creator';
+    let category = await this.db.tagCategory.findUnique({
+      where: { name: categoryName },
+    });
+
+    if (!category) {
+        try {
+            category = await this.db.tagCategory.create({
+                data: {
+                    name: categoryName,
+                    color: '#FF6B6B', // Creator category color
+                }
+            });
+        } catch (e) {
+            // Race condition check
+            category = await this.db.tagCategory.findUnique({
+                where: { name: categoryName },
+            });
+        }
+    }
+
+    if (!category) throw new Error('Failed to ensure creator category');
+
     // Find existing tag
     let tag = await this.db.tag.findUnique({
       where: { name: normalized },
@@ -203,14 +227,13 @@ export class TagResolver {
 
     if (!tag) {
         // Create with 'creator' category
-        // We assume 'creator' ID exists from seed
         try {
             tag = await this.db.tag.create({
                 data: {
                     name: normalized,
                     displayName: creatorName, // Use original case for display
                     language: 'ja',
-                    tagCategoryId: 'creator'
+                    tagCategoryId: category.id
                 }
             });
         } catch (e) {
@@ -223,7 +246,7 @@ export class TagResolver {
              try {
                 await this.db.tag.update({
                     where: { id: tag.id },
-                    data: { tagCategoryId: 'creator' }
+                    data: { tagCategoryId: category.id }
                 });
              } catch (e) {
                  console.warn(`Failed to update category for creator tag ${creatorName}:`, e);

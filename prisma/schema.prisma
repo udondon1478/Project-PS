@@ -399,7 +399,7 @@ model Seller {
   products  Product[] // この販売者が販売する商品リスト
   
   tagId     String?   @unique // クリエイタータグID
-  tag       Tag?      @relation(fields: [tagId], references: [id])
+  tag       Tag?      @relation(fields: [tagId], references: [id], onDelete: SetNull)
  
   @@map("sellers") // MongoDBの場合のコレクション名
 }
