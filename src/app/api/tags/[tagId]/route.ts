@@ -18,7 +18,7 @@ interface TagUpdateBody {
   wikiContent?: string | null;
   externalLinks?: ExternalLink[] | null;
   distinguishingFeatures?: string[] | null;
-  comment?: string;
+  comment?: string | null;
 }
 
 /**
@@ -93,6 +93,9 @@ export async function PUT(request: Request, context: { params: Promise<{ tagId: 
     if (distinguishingFeatures !== undefined && distinguishingFeatures !== null && !Array.isArray(distinguishingFeatures)) {
       return NextResponse.json({ error: 'Invalid distinguishingFeatures' }, { status: 400 });
     }
+    if (comment !== undefined && comment !== null && typeof comment !== 'string') {
+      return NextResponse.json({ error: 'Invalid comment' }, { status: 400 });
+    }
 
     // 外部リンクのバリデーション
     if (externalLinks) {
@@ -135,10 +138,10 @@ export async function PUT(request: Request, context: { params: Promise<{ tagId: 
 
       // 2. Build update data
       const updateData: {
-        description?: string;
-        wikiContent?: string;
-        externalLinks?: ExternalLink[];
-        distinguishingFeatures?: string[];
+        description?: string | null;
+        wikiContent?: string | null;
+        externalLinks?: ExternalLink[] | null;
+        distinguishingFeatures?: string[] | null;
       } = {};
 
       if (description !== undefined) {

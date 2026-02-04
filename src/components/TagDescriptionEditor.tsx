@@ -187,7 +187,7 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
                       components={{
                         // Override link rendering to only allow http/https protocols
                         a: ({ href, children }) => {
-                          if (!href) return <a href="#">{children}</a>;
+                          if (!href) return <span className="text-muted-foreground">{children}</span>;
                           try {
                             const url = new URL(href);
                             if (url.protocol === 'http:' || url.protocol === 'https:') {
@@ -205,11 +205,11 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
                           } catch {
                             // Invalid URL
                           }
-                          return <a href="#">{children}</a>;
+                          return <span className="text-muted-foreground">{children}</span>;
                         },
                       }}
                     >
-                      {wikiContent}
+                      {DOMPurify.sanitize(wikiContent)}
                     </ReactMarkdown>
                   ) : (
                     <p className="text-muted-foreground">コンテンツがありません</p>
