@@ -147,9 +147,13 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
 
-    await prisma.tagImplication.delete({
+    const result = await prisma.tagImplication.deleteMany({
       where: { id },
     });
+
+    if (result.count === 0) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
 
     return NextResponse.json({ message: 'Deleted successfully' });
   } catch (error) {
