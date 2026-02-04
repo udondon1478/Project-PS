@@ -3,26 +3,43 @@ import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 
 /**
- * 外部リンクの型定義
+ * Definition of an external link associated with a tag.
  */
 interface ExternalLink {
+  /** Display name of the link */
   name: string;
+  /** Valid URL string */
   url: string;
 }
 
 /**
- * タグ更新リクエストのボディ型
+ * Request body for updating tag metadata.
  */
 interface TagUpdateBody {
+  /** Short description of the tag */
   description?: string | null;
+  /** Detailed Markdown content for the tag wiki */
   wikiContent?: string | null;
+  /** List of external references or related links */
   externalLinks?: ExternalLink[] | null;
+  /** Array of visual or functional features that distinguish this tag */
   distinguishingFeatures?: string[] | null;
+  /** Optional comment explaining the update */
   comment?: string | null;
 }
 
 /**
- * GETハンドラー: タグの詳細情報を取得
+ * Retrieves a single tag by its ID.
+ * 
+ * Fetches comprehensive tag data including:
+ * - Basic metadata (name, display name)
+ * - Wiki content and description
+ * - External links and distinguishing features
+ * - Category information
+ * 
+ * @param request - The HTTP request object.
+ * @param context - Context containing the route parameters.
+ * @returns JSON response with tag data or 404 error if not found.
  */
 export async function GET(request: Request, context: { params: Promise<{ tagId: string }> }) {
   const { tagId } = await context.params;
@@ -65,8 +82,20 @@ export async function GET(request: Request, context: { params: Promise<{ tagId: 
 }
 
 /**
- * PUTハンドラー: タグのメタデータを更新
- * 対応フィールド: description, wikiContent, externalLinks, distinguishingFeatures
+ * Updates a tag's metadata.
+ * 
+ * Allows authenticated users to update:
+ * - Description
+ * - Wiki content (Markdown)
+ * - External links
+ * - Distinguishing features
+ * 
+ * Records all changes in `TagMetadataHistory` for audit trails.
+ * Validates input types and URL formats before updating.
+ * 
+ * @param request - The HTTP request containing the update payload.
+ * @param context - Context containing the route parameters.
+ * @returns JSON response with the updated tag or error status.
  */
 export async function PUT(request: Request, context: { params: Promise<{ tagId: string }> }) {
   const session = await auth();

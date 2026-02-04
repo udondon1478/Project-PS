@@ -2,6 +2,20 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 
+/**
+ * Retrieves detailed information for a specific tag.
+ * 
+ * This endpoint fetches:
+ * - Basic tag information (including Wiki content, external links, and distinguishing features)
+ * - Parent and child tag relationships (hierarchy)
+ * - Associated products (top 5 by view count)
+ * - Metadata edit history (description and Wiki updates)
+ * - User report status (if authenticated)
+ * 
+ * @param request - The HTTP request object.
+ * @param params - Route parameters containing the tag ID.
+ * @returns A JSON response containing the tag details or an error message.
+ */
 export async function GET(request: Request, { params }: { params: Promise<{ tagId: string }> }) {
   try {
     const { tagId } = await params;

@@ -12,22 +12,30 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Trash2, Eye, Edit } from 'lucide-react';
 
 /**
- * 外部リンクの型定義
+ * Definition of an external link associated with a tag.
  */
 interface ExternalLink {
-  id: string; // フロントエンド用の一意なID (API送信時には除外)
+  /** Unique ID for frontend state management (removed before API submission) */
+  id: string;
+  /** Display name of the link */
   name: string;
+  /** Valid URL string */
   url: string;
 }
 
 /**
- * 識別要素の型定義
+ * Definition of a distinguishing feature for a tag.
  */
 interface DistinguishingFeature {
-  id: string; // フロントエンド用の一意なID (API送信時には除外)
+  /** Unique ID for frontend state management (removed before API submission) */
+  id: string;
+  /** The descriptive text of the feature */
   value: string;
 }
 
+/**
+ * Interface representing the tag data structure used in the editor.
+ */
 interface Tag {
   id: string;
   name: string;
@@ -38,13 +46,30 @@ interface Tag {
   distinguishingFeatures?: string[] | null;
 }
 
+/**
+ * Props for the TagDescriptionEditor component.
+ */
 interface TagDescriptionEditorProps {
+  /** The tag object to edit. If null, the editor will not render content. */
   tag: Tag | null;
+  /** Boolean indicating if the dialog is open */
   open: boolean;
+  /** Callback to handle dialog open/close state changes */
   onOpenChange: (open: boolean) => void;
+  /** Callback triggered after a successful update */
   onSuccess: () => void;
 }
 
+/**
+ * A modal dialog component for editing tag details.
+ * 
+ * Provides a tabbed interface for editing:
+ * - Basic Information (Description)
+ * - Wiki Content (Markdown with preview)
+ * - External Links & Distinguishing Features
+ * 
+ * Handles validation, API submission via PUT request, and state management.
+ */
 export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: TagDescriptionEditorProps) {
   const [description, setDescription] = useState('');
   const [wikiContent, setWikiContent] = useState('');

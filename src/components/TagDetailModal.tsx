@@ -30,13 +30,17 @@ import { ReportDialog } from './reports/ReportDialog';
 // Extend Tag type to include API-returned displayName
 type TagWithDisplayName = Tag & { displayName?: string };
 
-// External link type
+/**
+ * Interface for external links returned from the API.
+ */
 interface ExternalLinkData {
   name: string;
   url: string;
 }
 
-// Define the shape of the data expected from the API
+/**
+ * Extended Tag interface including relations and additional metadata returned by the API.
+ */
 type TagDetails = Omit<Tag, 'wikiContent' | 'externalLinks' | 'distinguishingFeatures'> & {
   parentTags: TagWithDisplayName[];
   childTags: TagWithDisplayName[];
@@ -47,22 +51,31 @@ type TagDetails = Omit<Tag, 'wikiContent' | 'externalLinks' | 'distinguishingFea
   }[];
   history: (TagMetadataHistory & { editor: { id: string; name: string | null; image: string | null; }})[];
   hasReported?: boolean;
-  // Wiki fields (Issue #252)
+  /** Markdown content for the tag wiki */
   wikiContent?: string | null;
+  /** List of external references */
   externalLinks?: ExternalLinkData[] | null;
+  /** Array of distinguishing features text */
   distinguishingFeatures?: string[] | null;
 }
 
+/**
+ * Props for the TagDetailModal component.
+ */
 interface TagDetailModalProps {
+  /** The ID of the tag to display. Null if no tag is selected. */
   tagId: string | null;
+  /** Boolean indicating if the modal is open */
   open: boolean;
+  /** Callback to handle modal open/close state changes */
   onOpenChange: (open: boolean) => void;
 }
 
 /**
- * Validates and normalizes URLs to prevent XSS attacks via javascript: URIs
- * @param url - The URL to validate
- * @returns The safe URL or '#' if invalid
+ * Validates and normalizes URLs to prevent XSS attacks via javascript: URIs.
+ * 
+ * @param url - The URL to validate.
+ * @returns The sanitized URL if valid (http/https), otherwise '#'.
  */
 function safeUrl(url: string): string {
   try {
@@ -76,6 +89,16 @@ function safeUrl(url: string): string {
   }
 }
 
+/**
+ * A modal component for displaying detailed information about a tag.
+ * 
+ * Features:
+ * - Displays tag description, Wiki content, external links, and distinguishing features.
+ * - Shows tag hierarchy (parent/child tags) and associated products.
+ * - Provides access to edit functionality (TagDescriptionEditor) and change history.
+ * - Allows users to report inappropriate tags.
+ * - Fetches data dynamically when opened.
+ */
 export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProps) {
   const { data: session } = useSession();
   const [details, setDetails] = useState<TagDetails | null>(null);
