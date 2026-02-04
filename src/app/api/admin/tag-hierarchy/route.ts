@@ -1,5 +1,6 @@
 // src/app/api/admin/tag-hierarchy/route.ts
 import { NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { isAdmin } from '@/lib/auth';
 
@@ -62,8 +63,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: '管理者権限が必要です。' }, { status: 403 });
   }
 
+  let body;
   try {
-    const body = await request.json();
+    body = await request.json();
+  } catch (error) {
+    return NextResponse.json(
+      { message: 'Invalid JSON body' },
+      { status: 400 }
+    );
+  }
+
+  try {
     const { parentId, childId } = body;
 
     // Validate required fields
@@ -147,6 +157,14 @@ export async function POST(request: Request) {
     return NextResponse.json(newHierarchy, { status: 201 });
   } catch (error) {
     console.error('Error creating tag hierarchy:', error);
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return NextResponse.json(
+        { message: 'この親子関係は既に存在します。' },
+        { status: 409 }
+      );
+    }
+
     return NextResponse.json(
       {
         message: 'タグ階層の作成に失敗しました。',
@@ -167,8 +185,17 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ message: '管理者権限が必要です。' }, { status: 403 });
   }
 
+  let body;
   try {
-    const body = await request.json();
+    body = await request.json();
+  } catch (error) {
+    return NextResponse.json(
+      { message: 'Invalid JSON body' },
+      { status: 400 }
+    );
+  }
+
+  try {
     const { parentId, childId } = body;
 
     // Validate required fields
@@ -210,11 +237,19 @@ export async function DELETE(request: Request) {
     console.error('Error deleting tag hierarchy:', error);
 
     // Check for specific Prisma errors
-    if (error instanceof Error && error.message.includes('Record to delete does not exist')) {
-      return NextResponse.json(
-        { message: '指定されたタグ階層が見つかりません。' },
-        { status: 404 }
-      );
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        return NextResponse.json(
+          { message: '指定されたタグ階層が見つかりません。' },
+          { status: 404 }
+        );
+      }
+      if (error.code === 'P2002') {
+        return NextResponse.json(
+          { message: 'Conflict error during deletion.' },
+          { status: 409 }
+        );
+      }
     }
 
     return NextResponse.json(
