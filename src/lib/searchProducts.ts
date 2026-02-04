@@ -181,7 +181,10 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
       });
     }
 
-    if (params.liked === 'true' && userId) {
+    if (params.liked === 'true') {
+      if (!userId) {
+        throw new Error('検索条件エラー: いいね済みの商品を検索するにはログインが必要です。');
+      }
       whereConditions.push({
         likes: {
           some: {
@@ -191,7 +194,10 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
       });
     }
 
-    if (params.owned === 'true' && userId) {
+    if (params.owned === 'true') {
+      if (!userId) {
+        throw new Error('検索条件エラー: 所有済みの商品を検索するにはログインが必要です。');
+      }
       whereConditions.push({
         productOwners: {
           some: {

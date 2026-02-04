@@ -81,5 +81,5 @@ LaTeX/*.synctex.gz
 LaTeX/*.toc
 LaTeX/chapters/*.aux
 LaTeX/figures/*.pdf
-LaTeX/figures/*.xbbnode_modules/
+LaTeX/figures/*.xbb
 gmail-assistant/
