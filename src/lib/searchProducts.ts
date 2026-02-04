@@ -4,6 +4,7 @@ import { Product } from '@/types/product';
 import { auth } from '@/auth';
 import { normalizeQueryParam } from './utils';
 import { SAFE_SEARCH_EXCLUDED_TAGS } from '@/constants/safeSearch';
+import { resolveTagAliasesForSearch } from '@/lib/tag-resolution';
 
 /**
  * 商品検索のパラメータを定義します。
@@ -70,6 +71,8 @@ export interface SearchResult {
   products: Product[];
   /** 総件数 */
   total: number;
+  /** タグ解決情報 (入力タグ -> 解決された正規タグ) */
+  resolvedTags?: Record<string, string>;
 }
 
 export async function searchProducts(params: SearchParams): Promise<SearchResult> {
@@ -84,12 +87,28 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
 
     const initialTagNames = normalizeQueryParam(params.tags) || [];
     const ageRatingTagNames = normalizeQueryParam(params.ageRatingTags) || [];
-    const tagNames = [...new Set([...initialTagNames, ...ageRatingTagNames])];
+    
+    // Resolve aliases for positive tags
+    const rawTagNames = [...initialTagNames, ...ageRatingTagNames];
+    let tagNames: string[] = [];
+    let resolvedTagMap = new Map<string, string>();
+
+    if (rawTagNames.length > 0) {
+      resolvedTagMap = await resolveTagAliasesForSearch(rawTagNames);
+      // Map to resolved names and deduplicate
+      tagNames = [...new Set(rawTagNames.map(t => resolvedTagMap.get(t) || t))];
+    }
     
     let negativeTagNames = normalizeQueryParam(params.negativeTags);
+    
+    // Resolve aliases for negative tags
+    if (negativeTagNames && negativeTagNames.length > 0) {
+       const resolvedNegativeMap = await resolveTagAliasesForSearch(negativeTagNames);
+       negativeTagNames = [...new Set(negativeTagNames.map(t => resolvedNegativeMap.get(t) || t))];
+    }
 
-    // タグの衝突を検証 (ユーザーの元の意図に基づいてチェック)
-    if (tagNames && negativeTagNames) {
+    // タグの衝突を検証 (ユーザーの元の意図に基づいてチェック - Resolved names for accuracy)
+    if (tagNames.length > 0 && negativeTagNames && negativeTagNames.length > 0) {
       const negativeSet = new Set(negativeTagNames);
       const intersection = tagNames.filter(tag => negativeSet.has(tag));
       if (intersection.length > 0) {
@@ -320,6 +339,7 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
         } : null,
       })),
       total,
+      resolvedTags: Object.fromEntries(resolvedTagMap),
     };
 
   } catch (error) {
