@@ -248,6 +248,8 @@ model Tag {
   metadataHistory TagMetadataHistory[]
   
   reports       Report[]         // このタグに対する通報
+  
+  seller        Seller?          // クリエイタータグの場合の販売者情報
 }
 
 // タグの親子関係テーブル
@@ -395,6 +397,9 @@ model Seller {
   sellerUrl String    @unique // 販売者サイトのURL
   iconUrl   String? // アイコン画像URLは必須でなければOptionalにする
   products  Product[] // この販売者が販売する商品リスト
+  
+  tagId     String?   @unique // クリエイタータグID
+  tag       Tag?      @relation(fields: [tagId], references: [id])
  
   @@map("sellers") // MongoDBの場合のコレクション名
 }

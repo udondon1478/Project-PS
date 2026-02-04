@@ -119,19 +119,30 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
 
       // 3. Resolve 'other' category (Skipped as per original logic)
 
-      // 4. Seller Upsert
+      // 4. Seller Upsert & Creator Tag
       let seller = null;
+      let creatorTagId: string | null = null;
+      
       if (sellerUrl) {
+        // Resolve creator tag first
+        try {
+            creatorTagId = await tagResolver.resolveCreatorTag(sellerName);
+        } catch (e) {
+            console.warn(`Failed to resolve creator tag for ${sellerName}:`, e);
+        }
+
         seller = await tx.seller.upsert({
           where: { sellerUrl },
           update: {
             name: sellerName,
             iconUrl: sellerIconUrl || undefined, // Only update if provided
+            ...(creatorTagId ? { tagId: creatorTagId } : {}),
           },
           create: {
             name: sellerName,
             sellerUrl,
             iconUrl: sellerIconUrl,
+            ...(creatorTagId ? { tagId: creatorTagId } : {}),
           },
         });
       }
@@ -176,9 +187,9 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
           productTags: {
             create: [
               // 1. Normal Scraped Tags -> Official
-              // Filter out ageTagId to prevent duplicate official registration if it was also in tags
+              // Filter out ageTagId and creatorTagId to prevent duplicate
               ...tagIds
-                .filter(id => id !== ageTagId)
+                .filter(id => id !== ageTagId && id !== creatorTagId)
                 .map(tagId => ({
                   tagId,
                   userId: systemUserId,
@@ -202,7 +213,13 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
                     userId: systemUserId,
                     isOfficial: false, // Proprietary Age Rating (for initial state)
                 }
-              ] : [])
+              ] : []),
+              // 3. Creator Tag -> Official
+              ...(creatorTagId ? [{
+                  tagId: creatorTagId,
+                  userId: systemUserId,
+                  isOfficial: true,
+              }] : [])
             ],
           },
           variations: {

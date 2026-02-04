@@ -193,6 +193,48 @@ export class TagResolver {
     return tag ? tag.id : null;
   }
 
+  async resolveCreatorTag(creatorName: string): Promise<string> {
+    const normalized = this.normalizeTagName(creatorName);
+    
+    // Find existing tag
+    let tag = await this.db.tag.findUnique({
+      where: { name: normalized },
+    });
+
+    if (!tag) {
+        // Create with 'creator' category
+        // We assume 'creator' ID exists from seed
+        try {
+            tag = await this.db.tag.create({
+                data: {
+                    name: normalized,
+                    displayName: creatorName, // Use original case for display
+                    language: 'ja',
+                    tagCategoryId: 'creator'
+                }
+            });
+        } catch (e) {
+            // Race condition
+             tag = await this.db.tag.findUnique({ where: { name: normalized }});
+        }
+    } else {
+        // If tag exists but has no category, set it to creator
+        if (tag.tagCategoryId === null) {
+             try {
+                await this.db.tag.update({
+                    where: { id: tag.id },
+                    data: { tagCategoryId: 'creator' }
+                });
+             } catch (e) {
+                 console.warn(`Failed to update category for creator tag ${creatorName}:`, e);
+             }
+        }
+    }
+    
+    if (!tag) throw new Error(`Failed to resolve creator tag for ${creatorName}`);
+    return tag.id;
+  }
+
   private normalizeTagName(name: string): string {
     const normalized = name
       .normalize('NFKC')

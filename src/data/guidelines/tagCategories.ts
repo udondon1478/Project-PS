@@ -15,6 +15,15 @@ export const tagCategories: TagCategoryInfo[] = [
     priority: 1
   },
   {
+    id: 'creator',
+    name: 'クリエイター',
+    nameEn: 'Creator',
+    color: '#FF6B6B',
+    description: 'BOOTHの販売者や制作者を表します。',
+    examples: ['ひゅうがなつ', 'ポンデロニウム', 'キュビクローゼット'],
+    priority: 1.5
+  },
+  {
     id: 'avatar',
     name: 'アバター',
     nameEn: 'Avatar',
