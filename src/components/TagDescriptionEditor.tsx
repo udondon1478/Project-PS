@@ -15,6 +15,7 @@ import { Plus, Trash2, Eye, Edit } from 'lucide-react';
  * 外部リンクの型定義
  */
 interface ExternalLink {
+  id: string; // フロントエンド用の一意なID (API送信時には除外)
   name: string;
   url: string;
 }
@@ -51,7 +52,12 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
     if (tag) {
       setDescription(tag.description || '');
       setWikiContent(tag.wikiContent || '');
-      setExternalLinks(tag.externalLinks || []);
+      setExternalLinks(
+        (tag.externalLinks || []).map((link) => ({
+          ...link,
+          id: Math.random().toString(36).substring(7),
+        }))
+      );
       setDistinguishingFeatures(tag.distinguishingFeatures || []);
     }
   }, [tag]);
@@ -67,7 +73,7 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
   }, [tag, open]);
 
   const handleAddLink = () => {
-    setExternalLinks([...externalLinks, { name: '', url: '' }]);
+    setExternalLinks([...externalLinks, { id: Math.random().toString(36).substring(7), name: '', url: '' }]);
   };
 
   const handleRemoveLink = (index: number) => {
@@ -102,8 +108,10 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
     setError(null);
 
     // Filter out empty links and features
-    const validLinks = externalLinks.filter(link => link.name.trim() && link.url.trim());
-    const validFeatures = distinguishingFeatures.filter(f => f.trim());
+    const validLinks = externalLinks
+      .filter((link) => link.name.trim() && link.url.trim())
+      .map(({ id, ...rest }) => rest);
+    const validFeatures = distinguishingFeatures.filter((f) => f.trim());
 
     try {
       const response = await fetch(`/api/tags/${tag.id}`, {
@@ -239,7 +247,7 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
                   </Button>
                 </div>
                 {externalLinks.map((link, index) => (
-                  <div key={index} className="flex gap-2 items-start">
+                  <div key={link.id} className="flex gap-2 items-start">
                     <Input
                       placeholder="リンク名"
                       value={link.name}

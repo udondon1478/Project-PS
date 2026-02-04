@@ -100,6 +100,10 @@ export async function PUT(request: Request, context: { params: Promise<{ tagId: 
     // 外部リンクのバリデーション
     if (externalLinks) {
       for (const link of externalLinks) {
+        // オブジェクトかつ非nullであることを確認
+        if (typeof link !== 'object' || link === null) {
+          return NextResponse.json({ error: 'Invalid external link format' }, { status: 400 });
+        }
         if (!link.name || typeof link.name !== 'string') {
           return NextResponse.json({ error: 'Invalid external link name' }, { status: 400 });
         }
