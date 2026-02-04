@@ -58,10 +58,17 @@ export async function resolveAlias(tagNameOrId: string): Promise<Tag | null> {
 }
 
 /**
- * Bulk resolves a list of tag names/IDs.
- * Returns a map of original input -> resolved canonical tag name.
- * If a tag is not found, it is mapped to itself (or null? Issue implies we want to search for the resolved one).
- * For search purposes, if we can't find it, we usually keep the original query.
+ * Bulk resolves a list of tag names/IDs for search functionality.
+ * 
+ * Takes an array of input strings (names or IDs) and returns a map where:
+ * - Key: The original input string.
+ * - Value: The resolved canonical tag name.
+ * 
+ * If an input cannot be resolved to a canonical tag, it maps to itself.
+ * This is useful for search query expansion where aliases should be treated as their canonical forms.
+ * 
+ * @param inputs - Array of tag names or IDs to resolve.
+ * @returns A Map of input -> resolved name.
  */
 export async function resolveTagAliasesForSearch(inputs: string[]): Promise<Map<string, string>> {
   const result = new Map<string, string>();
