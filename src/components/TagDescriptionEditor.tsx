@@ -20,6 +20,14 @@ interface ExternalLink {
   url: string;
 }
 
+/**
+ * 識別要素の型定義
+ */
+interface DistinguishingFeature {
+  id: string; // フロントエンド用の一意なID (API送信時には除外)
+  value: string;
+}
+
 interface Tag {
   id: string;
   name: string;
@@ -41,7 +49,7 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
   const [description, setDescription] = useState('');
   const [wikiContent, setWikiContent] = useState('');
   const [externalLinks, setExternalLinks] = useState<ExternalLink[]>([]);
-  const [distinguishingFeatures, setDistinguishingFeatures] = useState<string[]>([]);
+  const [distinguishingFeatures, setDistinguishingFeatures] = useState<DistinguishingFeature[]>([]);
   const [comment, setComment] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +66,12 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
           id: Math.random().toString(36).substring(7),
         }))
       );
-      setDistinguishingFeatures(tag.distinguishingFeatures || []);
+      setDistinguishingFeatures(
+        (tag.distinguishingFeatures || []).map((feature) => ({
+          id: Math.random().toString(36).substring(7),
+          value: feature,
+        }))
+      );
     }
   }, [tag]);
 
@@ -87,17 +100,19 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
   };
 
   const handleAddFeature = () => {
-    setDistinguishingFeatures([...distinguishingFeatures, '']);
+    setDistinguishingFeatures([...distinguishingFeatures, { id: Math.random().toString(36).substring(7), value: '' }]);
   };
 
-  const handleRemoveFeature = (index: number) => {
-    setDistinguishingFeatures(distinguishingFeatures.filter((_, i) => i !== index));
+  const handleRemoveFeature = (id: string) => {
+    setDistinguishingFeatures(distinguishingFeatures.filter((feature) => feature.id !== id));
   };
 
-  const handleFeatureChange = (index: number, value: string) => {
-    const updated = [...distinguishingFeatures];
-    updated[index] = value;
-    setDistinguishingFeatures(updated);
+  const handleFeatureChange = (id: string, value: string) => {
+    setDistinguishingFeatures(
+      distinguishingFeatures.map((feature) =>
+        feature.id === id ? { ...feature, value } : feature
+      )
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -111,7 +126,9 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
     const validLinks = externalLinks
       .filter((link) => link.name.trim() && link.url.trim())
       .map(({ id, ...rest }) => rest);
-    const validFeatures = distinguishingFeatures.filter((f) => f.trim());
+    const validFeatures = distinguishingFeatures
+      .filter((feature) => feature.value.trim())
+      .map((feature) => feature.value);
 
     try {
       const response = await fetch(`/api/tags/${tag.id}`, {
@@ -284,19 +301,19 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
                     追加
                   </Button>
                 </div>
-                {distinguishingFeatures.map((feature, index) => (
-                  <div key={index} className="flex gap-2 items-center">
+                {distinguishingFeatures.map((feature) => (
+                  <div key={feature.id} className="flex gap-2 items-center">
                     <Input
                       placeholder="識別要素を入力..."
-                      value={feature}
-                      onChange={(e) => handleFeatureChange(index, e.target.value)}
+                      value={feature.value}
+                      onChange={(e) => handleFeatureChange(feature.id, e.target.value)}
                       className="flex-1"
                     />
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleRemoveFeature(index)}
+                      onClick={() => handleRemoveFeature(feature.id)}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
