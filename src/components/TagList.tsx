@@ -13,6 +13,7 @@ export interface TagWithCategoryInfo {
   id: string;
   name: string;
   description?: string | null;
+  isImplied?: boolean;
   tagCategory?: {
     id?: string;
     name?: string;
@@ -203,20 +204,25 @@ export const TagList: React.FC<TagListProps> = ({
             {group.tags.map((tag) => {
               const categoryColor = group.color;
               const tagStyle = getTagStyle(categoryColor, isDark);
+              const isImplied = tag.isImplied;
 
               return (
                 <div
                   key={`${variant}-${tag.id}`}
-                  className={`flex items-center justify-between gap-2 p-2 rounded-md transition-colors ${containerHoverClass}`}
+                  className={`flex items-center justify-between gap-2 p-2 rounded-md transition-colors ${containerHoverClass} ${isImplied ? 'opacity-75' : ''}`}
                 >
                   <span
-                    className="text-sm font-medium min-w-0 truncate px-2.5 py-0.5 rounded-full inline-block max-w-full"
+                    className="text-sm font-medium min-w-0 truncate px-2.5 py-0.5 rounded-full inline-block max-w-full relative group/tag"
                     style={{
                       backgroundColor: tagStyle.backgroundColor,
                       color: tagStyle.color,
+                      border: isImplied ? `1px dashed ${tagStyle.color}` : undefined,
                     }}
                   >
                     {tag.name}
+                    {isImplied && (
+                      <span className="sr-only">（自動付与）</span>
+                    )}
                   </span>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <Button
@@ -250,7 +256,10 @@ export const TagList: React.FC<TagListProps> = ({
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>{tag.description || '説明文はありません。'}</p>
+                        <p>
+                            {isImplied && <span className="block text-xs text-muted-foreground mb-1">※他のタグから自動的に付与されました</span>}
+                            {tag.description || '説明文はありません。'}
+                        </p>
                       </TooltipContent>
                     </Tooltip>
                   </div>

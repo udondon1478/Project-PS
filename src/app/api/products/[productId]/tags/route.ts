@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth'; // authをインポート
 import { sanitizeAndValidate } from '@/lib/sanitize';
+import { resolveImplications } from '@/lib/tagImplication';
 
 export async function PUT(
   req: NextRequest,
@@ -36,72 +37,23 @@ export async function PUT(
 
 
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      // 現在の商品のタグを取得（公式/独自の区分を含む）
-      const currentProductTags = await tx.productTag.findMany({
-        where: { productId: productId },
+      // 現在の商品の独自タグを取得
+      const currentManualProductTags = await tx.productTag.findMany({
+        where: { productId: productId, isOfficial: false },
         include: { tag: true },
       });
 
-      // 公式タグと独自タグを分離
-      // const officialProductTags = currentProductTags.filter(pt => pt.isOfficial); // Unused
-      const manualProductTags = currentProductTags.filter(pt => !pt.isOfficial);
+      const currentManualTagIds = new Set(currentManualProductTags.map(pt => pt.tagId));
 
-      const currentManualTagNames = new Set(
-        manualProductTags.map((pt: { tag: { name: string } }) => pt.tag.name)
-      );
-
-      const newTagNames = new Set(sanitizedTags.map((t: { name: string }) => t.name));
-
-      const addedTags: string[] = [];
-      const removedTags: string[] = [];
-      const keptTags: string[] = [];
-
-      // 削除された独自タグを特定
-      for (const currentTag of manualProductTags) {
-        if (!newTagNames.has(currentTag.tag.name)) {
-          removedTags.push(currentTag.tag.id);
-        } else {
-          keptTags.push(currentTag.tag.id);
-        }
-      }
-
-      // 追加されたタグを特定
-      for (const newTagData of sanitizedTags) {
-        if (!currentManualTagNames.has(newTagData.name)) {
-          // 新規タグの場合は、まずTagモデルに存在するか確認し、なければ作成
-          let tag = await tx.tag.findUnique({
-            where: { name: newTagData.name },
-          });
-
-          if (!tag) {
-            tag = await tx.tag.create({
-              data: {
-                name: newTagData.name,
-                language: 'ja', // デフォルト言語を日本語に設定
-              },
-            });
-          }
-          addedTags.push(tag.id);
-        }
-      }
-
-      // 独自タグ（isOfficial: false）のみを削除
-      // 公式タグは通常APIからは削除しない（ADMINでも誤削除防止のため）
-      await tx.productTag.deleteMany({
-        where: {
-          productId: productId,
-          isOfficial: false,
-        },
-      });
-
-      // 新しい独自タグを作成または既存のタグと関連付け
+      // 1. ユーザー入力タグの解決（名前 -> ID）
+      const userIntentTagIds: string[] = [];
+      
       for (const tagData of sanitizedTags) {
         let tag = await tx.tag.findUnique({
           where: { name: tagData.name },
         });
 
         if (!tag) {
-          // タグが存在しない場合は新規作成
           tag = await tx.tag.create({
             data: {
               name: tagData.name,
@@ -109,28 +61,77 @@ export async function PUT(
             },
           });
         }
-
-        // ProductTagを作成（独自タグとして: isOfficial: false）
-        await tx.productTag.create({
-          data: {
-            productId: productId,
-            tagId: tag.id,
-            userId: session.user.id!,
-            isOfficial: false,
-          },
-        });
+        // 重複を除外してリストに追加
+        if (!userIntentTagIds.includes(tag.id)) {
+            userIntentTagIds.push(tag.id);
+        }
       }
 
-      // 独自タグ（isOfficial: false）のみを削除したので、公式タグはそのまま残ります。再作成は不要です。
+      // 2. 含意タグの解決 (Expansion)
+      // ユーザーが選択したタグから含意されるすべてのタグを取得
+      const allTagIdsIncludingImplied = await resolveImplications(userIntentTagIds, tx);
+      
+      // 含意によって追加されたタグIDのみのセット（isImpliedフラグ用）
+      // ユーザーが明示的に指定したタグは、たとえ含意関係にあっても isImplied=false とする
+      const impliedTagIdsSet = new Set(
+          allTagIdsIncludingImplied.filter(id => !userIntentTagIds.includes(id))
+      );
 
-      // 最新のバージョン番号を取得
+      const finalTagIds = new Set(allTagIdsIncludingImplied);
+
+      // 3. 差分計算（履歴用）
+      // 最終的な状態（含意含む）と現在の状態を比較する
+      const addedTags: string[] = [];
+      const removedTags: string[] = [];
+      const keptTags: string[] = [];
+
+      for (const id of finalTagIds) {
+        if (!currentManualTagIds.has(id)) {
+          addedTags.push(id);
+        } else {
+          keptTags.push(id);
+        }
+      }
+
+      for (const id of currentManualTagIds) {
+        if (!finalTagIds.has(id)) {
+          removedTags.push(id);
+        }
+      }
+
+      // 4. タグの更新
+      // 既存の独自タグを削除
+      await tx.productTag.deleteMany({
+        where: {
+          productId: productId,
+          isOfficial: false,
+        },
+      });
+
+      // 新しいタグを一括作成
+      // createManyを使用 (PostgreSQL)
+      const dataToCreate = allTagIdsIncludingImplied.map(tagId => ({
+          productId: productId,
+          tagId: tagId,
+          userId: session.user.id!,
+          isOfficial: false,
+          isImplied: impliedTagIdsSet.has(tagId)
+      }));
+
+      if (dataToCreate.length > 0) {
+          await tx.productTag.createMany({
+              data: dataToCreate,
+              skipDuplicates: true, // 安全のため
+          });
+      }
+
+      // 5. 履歴の保存
       const latestHistory = await tx.tagEditHistory.findFirst({
         where: { productId: productId },
         orderBy: { version: 'desc' },
       });
       const newVersion = (latestHistory?.version || 0) + 1;
 
-      // TagEditHistoryを作成（独自タグの変更のみを記録）
       await tx.tagEditHistory.create({
         data: {
           productId: productId,
