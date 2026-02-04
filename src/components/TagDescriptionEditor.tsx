@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import DOMPurify from 'dompurify';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -54,6 +55,16 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
       setDistinguishingFeatures(tag.distinguishingFeatures || []);
     }
   }, [tag]);
+
+  // Reset UI state when tag changes or editor opens
+  useEffect(() => {
+    if (open) {
+      setComment('');
+      setActiveTab('basic');
+      setShowWikiPreview(false);
+      setError(null);
+    }
+  }, [tag, open]);
 
   const handleAddLink = () => {
     setExternalLinks([...externalLinks, { name: '', url: '' }]);
@@ -172,7 +183,7 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
               {showWikiPreview ? (
                 <div className="prose prose-sm dark:prose-invert max-w-none border rounded-md p-4 min-h-[200px]">
                   {wikiContent ? (
-                    <ReactMarkdown>{wikiContent}</ReactMarkdown>
+                    <ReactMarkdown>{DOMPurify.sanitize(wikiContent)}</ReactMarkdown>
                   ) : (
                     <p className="text-muted-foreground">コンテンツがありません</p>
                   )}

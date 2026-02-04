@@ -14,10 +14,10 @@ interface ExternalLink {
  * タグ更新リクエストのボディ型
  */
 interface TagUpdateBody {
-  description?: string;
-  wikiContent?: string;
-  externalLinks?: ExternalLink[];
-  distinguishingFeatures?: string[];
+  description?: string | null;
+  wikiContent?: string | null;
+  externalLinks?: ExternalLink[] | null;
+  distinguishingFeatures?: string[] | null;
   comment?: string;
 }
 
@@ -81,16 +81,16 @@ export async function PUT(request: Request, context: { params: Promise<{ tagId: 
     const { description, wikiContent, externalLinks, distinguishingFeatures, comment } = body;
 
     // バリデーション
-    if (description !== undefined && typeof description !== 'string') {
+    if (description !== undefined && description !== null && typeof description !== 'string') {
       return NextResponse.json({ error: 'Invalid description' }, { status: 400 });
     }
-    if (wikiContent !== undefined && typeof wikiContent !== 'string') {
+    if (wikiContent !== undefined && wikiContent !== null && typeof wikiContent !== 'string') {
       return NextResponse.json({ error: 'Invalid wikiContent' }, { status: 400 });
     }
-    if (externalLinks !== undefined && !Array.isArray(externalLinks)) {
+    if (externalLinks !== undefined && externalLinks !== null && !Array.isArray(externalLinks)) {
       return NextResponse.json({ error: 'Invalid externalLinks' }, { status: 400 });
     }
-    if (distinguishingFeatures !== undefined && !Array.isArray(distinguishingFeatures)) {
+    if (distinguishingFeatures !== undefined && distinguishingFeatures !== null && !Array.isArray(distinguishingFeatures)) {
       return NextResponse.json({ error: 'Invalid distinguishingFeatures' }, { status: 400 });
     }
 
@@ -104,10 +104,15 @@ export async function PUT(request: Request, context: { params: Promise<{ tagId: 
           return NextResponse.json({ error: 'Invalid external link url' }, { status: 400 });
         }
         // URLの基本的なバリデーション
+        let urlObj;
         try {
-          new URL(link.url);
+          urlObj = new URL(link.url);
         } catch {
           return NextResponse.json({ error: `Invalid URL: ${link.url}` }, { status: 400 });
+        }
+        // プロトコルのバリデーション (http/https のみ許可)
+        if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
+          return NextResponse.json({ error: `Invalid URL scheme: ${urlObj.protocol}. Only http and https are allowed.` }, { status: 400 });
         }
       }
     }

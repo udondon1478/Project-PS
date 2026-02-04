@@ -37,7 +37,7 @@ interface ExternalLinkData {
 }
 
 // Define the shape of the data expected from the API
-interface TagDetails extends Tag {
+type TagDetails = Omit<Tag, 'wikiContent' | 'externalLinks' | 'distinguishingFeatures'> & {
   parentTags: TagWithDisplayName[];
   childTags: TagWithDisplayName[];
   products: {
@@ -57,6 +57,23 @@ interface TagDetailModalProps {
   tagId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+}
+
+/**
+ * Validates and normalizes URLs to prevent XSS attacks via javascript: URIs
+ * @param url - The URL to validate
+ * @returns The safe URL or '#' if invalid
+ */
+function safeUrl(url: string): string {
+  try {
+    const parsed = new URL(url, window.location.origin);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return url;
+    }
+    return '#';
+  } catch {
+    return '#';
+  }
 }
 
 export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProps) {
@@ -171,7 +188,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
                       components={{
                         // Sanitize links to prevent XSS
                         a: ({ href, children }) => {
-                          const sanitizedHref = href ? DOMPurify.sanitize(href) : '#';
+                          const sanitizedHref = href ? safeUrl(DOMPurify.sanitize(href)) : '#';
                           return (
                             <a
                               href={sanitizedHref}
@@ -214,7 +231,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
                     {details.externalLinks.map((link, index) => (
                       <li key={index}>
                         <a
-                          href={DOMPurify.sanitize(link.url)}
+                          href={safeUrl(DOMPurify.sanitize(link.url))}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline"
