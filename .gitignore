@@ -81,4 +81,4 @@ LaTeX/*.synctex.gz
 LaTeX/*.toc
 LaTeX/chapters/*.aux
 LaTeX/figures/*.pdf
-LaTeX/figures/*.xbb
+LaTeX/figures/*.xbb.env.test
