@@ -100,11 +100,15 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
     }
     
     let negativeTagNames = normalizeQueryParam(params.negativeTags);
-    
+
     // Resolve aliases for negative tags
     if (negativeTagNames && negativeTagNames.length > 0) {
-       const resolvedNegativeMap = await resolveTagAliasesForSearch(negativeTagNames);
-       negativeTagNames = [...new Set(negativeTagNames.map(t => resolvedNegativeMap.get(t) || t))];
+      const resolvedNegativeMap = await resolveTagAliasesForSearch(negativeTagNames);
+      negativeTagNames = [...new Set(negativeTagNames.map(t => resolvedNegativeMap.get(t) || t))];
+      // Merge negative tag resolutions into resolvedTagMap for client visibility
+      resolvedNegativeMap.forEach((resolved, original) => {
+        resolvedTagMap.set(original, resolved);
+      });
     }
 
     // タグの衝突を検証 (ユーザーの元の意図に基づいてチェック - Resolved names for accuracy)

@@ -25,8 +25,16 @@ export async function resolveAlias(tagNameOrId: string): Promise<Tag | null> {
   const visited = new Set<string>();
   visited.add(current.id);
 
+  const MAX_HOPS = 10;
+  let hops = 0;
+
   // Traverse alias chain
   while (current && current.isAlias && current.canonicalId) {
+    if (hops >= MAX_HOPS) {
+      console.warn(`Max alias resolution depth (${MAX_HOPS}) exceeded for tag ${current.name} (${current.id})`);
+      break;
+    }
+
     if (visited.has(current.canonicalId)) {
       console.warn(`Circular alias detected for tag ${current.name} (${current.id}) -> ${current.canonicalId}`);
       break; // Stop at the last valid tag before the loop
@@ -43,6 +51,7 @@ export async function resolveAlias(tagNameOrId: string): Promise<Tag | null> {
 
     current = next;
     visited.add(current.id);
+    hops++;
   }
 
   return current;
