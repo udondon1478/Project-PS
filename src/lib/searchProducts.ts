@@ -60,6 +60,10 @@ export interface SearchParams {
   pageSize?: number;
   /** PolySeek独自のタグのみを検索対象にするかどうか */
   searchPolySeekTagsOnly?: boolean;
+  /** いいね済みの商品のみを表示するか ('true'の場合) */
+  liked?: string;
+  /** 所有済みの商品のみを表示するか ('true'の場合) */
+  owned?: string;
 }
 
 /**
@@ -172,6 +176,26 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
                 },
               },
             },
+          },
+        },
+      });
+    }
+
+    if (params.liked === 'true' && userId) {
+      whereConditions.push({
+        likes: {
+          some: {
+            userId: { equals: userId },
+          },
+        },
+      });
+    }
+
+    if (params.owned === 'true' && userId) {
+      whereConditions.push({
+        productOwners: {
+          some: {
+            userId: { equals: userId },
           },
         },
       });

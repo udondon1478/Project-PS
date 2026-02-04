@@ -19,6 +19,12 @@ export async function GET(request: Request) {
     const negativeTags = normalizeQueryParam(searchParams.getAll('negativeTags'));
     if (negativeTags) params.negativeTags = negativeTags;
 
+    const liked = searchParams.get('liked');
+    if (liked) params.liked = liked;
+
+    const owned = searchParams.get('owned');
+    if (owned) params.owned = owned;
+
     const sort = searchParams.get('sort');
     if (sort) params.sort = sort;
 
