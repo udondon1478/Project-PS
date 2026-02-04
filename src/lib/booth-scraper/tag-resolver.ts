@@ -194,6 +194,9 @@ export class TagResolver {
   }
 
   async resolveCreatorTag(creatorName: string): Promise<string> {
+    if (!creatorName || !creatorName.trim()) {
+      throw new Error('Creator name cannot be empty');
+    }
     const normalized = this.normalizeTagName(creatorName);
     
     // Ensure 'creator' category exists
