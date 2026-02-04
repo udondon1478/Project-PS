@@ -3,10 +3,12 @@ import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 
 /**
- * Check if targetId is reachable from startId via tag implications using BFS
- * @param startId - The starting tag ID
- * @param targetId - The target tag ID to reach
- * @returns true if targetId is reachable from startId, false otherwise
+ * Check if targetId is reachable from startId via tag implications using BFS.
+ * Used to detect circular dependencies before creating a new implication.
+ * 
+ * @param startId - The starting tag ID (potential implied tag).
+ * @param targetId - The target tag ID to reach (potential implying tag).
+ * @returns Promise<boolean> - true if a path exists (cycle detected), false otherwise.
  */
 async function checkReachability(startId: string, targetId: string): Promise<boolean> {
   const visited = new Set<string>();
@@ -41,6 +43,15 @@ async function checkReachability(startId: string, targetId: string): Promise<boo
   return false;
 }
 
+/**
+ * GET handler: Fetch all tag implications.
+ * 
+ * Requires ADMIN role.
+ * Returns a list of all tag implications ordered by creation date (descending).
+ * 
+ * @param req - The HTTP request.
+ * @returns JSON response with list of implications or error status.
+ */
 export async function GET(req: NextRequest) {
   const session = await auth();
   if (session?.user?.role !== 'ADMIN') {
@@ -65,6 +76,21 @@ export async function GET(req: NextRequest) {
   }
 }
 
+/**
+ * POST handler: Create a new tag implication.
+ * 
+ * Requires ADMIN role.
+ * Creates a directed implication: implyingTagName -> impliedTagName.
+ * 
+ * Validations:
+ * - Both tags must exist.
+ * - Self-implication is not allowed.
+ * - Implication must not already exist.
+ * - Circular dependency (transitive) check via BFS.
+ * 
+ * @param req - The HTTP request containing { implyingTagName, impliedTagName }.
+ * @returns JSON response with the created implication or error status.
+ */
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (session?.user?.role !== 'ADMIN') {
@@ -133,6 +159,15 @@ export async function POST(req: NextRequest) {
   }
 }
 
+/**
+ * DELETE handler: Remove a tag implication.
+ * 
+ * Requires ADMIN role.
+ * Deletes the implication record by ID.
+ * 
+ * @param req - The HTTP request with ?id=<implicationId> query parameter.
+ * @returns JSON response with success message or error status.
+ */
 export async function DELETE(req: NextRequest) {
   const session = await auth();
   if (session?.user?.role !== 'ADMIN') {
