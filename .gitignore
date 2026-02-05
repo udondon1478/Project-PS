@@ -82,3 +82,5 @@ LaTeX/*.toc
 LaTeX/chapters/*.aux
 LaTeX/figures/*.pdf
 LaTeX/figures/*.xbb.env.test
+gmail-assistant/credentials.json
+gmail-assistant/token.json
