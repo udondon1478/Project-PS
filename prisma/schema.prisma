@@ -51,6 +51,8 @@ model User {
   searchHistories SearchHistory[] // 検索履歴
   favorites       SearchFavorite[] // お気に入り検索
   tagProposals  TagProposal[]    // ユーザーが行ったタグ提案
+  resolvedTagProposals TagProposal[] @relation("ResolvedByUser") // ユーザーが解決したタグ提案
+  tagProposalVotes TagProposalVote[] // ユーザーが行ったタグ提案への投票
 
   @@index([name])
   @@index([email])
@@ -601,7 +603,8 @@ model TagProposal {
   downvotes   Int               @default(0) // 反対票数
 
   resolvedAt  DateTime?         // 解決日時
-  resolvedBy  String?           // 解決したユーザーID（管理者）
+  resolvedById String?          // 解決したユーザーID（管理者）
+  resolvedBy   User?            @relation("ResolvedByUser", fields: [resolvedById], references: [id], onDelete: SetNull)
 
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
@@ -621,6 +624,7 @@ model TagProposalVote {
   proposal    TagProposal   @relation(fields: [proposalId], references: [id], onDelete: Cascade)
 
   voterId     String        // 投票したユーザーID
+  voter       User          @relation(fields: [voterId], references: [id], onDelete: Cascade)
 
   isUpvote    Boolean       // true: 賛成, false: 反対
   comment     String?       @db.Text // 投票コメント
