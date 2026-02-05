@@ -161,22 +161,24 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
     setIsSaving(true);
     setError(null);
 
-    // Filter out empty links and validate URLs
-    const nonEmptyLinks = externalLinks.filter((link) => link.name.trim() && link.url.trim());
+    // Filter out empty links and trim values
+    const trimmedLinks = externalLinks
+      .map(link => ({ ...link, name: link.name.trim(), url: link.url.trim() }))
+      .filter((link) => link.name && link.url);
 
     // Validate that all URLs use http:// or https://
-    for (let i = 0; i < nonEmptyLinks.length; i++) {
-      if (!isValidUrl(nonEmptyLinks[i].url)) {
-        setError(`無効なURLです: ${nonEmptyLinks[i].url}。http://またはhttps://で始まるURLを使用してください。`);
+    for (let i = 0; i < trimmedLinks.length; i++) {
+      if (!isValidUrl(trimmedLinks[i].url)) {
+        setError(`無効なURLです: ${trimmedLinks[i].url}。http://またはhttps://で始まるURLを使用してください。`);
         setIsSaving(false);
         return;
       }
     }
 
-    const validLinks = nonEmptyLinks.map(({ id, ...rest }) => rest);
+    const validLinks = trimmedLinks.map(({ id, ...rest }) => rest);
     const validFeatures = distinguishingFeatures
-      .filter((feature) => feature.value.trim())
-      .map((feature) => feature.value);
+      .map((feature) => feature.value.trim())
+      .filter((value) => value);
 
     try {
       const response = await fetch(`/api/tags/${tag.id}`, {
