@@ -1,6 +1,15 @@
 import { prisma } from '@/lib/prisma';
 import { Tag } from '@prisma/client';
 
+/**
+ * Returns the localized name of a tag based on the user's preferred language.
+ * Checks for direct translation or reverse translation relationships.
+ * Falls back to the original tag name if no translation is found.
+ *
+ * @param tag - The Tag object to localize.
+ * @param userLanguage - The user's preferred language code (e.g., 'ja', 'en').
+ * @returns A Promise that resolves to the localized tag name string.
+ */
 export async function getLocalizedTagName(
   tag: Tag,
   userLanguage: string // 'ja' | 'en' but typed as string in User model

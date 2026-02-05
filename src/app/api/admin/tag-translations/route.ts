@@ -2,6 +2,13 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { isAdmin } from '@/lib/auth';
 
+/**
+ * Creates a new tag translation relationship.
+ * Requires admin privileges.
+ * 
+ * @param request - The incoming request object containing sourceTagId and translatedTagId in JSON body.
+ * @returns A JSON response with the created translation or an error message.
+ */
 export async function POST(request: Request) {
   if (!await isAdmin()) {
     return NextResponse.json({ message: '管理者権限が必要です。' }, { status: 403 });
@@ -45,6 +52,13 @@ export async function POST(request: Request) {
   }
 }
 
+/**
+ * Deletes a tag translation relationship.
+ * Requires admin privileges.
+ * 
+ * @param request - The incoming request object containing id OR (sourceTagId and translatedTagId).
+ * @returns A JSON response confirming deletion or an error message.
+ */
 export async function DELETE(request: Request) {
     if (!await isAdmin()) {
       return NextResponse.json({ message: '管理者権限が必要です。' }, { status: 403 });
