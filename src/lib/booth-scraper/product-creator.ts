@@ -3,6 +3,7 @@ import { TagResolver } from './tag-resolver';
 import { sendDiscordNotification } from '../discord/webhook';
 import { validateUserExists } from '@/lib/user-validation';
 import { getAvatarDefinitions } from '@/lib/avatars';
+import { analyzeProductText } from '@/lib/auto-tagger';
 
 export interface ScrapedProductData {
   boothJpUrl: string;
@@ -109,9 +110,14 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
       }
       // --- Avatar Auto-Tagging End ---
 
+      // --- General Auto-Tagging Start ---
+      const autoDetectedTags = analyzeProductText(title, description);
+      // --- General Auto-Tagging End ---
+
       // 1. Resolve Tags
       const tagIds = await tagResolver.resolveTags(tags);
       const detectedAvatarTagIds = await tagResolver.resolveTags(detectedAvatarTags);
+      const autoDetectedTagIds = await tagResolver.resolveTags(autoDetectedTags);
 
       // 2. Resolve Age Rating
       // Default to 'all_ages' (-> '全年齢') if not specified
@@ -190,6 +196,12 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
                 userId: systemUserId,
                 isOfficial: false,
               })),
+              // 1.6 Auto-Detected Tags -> Unofficial (Proprietary)
+              ...autoDetectedTagIds.map(tagId => ({
+                tagId,
+                userId: systemUserId,
+                isOfficial: false,
+              })),
               // 2. Age Rating -> Both Official AND Proprietary
               ...(ageTagId ? [
                 {
@@ -220,7 +232,7 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
               version: 1,
               addedTags: (() => {
                 const baseTags = ageTagId && !tagIds.includes(ageTagId) ? [...tagIds, ageTagId] : tagIds;
-                return [...baseTags, ...detectedAvatarTagIds];
+                return [...baseTags, ...detectedAvatarTagIds, ...autoDetectedTagIds];
               })(),
               removedTags: [],
               keptTags: [],
