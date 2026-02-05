@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { isAdmin } from '@/lib/auth';
+import { Prisma } from '@prisma/client';
 
 /**
  * GET /api/tag-groups
@@ -51,8 +52,17 @@ export async function POST(request: Request) {
 
     return NextResponse.json(group, { status: 201 });
   } catch (error) {
+    if (error instanceof SyntaxError) {
+      return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
+    }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        return NextResponse.json({ message: 'Tag group name already exists' }, { status: 409 });
+      }
+    }
+
     console.error('Error creating tag group:', error);
-    // Unique constraint error handling could be added here
     return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
   }
 }

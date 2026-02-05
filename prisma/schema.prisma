@@ -585,6 +585,8 @@ model TagGroupMember {
   tagId     String
   group     TagGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
   tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  
+
   @@unique([groupId, tagId])
+  @@index([groupId])
+  @@index([tagId])
 }

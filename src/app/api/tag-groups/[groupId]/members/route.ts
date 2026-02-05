@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { isAdmin } from '@/lib/auth';
+import { Prisma } from '@prisma/client';
 
 /**
  * POST /api/tag-groups/[groupId]/members
@@ -16,7 +17,8 @@ export async function POST(
   }
 
   try {
-    const { tagId } = await request.json();
+    const body = await request.json();
+    const { tagId } = body;
     if (!tagId) return NextResponse.json({ message: 'tagId required' }, { status: 400 });
 
     const member = await prisma.tagGroupMember.create({
@@ -28,9 +30,19 @@ export async function POST(
 
     return NextResponse.json(member, { status: 201 });
   } catch (error) {
-     if (error instanceof Error && error.message.includes('Unique constraint failed')) {
-         return NextResponse.json({ message: 'Tag already in group' }, { status: 409 });
+    if (error instanceof SyntaxError) {
+      return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
     }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        return NextResponse.json({ message: 'Tag already in group' }, { status: 409 });
+      }
+      if (error.code === 'P2003') {
+        return NextResponse.json({ message: 'Invalid groupId or tagId' }, { status: 400 });
+      }
+    }
+
     console.error('Error adding member:', error);
     return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
   }
@@ -50,7 +62,8 @@ export async function DELETE(
   }
 
   try {
-    const { tagId } = await request.json();
+    const body = await request.json();
+    const { tagId } = body;
     if (!tagId) return NextResponse.json({ message: 'tagId required' }, { status: 400 });
 
     await prisma.tagGroupMember.delete({
@@ -64,6 +77,16 @@ export async function DELETE(
 
     return NextResponse.json({ message: 'Member removed' });
   } catch (error) {
+    if (error instanceof SyntaxError) {
+      return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
+    }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        return NextResponse.json({ message: 'Member not found' }, { status: 404 });
+      }
+    }
+
     console.error('Error removing member:', error);
     return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
   }
