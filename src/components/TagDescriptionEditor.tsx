@@ -140,6 +140,20 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
     );
   };
 
+  /**
+   * Validates that a URL uses only http:// or https:// protocol.
+   * @param url - The URL string to validate
+   * @returns true if the URL is valid and uses http/https, false otherwise
+   */
+  const isValidUrl = (url: string): boolean => {
+    try {
+      const parsedUrl = new URL(url);
+      return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tag) return;
@@ -147,10 +161,19 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
     setIsSaving(true);
     setError(null);
 
-    // Filter out empty links and features
-    const validLinks = externalLinks
-      .filter((link) => link.name.trim() && link.url.trim())
-      .map(({ id, ...rest }) => rest);
+    // Filter out empty links and validate URLs
+    const nonEmptyLinks = externalLinks.filter((link) => link.name.trim() && link.url.trim());
+
+    // Validate that all URLs use http:// or https://
+    for (let i = 0; i < nonEmptyLinks.length; i++) {
+      if (!isValidUrl(nonEmptyLinks[i].url)) {
+        setError(`無効なURLです: ${nonEmptyLinks[i].url}。http://またはhttps://で始まるURLを使用してください。`);
+        setIsSaving(false);
+        return;
+      }
+    }
+
+    const validLinks = nonEmptyLinks.map(({ id, ...rest }) => rest);
     const validFeatures = distinguishingFeatures
       .filter((feature) => feature.value.trim())
       .map((feature) => feature.value);
