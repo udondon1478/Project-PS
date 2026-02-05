@@ -89,12 +89,12 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
     const ageRatingTagNames = normalizeQueryParam(params.ageRatingTags) || [];
     const rawNegativeTagNames = normalizeQueryParam(params.negativeTags);
 
-    // Combine all tags for a single resolution call
-    const allRawTags = [
+    // Combine all tags for a single resolution call and deduplicate
+    const allRawTags = Array.from(new Set([
       ...initialTagNames,
       ...ageRatingTagNames,
       ...(rawNegativeTagNames || [])
-    ];
+    ]));
 
     let tagNames: string[] = [];
     let negativeTagNames = rawNegativeTagNames;
