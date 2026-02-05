@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
+import { getLocalizedTagName } from '@/lib/tag-i18n';
 
 export async function GET(request: Request, { params }: { params: Promise<{ tagId: string }> }) {
   try {
     const { tagId } = await params;
     const session = await auth();
+    const userLanguage = session?.user?.language || 'ja';
 
     if (!tagId) {
       return NextResponse.json({ error: 'Tag ID is required' }, { status: 400 });
