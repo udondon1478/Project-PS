@@ -4,7 +4,7 @@ import { Product } from '@/types/product';
 import { auth } from '@/auth';
 import { normalizeQueryParam } from './utils';
 import { SAFE_SEARCH_EXCLUDED_TAGS } from '@/constants/safeSearch';
-import { getLocalizedTagName } from '@/lib/tag-i18n';
+import { getLocalizedTagNames } from '@/lib/tag-i18n';
 
 /**
  * 商品検索のパラメータを定義します。
@@ -303,38 +303,37 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
       prisma.product.count({ where: whereClause }),
     ]);
 
-    // Localize product tags
-    const productsWithLocalizedTags = await Promise.all(
-      products.map(async (product) => {
-        const localizedTags = await Promise.all(
-          product.productTags.map(async (pt) => ({
-            name: await getLocalizedTagName(pt.tag, userLanguage),
-            categoryColor: pt.tag.tagCategory?.color || null,
-          }))
-        );
+    // Localize product tags using batch operation to avoid N+1 problem
+    const allTags = products.flatMap(p => p.productTags.map(pt => pt.tag));
+    const localizedTagNamesMap = await getLocalizedTagNames(allTags, userLanguage);
 
-        return {
-          id: product.id,
-          title: product.title,
-          lowPrice: product.lowPrice,
-          highPrice: product.highPrice,
-          mainImageUrl: product.images.length > 0 ? product.images[0].imageUrl : null,
-          tags: localizedTags,
-          variations: product.variations.map(v => ({
-            id: v.id,
-            name: v.name,
-            price: v.price,
-          })),
-          isLiked: product.likes.length > 0,
-          isOwned: product.productOwners.length > 0,
-          seller: product.seller ? {
-            name: product.seller.name,
-            iconUrl: product.seller.iconUrl,
-            sellerUrl: product.seller.sellerUrl,
-          } : null,
-        };
-      })
-    );
+    const productsWithLocalizedTags = products.map((product) => {
+      const localizedTags = product.productTags.map((pt) => ({
+        name: localizedTagNamesMap.get(pt.tag.id) || pt.tag.displayName || pt.tag.name,
+        categoryColor: pt.tag.tagCategory?.color || null,
+      }));
+
+      return {
+        id: product.id,
+        title: product.title,
+        lowPrice: product.lowPrice,
+        highPrice: product.highPrice,
+        mainImageUrl: product.images.length > 0 ? product.images[0].imageUrl : null,
+        tags: localizedTags,
+        variations: product.variations.map(v => ({
+          id: v.id,
+          name: v.name,
+          price: v.price,
+        })),
+        isLiked: product.likes.length > 0,
+        isOwned: product.productOwners.length > 0,
+        seller: product.seller ? {
+          name: product.seller.name,
+          iconUrl: product.seller.iconUrl,
+          sellerUrl: product.seller.sellerUrl,
+        } : null,
+      };
+    });
 
     return {
       products: productsWithLocalizedTags,

@@ -18,7 +18,7 @@ export async function getLocalizedTagName(
   if (tag.language === userLanguage) {
     return tag.displayName || tag.name;
   }
-  
+
   // 翻訳先として登録されているタグを検索 (source -> translated)
   // 例: tag(JP) -> translation(EN)
   const translation = await prisma.tagTranslation.findFirst({
@@ -28,11 +28,11 @@ export async function getLocalizedTagName(
     },
     include: { translatedTag: true }
   });
-  
+
   if (translation) {
     return translation.translatedTag.displayName || translation.translatedTag.name;
   }
-  
+
   // 逆方向の翻訳も検索 (translated -> source)
   // 例: tag(EN) <- translation(JP)
   // 元のタグが「翻訳先」として登録されている場合、その「ソース」がターゲット言語ならそれを返す
@@ -50,4 +50,90 @@ export async function getLocalizedTagName(
 
   // フォールバック: 元のタグ名
   return tag.displayName || tag.name;
+}
+
+/**
+ * Returns the localized names of multiple tags in a single batch operation.
+ * This function resolves N+1 query problems by fetching all translations at once.
+ *
+ * @param tags - Array of Tag objects to localize.
+ * @param userLanguage - The user's preferred language code (e.g., 'ja', 'en').
+ * @returns A Promise that resolves to a Map of tag IDs to localized tag names.
+ */
+export async function getLocalizedTagNames(
+  tags: Tag[],
+  userLanguage: string
+): Promise<Map<string, string>> {
+  const result = new Map<string, string>();
+
+  if (tags.length === 0) {
+    return result;
+  }
+
+  // Separate tags by whether they match user language
+  const tagIds = tags.map(tag => tag.id);
+  const matchingLanguageTags = tags.filter(tag => tag.language === userLanguage);
+  const nonMatchingTags = tags.filter(tag => tag.language !== userLanguage);
+
+  // For matching language tags, use displayName or name directly
+  matchingLanguageTags.forEach(tag => {
+    result.set(tag.id, tag.displayName || tag.name);
+  });
+
+  if (nonMatchingTags.length === 0) {
+    return result;
+  }
+
+  const nonMatchingTagIds = nonMatchingTags.map(tag => tag.id);
+
+  // Batch fetch all translations (both directions)
+  const [forwardTranslations, reverseTranslations] = await Promise.all([
+    // Forward: source -> translated
+    prisma.tagTranslation.findMany({
+      where: {
+        sourceTagId: { in: nonMatchingTagIds },
+        translatedTag: { language: userLanguage }
+      },
+      include: { translatedTag: true }
+    }),
+    // Reverse: translated -> source
+    prisma.tagTranslation.findMany({
+      where: {
+        translatedTagId: { in: nonMatchingTagIds },
+        sourceTag: { language: userLanguage }
+      },
+      include: { sourceTag: true }
+    })
+  ]);
+
+  // Create lookup maps
+  const forwardMap = new Map<string, string>();
+  forwardTranslations.forEach(t => {
+    forwardMap.set(t.sourceTagId, t.translatedTag.displayName || t.translatedTag.name);
+  });
+
+  const reverseMap = new Map<string, string>();
+  reverseTranslations.forEach(t => {
+    reverseMap.set(t.translatedTagId, t.sourceTag.displayName || t.sourceTag.name);
+  });
+
+  // Apply translations to non-matching tags
+  nonMatchingTags.forEach(tag => {
+    const forwardTranslation = forwardMap.get(tag.id);
+    if (forwardTranslation) {
+      result.set(tag.id, forwardTranslation);
+      return;
+    }
+
+    const reverseTranslation = reverseMap.get(tag.id);
+    if (reverseTranslation) {
+      result.set(tag.id, reverseTranslation);
+      return;
+    }
+
+    // Fallback to original tag name
+    result.set(tag.id, tag.displayName || tag.name);
+  });
+
+  return result;
 }

@@ -9,6 +9,10 @@ const useSecureCookies = process.env.USE_SECURE_COOKIES === 'true' ||
     (process.env.NODE_ENV === 'production' && process.env.USE_SECURE_COOKIES !== 'false');
 
 export const authConfig = {
+    pages: {
+        signIn: '/auth/signin',
+        error: '/auth/error',
+    },
     providers: [
         Google({
             clientId: process.env.GOOGLE_CLIENT_ID,
@@ -99,6 +103,7 @@ export const authConfig = {
                 token.status = user.status;
                 token.termsAgreedAt = user.termsAgreedAt;
                 token.isSafeSearchEnabled = user.isSafeSearchEnabled;
+                token.language = user.language;
             }
             if (typeof token.isSafeSearchEnabled === "undefined") {
                 token.isSafeSearchEnabled = true;
@@ -109,6 +114,9 @@ export const authConfig = {
                 }
                 if (typeof session?.isSafeSearchEnabled === 'boolean') {
                     token.isSafeSearchEnabled = session.isSafeSearchEnabled;
+                }
+                if (session?.language) {
+                    token.language = session.language;
                 }
             }
             return token;
@@ -124,6 +132,7 @@ export const authConfig = {
                     : UserStatus.ACTIVE;
                 session.user.termsAgreedAt = token.termsAgreedAt;
                 session.user.isSafeSearchEnabled = token.isSafeSearchEnabled ?? true;
+                session.user.language = token.language;
             }
             return session;
         },

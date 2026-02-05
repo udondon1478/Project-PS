@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
-import { getLocalizedTagName } from '@/lib/tag-i18n';
+import { getLocalizedTagName, getLocalizedTagNames } from '@/lib/tag-i18n';
 
 /**
  * 指定されたタグの詳細情報を取得します。
@@ -135,22 +135,26 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
 
     const hasReported = !!report;
 
-    // Localize tag names based on user's language
-    const localizedTagName = await getLocalizedTagName(tag, userLanguage);
+    // Localize tag names based on user's language using batch operation to avoid N+1 problem
+    const allTagsToLocalize = [
+      tag,
+      ...parentTagRelations.map(pt => pt.parent),
+      ...childTagRelations.map(ct => ct.child)
+    ];
 
-    const localizedParentTags = await Promise.all(
-      parentTagRelations.map(async (pt) => ({
-        ...pt.parent,
-        displayName: await getLocalizedTagName(pt.parent, userLanguage),
-      }))
-    );
+    const localizedTagNamesMap = await getLocalizedTagNames(allTagsToLocalize, userLanguage);
 
-    const localizedChildTags = await Promise.all(
-      childTagRelations.map(async (ct) => ({
-        ...ct.child,
-        displayName: await getLocalizedTagName(ct.child, userLanguage),
-      }))
-    );
+    const localizedTagName = localizedTagNamesMap.get(tag.id) || tag.displayName || tag.name;
+
+    const localizedParentTags = parentTagRelations.map((pt) => ({
+      ...pt.parent,
+      displayName: localizedTagNamesMap.get(pt.parent.id) || pt.parent.displayName || pt.parent.name,
+    }));
+
+    const localizedChildTags = childTagRelations.map((ct) => ({
+      ...ct.child,
+      displayName: localizedTagNamesMap.get(ct.child.id) || ct.child.displayName || ct.child.name,
+    }));
 
     // Format the data for the response
     const response = {

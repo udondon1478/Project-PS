@@ -45,7 +45,8 @@ export async function POST(request: Request) {
     return NextResponse.json(translation, { status: 201 });
   } catch (error) {
     console.error('Error creating translation:', error);
-    if (error instanceof Error && error.message.includes('Unique constraint failed')) {
+    // Prisma error code check for unique constraint violation
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
          return NextResponse.json({ message: 'この翻訳関係は既に存在します。' }, { status: 409 });
     }
     return NextResponse.json({ message: '翻訳関係の作成に失敗しました。' }, { status: 500 });
@@ -86,6 +87,10 @@ export async function DELETE(request: Request) {
         return NextResponse.json({ message: '翻訳関係を削除しました。' });
     } catch (error) {
         console.error('Error deleting translation:', error);
+        // Prisma error code check for record not found
+        if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
+            return NextResponse.json({ message: '指定された翻訳関係が見つかりません。' }, { status: 404 });
+        }
         return NextResponse.json({ message: '翻訳関係の削除に失敗しました。' }, { status: 500 });
     }
 }
