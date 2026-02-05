@@ -26,28 +26,36 @@ async function wouldCreateCycle(
   const client = tx || prisma;
 
   // Check if the child is already an ancestor of the parent
-  // Traverse up from the parent to see if we reach the child
-  // This is O(depth) since we only follow one path up the hierarchy
-  let currentId = parentId;
+  // This is done by traversing up from the parent using BFS
+  const visited = new Set<string>();
+  let frontier = [parentId];
 
-  while (currentId) {
-    // If we reached the child while traversing parents, it would create a cycle
-    if (currentId === childId) {
+  while (frontier.length > 0) {
+    // Check if any node in the current frontier is the child
+    if (frontier.includes(childId)) {
       return true;
     }
 
-    // Get the parent of the current node
-    const parentRelation = await client.tagHierarchy.findFirst({
-      where: { childId: currentId },
+    // Mark current frontier as visited
+    frontier.forEach(id => visited.add(id));
+
+    // Fetch all parents for the entire frontier in one query
+    const parentRelations = await client.tagHierarchy.findMany({
+      where: {
+        childId: { in: frontier }
+      },
       select: { parentId: true },
     });
 
-    if (!parentRelation) {
-      // No more parents, we've reached the root
-      break;
+    // Collect next frontier (unique parents not yet visited)
+    const nextFrontier = new Set<string>();
+    for (const relation of parentRelations) {
+      if (!visited.has(relation.parentId)) {
+        nextFrontier.add(relation.parentId);
+      }
     }
-
-    currentId = parentRelation.parentId;
+    
+    frontier = Array.from(nextFrontier);
   }
 
   return false;
@@ -69,7 +77,7 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof SyntaxError) {
       return NextResponse.json(
-        { message: 'Invalid JSON body' },
+        { message: '不正なJSON形式です。' },
         { status: 400 }
       );
     }
@@ -207,7 +215,7 @@ export async function DELETE(request: Request) {
   } catch (error) {
     if (error instanceof SyntaxError) {
       return NextResponse.json(
-        { message: 'Invalid JSON body' },
+        { message: '不正なJSON形式です。' },
         { status: 400 }
       );
     }
