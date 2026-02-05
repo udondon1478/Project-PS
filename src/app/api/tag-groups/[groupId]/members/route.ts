@@ -10,11 +10,13 @@ import { Prisma } from '@prisma/client';
  */
 export async function POST(
   request: Request,
-  { params }: { params: { groupId: string } }
+  { params }: { params: Promise<{ groupId: string }> }
 ) {
   if (!await isAdmin()) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
+
+  const { groupId } = await params;
 
   try {
     const body = await request.json();
@@ -23,7 +25,7 @@ export async function POST(
 
     const member = await prisma.tagGroupMember.create({
       data: {
-        groupId: params.groupId,
+        groupId,
         tagId
       }
     });
@@ -55,11 +57,13 @@ export async function POST(
  */
 export async function DELETE(
   request: Request,
-  { params }: { params: { groupId: string } }
+  { params }: { params: Promise<{ groupId: string }> }
 ) {
   if (!await isAdmin()) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
+
+  const { groupId } = await params;
 
   try {
     const body = await request.json();
@@ -69,7 +73,7 @@ export async function DELETE(
     await prisma.tagGroupMember.delete({
       where: {
         groupId_tagId: {
-          groupId: params.groupId,
+          groupId,
           tagId
         }
       }
