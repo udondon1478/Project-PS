@@ -343,7 +343,7 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
         } : null,
       })),
       total,
-      resolvedTags: Object.fromEntries(resolvedTagMap),
+      resolvedTags: resolvedTagMap.size > 0 ? Object.fromEntries(resolvedTagMap) : undefined,
     };
 
   } catch (error) {
