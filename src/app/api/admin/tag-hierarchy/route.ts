@@ -7,47 +7,47 @@ import { isAdmin } from '@/lib/auth';
 /**
  * Helper function to detect cycles in tag hierarchy
  * Checks if adding a parent-child relationship would create a cycle
+ * Optimized to O(depth) by traversing only the ancestor path
  * @param parentId - The ID of the parent tag
  * @param childId - The ID of the child tag
+ * @param tx - Optional Prisma transaction client
  * @returns true if a cycle would be created, false otherwise
  */
-async function wouldCreateCycle(parentId: string, childId: string): Promise<boolean> {
+async function wouldCreateCycle(
+  parentId: string,
+  childId: string,
+  tx?: Prisma.TransactionClient
+): Promise<boolean> {
   // If parent and child are the same, it's a cycle
   if (parentId === childId) {
     return true;
   }
 
+  const client = tx || prisma;
+
   // Check if the child is already an ancestor of the parent
-  // This is done by traversing up from the parent to see if we reach the child
-  const visited = new Set<string>();
-  const queue: string[] = [parentId];
+  // Traverse up from the parent to see if we reach the child
+  // This is O(depth) since we only follow one path up the hierarchy
+  let currentId = parentId;
 
-  while (queue.length > 0) {
-    const currentId = queue.shift()!;
-
-    // If we've already visited this node, skip it
-    if (visited.has(currentId)) {
-      continue;
-    }
-    visited.add(currentId);
-
+  while (currentId) {
     // If we reached the child while traversing parents, it would create a cycle
     if (currentId === childId) {
       return true;
     }
 
-    // Get all parents of the current node
-    const parentRelations = await prisma.tagHierarchy.findMany({
+    // Get the parent of the current node
+    const parentRelation = await client.tagHierarchy.findFirst({
       where: { childId: currentId },
       select: { parentId: true },
     });
 
-    // Add all parents to the queue for further traversal
-    for (const relation of parentRelations) {
-      if (!visited.has(relation.parentId)) {
-        queue.push(relation.parentId);
-      }
+    if (!parentRelation) {
+      // No more parents, we've reached the root
+      break;
     }
+
+    currentId = parentRelation.parentId;
   }
 
   return false;
@@ -107,59 +107,72 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check for cycle
-    const cycleDetected = await wouldCreateCycle(parentId, childId);
-    if (cycleDetected) {
-      return NextResponse.json(
-        { message: 'この親子関係を追加すると循環参照が発生します。子タグは親タグの祖先になることはできません。' },
-        { status: 400 }
-      );
-    }
+    // Use atomic transaction for cycle check and creation
+    const newHierarchy = await prisma.$transaction(async (tx) => {
+      // Check for cycle within transaction
+      const cycleDetected = await wouldCreateCycle(parentId, childId, tx);
+      if (cycleDetected) {
+        throw new Error('CYCLE_DETECTED');
+      }
 
-    // Check if the relationship already exists
-    const existingRelation = await prisma.tagHierarchy.findUnique({
-      where: {
-        parentId_childId: {
+      // Check if the relationship already exists
+      const existingRelation = await tx.tagHierarchy.findUnique({
+        where: {
+          parentId_childId: {
+            parentId,
+            childId,
+          },
+        },
+      });
+
+      if (existingRelation) {
+        throw new Error('RELATION_EXISTS');
+      }
+
+      // Create the hierarchy relation
+      return await tx.tagHierarchy.create({
+        data: {
           parentId,
           childId,
         },
-      },
-    });
-
-    if (existingRelation) {
-      return NextResponse.json(
-        { message: 'この親子関係は既に存在します。' },
-        { status: 409 }
-      );
-    }
-
-    // Create the hierarchy relation
-    const newHierarchy = await prisma.tagHierarchy.create({
-      data: {
-        parentId,
-        childId,
-      },
-      include: {
-        parent: {
-          select: {
-            id: true,
-            name: true,
-            displayName: true,
+        include: {
+          parent: {
+            select: {
+              id: true,
+              name: true,
+              displayName: true,
+            },
+          },
+          child: {
+            select: {
+              id: true,
+              name: true,
+              displayName: true,
+            },
           },
         },
-        child: {
-          select: {
-            id: true,
-            name: true,
-            displayName: true,
-          },
-        },
-      },
+      });
     });
 
     return NextResponse.json(newHierarchy, { status: 201 });
   } catch (error) {
     console.error('Error creating tag hierarchy:', error);
+
+    // Handle custom errors from transaction
+    if (error instanceof Error) {
+      if (error.message === 'CYCLE_DETECTED') {
+        return NextResponse.json(
+          { message: 'この親子関係を追加すると循環参照が発生します。子タグは親タグの祖先になることはできません。' },
+          { status: 400 }
+        );
+      }
+      if (error.message === 'RELATION_EXISTS') {
+        return NextResponse.json(
+          { message: 'この親子関係は既に存在します。' },
+          { status: 409 }
+        );
+      }
+    }
 
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       return NextResponse.json(
