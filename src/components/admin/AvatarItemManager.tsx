@@ -207,8 +207,10 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
       if (result.success) {
         setRescanStatus({ id, loading: false, message: `完了: ${result.count}件の商品を更新しました` });
         toast.success(`${avatarName}: 再スキャン完了 (${result.count}件更新)`);
-        // Clear message after 5 seconds
-        setTimeout(() => setRescanStatus(null), 5000);
+        // Clear message after 5 seconds, but only if it still belongs to this id
+        setTimeout(() => {
+          setRescanStatus(prev => prev?.id === id ? null : prev);
+        }, 5000);
       } else {
         setRescanStatus({ id, loading: false, message: `エラー: ${result.error}` });
         toast.error(`エラー: ${result.error}`);

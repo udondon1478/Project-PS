@@ -302,11 +302,11 @@ function TagListContent({ onEditClick }: TagListProps) {
                     <TableCell className="max-w-[300px] truncate">{tag.description || '-'}</TableCell>
                     <TableCell className="text-right">{tag._count?.productTags || 0}</TableCell>
                     <TableCell>
-                      <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
-                        <Button variant="outline" size="sm" onClick={() => onEditClick(tag)}>
+                      <div className="flex space-x-2">
+                        <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); onEditClick(tag); }}>
                           <PencilIcon className="h-4 w-4" />
                         </Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDeleteClick(tag)}>
+                        <Button variant="destructive" size="sm" onClick={(e) => { e.stopPropagation(); handleDeleteClick(tag); }}>
                           削除
                         </Button>
                       </div>
