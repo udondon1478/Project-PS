@@ -237,8 +237,11 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
               version: 1,
               addedTags: (() => {
                 const baseTags = ageTagId && !tagIds.includes(ageTagId) ? [...tagIds, ageTagId] : tagIds;
-                const creatorTags = creatorTagId && !baseTags.includes(creatorTagId) ? [creatorTagId] : [];
-                return [...baseTags, ...detectedAvatarTagIds, ...creatorTags];
+                // Add creatorTagId if it exists and isn't already in baseTags
+                const allBaseTags = creatorTagId && !baseTags.includes(creatorTagId)
+                  ? [...baseTags, creatorTagId]
+                  : baseTags;
+                return [...allBaseTags, ...detectedAvatarTagIds];
               })(),
               removedTags: [],
               keptTags: [],
