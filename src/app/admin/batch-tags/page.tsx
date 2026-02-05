@@ -8,19 +8,41 @@ import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+interface BatchTagResult {
+  success?: boolean;
+  dryRun?: boolean;
+  changes?: Array<{
+    productId: string;
+    added: string[];
+    removed: string[];
+  }>;
+  error?: string;
+}
+
 export default function BatchTagsPage() {
   const [productIds, setProductIds] = useState("");
   const [action, setAction] = useState("add");
   const [tagsToAdd, setTagsToAdd] = useState("");
   const [tagsToRemove, setTagsToRemove] = useState("");
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<BatchTagResult | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (dryRun: boolean) => {
     if (!productIds.trim()) {
-        alert("Please enter Product IDs");
-        return;
+      setResult({ error: "Please enter Product IDs" });
+      return;
     }
+
+    // Confirmation dialog for execute (not dry run)
+    if (!dryRun) {
+      const confirmed = window.confirm(
+        "Are you sure you want to execute this batch operation? This will modify the tags for all selected products."
+      );
+      if (!confirmed) {
+        return;
+      }
+    }
+
     setLoading(true);
     setResult(null);
     try {
@@ -39,10 +61,17 @@ export default function BatchTagsPage() {
           dryRun
         })
       });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        setResult({ error: errorData.error || `Request failed with status ${res.status}` });
+        return;
+      }
+
       const data = await res.json();
       setResult(data);
     } catch (e) {
-      setResult({ error: "Request failed" });
+      setResult({ error: e instanceof Error ? e.message : "Request failed" });
     } finally {
       setLoading(false);
     }
@@ -56,19 +85,20 @@ export default function BatchTagsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Product IDs (one per line)</Label>
-            <Textarea 
-              value={productIds} 
-              onChange={e => setProductIds(e.target.value)} 
-              rows={5} 
+            <Label htmlFor="productIds">Product IDs (one per line)</Label>
+            <Textarea
+              id="productIds"
+              value={productIds}
+              onChange={e => setProductIds(e.target.value)}
+              rows={5}
               placeholder="id1&#10;id2"
             />
           </div>
-          
+
           <div className="space-y-2">
-            <Label>Action</Label>
+            <Label htmlFor="action">Action</Label>
             <Select value={action} onValueChange={setAction}>
-              <SelectTrigger>
+              <SelectTrigger id="action">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -79,16 +109,29 @@ export default function BatchTagsPage() {
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {(action === "add" || action === "replace") && (
             <div className="space-y-2">
-              <Label>Tags to Add (comma separated)</Label>
-              <Input value={tagsToAdd} onChange={e => setTagsToAdd(e.target.value)} placeholder="tag1, tag2" />
+              <Label htmlFor="tagsToAdd">Tags to Add (comma separated)</Label>
+              <Input
+                id="tagsToAdd"
+                value={tagsToAdd}
+                onChange={e => setTagsToAdd(e.target.value)}
+                placeholder="tag1, tag2"
+              />
             </div>
+          )}
+
+          {(action === "remove" || action === "replace") && (
             <div className="space-y-2">
-              <Label>Tags to Remove (comma separated)</Label>
-              <Input value={tagsToRemove} onChange={e => setTagsToRemove(e.target.value)} placeholder="tag3, tag4" />
+              <Label htmlFor="tagsToRemove">Tags to Remove (comma separated)</Label>
+              <Input
+                id="tagsToRemove"
+                value={tagsToRemove}
+                onChange={e => setTagsToRemove(e.target.value)}
+                placeholder="tag3, tag4"
+              />
             </div>
-          </div>
+          )}
 
           <div className="flex space-x-2 pt-4">
             <Button variant="outline" onClick={() => handleSubmit(true)} disabled={loading}>
