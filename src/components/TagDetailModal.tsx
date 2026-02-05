@@ -41,7 +41,7 @@ interface ExternalLinkData {
 /**
  * Extended Tag interface including relations and additional metadata returned by the API.
  */
-type TagDetails = Omit<Tag, 'wikiContent' | 'externalLinks' | 'distinguishingFeatures'> & {
+type TagDetails = Omit<Tag, 'wikiContent' | 'externalLinks' | 'distinguishingFeatures' | 'productTags' | 'tagCategory' | 'tagCategoryId' | 'count' | 'sourceTranslations' | 'translatedTranslations' | 'implyingRelations' | 'impliedRelations' | 'parentRelations' | 'childRelations' | 'metadataHistory' | 'reports'> & {
   parentTags: TagWithDisplayName[];
   childTags: TagWithDisplayName[];
   products: {
