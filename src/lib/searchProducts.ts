@@ -87,28 +87,32 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
 
     const initialTagNames = normalizeQueryParam(params.tags) || [];
     const ageRatingTagNames = normalizeQueryParam(params.ageRatingTags) || [];
-    
-    // Resolve aliases for positive tags
-    const rawTagNames = [...initialTagNames, ...ageRatingTagNames];
+    const rawNegativeTagNames = normalizeQueryParam(params.negativeTags);
+
+    // Combine all tags for a single resolution call
+    const allRawTags = [
+      ...initialTagNames,
+      ...ageRatingTagNames,
+      ...(rawNegativeTagNames || [])
+    ];
+
     let tagNames: string[] = [];
+    let negativeTagNames = rawNegativeTagNames;
     let resolvedTagMap = new Map<string, string>();
 
-    if (rawTagNames.length > 0) {
-      resolvedTagMap = await resolveTagAliasesForSearch(rawTagNames);
-      // Map to resolved names and deduplicate
-      tagNames = [...new Set(rawTagNames.map(t => resolvedTagMap.get(t) || t))];
-    }
-    
-    let negativeTagNames = normalizeQueryParam(params.negativeTags);
+    if (allRawTags.length > 0) {
+      resolvedTagMap = await resolveTagAliasesForSearch(allRawTags);
 
-    // Resolve aliases for negative tags
-    if (negativeTagNames && negativeTagNames.length > 0) {
-      const resolvedNegativeMap = await resolveTagAliasesForSearch(negativeTagNames);
-      negativeTagNames = [...new Set(negativeTagNames.map(t => resolvedNegativeMap.get(t) || t))];
-      // Merge negative tag resolutions into resolvedTagMap for client visibility
-      resolvedNegativeMap.forEach((resolved, original) => {
-        resolvedTagMap.set(original, resolved);
-      });
+      // Map positive tags to resolved names and deduplicate
+      const rawTagNames = [...initialTagNames, ...ageRatingTagNames];
+      if (rawTagNames.length > 0) {
+        tagNames = [...new Set(rawTagNames.map(t => resolvedTagMap.get(t) || t))];
+      }
+
+      // Map negative tags to resolved names and deduplicate
+      if (negativeTagNames && negativeTagNames.length > 0) {
+        negativeTagNames = [...new Set(negativeTagNames.map(t => resolvedTagMap.get(t) || t))];
+      }
     }
 
     // タグの衝突を検証 (ユーザーの元の意図に基づいてチェック - Resolved names for accuracy)
