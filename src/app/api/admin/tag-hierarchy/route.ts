@@ -67,10 +67,13 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch (error) {
-    return NextResponse.json(
-      { message: 'Invalid JSON body' },
-      { status: 400 }
-    );
+    if (error instanceof SyntaxError) {
+      return NextResponse.json(
+        { message: 'Invalid JSON body' },
+        { status: 400 }
+      );
+    }
+    throw error;
   }
 
   try {
@@ -189,10 +192,13 @@ export async function DELETE(request: Request) {
   try {
     body = await request.json();
   } catch (error) {
-    return NextResponse.json(
-      { message: 'Invalid JSON body' },
-      { status: 400 }
-    );
+    if (error instanceof SyntaxError) {
+      return NextResponse.json(
+        { message: 'Invalid JSON body' },
+        { status: 400 }
+      );
+    }
+    throw error;
   }
 
   try {
