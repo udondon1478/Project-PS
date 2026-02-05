@@ -227,7 +227,7 @@ model Tag {
   
   // Wiki機能 (Issue #252)
   wikiContent            String?  @db.Text  // Markdown形式のWikiコンテンツ
-  externalLinks          Json?              // 外部リンク [{name: string, url: string}]
+  externalLinks          Json?    @default("[]") // 外部リンク [{name: string, url: string}]
   distinguishingFeatures String[] @default([]) // 識別要素リスト
   
   isAlias      Boolean          @default(false) // エイリアスフラグ
