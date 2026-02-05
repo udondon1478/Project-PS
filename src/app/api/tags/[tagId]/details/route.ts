@@ -3,6 +3,14 @@ import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { getLocalizedTagName } from '@/lib/tag-i18n';
 
+/**
+ * 指定されたタグの詳細情報を取得します。
+ * 親タグ、子タグ、関連商品、編集履歴なども含みます。
+ * 
+ * @param request - HTTPリクエスト
+ * @param params - ルートパラメータ (tagIdを含む)
+ * @returns タグ詳細情報のJSONレスポンス
+ */
 export async function GET(request: Request, { params }: { params: Promise<{ tagId: string }> }) {
   try {
     const { tagId } = await params;

@@ -73,6 +73,12 @@ export interface SearchResult {
   total: number;
 }
 
+/**
+ * 商品を検索します。
+ * 
+ * @param params - 検索パラメータ (キーワード, タグ, 価格範囲など)
+ * @returns 検索結果 (商品リストと総件数)
+ */
 export async function searchProducts(params: SearchParams): Promise<SearchResult> {
   try {
     const session = await auth();
