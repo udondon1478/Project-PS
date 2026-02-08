@@ -9,6 +9,7 @@ import {
   Easing,
 } from "remotion";
 import { FocusHighlight } from "../../components/FocusHighlight";
+import { DimOverlay } from "../../components/DimOverlay";
 
 /**
  * Scene 1: 問題提起 - BOOTHの検索ノイズを視覚化
@@ -36,9 +37,9 @@ export const Scene1Problem: React.FC = () => {
 
   // ノイズ商品の位置（3商品のみ：衣装、テクスチャ、ギミック）
   const noiseProducts = [
-    { x: 1088, y: 300, label: "衣装", width: 240, height: 380 },
-    { x: 1350, y: 300, label: "テクスチャ", width: 240, height: 380 },
-    { x: 1600, y: 300, label: "ギミック", width: 250, height: 380 },
+    { x: 1039, y: 395, label: "衣装", width: 340, height: 560 },
+    { x: 1195, y: 395, label: "テクスチャ", width: 340, height: 560 },
+    { x: 1450, y: 395, label: "ギミック", width: 340, height: 560 },
   ];
 
   // 検索窓の位置（動画に合わせて調整）
@@ -156,6 +157,107 @@ export const Scene1Problem: React.FC = () => {
   // フォーカス開始フレーム（スキップ分を調整）
   const focusStartFrame = 240 - SKIP_DURATION;
   const focusDuration = 60; // 各商品のフォーカス時間
+  const totalFocusDuration = focusDuration * noiseProducts.length;
+  const focusEndFrame = focusStartFrame + totalFocusDuration;
+
+  // 商品フォーカス時のズーム（1.5倍）- パン方式
+  const PRODUCT_ZOOM_SCALE = 1.5;
+  const zoomInDuration = 12; // 0.4秒でズームイン
+  const zoomOutDuration = 12; // 0.4秒でズームアウト
+  const panDuration = 15; // 0.5秒でパン移動
+
+  // 現在フォーカス中の商品を判定
+  const localFocusFrame = frame - focusStartFrame;
+  const currentProductIndex = Math.min(
+    Math.floor(localFocusFrame / focusDuration),
+    noiseProducts.length - 1
+  );
+  const isInFocusPhase = frame >= focusStartFrame && frame < focusEndFrame;
+
+  // 商品フォーカス時のズームとパンアニメーション
+  let productZoomScale = 1;
+  let productTranslateX = 0;
+  let productTranslateY = 0;
+
+  if (isInFocusPhase) {
+    // フォーカスフェーズ全体でのズーム（最初にズームイン、最後にズームアウト）
+    productZoomScale = interpolate(
+      localFocusFrame,
+      [0, zoomInDuration, totalFocusDuration - zoomOutDuration, totalFocusDuration],
+      [1, PRODUCT_ZOOM_SCALE, PRODUCT_ZOOM_SCALE, 1],
+      {
+        extrapolateLeft: "clamp",
+        extrapolateRight: "clamp",
+        easing: Easing.inOut(Easing.cubic),
+      }
+    );
+
+    // 各商品へのパン（視点移動）
+    // 商品を画面中央に持ってくるためのトランスレート値を計算（ズーム倍率を考慮）
+    // 黒縁が見えないように境界内に制限
+    const screenWidth = 1920;
+    const screenHeight = 1080;
+
+    // ズーム時に黒縁が見えない最大トランスレート値を計算
+    const maxTranslateX = (screenWidth * PRODUCT_ZOOM_SCALE - screenWidth) / 2;
+    const maxTranslateY = (screenHeight * PRODUCT_ZOOM_SCALE - screenHeight) / 2;
+
+    const productPositions = noiseProducts.map((p) => {
+      // 理想的な移動量（商品を中央に）
+      const idealX = (centerX - p.x) * PRODUCT_ZOOM_SCALE;
+      const idealY = (centerY - p.y) * PRODUCT_ZOOM_SCALE;
+
+      // 境界内に制限（黒縁が見えないように）
+      return {
+        x: Math.max(-maxTranslateX, Math.min(maxTranslateX, idealX)),
+        y: Math.max(-maxTranslateY, Math.min(maxTranslateY, idealY)),
+      };
+    });
+
+    // 各商品のフォーカス開始フレームを計算
+    const keyframes: number[] = [];
+    const xValues: number[] = [];
+    const yValues: number[] = [];
+
+    noiseProducts.forEach((_, i) => {
+      const productStart = i * focusDuration;
+      if (i === 0) {
+        // 最初の商品：ズームインと同時に移動
+        keyframes.push(0, zoomInDuration);
+        xValues.push(0, productPositions[0].x);
+        yValues.push(0, productPositions[0].y);
+      } else {
+        // 2番目以降：前の商品から次の商品へパン
+        const panStart = productStart;
+        const panEnd = productStart + panDuration;
+        keyframes.push(panStart, panEnd);
+        xValues.push(productPositions[i - 1].x, productPositions[i].x);
+        yValues.push(productPositions[i - 1].y, productPositions[i].y);
+      }
+    });
+
+    // 最後にズームアウト時の移動
+    keyframes.push(totalFocusDuration - zoomOutDuration, totalFocusDuration);
+    xValues.push(productPositions[noiseProducts.length - 1].x, 0);
+    yValues.push(productPositions[noiseProducts.length - 1].y, 0);
+
+    productTranslateX = interpolate(localFocusFrame, keyframes, xValues, {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+      easing: Easing.inOut(Easing.cubic),
+    });
+
+    productTranslateY = interpolate(localFocusFrame, keyframes, yValues, {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+      easing: Easing.inOut(Easing.cubic),
+    });
+  }
+
+  // 最終的なズームとトランスレート（検索窓ズーム + 商品フォーカスズーム）
+  const finalZoomScale = zoomScale * productZoomScale;
+  const finalTranslateX = translateX + productTranslateX;
+  const finalTranslateY = translateY + productTranslateY;
 
   // 動画の共通スタイル
   const videoStyle: React.CSSProperties = {
@@ -171,7 +273,7 @@ export const Scene1Problem: React.FC = () => {
         style={{
           width: "100%",
           height: "100%",
-          transform: `scale(${zoomScale}) translate(${translateX / zoomScale}px, ${translateY / zoomScale}px)`,
+          transform: `scale(${finalZoomScale}) translate(${finalTranslateX / finalZoomScale}px, ${finalTranslateY / finalZoomScale}px)`,
           transformOrigin: "center center",
         }}
       >
@@ -196,18 +298,40 @@ export const Scene1Problem: React.FC = () => {
       {/* ノイズ商品へのフォーカスオーバーレイ */}
       <Sequence from={focusStartFrame}>
         <AbsoluteFill>
-          {noiseProducts.map((product, i) => (
-            <FocusHighlight
-              key={i}
-              x={product.x}
-              y={product.y}
-              width={product.width}
-              height={product.height}
-              label={product.label}
-              startFrame={i * focusDuration}
-              duration={focusDuration}
-            />
-          ))}
+          {/* 暗転オーバーレイ（フォーカス商品以外を暗く） */}
+          {noiseProducts.map((product, i) => {
+            // 最初の商品はズームイン後、それ以降はパン移動後に表示
+            const delay = i === 0 ? zoomInDuration : panDuration;
+            return (
+              <DimOverlay
+                key={`dim-${i}`}
+                focusX={product.x}
+                focusY={product.y}
+                focusWidth={product.width + 20}
+                focusHeight={product.height + 20}
+                startFrame={i * focusDuration + delay}
+                duration={focusDuration - delay}
+                dimOpacity={0.5}
+              />
+            );
+          })}
+          {/* ラベル表示（カメラ移動完了後に表示） */}
+          {noiseProducts.map((product, i) => {
+            // 最初の商品はズームイン後、それ以降はパン移動後に表示
+            const delay = i === 0 ? zoomInDuration : panDuration;
+            return (
+              <FocusHighlight
+                key={i}
+                x={product.x}
+                y={product.y}
+                width={product.width}
+                height={product.height}
+                label={product.label}
+                startFrame={i * focusDuration + delay}
+                duration={focusDuration - delay}
+              />
+            );
+          })}
         </AbsoluteFill>
       </Sequence>
     </AbsoluteFill>

@@ -1,5 +1,5 @@
 import React from "react";
-import { useCurrentFrame, interpolate, spring, useVideoConfig } from "remotion";
+import { useCurrentFrame, interpolate, spring, useVideoConfig, Easing } from "remotion";
 
 interface FocusHighlightProps {
   x: number;
@@ -9,6 +9,10 @@ interface FocusHighlightProps {
   label: string;
   startFrame: number;
   duration: number;
+  /** ズーム倍率（デフォルト: 1.3） */
+  zoomScale?: number;
+  /** ズームを適用するコールバック */
+  onZoomChange?: (scale: number, translateX: number, translateY: number) => void;
 }
 
 export const FocusHighlight: React.FC<FocusHighlightProps> = ({
@@ -56,26 +60,18 @@ export const FocusHighlight: React.FC<FocusHighlightProps> = ({
         top: y - height / 2,
         width,
         height,
-        transform: `scale(${scaleIn})`,
         opacity,
         pointerEvents: "none",
       }}
     >
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          border: "4px solid #ff4444",
-          borderRadius: 12,
-          boxShadow: "0 0 20px rgba(255, 68, 68, 0.5)",
-        }}
-      />
+      {/* ラベルのみ表示（赤枠は削除） */}
       <div
         style={{
           position: "absolute",
           bottom: -40,
           left: "50%",
-          transform: "translateX(-50%)",
+          transform: `translateX(-50%) scale(${scaleIn})`,
+          transformOrigin: "center center",
           backgroundColor: "#ff4444",
           color: "#fff",
           padding: "8px 16px",
