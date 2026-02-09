@@ -191,7 +191,7 @@ export const Scene2Solution: React.FC = () => {
               textAlign: "center",
             }}
           >
-            公式タグにない検索が可能
+            正しい情報を付け足し、より詳細な検索を可能に
           </p>
         </div>
       </AbsoluteFill>

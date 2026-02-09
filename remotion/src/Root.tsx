@@ -7,7 +7,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="PolySeekPromo"
         component={Video}
-        durationInFrames={1590}
+        durationInFrames={1690}
         fps={30}
         width={1920}
         height={1080}

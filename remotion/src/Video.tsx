@@ -2,6 +2,7 @@ import { AbsoluteFill, Sequence } from "remotion";
 import { Scene1Problem } from "./scenes/Scene1Problem";
 import { Scene2Solution } from "./scenes/Scene2Solution";
 import { Scene3SocialTagging } from "./scenes/Scene3SocialTagging";
+import { Scene4Tagging } from "./scenes/Scene4Tagging";
 
 export const Video: React.FC = () => {
   return (
@@ -12,8 +13,11 @@ export const Video: React.FC = () => {
       <Sequence from={540} durationInFrames={150}>
         <Scene2Solution />
       </Sequence>
-      <Sequence from={690} durationInFrames={900}>
+      <Sequence from={690} durationInFrames={300}>
         <Scene3SocialTagging />
+      </Sequence>
+      <Sequence from={990} durationInFrames={700}>
+        <Scene4Tagging />
       </Sequence>
     </AbsoluteFill>
   );
