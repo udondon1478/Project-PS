@@ -15,7 +15,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
   try {
     const { tagId } = await params;
     const session = await auth();
-    const userLanguage = session?.user?.language || 'ja';
+    const userLanguage = 'ja'; // TODO: Get user language from preferences when implemented
 
     if (!tagId) {
       return NextResponse.json({ error: 'Tag ID is required' }, { status: 400 });
