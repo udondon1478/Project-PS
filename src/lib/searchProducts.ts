@@ -4,6 +4,7 @@ import { Product } from '@/types/product';
 import { auth } from '@/auth';
 import { normalizeQueryParam } from './utils';
 import { SAFE_SEARCH_EXCLUDED_TAGS } from '@/constants/safeSearch';
+import { getLocalizedTagName } from '@/lib/tag-i18n';
 
 /**
  * 商品検索のパラメータを定義します。
@@ -72,10 +73,18 @@ export interface SearchResult {
   total: number;
 }
 
+/**
+ * 商品を検索します。
+ * 
+ * @param params - 検索パラメータ (キーワード, タグ, 価格範囲など)
+ * @returns 検索結果 (商品リストと総件数)
+ */
 export async function searchProducts(params: SearchParams): Promise<SearchResult> {
   try {
     const session = await auth();
     const userId = session?.user?.id;
+    // TODO: ユーザーの言語設定を取得する実装が必要（現在はデフォルト'ja'を使用）
+    const userLanguage = 'ja';
 
     // ページネーションパラメータのバリデーション
     const page = Math.max(1, params.page ?? 1);
@@ -295,30 +304,41 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
       prisma.product.count({ where: whereClause }),
     ]);
 
+    // Localize product tags
+    const productsWithLocalizedTags = await Promise.all(
+      products.map(async (product) => {
+        const localizedTags = await Promise.all(
+          product.productTags.map(async (pt) => ({
+            name: await getLocalizedTagName(pt.tag, userLanguage),
+            categoryColor: pt.tag.tagCategory?.color || null,
+          }))
+        );
+
+        return {
+          id: product.id,
+          title: product.title,
+          lowPrice: product.lowPrice,
+          highPrice: product.highPrice,
+          mainImageUrl: product.images.length > 0 ? product.images[0].imageUrl : null,
+          tags: localizedTags,
+          variations: product.variations.map(v => ({
+            id: v.id,
+            name: v.name,
+            price: v.price,
+          })),
+          isLiked: product.likes.length > 0,
+          isOwned: product.productOwners.length > 0,
+          seller: product.seller ? {
+            name: product.seller.name,
+            iconUrl: product.seller.iconUrl,
+            sellerUrl: product.seller.sellerUrl,
+          } : null,
+        };
+      })
+    );
+
     return {
-      products: products.map(product => ({
-        id: product.id,
-        title: product.title,
-        lowPrice: product.lowPrice,
-        highPrice: product.highPrice,
-        mainImageUrl: product.images.length > 0 ? product.images[0].imageUrl : null,
-        tags: product.productTags.map(pt => ({
-          name: pt.tag.displayName || pt.tag.name,
-          categoryColor: pt.tag.tagCategory?.color || null,
-        })),
-        variations: product.variations.map(v => ({
-          id: v.id,
-          name: v.name,
-          price: v.price,
-        })),
-        isLiked: product.likes.length > 0,
-        isOwned: product.productOwners.length > 0,
-        seller: product.seller ? {
-          name: product.seller.name,
-          iconUrl: product.seller.iconUrl,
-          sellerUrl: product.seller.sellerUrl,
-        } : null,
-      })),
+      products: productsWithLocalizedTags,
       total,
     };
 

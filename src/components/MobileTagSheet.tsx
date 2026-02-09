@@ -72,16 +72,19 @@ const MobileTagSheet: React.FC<MobileTagSheetProps> = ({
               </div>
 
               {polyseekTags.length > 0 ? (
-                <ScrollArea className="h-40">
-                  <TagList
-                    tags={polyseekTags.map(pt => pt.tag)}
-                    onAddTagToSearch={onAddTagToSearch}
-                    onAddNegativeTagToSearch={onAddNegativeTagToSearch}
-                    onViewTagDetails={onViewTagDetails}
-                    variant="manual"
-                    viewMode="mobile"
-                  />
-                </ScrollArea>
+                <div className="relative">
+                  <ScrollArea className="h-40">
+                    <TagList
+                      tags={polyseekTags.map(pt => pt.tag)}
+                      onAddTagToSearch={onAddTagToSearch}
+                      onAddNegativeTagToSearch={onAddNegativeTagToSearch}
+                      onViewTagDetails={onViewTagDetails}
+                      variant="manual"
+                      viewMode="mobile"
+                    />
+                  </ScrollArea>
+                  <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-blue-50 to-transparent dark:from-blue-900/20" />
+                </div>
               ) : (
                 <div className="text-center py-4 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-lg text-sm text-blue-600 dark:text-blue-400">
                   <p>PolySeekタグはまだありません。</p>
@@ -137,16 +140,19 @@ const MobileTagSheet: React.FC<MobileTagSheetProps> = ({
                 <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3">
                   公式タグ（BOOTH由来） ({officialTags.length})
                 </h3>
-                <ScrollArea className="h-32">
-                  <TagList
-                    tags={officialTags.map(pt => pt.tag)}
-                    onAddTagToSearch={onAddTagToSearch}
-                    onAddNegativeTagToSearch={onAddNegativeTagToSearch}
-                    onViewTagDetails={onViewTagDetails}
-                    variant="official"
-                    viewMode="mobile"
-                  />
-                </ScrollArea>
+                <div className="relative">
+                  <ScrollArea className="h-32">
+                    <TagList
+                      tags={officialTags.map(pt => pt.tag)}
+                      onAddTagToSearch={onAddTagToSearch}
+                      onAddNegativeTagToSearch={onAddNegativeTagToSearch}
+                      onViewTagDetails={onViewTagDetails}
+                      variant="official"
+                      viewMode="mobile"
+                    />
+                  </ScrollArea>
+                  <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-gray-50 to-transparent dark:from-gray-800/50" />
+                </div>
               </div>
             )}
           </div>
