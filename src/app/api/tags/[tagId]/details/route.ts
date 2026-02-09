@@ -37,16 +37,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
       prisma.tagHierarchy.findMany({
         where: { childId: tagId },
         include: {
-          parent: {
-            select: {
-              id: true,
-              name: true,
-              displayName: true,
-              description: true,
-              count: true,
-              tagCategoryId: true,
-            },
-          },
+          parent: true,
         },
       }),
 
@@ -54,16 +45,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
       prisma.tagHierarchy.findMany({
         where: { parentId: tagId },
         include: {
-          child: {
-            select: {
-              id: true,
-              name: true,
-              displayName: true,
-              description: true,
-              count: true,
-              tagCategoryId: true,
-            },
-          },
+          child: true,
         },
       }),
 
