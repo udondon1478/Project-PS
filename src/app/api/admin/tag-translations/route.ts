@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { isAdmin } from '@/lib/auth';
+import { Prisma } from '@prisma/client';
 
 /**
  * Creates a new tag translation relationship.
@@ -15,10 +16,23 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { sourceTagId, translatedTagId } = await request.json();
+    let sourceTagId: string;
+    let translatedTagId: string;
+
+    try {
+        const body = await request.json();
+        sourceTagId = body.sourceTagId;
+        translatedTagId = body.translatedTagId;
+    } catch {
+        return NextResponse.json({ message: 'リクエストボディが不正です。' }, { status: 400 });
+    }
 
     if (!sourceTagId || !translatedTagId) {
        return NextResponse.json({ message: 'sourceTagId と translatedTagId は必須です。' }, { status: 400 });
+    }
+
+    if (sourceTagId === translatedTagId) {
+       return NextResponse.json({ message: '同じタグ同士は翻訳関係にできません。' }, { status: 400 });
     }
 
     // 同じ言語同士の翻訳を防止
@@ -45,7 +59,7 @@ export async function POST(request: Request) {
     return NextResponse.json(translation, { status: 201 });
   } catch (error) {
     console.error('Error creating translation:', error);
-    if (error instanceof Error && error.message.includes('Unique constraint failed')) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
          return NextResponse.json({ message: 'この翻訳関係は既に存在します。' }, { status: 409 });
     }
     return NextResponse.json({ message: '翻訳関係の作成に失敗しました。' }, { status: 500 });
@@ -86,6 +100,9 @@ export async function DELETE(request: Request) {
         return NextResponse.json({ message: '翻訳関係を削除しました。' });
     } catch (error) {
         console.error('Error deleting translation:', error);
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+            return NextResponse.json({ message: '翻訳関係が見つかりません。' }, { status: 404 });
+        }
         return NextResponse.json({ message: '翻訳関係の削除に失敗しました。' }, { status: 500 });
     }
 }

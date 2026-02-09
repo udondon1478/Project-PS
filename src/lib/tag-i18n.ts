@@ -19,35 +19,57 @@ export async function getLocalizedTagName(
     return tag.displayName || tag.name;
   }
   
-  // 翻訳先として登録されているタグを検索 (source -> translated)
-  // 例: tag(JP) -> translation(EN)
+  // 翻訳関係を検索 (双方向)
   const translation = await prisma.tagTranslation.findFirst({
     where: {
-      sourceTagId: tag.id,
-      translatedTag: { language: userLanguage }
+      OR: [
+        { sourceTagId: tag.id, translatedTag: { language: userLanguage } },
+        { translatedTagId: tag.id, sourceTag: { language: userLanguage } }
+      ]
     },
-    include: { translatedTag: true }
-  });
-  
-  if (translation) {
-    return translation.translatedTag.displayName || translation.translatedTag.name;
-  }
-  
-  // 逆方向の翻訳も検索 (translated -> source)
-  // 例: tag(EN) <- translation(JP)
-  // 元のタグが「翻訳先」として登録されている場合、その「ソース」がターゲット言語ならそれを返す
-  const reverseTranslation = await prisma.tagTranslation.findFirst({
-    where: {
-      translatedTagId: tag.id,
-      sourceTag: { language: userLanguage }
-    },
-    include: { sourceTag: true }
+    include: { sourceTag: true, translatedTag: true }
   });
 
-  if (reverseTranslation) {
-    return reverseTranslation.sourceTag.displayName || reverseTranslation.sourceTag.name;
+  if (translation) {
+    const resolved =
+      translation.translatedTag?.language === userLanguage
+        ? translation.translatedTag
+        : translation.sourceTag;
+    if (resolved) {
+      return resolved.displayName || resolved.name;
+    }
   }
 
   // フォールバック: 元のタグ名
   return tag.displayName || tag.name;
+}
+
+/**
+ * Batch fetches localized names for multiple tags.
+ */
+export async function getLocalizedTagNames(
+  tags: { id: string; language: string | null; displayName: string | null; name: string }[],
+  userLanguage: string
+): Promise<Map<string, string>> {
+  const uniqueTagIds = [...new Set(tags.map(t => t.id))];
+  
+  const translations = await prisma.tagTranslation.findMany({
+    where: {
+      OR: [
+        { sourceTagId: { in: uniqueTagIds }, translatedTag: { language: userLanguage } },
+        { translatedTagId: { in: uniqueTagIds }, sourceTag: { language: userLanguage } }
+      ]
+    },
+    include: { sourceTag: true, translatedTag: true }
+  });
+
+  const map = new Map<string, string>();
+  for (const tr of translations) {
+     if (tr.translatedTag?.language === userLanguage) {
+        map.set(tr.sourceTagId, tr.translatedTag.displayName || tr.translatedTag.name);
+     } else if (tr.sourceTag?.language === userLanguage) {
+        map.set(tr.translatedTagId, tr.sourceTag.displayName || tr.sourceTag.name);
+     }
+  }
+  return map;
 }

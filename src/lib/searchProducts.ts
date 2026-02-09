@@ -304,14 +304,35 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
     ]);
 
     // Localize product tags
-    const productsWithLocalizedTags = await Promise.all(
-      products.map(async (product) => {
-        const localizedTags = await Promise.all(
-          product.productTags.map(async (pt) => ({
-            name: await getLocalizedTagName(pt.tag, userLanguage),
+    const allTags = products.flatMap(p => p.productTags.map(pt => pt.tag));
+    const uniqueTagIds = [...new Set(allTags.map(t => t.id))];
+
+    const translations = await prisma.tagTranslation.findMany({
+      where: {
+        OR: [
+          { sourceTagId: { in: uniqueTagIds }, translatedTag: { language: userLanguage } },
+          { translatedTagId: { in: uniqueTagIds }, sourceTag: { language: userLanguage } }
+        ]
+      },
+      include: { sourceTag: true, translatedTag: true }
+    });
+
+    const translationMap = new Map<string, string>();
+    for (const tr of translations) {
+      if (tr.translatedTag?.language === userLanguage) {
+        translationMap.set(tr.sourceTagId, tr.translatedTag.displayName || tr.translatedTag.name);
+      } else if (tr.sourceTag?.language === userLanguage) {
+        translationMap.set(tr.translatedTagId, tr.sourceTag.displayName || tr.sourceTag.name);
+      }
+    }
+
+    const productsWithLocalizedTags = products.map((product) => {
+        const localizedTags = product.productTags.map((pt) => ({
+            name: (pt.tag.language === userLanguage 
+              ? (pt.tag.displayName || pt.tag.name)
+              : translationMap.get(pt.tag.id)) || pt.tag.displayName || pt.tag.name,
             categoryColor: pt.tag.tagCategory?.color || null,
-          }))
-        );
+          }));
 
         return {
           id: product.id,
