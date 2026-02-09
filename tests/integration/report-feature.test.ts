@@ -87,12 +87,22 @@ describe('Report Feature Integration Tests', () => {
 
   it('should reject report creation with non-existent reporterId', async () => {
     const nonExistentUserId = 'non-existent-user-id-12345';
+    
+    // Create a valid tag first (required to satisfy check constraint)
+    const tag = await prisma.tag.create({
+      data: {
+        name: testTagName,
+        language: 'ja'
+      },
+    });
 
+    // The report creation should fail due to invalid reporterId (FK constraint)
     await expect(
       prisma.report.create({
         data: {
           reporterId: nonExistentUserId,
           targetType: 'TAG',
+          tagId: tag.id, // Valid tagId to satisfy check constraint
           reason: 'Test report with invalid reporter',
           status: 'PENDING',
         },

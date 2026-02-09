@@ -4,6 +4,7 @@ import { Product } from '@/types/product';
 import { auth } from '@/auth';
 import { normalizeQueryParam } from './utils';
 import { SAFE_SEARCH_EXCLUDED_TAGS } from '@/constants/safeSearch';
+import { getLocalizedTagName } from '@/lib/tag-i18n';
 
 /**
  * 商品検索のパラメータを定義します。
@@ -72,10 +73,17 @@ export interface SearchResult {
   total: number;
 }
 
+/**
+ * 商品を検索します。
+ * 
+ * @param params - 検索パラメータ (キーワード, タグ, 価格範囲など)
+ * @returns 検索結果 (商品リストと総件数)
+ */
 export async function searchProducts(params: SearchParams): Promise<SearchResult> {
   try {
     const session = await auth();
     const userId = session?.user?.id;
+    const userLanguage = session?.user?.language || 'ja';
 
     // ページネーションパラメータのバリデーション
     const page = Math.max(1, params.page ?? 1);
@@ -295,30 +303,61 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
       prisma.product.count({ where: whereClause }),
     ]);
 
+    // Localize product tags
+    const allTags = products.flatMap(p => p.productTags.map(pt => pt.tag));
+    const uniqueTagIds = [...new Set(allTags.map(t => t.id))];
+
+    const translations = await prisma.tagTranslation.findMany({
+      where: {
+        OR: [
+          { sourceTagId: { in: uniqueTagIds }, translatedTag: { language: userLanguage } },
+          { translatedTagId: { in: uniqueTagIds }, sourceTag: { language: userLanguage } }
+        ]
+      },
+      include: { sourceTag: true, translatedTag: true }
+    });
+
+    const translationMap = new Map<string, string>();
+    for (const tr of translations) {
+      if (tr.translatedTag?.language === userLanguage) {
+        translationMap.set(tr.sourceTagId, tr.translatedTag.displayName || tr.translatedTag.name);
+      } else if (tr.sourceTag?.language === userLanguage) {
+        translationMap.set(tr.translatedTagId, tr.sourceTag.displayName || tr.sourceTag.name);
+      }
+    }
+
+    const productsWithLocalizedTags = products.map((product) => {
+        const localizedTags = product.productTags.map((pt) => ({
+            name: (pt.tag.language === userLanguage 
+              ? (pt.tag.displayName || pt.tag.name)
+              : translationMap.get(pt.tag.id)) || pt.tag.displayName || pt.tag.name,
+            categoryColor: pt.tag.tagCategory?.color || null,
+          }));
+
+        return {
+          id: product.id,
+          title: product.title,
+          lowPrice: product.lowPrice,
+          highPrice: product.highPrice,
+          mainImageUrl: product.images.length > 0 ? product.images[0].imageUrl : null,
+          tags: localizedTags,
+          variations: product.variations.map(v => ({
+            id: v.id,
+            name: v.name,
+            price: v.price,
+          })),
+          isLiked: product.likes.length > 0,
+          isOwned: product.productOwners.length > 0,
+          seller: product.seller ? {
+            name: product.seller.name,
+            iconUrl: product.seller.iconUrl,
+            sellerUrl: product.seller.sellerUrl,
+          } : null,
+        };
+      });
+
     return {
-      products: products.map(product => ({
-        id: product.id,
-        title: product.title,
-        lowPrice: product.lowPrice,
-        highPrice: product.highPrice,
-        mainImageUrl: product.images.length > 0 ? product.images[0].imageUrl : null,
-        tags: product.productTags.map(pt => ({
-          name: pt.tag.displayName || pt.tag.name,
-          categoryColor: pt.tag.tagCategory?.color || null,
-        })),
-        variations: product.variations.map(v => ({
-          id: v.id,
-          name: v.name,
-          price: v.price,
-        })),
-        isLiked: product.likes.length > 0,
-        isOwned: product.productOwners.length > 0,
-        seller: product.seller ? {
-          name: product.seller.name,
-          iconUrl: product.seller.iconUrl,
-          sellerUrl: product.seller.sellerUrl,
-        } : null,
-      })),
+      products: productsWithLocalizedTags,
       total,
     };
 
