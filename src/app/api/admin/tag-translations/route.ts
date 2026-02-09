@@ -94,7 +94,7 @@ export async function DELETE(request: Request) {
         }
         console.error('Error deleting translation:', error);
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-            return NextResponse.json({ message: '指定された翻訳関係が見つかりません。' }, { status: 404 });
+            return NextResponse.json({ message: '削除対象が見つかりません。' }, { status: 404 });
         }
         return NextResponse.json({ message: '翻訳関係の削除に失敗しました。' }, { status: 500 });
     }

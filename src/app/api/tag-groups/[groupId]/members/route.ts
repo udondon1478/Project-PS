@@ -87,7 +87,7 @@ export async function DELETE(
 
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2025') {
-        return NextResponse.json({ message: 'Member not found' }, { status: 404 });
+        return NextResponse.json({ message: 'Not Found' }, { status: 404 });
       }
     }
 

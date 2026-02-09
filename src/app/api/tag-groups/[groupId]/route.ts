@@ -73,7 +73,7 @@ export async function PUT(
         return NextResponse.json({ message: 'Tag group name already exists' }, { status: 409 });
       }
       if (error.code === 'P2025') {
-        return NextResponse.json({ message: 'Tag group not found' }, { status: 404 });
+        return NextResponse.json({ message: 'Not Found' }, { status: 404 });
       }
     }
 
@@ -105,7 +105,7 @@ export async function DELETE(
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2025') {
-        return NextResponse.json({ message: 'Tag group not found' }, { status: 404 });
+        return NextResponse.json({ message: 'Not Found' }, { status: 404 });
       }
     }
 
