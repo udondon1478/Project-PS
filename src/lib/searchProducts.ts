@@ -354,8 +354,7 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
             sellerUrl: product.seller.sellerUrl,
           } : null,
         };
-      })
-    );
+      });
 
     return {
       products: productsWithLocalizedTags,
