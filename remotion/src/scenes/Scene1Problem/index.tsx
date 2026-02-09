@@ -160,10 +160,22 @@ export const Scene1Problem: React.FC = () => {
   const totalFocusDuration = focusDuration * noiseProducts.length;
   const focusEndFrame = focusStartFrame + totalFocusDuration;
 
+  // フォーカス終了演出のタイミング
+  const focusShrinkDuration = 20; // 0.67秒でフォーカス領域を縮小
+  const zoomOutDuration = 20; // 0.67秒でズームアウト
+  const dimFadeInDuration = 15; // 0.5秒で暗転フェードイン
+
+  // 最後の商品（ギミック）の位置
+  const lastProduct = noiseProducts[noiseProducts.length - 1];
+
+  // ズームアウト後の表示範囲調整（手動調整用）
+  // 正の値: 右/下方向、負の値: 左/上方向にシフト
+  const ZOOM_OUT_OFFSET_X = -245; // X方向の調整値（例: -100で左に100pxシフト）
+  const ZOOM_OUT_OFFSET_Y = -410; // Y方向の調整値（例: 50で下に50pxシフト）
+
   // 商品フォーカス時のズーム（1.5倍）- パン方式
   const PRODUCT_ZOOM_SCALE = 1.5;
   const zoomInDuration = 12; // 0.4秒でズームイン
-  const zoomOutDuration = 12; // 0.4秒でズームアウト
   const panDuration = 15; // 0.5秒でパン移動
 
   // 現在フォーカス中の商品を判定
@@ -175,16 +187,17 @@ export const Scene1Problem: React.FC = () => {
   const isInFocusPhase = frame >= focusStartFrame && frame < focusEndFrame;
 
   // 商品フォーカス時のズームとパンアニメーション
+  // focusEndFrame以降もextrapolateRight: "clamp"で最後の値を維持するため、常に計算
   let productZoomScale = 1;
   let productTranslateX = 0;
   let productTranslateY = 0;
 
-  if (isInFocusPhase) {
-    // フォーカスフェーズ全体でのズーム（最初にズームイン、最後にズームアウト）
+  if (frame >= focusStartFrame) {
+    // フォーカスフェーズ全体でのズーム（最初にズームイン、終了後も維持）
     productZoomScale = interpolate(
       localFocusFrame,
-      [0, zoomInDuration, totalFocusDuration - zoomOutDuration, totalFocusDuration],
-      [1, PRODUCT_ZOOM_SCALE, PRODUCT_ZOOM_SCALE, 1],
+      [0, zoomInDuration],
+      [1, PRODUCT_ZOOM_SCALE],
       {
         extrapolateLeft: "clamp",
         extrapolateRight: "clamp",
@@ -236,10 +249,7 @@ export const Scene1Problem: React.FC = () => {
       }
     });
 
-    // 最後にズームアウト時の移動
-    keyframes.push(totalFocusDuration - zoomOutDuration, totalFocusDuration);
-    xValues.push(productPositions[noiseProducts.length - 1].x, 0);
-    yValues.push(productPositions[noiseProducts.length - 1].y, 0);
+    // 最後の商品の位置を維持（ズームアウトなし）
 
     productTranslateX = interpolate(localFocusFrame, keyframes, xValues, {
       extrapolateLeft: "clamp",
@@ -254,10 +264,73 @@ export const Scene1Problem: React.FC = () => {
     });
   }
 
+  // フォーカス領域の縮小アニメーション（ギミックの中心に向かって縮小）
+  const focusShrinkScale = interpolate(
+    frame,
+    [focusEndFrame - focusShrinkDuration, focusEndFrame],
+    [1, 0],
+    {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+      easing: Easing.in(Easing.cubic),
+    }
+  );
+
+  // フォーカス終了後のズームアウト（1.5倍 → 1.0倍、ギミックの位置を基準に）
+  const zoomOutScale = interpolate(
+    frame,
+    [focusEndFrame, focusEndFrame + zoomOutDuration],
+    [PRODUCT_ZOOM_SCALE, 1],
+    {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+      easing: Easing.out(Easing.cubic),
+    }
+  );
+
+  // ズームアウト中、ギミックの画面上の位置を維持するためのパン調整
+  // ギミックの画面上の位置 = lastProduct座標 * scale + translate
+  // ズームアウト前: lastProduct.x * 1.5 + focusEndTranslateX
+  // ズームアウト後: lastProduct.x * 1.0 + newTranslateX
+  // これらを等しくするため: newTranslateX = lastProduct.x * 0.5 + focusEndTranslateX
+  const zoomOutTranslateX = interpolate(
+    frame,
+    [focusEndFrame, focusEndFrame + zoomOutDuration],
+    [
+      productTranslateX,
+      lastProduct.x * (PRODUCT_ZOOM_SCALE - 1) + productTranslateX + ZOOM_OUT_OFFSET_X
+    ],
+    {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+      easing: Easing.out(Easing.cubic),
+    }
+  );
+
+  const zoomOutTranslateY = interpolate(
+    frame,
+    [focusEndFrame, focusEndFrame + zoomOutDuration],
+    [
+      productTranslateY,
+      lastProduct.y * (PRODUCT_ZOOM_SCALE - 1) + productTranslateY + ZOOM_OUT_OFFSET_Y
+    ],
+    {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+      easing: Easing.out(Easing.cubic),
+    }
+  );
+
+  // フォーカス中またはフォーカス終了後のズーム・パン値を計算
+  // focusEndFrame以降はズームアウトの値を使用
+  const currentProductZoom = frame >= focusEndFrame ? zoomOutScale : productZoomScale;
+  const currentProductTranslateX = frame >= focusEndFrame ? zoomOutTranslateX : productTranslateX;
+  const currentProductTranslateY = frame >= focusEndFrame ? zoomOutTranslateY : productTranslateY;
+
   // 最終的なズームとトランスレート（検索窓ズーム + 商品フォーカスズーム）
-  const finalZoomScale = zoomScale * productZoomScale;
-  const finalTranslateX = translateX + productTranslateX;
-  const finalTranslateY = translateY + productTranslateY;
+  const finalZoomScale = zoomScale * currentProductZoom;
+  const finalTranslateX = translateX + currentProductTranslateX;
+  const finalTranslateY = translateY + currentProductTranslateY;
 
   // 動画の共通スタイル
   const videoStyle: React.CSSProperties = {
@@ -265,6 +338,21 @@ export const Scene1Problem: React.FC = () => {
     height: "100%",
     objectFit: "cover",
   };
+
+  // テキスト表示のタイミング
+  const textStartFrame = focusEndFrame + zoomOutDuration; // ズームアウト終了後にテキスト表示
+
+  // ズームアウト後の暗転オーバーレイ（BOOTHの背景を残しつつ暗くする）
+  const dimOverlayOpacity = interpolate(
+    frame,
+    [textStartFrame, textStartFrame + dimFadeInDuration],
+    [0, 0.7],
+    {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+      easing: Easing.out(Easing.quad),
+    }
+  );
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#000", overflow: "hidden" }}>
@@ -296,24 +384,51 @@ export const Scene1Problem: React.FC = () => {
       </div>
 
       {/* ノイズ商品へのフォーカスオーバーレイ */}
-      <Sequence from={focusStartFrame}>
+      <Sequence from={focusStartFrame} durationInFrames={focusEndFrame - focusStartFrame}>
         <AbsoluteFill>
           {/* 暗転オーバーレイ（フォーカス商品以外を暗く） */}
           {noiseProducts.map((product, i) => {
             // 最初の商品はズームイン後、それ以降はパン移動後に表示
             const delay = i === 0 ? zoomInDuration : panDuration;
-            return (
-              <DimOverlay
-                key={`dim-${i}`}
-                focusX={product.x}
-                focusY={product.y}
-                focusWidth={product.width + 20}
-                focusHeight={product.height + 20}
-                startFrame={i * focusDuration + delay}
-                duration={focusDuration - delay}
-                dimOpacity={0.5}
-              />
-            );
+            // 最後の商品のみ、フォーカス終了時に縮小アニメーション
+            const isLastProduct = i === noiseProducts.length - 1;
+
+            if (isLastProduct) {
+              // 最後の商品：フォーカス→縮小→完全暗転
+              const shrinkStartFrame = focusEndFrame - focusShrinkDuration;
+              const localShrinkFrame = Math.max(0, frame - shrinkStartFrame);
+              const shrinkProgress = Math.min(1, localShrinkFrame / focusShrinkDuration);
+
+              // フォーカス領域のサイズを縮小（線形ではなく、加速的に）
+              const shrunkWidth = (product.width + 20) * (1 - shrinkProgress);
+              const shrunkHeight = (product.height + 20) * (1 - shrinkProgress);
+
+              return (
+                <DimOverlay
+                  key={`dim-${i}`}
+                  focusX={product.x}
+                  focusY={product.y}
+                  focusWidth={shrunkWidth}
+                  focusHeight={shrunkHeight}
+                  startFrame={i * focusDuration + delay}
+                  duration={focusDuration - delay + focusShrinkDuration}
+                  dimOpacity={0.5}
+                />
+              );
+            } else {
+              return (
+                <DimOverlay
+                  key={`dim-${i}`}
+                  focusX={product.x}
+                  focusY={product.y}
+                  focusWidth={product.width + 20}
+                  focusHeight={product.height + 20}
+                  startFrame={i * focusDuration + delay}
+                  duration={focusDuration - delay}
+                  dimOpacity={0.5}
+                />
+              );
+            }
           })}
           {/* ラベル表示（カメラ移動完了後に表示） */}
           {noiseProducts.map((product, i) => {
@@ -332,6 +447,86 @@ export const Scene1Problem: React.FC = () => {
               />
             );
           })}
+        </AbsoluteFill>
+      </Sequence>
+
+      {/* 完全暗転（フォーカス縮小完了後） */}
+      <Sequence from={focusEndFrame}>
+        <AbsoluteFill
+          style={{
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            pointerEvents: "none",
+          }}
+        />
+      </Sequence>
+
+      {/* 暗転オーバーレイ（ズームアウト後、BOOTHの背景を残しつつさらに暗くする） */}
+      <Sequence from={textStartFrame}>
+        <AbsoluteFill
+          style={{
+            backgroundColor: `rgba(0, 0, 0, ${dimOverlayOpacity})`,
+            pointerEvents: "none",
+          }}
+        />
+      </Sequence>
+
+      {/* 問題提起テキスト（ズームアウト終了後に表示） */}
+      <Sequence from={textStartFrame}>
+        <AbsoluteFill
+          style={{
+            justifyContent: "center",
+            alignItems: "center",
+            pointerEvents: "none",
+          }}
+        >
+          <div
+            style={{
+              opacity: interpolate(
+                frame - textStartFrame,
+                [0, 20],
+                [0, 1],
+                {
+                  extrapolateLeft: "clamp",
+                  extrapolateRight: "clamp",
+                  easing: Easing.out(Easing.quad),
+                }
+              ),
+              transform: `translateY(${interpolate(
+                frame - textStartFrame,
+                [0, 20],
+                [60, 0],
+                {
+                  extrapolateLeft: "clamp",
+                  extrapolateRight: "clamp",
+                  easing: Easing.out(Easing.back),
+                }
+              )}px)`,
+              textAlign: "center",
+            }}
+          >
+            <p
+              style={{
+                color: "#fff",
+                fontSize: 48,
+                fontWeight: "bold",
+                margin: 0,
+                textShadow: "0 0 20px rgba(255, 255, 255, 0.5), 0 0 40px rgba(255, 255, 255, 0.3), 0 4px 20px rgba(0, 0, 0, 0.5)",
+              }}
+            >
+              求めていない商品ばかり表示されて
+            </p>
+            <p
+              style={{
+                color: "#ff6b6b",
+                fontSize: 56,
+                fontWeight: "bold",
+                margin: "20px 0 0 0",
+                textShadow: "0 0 30px rgba(255, 107, 107, 0.8), 0 0 60px rgba(255, 107, 107, 0.5), 0 4px 20px rgba(0, 0, 0, 0.5)",
+              }}
+            >
+              困ったことはありませんか？
+            </p>
+          </div>
         </AbsoluteFill>
       </Sequence>
     </AbsoluteFill>

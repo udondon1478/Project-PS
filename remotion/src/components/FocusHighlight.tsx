@@ -68,15 +68,15 @@ export const FocusHighlight: React.FC<FocusHighlightProps> = ({
       <div
         style={{
           position: "absolute",
-          bottom: -40,
+          bottom: -70,
           left: "50%",
           transform: `translateX(-50%) scale(${scaleIn})`,
           transformOrigin: "center center",
           backgroundColor: "#ff4444",
           color: "#fff",
-          padding: "8px 16px",
-          borderRadius: 8,
-          fontSize: 24,
+          padding: "12px 28px",
+          borderRadius: 12,
+          fontSize: 48,
           fontWeight: "bold",
           whiteSpace: "nowrap",
         }}
