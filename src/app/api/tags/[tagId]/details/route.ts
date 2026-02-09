@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
+import { getLocalizedTagName } from '@/lib/tag-i18n';
 
 export async function GET(request: Request, { params }: { params: Promise<{ tagId: string }> }) {
   try {
     const { tagId } = await params;
     const session = await auth();
+    const userLanguage = session?.user?.language || 'ja';
 
     if (!tagId) {
       return NextResponse.json({ error: 'Tag ID is required' }, { status: 400 });
@@ -35,16 +37,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
       prisma.tagHierarchy.findMany({
         where: { childId: tagId },
         include: {
-          parent: {
-            select: {
-              id: true,
-              name: true,
-              displayName: true,
-              description: true,
-              count: true,
-              tagCategoryId: true,
-            },
-          },
+          parent: true,
         },
       }),
 
@@ -52,16 +45,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
       prisma.tagHierarchy.findMany({
         where: { parentId: tagId },
         include: {
-          child: {
-            select: {
-              id: true,
-              name: true,
-              displayName: true,
-              description: true,
-              count: true,
-              tagCategoryId: true,
-            },
-          },
+          child: true,
         },
       }),
 
@@ -125,11 +109,29 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
 
     const hasReported = !!report;
 
+    // Localize tag names based on user's language
+    const localizedTagName = await getLocalizedTagName(tag, userLanguage);
+
+    const localizedParentTags = await Promise.all(
+      parentTagRelations.map(async (pt) => ({
+        ...pt.parent,
+        displayName: await getLocalizedTagName(pt.parent, userLanguage),
+      }))
+    );
+
+    const localizedChildTags = await Promise.all(
+      childTagRelations.map(async (ct) => ({
+        ...ct.child,
+        displayName: await getLocalizedTagName(ct.child, userLanguage),
+      }))
+    );
+
     // Format the data for the response
     const response = {
       ...tag,
-      parentTags: parentTagRelations.map(pt => pt.parent),
-      childTags: childTagRelations.map(ct => ct.child),
+      displayName: localizedTagName,
+      parentTags: localizedParentTags,
+      childTags: localizedChildTags,
       products: productRelations.map(p => ({
         id: p.product.id,
         title: p.product.title,

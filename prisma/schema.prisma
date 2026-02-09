@@ -248,6 +248,9 @@ model Tag {
   metadataHistory TagMetadataHistory[]
   
   reports       Report[]         // このタグに対する通報
+
+  // タググループ（テーマ別コレクション）への所属
+  tagGroups     TagGroupMember[]
 }
 
 // タグの親子関係テーブル
@@ -562,4 +565,28 @@ model AvatarItem {
   suggestedTags     String[] @default([])   // 提案・自動付与するタグのリスト (例: ["マヌカ", "マヌカ対応"])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// タググループ（テーマ別コレクション）テーブル
+model TagGroup {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  iconUrl     String?
+  tags        TagGroupMember[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// タググループメンバーテーブル
+model TagGroupMember {
+  id        String   @id @default(cuid())
+  groupId   String
+  tagId     String
+  group     TagGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, tagId])
+  @@index([groupId])
+  @@index([tagId])
 }

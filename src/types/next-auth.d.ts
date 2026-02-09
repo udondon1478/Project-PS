@@ -12,6 +12,7 @@ declare module "next-auth" {
             status: UserStatus;
             termsAgreedAt: Date | null;
             isSafeSearchEnabled: boolean;
+            language: string; // Add this
         } & DefaultSession["user"];
     }
 
@@ -20,6 +21,7 @@ declare module "next-auth" {
         status?: UserStatus;
         termsAgreedAt: Date | null;
         isSafeSearchEnabled: boolean;
+        preferredLanguage: string; // Add this
     }
 }
 
@@ -33,5 +35,6 @@ declare module "next-auth/jwt" {
         status?: UserStatus;
         termsAgreedAt: Date | null;
         isSafeSearchEnabled: boolean;
+        preferredLanguage: string; // Add this
     }
 }

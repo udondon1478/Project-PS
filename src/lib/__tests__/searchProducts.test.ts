@@ -1,8 +1,9 @@
-import { vi, describe, it, expect, beforeEach, type Mock, type MockedFunction } from 'vitest';
+import { vi, describe, it, expect, beforeEach, type Mock } from 'vitest';
 import { searchProducts, SearchParams } from '../searchProducts';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { Session } from 'next-auth';
+import { getLocalizedTagNames } from '@/lib/tag-i18n';
 
 // 依存関係をモック化
 vi.mock('@/lib/prisma', () => ({
@@ -18,6 +19,10 @@ vi.mock('@/auth', () => ({
   auth: vi.fn(),
 }));
 
+vi.mock('@/lib/tag-i18n', () => ({
+  getLocalizedTagNames: vi.fn(),
+}));
+
 // Prismaのwhere条件の型定義
 type WhereCondition = {
   NOT?: unknown;
@@ -29,7 +34,8 @@ type WhereCondition = {
 // モックされた関数に型アサーションを適用
 const mockedPrismaFindMany = prisma.product.findMany as Mock;
 const mockedPrismaCount = prisma.product.count as Mock;
-const mockedAuth = auth as any;
+const mockedAuth = auth as unknown as Mock;
+const mockedGetLocalizedTagNames = getLocalizedTagNames as Mock;
 
 describe('searchProducts', () => {
   beforeEach(() => {
@@ -39,6 +45,8 @@ describe('searchProducts', () => {
     mockedAuth.mockResolvedValue({ user: { id: 'test-user', isSafeSearchEnabled: false } } as Session);
     // デフォルトのカウント結果をモック
     mockedPrismaCount.mockResolvedValue(0);
+    // デフォルトのタグローカライズ結果をモック
+    mockedGetLocalizedTagNames.mockResolvedValue(new Map());
   });
 
   it('ネガティブタグを指定した場合、そのタグを持つ商品が除外されるべき', async () => {

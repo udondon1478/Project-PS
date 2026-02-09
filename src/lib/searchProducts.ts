@@ -4,6 +4,7 @@ import { Product } from '@/types/product';
 import { auth } from '@/auth';
 import { normalizeQueryParam } from './utils';
 import { SAFE_SEARCH_EXCLUDED_TAGS } from '@/constants/safeSearch';
+import { getLocalizedTagNames } from '@/lib/tag-i18n';
 
 /**
  * 商品検索のパラメータを定義します。
@@ -76,6 +77,7 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
   try {
     const session = await auth();
     const userId = session?.user?.id;
+    const userLanguage = session?.user?.language || 'ja';
 
     // ページネーションパラメータのバリデーション
     const page = Math.max(1, params.page ?? 1);
@@ -295,17 +297,23 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
       prisma.product.count({ where: whereClause }),
     ]);
 
-    return {
-      products: products.map(product => ({
+    // Localize product tags using batch operation to avoid N+1 problem
+    const allTags = products.flatMap(p => p.productTags.map(pt => pt.tag));
+    const localizedNamesMap = await getLocalizedTagNames(allTags, userLanguage);
+
+    const productsWithLocalizedTags = products.map((product) => {
+      const localizedTags = product.productTags.map((pt) => ({
+        name: localizedNamesMap.get(pt.tag.id) || pt.tag.displayName || pt.tag.name,
+        categoryColor: pt.tag.tagCategory?.color || null,
+      }));
+
+      return {
         id: product.id,
         title: product.title,
         lowPrice: product.lowPrice,
         highPrice: product.highPrice,
         mainImageUrl: product.images.length > 0 ? product.images[0].imageUrl : null,
-        tags: product.productTags.map(pt => ({
-          name: pt.tag.displayName || pt.tag.name,
-          categoryColor: pt.tag.tagCategory?.color || null,
-        })),
+        tags: localizedTags,
         variations: product.variations.map(v => ({
           id: v.id,
           name: v.name,
@@ -318,7 +326,11 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
           iconUrl: product.seller.iconUrl,
           sellerUrl: product.seller.sellerUrl,
         } : null,
-      })),
+      };
+    });
+
+    return {
+      products: productsWithLocalizedTags,
       total,
     };
 

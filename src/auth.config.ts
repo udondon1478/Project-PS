@@ -99,6 +99,7 @@ export const authConfig = {
                 token.status = user.status;
                 token.termsAgreedAt = user.termsAgreedAt;
                 token.isSafeSearchEnabled = user.isSafeSearchEnabled;
+                token.preferredLanguage = user.preferredLanguage || 'ja';
             }
             if (typeof token.isSafeSearchEnabled === "undefined") {
                 token.isSafeSearchEnabled = true;
@@ -109,6 +110,9 @@ export const authConfig = {
                 }
                 if (typeof session?.isSafeSearchEnabled === 'boolean') {
                     token.isSafeSearchEnabled = session.isSafeSearchEnabled;
+                }
+                if (session?.language) {
+                    token.preferredLanguage = session.language;
                 }
             }
             return token;
@@ -124,6 +128,7 @@ export const authConfig = {
                     : UserStatus.ACTIVE;
                 session.user.termsAgreedAt = token.termsAgreedAt;
                 session.user.isSafeSearchEnabled = token.isSafeSearchEnabled ?? true;
+                session.user.language = token.preferredLanguage || 'ja';
             }
             return session;
         },
