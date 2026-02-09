@@ -45,7 +45,8 @@ export async function POST(request: Request) {
     return NextResponse.json(translation, { status: 201 });
   } catch (error) {
     console.error('Error creating translation:', error);
-    if (error instanceof Error && error.message.includes('Unique constraint failed')) {
+    // Check for Prisma unique constraint violation (P2002)
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
          return NextResponse.json({ message: 'この翻訳関係は既に存在します。' }, { status: 409 });
     }
     return NextResponse.json({ message: '翻訳関係の作成に失敗しました。' }, { status: 500 });
