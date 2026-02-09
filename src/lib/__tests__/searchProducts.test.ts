@@ -11,6 +11,9 @@ vi.mock('@/lib/prisma', () => ({
       findMany: vi.fn(),
       count: vi.fn(),
     },
+    tagTranslation: {
+      findMany: vi.fn(),
+    },
   },
 }));
 
@@ -29,6 +32,7 @@ type WhereCondition = {
 // モックされた関数に型アサーションを適用
 const mockedPrismaFindMany = prisma.product.findMany as Mock;
 const mockedPrismaCount = prisma.product.count as Mock;
+const mockedPrismaTagTranslationFindMany = prisma.tagTranslation.findMany as Mock;
 const mockedAuth = auth as any;
 
 describe('searchProducts', () => {
@@ -39,6 +43,8 @@ describe('searchProducts', () => {
     mockedAuth.mockResolvedValue({ user: { id: 'test-user', isSafeSearchEnabled: false } } as Session);
     // デフォルトのカウント結果をモック
     mockedPrismaCount.mockResolvedValue(0);
+    // デフォルトのタグ翻訳結果をモック
+    mockedPrismaTagTranslationFindMany.mockResolvedValue([]);
   });
 
   it('ネガティブタグを指定した場合、そのタグを持つ商品が除外されるべき', async () => {
