@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { isAdmin } from '@/lib/auth';
+import { Prisma } from '@prisma/client';
 
 /**
  * Creates a new tag translation relationship.
@@ -44,8 +45,11 @@ export async function POST(request: Request) {
     
     return NextResponse.json(translation, { status: 201 });
   } catch (error) {
+    if (error instanceof SyntaxError) {
+      return NextResponse.json({ message: '無効なJSON形式です。' }, { status: 400 });
+    }
     console.error('Error creating translation:', error);
-    if (error instanceof Error && error.message.includes('Unique constraint failed')) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
          return NextResponse.json({ message: 'この翻訳関係は既に存在します。' }, { status: 409 });
     }
     return NextResponse.json({ message: '翻訳関係の作成に失敗しました。' }, { status: 500 });
@@ -85,7 +89,13 @@ export async function DELETE(request: Request) {
 
         return NextResponse.json({ message: '翻訳関係を削除しました。' });
     } catch (error) {
+        if (error instanceof SyntaxError) {
+          return NextResponse.json({ message: '無効なJSON形式です。' }, { status: 400 });
+        }
         console.error('Error deleting translation:', error);
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+            return NextResponse.json({ message: '指定された翻訳関係が見つかりません。' }, { status: 404 });
+        }
         return NextResponse.json({ message: '翻訳関係の削除に失敗しました。' }, { status: 500 });
     }
 }
