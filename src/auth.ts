@@ -84,6 +84,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         user.status = existingUser.status;
         user.termsAgreedAt = existingUser.termsAgreedAt;
         user.isSafeSearchEnabled = existingUser.isSafeSearchEnabled;
+        user.language = existingUser.preferredLanguage;
 
         return true;
       } catch (error) {

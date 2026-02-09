@@ -1,11 +1,21 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
+import { getLocalizedTagNames } from '@/lib/tag-i18n';
 
+/**
+ * 指定されたタグの詳細情報を取得します。
+ * 親タグ、子タグ、関連商品、編集履歴なども含みます。
+ * 
+ * @param request - HTTPリクエスト
+ * @param params - ルートパラメータ (tagIdを含む)
+ * @returns タグ詳細情報のJSONレスポンス
+ */
 export async function GET(request: Request, { params }: { params: Promise<{ tagId: string }> }) {
   try {
     const { tagId } = await params;
     const session = await auth();
+    const userLanguage = session?.user?.language || 'ja';
 
     if (!tagId) {
       return NextResponse.json({ error: 'Tag ID is required' }, { status: 400 });
@@ -43,6 +53,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
               description: true,
               count: true,
               tagCategoryId: true,
+              language: true,
+              isAlias: true,
+              canonicalId: true,
+              createdAt: true,
+              updatedAt: true,
             },
           },
         },
@@ -60,6 +75,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
               description: true,
               count: true,
               tagCategoryId: true,
+              language: true,
+              isAlias: true,
+              canonicalId: true,
+              createdAt: true,
+              updatedAt: true,
             },
           },
         },
@@ -125,11 +145,33 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
 
     const hasReported = !!report;
 
+    // Localize tag names based on user's language using batch operation to avoid N+1 problem
+    const allTagsToLocalize = [
+      tag,
+      ...parentTagRelations.map(pt => pt.parent).filter(Boolean),
+      ...childTagRelations.map(ct => ct.child).filter(Boolean)
+    ] as any[];
+
+    const localizedTagNamesMap = await getLocalizedTagNames(allTagsToLocalize, userLanguage);
+
+    const localizedTagName = localizedTagNamesMap.get(tag.id) || tag.displayName || tag.name;
+
+    const localizedParentTags = parentTagRelations.map((pt) => ({
+      ...pt.parent,
+      displayName: localizedTagNamesMap.get(pt.parent.id) || pt.parent.displayName || pt.parent.name,
+    }));
+
+    const localizedChildTags = childTagRelations.map((ct) => ({
+      ...ct.child,
+      displayName: localizedTagNamesMap.get(ct.child.id) || ct.child.displayName || ct.child.name,
+    }));
+
     // Format the data for the response
     const response = {
       ...tag,
-      parentTags: parentTagRelations.map(pt => pt.parent),
-      childTags: childTagRelations.map(ct => ct.child),
+      displayName: localizedTagName,
+      parentTags: localizedParentTags,
+      childTags: localizedChildTags,
       products: productRelations.map(p => ({
         id: p.product.id,
         title: p.product.title,
