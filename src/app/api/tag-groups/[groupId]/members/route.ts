@@ -41,7 +41,7 @@ export async function POST(
         return NextResponse.json({ message: 'Tag already in group' }, { status: 409 });
       }
       if (error.code === 'P2003') {
-        return NextResponse.json({ message: 'Invalid groupId or tagId' }, { status: 400 });
+        return NextResponse.json({ message: 'Invalid groupId or tagId' }, { status: 404 });
       }
     }
 
