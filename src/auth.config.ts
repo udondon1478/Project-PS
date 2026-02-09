@@ -103,7 +103,8 @@ export const authConfig = {
                 token.status = user.status;
                 token.termsAgreedAt = user.termsAgreedAt;
                 token.isSafeSearchEnabled = user.isSafeSearchEnabled;
-                token.language = user.language;
+                // Map preferredLanguage from DB to language in token
+                token.language = (user as any).preferredLanguage || user.language;
             }
             if (typeof token.isSafeSearchEnabled === "undefined") {
                 token.isSafeSearchEnabled = true;

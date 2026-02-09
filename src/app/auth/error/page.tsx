@@ -71,7 +71,7 @@ function ErrorContent() {
 export default function ErrorPage() {
   return (
     <div className="flex min-h-screen items-center justify-center p-4 bg-gray-50 dark:bg-gray-900">
-      <Suspense fallback={<div className="text-center">Loading...</div>}>
+      <Suspense fallback={<div className="text-center">読み込み中...</div>}>
         <ErrorContent />
       </Suspense>
     </div>

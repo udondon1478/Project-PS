@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
-import { getLocalizedTagName, getLocalizedTagNames } from '@/lib/tag-i18n';
+import { getLocalizedTagNames } from '@/lib/tag-i18n';
 
 /**
  * 指定されたタグの詳細情報を取得します。
@@ -53,6 +53,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
               description: true,
               count: true,
               tagCategoryId: true,
+              language: true,
+              isAlias: true,
+              canonicalId: true,
+              createdAt: true,
+              updatedAt: true,
             },
           },
         },
@@ -70,6 +75,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
               description: true,
               count: true,
               tagCategoryId: true,
+              language: true,
+              isAlias: true,
+              canonicalId: true,
+              createdAt: true,
+              updatedAt: true,
             },
           },
         },
@@ -138,9 +148,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
     // Localize tag names based on user's language using batch operation to avoid N+1 problem
     const allTagsToLocalize = [
       tag,
-      ...parentTagRelations.map(pt => pt.parent),
-      ...childTagRelations.map(ct => ct.child)
-    ];
+      ...parentTagRelations.map(pt => pt.parent).filter(Boolean),
+      ...childTagRelations.map(ct => ct.child).filter(Boolean)
+    ] as any[];
 
     const localizedTagNamesMap = await getLocalizedTagNames(allTagsToLocalize, userLanguage);
 

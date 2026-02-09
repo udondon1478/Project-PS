@@ -14,8 +14,14 @@ function SignInContent() {
   const [isLoading, setIsLoading] = useState<string | null>(null)
 
   const handleSignIn = async (provider: string) => {
-    setIsLoading(provider)
-    await signIn(provider, { callbackUrl })
+    try {
+      setIsLoading(provider)
+      await signIn(provider, { callbackUrl })
+    } catch (e) {
+      console.error('Sign in error:', e)
+    } finally {
+      setIsLoading(null)
+    }
   }
 
   const errorMessage = error === 'OAuthAccountNotLinked' 
@@ -76,7 +82,7 @@ function SignInContent() {
 export default function SignInPage() {
   return (
     <div className="flex min-h-screen items-center justify-center p-4 bg-gray-50 dark:bg-gray-900">
-      <Suspense fallback={<div className="text-center">Loading...</div>}>
+      <Suspense fallback={<div className="text-center">読み込み中...</div>}>
         <SignInContent />
       </Suspense>
     </div>
