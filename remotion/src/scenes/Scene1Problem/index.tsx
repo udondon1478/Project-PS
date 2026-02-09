@@ -529,6 +529,23 @@ export const Scene1Problem: React.FC = () => {
           </div>
         </AbsoluteFill>
       </Sequence>
+
+      {/* Scene2へのトランジション：黒フェードアウト */}
+      <AbsoluteFill
+        style={{
+          backgroundColor: "#000",
+          opacity: interpolate(
+            frame,
+            [510, 540],
+            [0, 1],
+            {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+            }
+          ),
+          pointerEvents: "none",
+        }}
+      />
     </AbsoluteFill>
   );
 };
