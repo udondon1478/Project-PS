@@ -51,3 +51,80 @@ export async function getLocalizedTagName(
   // フォールバック: 元のタグ名
   return tag.displayName || tag.name;
 }
+
+/**
+ * Returns the localized names of multiple tags in a single batch operation.
+ * This function resolves N+1 query problems by fetching all translations at once.
+ *
+ * @param tags - Array of Tag objects to localize.
+ * @param userLanguage - The user's preferred language code (e.g., 'ja', 'en').
+ * @returns A Promise that resolves to a Map of tag IDs to localized tag names.
+ */
+export async function getLocalizedTagNames(
+  tags: Tag[],
+  userLanguage: string
+): Promise<Map<string, string>> {
+  const result = new Map<string, string>();
+
+  if (tags.length === 0) {
+    return result;
+  }
+
+  // Separate tags by whether they match user language
+  const matchingLanguageTags = tags.filter(tag => tag.language === userLanguage);
+  const nonMatchingTags = tags.filter(tag => tag.language !== userLanguage);
+
+  // For matching language tags, use displayName or name directly
+  matchingLanguageTags.forEach(tag => {
+    result.set(tag.id, tag.displayName || tag.name);
+  });
+
+  if (nonMatchingTags.length === 0) {
+    return result;
+  }
+
+  const nonMatchingTagIds = [...new Set(nonMatchingTags.map(tag => tag.id))];
+
+  // Batch fetch all translations (both directions)
+  const [forwardTranslations, reverseTranslations] = await Promise.all([
+    // Forward: source -> translated
+    prisma.tagTranslation.findMany({
+      where: {
+        sourceTagId: { in: nonMatchingTagIds },
+        translatedTag: { language: userLanguage }
+      },
+      include: { translatedTag: true }
+    }),
+    // Reverse: translated -> source
+    prisma.tagTranslation.findMany({
+      where: {
+        translatedTagId: { in: nonMatchingTagIds },
+        sourceTag: { language: userLanguage }
+      },
+      include: { sourceTag: true }
+    })
+  ]);
+
+  // Process forward translations
+  forwardTranslations.forEach(t => {
+    if (!result.has(t.sourceTagId)) {
+      result.set(t.sourceTagId, t.translatedTag.displayName || t.translatedTag.name);
+    }
+  });
+
+  // Process reverse translations
+  reverseTranslations.forEach(t => {
+    if (!result.has(t.translatedTagId)) {
+      result.set(t.translatedTagId, t.sourceTag.displayName || t.sourceTag.name);
+    }
+  });
+
+  // Fill in remaining tags with their original names
+  tags.forEach(tag => {
+    if (!result.has(tag.id)) {
+      result.set(tag.id, tag.displayName || tag.name);
+    }
+  });
+
+  return result;
+}
