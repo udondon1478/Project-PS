@@ -83,7 +83,8 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
   try {
     const session = await auth();
     const userId = session?.user?.id;
-    const userLanguage = session?.user?.language || 'ja';
+    // TODO: ユーザーの言語設定を取得する実装が必要（現在はデフォルト'ja'を使用）
+    const userLanguage = 'ja';
 
     // ページネーションパラメータのバリデーション
     const page = Math.max(1, params.page ?? 1);
