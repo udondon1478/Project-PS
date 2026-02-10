@@ -60,7 +60,6 @@ export async function GET(request: Request, context: { params: Promise<{ tagId: 
           select: {
             id: true,
             name: true,
-            nameEn: true,
             color: true,
           },
         },
