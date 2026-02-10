@@ -98,10 +98,6 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
         }))
       );
     }
-  }, [tag]);
-
-  // Reset UI state when tag changes or editor opens
-  useEffect(() => {
     if (open) {
       setComment('');
       setActiveTab('basic');
@@ -120,7 +116,7 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
 
   const handleLinkChange = (index: number, field: 'name' | 'url', value: string) => {
     const updated = [...externalLinks];
-    updated[index][field] = value;
+    updated[index] = { ...updated[index], [field]: value };
     setExternalLinks(updated);
   };
 
@@ -187,8 +183,8 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
         body: JSON.stringify({
           description,
           wikiContent: wikiContent || null,
-          externalLinks: validLinks.length > 0 ? validLinks : null,
-          distinguishingFeatures: validFeatures.length > 0 ? validFeatures : null,
+          externalLinks: validLinks.length > 0 ? validLinks : [],
+          distinguishingFeatures: validFeatures.length > 0 ? validFeatures : [],
           comment,
         }),
       });
