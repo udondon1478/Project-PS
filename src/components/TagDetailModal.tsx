@@ -34,6 +34,7 @@ type TagWithDisplayName = Tag & { displayName?: string };
  * Interface for external links returned from the API.
  */
 interface ExternalLinkData {
+  id: string;
   name: string;
   url: string;
 }
