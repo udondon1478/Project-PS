@@ -1,7 +1,6 @@
 import React from "react";
 import {
   AbsoluteFill,
-  Video,
   Img,
   staticFile,
   Sequence,
@@ -11,21 +10,7 @@ import {
   useVideoConfig,
   Easing,
 } from "remotion";
-import {
-  FaUserCircle,
-  FaTag,
-} from "react-icons/fa"; // アイコン用（要確認：react-iconsが入っていない場合はSVGで代用）
-
-// ブランドカラー（Scene2と共通化）
-const BRAND_COLORS = {
-  darkGreen: "#0a2818",
-  green1: "#358C54",
-  green2: "#3FA659",
-  brightGreen: "#0DF205",
-  lightGreen: "#54BF50",
-  tagBg: "rgba(255, 255, 255, 0.95)",
-  tagText: "#333",
-};
+import { BRAND_COLORS } from "../../constants";
 
 // ユーザーとタグの定義
 const TAG_ACTIONS = [
@@ -111,7 +96,7 @@ export const Scene3SocialTagging: React.FC = () => {
         frame,
         [scrollStart, scrollStart + 150],
         [0, -150], // 初期位置を-250pxにしてアドレスバーを隠す
-        { extrapolateRight: "clamp", easing: Easing.bezier(0.25, 0.1, 0.25, 1) } // スマートなイージング
+        { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.bezier(0.25, 0.1, 0.25, 1) } // スマートなイージング
       );
 
       // メッセージ表示タイミング

@@ -8,25 +8,11 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { Search } from "lucide-react";
+import { notoSansJP } from "../../fonts";
 
 export const Scene5CTA: React.FC = () => {
   const frame = useCurrentFrame();
-  const { fps, height } = useVideoConfig();
-
-  // Transition: Slide up from bottom with spring
-  // 0-30フレームで下からスライドイン
-  const slideIn = spring({
-    frame,
-    fps,
-    config: {
-      damping: 20,
-      stiffness: 90,
-      mass: 1,
-    },
-  });
-
-  const translateY = interpolate(slideIn, [0, 1], [height, 0]);
+  const { fps } = useVideoConfig();
 
   // Elements animation triggers
   const logoDelay = 25;
@@ -58,7 +44,7 @@ export const Scene5CTA: React.FC = () => {
   const searchBarWidth = interpolate(
     spring({ frame: frame - searchBarDelay, fps }),
     [0, 1],
-    [0, 800] // Target width
+    [0, 800]
   );
 
   const searchBarOpacity = interpolate(
@@ -72,7 +58,7 @@ export const Scene5CTA: React.FC = () => {
   const urlText = "polyseek.jp";
   const typeProgress = interpolate(
     frame - typingDelay,
-    [0, 40], // 40 frames to type
+    [0, 40],
     [0, urlText.length],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );
@@ -85,14 +71,21 @@ export const Scene5CTA: React.FC = () => {
     <AbsoluteFill
       style={{
         backgroundColor: "#ffffff",
-        transform: `translateY(${translateY}px)`,
         justifyContent: "center",
         alignItems: "center",
-        fontFamily: "'Noto Sans JP', sans-serif",
+        fontFamily: notoSansJP,
       }}
     >
       {/* Container for content */}
-      <div className="flex flex-col items-center gap-12 w-full">
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 48,
+          width: "100%",
+        }}
+      >
 
         {/* Logo */}
         <div style={{
@@ -104,12 +97,10 @@ export const Scene5CTA: React.FC = () => {
            <Img
             src={staticFile("images/PolySeek_10_export_icon.svg")}
             style={{ height: 160, width: "auto" }}
-            alt="PolySeek Icon"
           />
            <Img
             src={staticFile("images/PolySeek_logo_type.svg")}
             style={{ height: 120, width: "auto" }}
-            alt="PolySeek Type"
           />
         </div>
 
@@ -144,8 +135,21 @@ export const Scene5CTA: React.FC = () => {
             position: "relative",
           }}
         >
-            {/* Search Icon */}
-            <Search color="#9ca3af" size={36} strokeWidth={2.5} style={{ marginRight: 20 }} />
+            {/* Search Icon (inline SVG) */}
+            <svg
+              width="36"
+              height="36"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#9ca3af"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ marginRight: 20, flexShrink: 0 }}
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
 
             {/* URL Text */}
             <div style={{
@@ -161,7 +165,7 @@ export const Scene5CTA: React.FC = () => {
                 <span style={{
                     width: 3,
                     height: 40,
-                    backgroundColor: "#22c55e", // Brand Green (Tailwind green-500)
+                    backgroundColor: "#22c55e",
                     marginLeft: 4,
                     opacity: showCursor ? 1 : 0
                 }} />

@@ -126,7 +126,7 @@ export const Scene4Tagging: React.FC = () => {
     frame,
     [ZOOM_IN_START + 10, ZOOM_IN_START + 30],
     [0, 1],
-    { extrapolateRight: "clamp" }
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );
 
   const showSecondText = frame > 75;
@@ -230,14 +230,6 @@ export const Scene4Tagging: React.FC = () => {
          </div>
       </AbsoluteFill>
 
-      {/* フェードアウト */}
-      <AbsoluteFill
-        style={{
-            backgroundColor: "#000",
-            opacity: interpolate(frame, [679, 699], [0, 1], {extrapolateLeft: "clamp"}),
-            pointerEvents: "none",
-        }}
-      />
     </AbsoluteFill>
   );
 };

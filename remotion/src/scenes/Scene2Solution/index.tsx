@@ -19,15 +19,6 @@ import {
  * - 105-150f (3.5-5秒): 全体表示維持
  */
 
-// ブランドカラー
-const BRAND_COLORS = {
-  darkGreen: "#0a2818",
-  green1: "#358C54",
-  green2: "#3FA659",
-  brightGreen: "#0DF205",
-  lightGreen: "#54BF50",
-};
-
 export const Scene2Solution: React.FC = () => {
   const frame = useCurrentFrame();
 

@@ -498,7 +498,7 @@ export const Scene1Problem: React.FC = () => {
                 {
                   extrapolateLeft: "clamp",
                   extrapolateRight: "clamp",
-                  easing: Easing.out(Easing.back),
+                  easing: Easing.out(Easing.back(1.7)),
                 }
               )}px)`,
               textAlign: "center",
@@ -530,22 +530,6 @@ export const Scene1Problem: React.FC = () => {
         </AbsoluteFill>
       </Sequence>
 
-      {/* Scene2へのトランジション：黒フェードアウト */}
-      <AbsoluteFill
-        style={{
-          backgroundColor: "#000",
-          opacity: interpolate(
-            frame,
-            [510, 540],
-            [0, 1],
-            {
-              extrapolateLeft: "clamp",
-              extrapolateRight: "clamp",
-            }
-          ),
-          pointerEvents: "none",
-        }}
-      />
     </AbsoluteFill>
   );
 };
