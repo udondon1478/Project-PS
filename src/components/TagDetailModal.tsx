@@ -18,7 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { TagDescriptionEditor } from './TagDescriptionEditor';
+import { TagDescriptionEditor, TagForEditor } from './TagDescriptionEditor';
 import { TagDescriptionHistory } from './TagDescriptionHistory';
 import { Tag, TagMetadataHistory } from '@prisma/client';
 import { REPORT_TARGET_TAG } from '@/lib/constants';
@@ -212,7 +212,8 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
                       components={{
                         // Sanitize links to prevent XSS
                         a: ({ href, children }) => {
-                          const sanitizedHref = href ? safeUrl(DOMPurify.sanitize(href)) : '#';
+                          if (!href) return <span>{children}</span>;
+                          const sanitizedHref = safeUrl(href);
                           return (
                             <a
                               href={sanitizedHref}
@@ -226,7 +227,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
                         },
                       }}
                     >
-                      {DOMPurify.sanitize(details.wikiContent)}
+                      {details.wikiContent}
                     </ReactMarkdown>
                   </div>
                 </section>
@@ -252,10 +253,10 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
                 <section>
                   <h3 className="text-lg font-semibold border-b mb-2">外部リンク</h3>
                   <ul className="space-y-2">
-                    {details.externalLinks.map((link, index) => (
-                      <li key={index}>
+                    {details.externalLinks.map((link) => (
+                      <li key={link.id}>
                         <a
-                          href={safeUrl(DOMPurify.sanitize(link.url))}
+                          href={safeUrl(link.url)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline"
@@ -320,7 +321,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
         {details && (
           <>
             <TagDescriptionEditor
-              tag={details}
+              tag={details as TagForEditor}
               open={isEditorOpen}
               onOpenChange={setIsEditorOpen}
               onSuccess={handleEditorSuccess}

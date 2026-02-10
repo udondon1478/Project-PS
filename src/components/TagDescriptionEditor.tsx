@@ -36,7 +36,7 @@ interface DistinguishingFeature {
 /**
  * Interface representing the tag data structure used in the editor.
  */
-interface Tag {
+export interface TagForEditor {
   id: string;
   name: string;
   displayName?: string | null;
@@ -51,7 +51,7 @@ interface Tag {
  */
 interface TagDescriptionEditorProps {
   /** The tag object to edit. If null, the editor will not render content. */
-  tag: Tag | null;
+  tag: TagForEditor | null;
   /** Boolean indicating if the dialog is open */
   open: boolean;
   /** Callback to handle dialog open/close state changes */
@@ -258,29 +258,25 @@ export function TagDescriptionEditor({ tag, open, onOpenChange, onSuccess }: Tag
                       components={{
                         // Override link rendering to only allow http/https protocols
                         a: ({ href, children }) => {
-                          if (!href) return <span className="text-muted-foreground">{children}</span>;
-                          try {
-                            const url = new URL(href);
-                            if (url.protocol === 'http:' || url.protocol === 'https:') {
-                              return (
-                                <a
-                                  href={href}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 dark:text-blue-400 hover:underline"
-                                >
-                                  {children}
-                                </a>
-                              );
-                            }
-                          } catch {
-                            // Invalid URL
+                          if (!href) return <span>{children}</span>;
+                          const isHttp = href.startsWith('http://') || href.startsWith('https://');
+                          if (isHttp) {
+                            return (
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 dark:text-blue-400 hover:underline"
+                              >
+                                {children}
+                              </a>
+                            );
                           }
                           return <span className="text-muted-foreground">{children}</span>;
                         },
                       }}
                     >
-                      {DOMPurify.sanitize(wikiContent)}
+                      {wikiContent}
                     </ReactMarkdown>
                   ) : (
                     <p className="text-muted-foreground">コンテンツがありません</p>
