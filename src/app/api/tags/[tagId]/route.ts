@@ -169,12 +169,8 @@ export async function PUT(request: Request, context: { params: Promise<{ tagId: 
       }
 
       // 2. Build update data
-      const updateData: {
-        description?: string | null;
-        wikiContent?: string | null;
-        externalLinks?: ExternalLink[] | null;
-        distinguishingFeatures?: string[] | null;
-      } = {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updateData: Record<string, any> = {};
 
       if (description !== undefined) {
         updateData.description = description;
