@@ -18,7 +18,7 @@ const noiseProducts = [
 export const Phase4FocusNoise: React.FC<Phase4FocusNoiseProps> = ({
   startFrame,
 }) => {
-  const frameDuration = 45; // 各商品のフォーカス時間
+  const frameDuration = 90; // 各商品のフォーカス時間
 
   return (
     <AbsoluteFill>

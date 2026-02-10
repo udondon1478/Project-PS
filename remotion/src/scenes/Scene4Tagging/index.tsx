@@ -39,19 +39,19 @@ export const Scene4Tagging: React.FC = () => {
 
   // ==========================================
 
-  // タイムライン設定 (合計150フレーム想定)
-  const ZOOM_IN_START = 30;
-  const ZOOM_IN_DURATION = 20; // ズームイン時間
+  // タイムライン設定 (合計300フレーム想定)
+  const ZOOM_IN_START = 60;
+  const ZOOM_IN_DURATION = 40; // ズームイン時間
 
   // 各ポイントへの移動開始タイミング
-  // ズームイン完了時点(35f)でPoint 1に到達
-  const POINT_2_START = 70;
-  const POINT_3_START = 180;
-  const POINT_4_START = 220;
-  const MOVE_DURATION = 15; // 移動にかかる時間
+  // ズームイン完了時点(70f)でPoint 1に到達
+  const POINT_2_START = 140;
+  const POINT_3_START = 360;
+  const POINT_4_START = 440;
+  const MOVE_DURATION = 30; // 移動にかかる時間
 
-  const ZOOM_OUT_START = 520;
-  const ZOOM_OUT_DURATION = 20;
+  const ZOOM_OUT_START = 1040;
+  const ZOOM_OUT_DURATION = 40;
 
   // 1. ズーム倍率のアニメーション
   // 等倍 -> ズーム -> ズーム維持 -> 等倍
@@ -129,9 +129,9 @@ export const Scene4Tagging: React.FC = () => {
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );
 
-  const showSecondText = frame > 75;
-  const showThirdText = frame > 282;
-  const showFourthText = frame > 633;
+  const showSecondText = frame > 150;
+  const showThirdText = frame > 564;
+  const showFourthText = frame > 1266;
 
   // テキスト切り替え時のバウンスアニメーション
   // ベースの出現アニメーション
@@ -145,21 +145,21 @@ export const Scene4Tagging: React.FC = () => {
   // 各切り替えタイミングでのバウンス
   const bounce1 = interpolate(
     frame,
-    [75, 78, 85],
+    [150, 156, 170],
     [1, 1.05, 1],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.quad) }
   );
 
   const bounce2 = interpolate(
     frame,
-    [282, 285, 292],
+    [564, 570, 584],
     [1, 1.05, 1],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.quad) }
   );
 
   const bounce3 = interpolate(
     frame,
-    [633, 636, 643],
+    [1266, 1272, 1286],
     [1, 1.05, 1],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.quad) }
   );
@@ -189,8 +189,8 @@ export const Scene4Tagging: React.FC = () => {
         />
       </div>
 
-      {/* 動画下部の黒い領域を白で上書き（633フレーム以降） */}
-      {frame >= 633 && (
+      {/* 動画下部の黒い領域を白で上書き（1266フレーム以降） */}
+      {frame >= 1266 && (
         <div
           style={{
             position: "absolute",

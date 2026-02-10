@@ -15,10 +15,10 @@ export const Scene5CTA: React.FC = () => {
   const { fps } = useVideoConfig();
 
   // Elements animation triggers
-  const logoDelay = 25;
-  const sloganDelay = 45;
-  const searchBarDelay = 70;
-  const typingDelay = 100;
+  const logoDelay = 50;
+  const sloganDelay = 90;
+  const searchBarDelay = 140;
+  const typingDelay = 200;
 
   // Logo: Pop in
   const logoScale = spring({
@@ -30,7 +30,7 @@ export const Scene5CTA: React.FC = () => {
   // Slogan: Fade up
   const sloganOpacity = interpolate(
     frame - sloganDelay,
-    [0, 15],
+    [0, 30],
     [0, 1],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );
@@ -49,7 +49,7 @@ export const Scene5CTA: React.FC = () => {
 
   const searchBarOpacity = interpolate(
     frame - searchBarDelay,
-    [0, 10],
+    [0, 20],
     [0, 1],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );
@@ -58,14 +58,14 @@ export const Scene5CTA: React.FC = () => {
   const urlText = "polyseek.jp";
   const typeProgress = interpolate(
     frame - typingDelay,
-    [0, 40],
+    [0, 80],
     [0, urlText.length],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );
   const currentText = urlText.slice(0, Math.floor(typeProgress));
 
   // Cursor blink
-  const showCursor = frame > typingDelay && frame < typingDelay + 60 && Math.floor(frame / 10) % 2 === 0;
+  const showCursor = frame > typingDelay && frame < typingDelay + 120 && Math.floor(frame / 10) % 2 === 0;
 
   return (
     <AbsoluteFill

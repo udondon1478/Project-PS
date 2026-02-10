@@ -22,56 +22,56 @@ import {
 export const Scene2Solution: React.FC = () => {
   const frame = useCurrentFrame();
 
-  // 背景フェードイン (0-30f)
-  const bgOpacity = interpolate(frame, [0, 30], [0, 1], {
+  // 背景フェードイン (0-60f)
+  const bgOpacity = interpolate(frame, [0, 60], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
     easing: Easing.out(Easing.cubic),
   });
 
-  // ロゴアニメーション (15-45f)
-  const logoScale = interpolate(frame, [15, 45], [0, 1], {
+  // ロゴアニメーション (30-90f)
+  const logoScale = interpolate(frame, [30, 90], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
     easing: Easing.out(Easing.back(1.5)),
   });
 
-  const logoOpacity = interpolate(frame, [15, 30], [0, 1], {
+  const logoOpacity = interpolate(frame, [30, 60], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  // ロゴタイプアニメーション (30-50f)
-  const logoTypeOpacity = interpolate(frame, [30, 45], [0, 1], {
+  // ロゴタイプアニメーション (60-100f)
+  const logoTypeOpacity = interpolate(frame, [60, 90], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  const logoTypeY = interpolate(frame, [30, 50], [20, 0], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-    easing: Easing.out(Easing.cubic),
-  });
-
-  // キャッチコピーアニメーション (45-75f)
-  const catchcopyOpacity = interpolate(frame, [45, 60], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
-  const catchcopyY = interpolate(frame, [45, 65], [30, 0], {
+  const logoTypeY = interpolate(frame, [60, 100], [20, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
     easing: Easing.out(Easing.cubic),
   });
 
-  // 説明文アニメーション (75-105f)
-  const descOpacity = interpolate(frame, [75, 90], [0, 1], {
+  // キャッチコピーアニメーション (90-150f)
+  const catchcopyOpacity = interpolate(frame, [90, 120], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  const descY = interpolate(frame, [75, 95], [20, 0], {
+  const catchcopyY = interpolate(frame, [90, 130], [30, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.out(Easing.cubic),
+  });
+
+  // 説明文アニメーション (150-210f)
+  const descOpacity = interpolate(frame, [150, 180], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  const descY = interpolate(frame, [150, 190], [20, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
     easing: Easing.out(Easing.cubic),

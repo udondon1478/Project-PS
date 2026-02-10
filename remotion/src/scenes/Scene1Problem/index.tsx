@@ -27,9 +27,9 @@ import { DimOverlay } from "../../components/DimOverlay";
  * - 8秒以降 (240f-): ノイズ商品にフォーカス
  */
 
-// 動画フレーム定義（30fps）
-const VIDEO_FREEZE_FRAME = 177; // 動画05:25 - フリーズポイント
-const VIDEO_RESUME_FRAME = 180; // 動画05:30 - 再開ポイント
+// 動画フレーム定義（60fps）
+const VIDEO_FREEZE_FRAME = 354; // 動画05:25 - フリーズポイント
+const VIDEO_RESUME_FRAME = 360; // 動画05:30 - 再開ポイント
 const SKIP_DURATION = VIDEO_RESUME_FRAME - VIDEO_FREEZE_FRAME; // スキップするフレーム数
 
 export const Scene1Problem: React.FC = () => {
@@ -47,10 +47,10 @@ export const Scene1Problem: React.FC = () => {
   const searchBoxY = 0;
 
   // ズームアニメーション（プロフェッショナルなイージング適用）
-  // 0-30f: 1倍、30-60f: 1→3倍（ease-out）、60-120f: 3倍維持、120-150f: 3→1倍（ease-in-out）
+  // 0-60f: 1倍、60-120f: 1→3倍（ease-out）、120-240f: 3倍維持、240-300f: 3→1倍（ease-in-out）
   const zoomIn = interpolate(
     frame,
-    [30, 60],
+    [60, 120],
     [1, 3],
     {
       extrapolateLeft: "clamp",
@@ -61,7 +61,7 @@ export const Scene1Problem: React.FC = () => {
 
   const zoomOut = interpolate(
     frame,
-    [120, 150],
+    [240, 300],
     [3, 1],
     {
       extrapolateLeft: "clamp",
@@ -72,13 +72,13 @@ export const Scene1Problem: React.FC = () => {
 
   // フレームに応じてズームスケールを決定
   let zoomScale: number;
-  if (frame < 30) {
+  if (frame < 60) {
     zoomScale = 1;
-  } else if (frame < 60) {
-    zoomScale = zoomIn;
   } else if (frame < 120) {
+    zoomScale = zoomIn;
+  } else if (frame < 240) {
     zoomScale = 3;
-  } else if (frame < 150) {
+  } else if (frame < 300) {
     zoomScale = zoomOut;
   } else {
     zoomScale = 1;
@@ -92,7 +92,7 @@ export const Scene1Problem: React.FC = () => {
 
   const translateInX = interpolate(
     frame,
-    [30, 60],
+    [60, 120],
     [0, maxTranslateX],
     {
       extrapolateLeft: "clamp",
@@ -103,7 +103,7 @@ export const Scene1Problem: React.FC = () => {
 
   const translateOutX = interpolate(
     frame,
-    [120, 150],
+    [240, 300],
     [maxTranslateX, 0],
     {
       extrapolateLeft: "clamp",
@@ -114,7 +114,7 @@ export const Scene1Problem: React.FC = () => {
 
   const translateInY = interpolate(
     frame,
-    [30, 60],
+    [60, 120],
     [0, maxTranslateY],
     {
       extrapolateLeft: "clamp",
@@ -125,7 +125,7 @@ export const Scene1Problem: React.FC = () => {
 
   const translateOutY = interpolate(
     frame,
-    [120, 150],
+    [240, 300],
     [maxTranslateY, 0],
     {
       extrapolateLeft: "clamp",
@@ -137,16 +137,16 @@ export const Scene1Problem: React.FC = () => {
   // フレームに応じてトランスレートを決定
   let translateX: number;
   let translateY: number;
-  if (frame < 30) {
+  if (frame < 60) {
     translateX = 0;
     translateY = 0;
-  } else if (frame < 60) {
+  } else if (frame < 120) {
     translateX = translateInX;
     translateY = translateInY;
-  } else if (frame < 120) {
+  } else if (frame < 240) {
     translateX = maxTranslateX;
     translateY = maxTranslateY;
-  } else if (frame < 150) {
+  } else if (frame < 300) {
     translateX = translateOutX;
     translateY = translateOutY;
   } else {
@@ -155,15 +155,15 @@ export const Scene1Problem: React.FC = () => {
   }
 
   // フォーカス開始フレーム（スキップ分を調整）
-  const focusStartFrame = 240 - SKIP_DURATION;
-  const focusDuration = 60; // 各商品のフォーカス時間
+  const focusStartFrame = 480 - SKIP_DURATION;
+  const focusDuration = 120; // 各商品のフォーカス時間
   const totalFocusDuration = focusDuration * noiseProducts.length;
   const focusEndFrame = focusStartFrame + totalFocusDuration;
 
   // フォーカス終了演出のタイミング
-  const focusShrinkDuration = 20; // 0.67秒でフォーカス領域を縮小
-  const zoomOutDuration = 20; // 0.67秒でズームアウト
-  const dimFadeInDuration = 15; // 0.5秒で暗転フェードイン
+  const focusShrinkDuration = 40; // 0.67秒でフォーカス領域を縮小
+  const zoomOutDuration = 40; // 0.67秒でズームアウト
+  const dimFadeInDuration = 30; // 0.5秒で暗転フェードイン
 
   // 最後の商品（ギミック）の位置
   const lastProduct = noiseProducts[noiseProducts.length - 1];
@@ -175,8 +175,8 @@ export const Scene1Problem: React.FC = () => {
 
   // 商品フォーカス時のズーム（1.5倍）- パン方式
   const PRODUCT_ZOOM_SCALE = 1.5;
-  const zoomInDuration = 12; // 0.4秒でズームイン
-  const panDuration = 15; // 0.5秒でパン移動
+  const zoomInDuration = 24; // 0.4秒でズームイン
+  const panDuration = 30; // 0.5秒でパン移動
 
   // 現在フォーカス中の商品を判定
   const localFocusFrame = frame - focusStartFrame;
@@ -483,7 +483,7 @@ export const Scene1Problem: React.FC = () => {
             style={{
               opacity: interpolate(
                 frame - textStartFrame,
-                [0, 20],
+                [0, 40],
                 [0, 1],
                 {
                   extrapolateLeft: "clamp",
@@ -493,7 +493,7 @@ export const Scene1Problem: React.FC = () => {
               ),
               transform: `translateY(${interpolate(
                 frame - textStartFrame,
-                [0, 20],
+                [0, 40],
                 [60, 0],
                 {
                   extrapolateLeft: "clamp",

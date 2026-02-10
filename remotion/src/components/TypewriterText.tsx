@@ -15,7 +15,7 @@ export const TypewriterText: React.FC<TypewriterTextProps> = ({
   style,
 }) => {
   const frame = useCurrentFrame();
-  const fps = 30;
+  const fps = 60;
   const framesPerCharacter = fps / charactersPerSecond;
 
   const elapsedFrames = Math.max(0, frame - startFrame);
@@ -23,7 +23,7 @@ export const TypewriterText: React.FC<TypewriterTextProps> = ({
   const displayText = text.slice(0, Math.min(charactersToShow, text.length));
 
   const showCursor = frame >= startFrame && charactersToShow <= text.length;
-  const cursorOpacity = Math.sin(frame * 0.3) > 0 ? 1 : 0;
+  const cursorOpacity = Math.sin(frame * 0.15) > 0 ? 1 : 0;
 
   return (
     <span style={style}>

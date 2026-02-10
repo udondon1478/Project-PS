@@ -38,8 +38,8 @@ export const DimOverlay: React.FC<DimOverlayProps> = ({
 
   const localFrame = frame - startFrame;
 
-  // フェードイン・アウト（0.3秒 = 9フレーム）
-  const fadeFrames = 9;
+  // フェードイン・アウト（0.3秒 = 18フレーム）
+  const fadeFrames = 18;
   const opacity = interpolate(
     localFrame,
     [0, fadeFrames, duration - fadeFrames, duration],

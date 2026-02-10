@@ -18,7 +18,7 @@ const TAG_ACTIONS = [
     id: 1,
     userPos: { x: 200, y: 300 }, // 左上
     tagText: "うさぎ",
-    delay: 30,
+    delay: 60,
     angle: -10,
     endOffset: { x: -120, y: -180 }
   },
@@ -26,7 +26,7 @@ const TAG_ACTIONS = [
     id: 2,
     userPos: { x: 1720, y: 300 }, // 右上
     tagText: "宇宙服",
-    delay: 50,
+    delay: 100,
     angle: 8,
     endOffset: { x: 140, y: -100 }
   },
@@ -34,7 +34,7 @@ const TAG_ACTIONS = [
     id: 3,
     userPos: { x: 300, y: 800 }, // 左下
     tagText: "SF",
-    delay: 70,
+    delay: 140,
     angle: -5,
     endOffset: { x: -100, y: 150 }
   },
@@ -42,7 +42,7 @@ const TAG_ACTIONS = [
     id: 4,
     userPos: { x: 1600, y: 850 }, // 右下
     tagText: "異形頭",
-    delay: 90,
+    delay: 180,
     angle: 12,
     endOffset: { x: 130, y: 200 }
   },
@@ -50,7 +50,7 @@ const TAG_ACTIONS = [
     id: 5,
     userPos: { x: 960, y: 150 }, // 上中央
     tagText: "メカ",
-    delay: 100,
+    delay: 200,
     angle: 0,
     endOffset: { x: 0, y: -250 }
   }
@@ -90,17 +90,17 @@ export const Scene3SocialTagging: React.FC = () => {
       });
 
       // スクロール演出: 画面詳細を見せるために画像をゆっくりスクロール
-      const scrollStart = 60;
+      const scrollStart = 120;
       // アドレスバー回避のため初期位置をオフセットし、タグエリアまでスクロール
       const scrollY = interpolate(
         frame,
-        [scrollStart, scrollStart + 150],
+        [scrollStart, scrollStart + 300],
         [0, -150], // 初期位置を-250pxにしてアドレスバーを隠す
         { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.bezier(0.25, 0.1, 0.25, 1) } // スマートなイージング
       );
 
       // メッセージ表示タイミング
-      const messageStart = 220;
+      const messageStart = 440;
 
       return (
         <AbsoluteFill style={{ backgroundColor: "#000" }}>
@@ -180,8 +180,8 @@ export const Scene3SocialTagging: React.FC = () => {
             });
 
             // タグ発射（ユーザーから商品へ）
-            const flightStart = action.delay + 15;
-            const flightDuration = 30; // 少しゆっくりに
+            const flightStart = action.delay + 30;
+            const flightDuration = 60; // 少しゆっくりに
 
             const tagProgress = interpolate(
                 frame,
@@ -277,8 +277,8 @@ export const Scene3SocialTagging: React.FC = () => {
             bottom: 120,
             width: "100%",
             textAlign: "center",
-            opacity: interpolate(frame, [messageStart, messageStart + 20], [0, 1]),
-            transform: `translateY(${interpolate(frame, [messageStart, messageStart + 20], [20, 0], { extrapolateRight: "clamp", easing: Easing.out(Easing.cubic) })}px)`,
+            opacity: interpolate(frame, [messageStart, messageStart + 40], [0, 1]),
+            transform: `translateY(${interpolate(frame, [messageStart, messageStart + 40], [20, 0], { extrapolateRight: "clamp", easing: Easing.out(Easing.cubic) })}px)`,
             zIndex: 100,
         }}>
             <h2 style={{
