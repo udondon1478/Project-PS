@@ -14,38 +14,42 @@ export const Scene5CTA: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Elements animation triggers
-  const logoDelay = 50;
-  const sloganDelay = 90;
-  const searchBarDelay = 140;
-  const typingDelay = 200;
+  // タイミング（360fに圧縮）
+  const logoDelay = 30;
+  const sloganDelay = 60;
+  const searchBarDelay = 100;
+  const typingDelay = 150;
 
-  // Logo: Pop in
+  // Logo: Bouncy spring
   const logoScale = spring({
     frame: frame - logoDelay,
     fps,
-    config: { damping: 12 },
+    config: { damping: 8 },
   });
 
-  // Slogan: Fade up
+  // Slogan: Snappy spring
+  const sloganSpring = spring({
+    frame: frame - sloganDelay,
+    fps,
+    config: { damping: 20, stiffness: 200 },
+  });
+
   const sloganOpacity = interpolate(
     frame - sloganDelay,
-    [0, 30],
+    [0, 20],
     [0, 1],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );
-  const sloganTranslateY = interpolate(
-    spring({ frame: frame - sloganDelay, fps }),
-    [0, 1],
-    [20, 0]
-  );
+  const sloganTranslateY = interpolate(sloganSpring, [0, 1], [20, 0]);
 
-  // Search Bar: Expand width
-  const searchBarWidth = interpolate(
-    spring({ frame: frame - searchBarDelay, fps }),
-    [0, 1],
-    [0, 800]
-  );
+  // Search Bar: Heavy spring
+  const searchBarSpring = spring({
+    frame: frame - searchBarDelay,
+    fps,
+    config: { damping: 15, stiffness: 80, mass: 2 },
+  });
+
+  const searchBarWidth = interpolate(searchBarSpring, [0, 1], [0, 800]);
 
   const searchBarOpacity = interpolate(
     frame - searchBarDelay,
@@ -58,19 +62,27 @@ export const Scene5CTA: React.FC = () => {
   const urlText = "polyseek.jp";
   const typeProgress = interpolate(
     frame - typingDelay,
-    [0, 80],
+    [0, 60],
     [0, urlText.length],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );
   const currentText = urlText.slice(0, Math.floor(typeProgress));
 
   // Cursor blink
-  const showCursor = frame > typingDelay && frame < typingDelay + 120 && Math.floor(frame / 10) % 2 === 0;
+  const showCursor = frame > typingDelay && frame < typingDelay + 100 && Math.floor(frame / 10) % 2 === 0;
+
+  // 検索ボタンのパルス（タイプライター完了後 ~frame 230）
+  const typingDone = frame > typingDelay + 70;
+  const pulseCycle = (frame - (typingDelay + 70)) / 60;
+  const pulseScale = typingDone ? 1 + Math.sin(pulseCycle * Math.PI * 2) * 0.03 : 1;
+  const pulseGlow = typingDone
+    ? `0 0 ${12 + Math.sin(pulseCycle * Math.PI * 2) * 8}px rgba(34, 197, 94, ${0.4 + Math.sin(pulseCycle * Math.PI * 2) * 0.3})`
+    : "none";
 
   return (
     <AbsoluteFill
       style={{
-        backgroundColor: "#ffffff",
+        background: "linear-gradient(180deg, #f0faf0 0%, #ffffff 40%, #f8fff8 100%)",
         justifyContent: "center",
         alignItems: "center",
         fontFamily: notoSansJP,
@@ -110,7 +122,8 @@ export const Scene5CTA: React.FC = () => {
             opacity: sloganOpacity,
             transform: `translateY(${sloganTranslateY}px)`,
             fontSize: 48,
-            fontWeight: "bold",
+            fontWeight: 900,
+            fontFamily: notoSansJP,
             color: "#333",
             letterSpacing: "0.05em",
             textAlign: "center",
@@ -171,7 +184,7 @@ export const Scene5CTA: React.FC = () => {
                 }} />
             </div>
 
-            {/* "Search" Button visual on the right */}
+            {/* "Search" Button with pulse */}
             <div style={{
                 position: "absolute",
                 right: 10,
@@ -186,6 +199,8 @@ export const Scene5CTA: React.FC = () => {
                 color: "white",
                 fontWeight: "bold",
                 fontSize: 20,
+                transform: `scale(${pulseScale})`,
+                boxShadow: pulseGlow,
             }}>
                 検索
             </div>

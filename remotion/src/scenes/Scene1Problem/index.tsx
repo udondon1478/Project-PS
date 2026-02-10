@@ -7,9 +7,12 @@ import {
   useCurrentFrame,
   interpolate,
   Easing,
+  spring,
+  useVideoConfig,
 } from "remotion";
 import { FocusHighlight } from "../../components/FocusHighlight";
 import { DimOverlay } from "../../components/DimOverlay";
+import { notoSansJP } from "../../fonts";
 
 /**
  * Scene 1: 問題提起 - BOOTHの検索ノイズを視覚化
@@ -34,6 +37,7 @@ const SKIP_DURATION = VIDEO_RESUME_FRAME - VIDEO_FREEZE_FRAME; // スキップ�
 
 export const Scene1Problem: React.FC = () => {
   const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
 
   // ノイズ商品の位置（3商品のみ：衣装、テクスチャ、ギミック）
   const noiseProducts = [
@@ -470,7 +474,7 @@ export const Scene1Problem: React.FC = () => {
         />
       </Sequence>
 
-      {/* 問題提起テキスト（ズームアウト終了後に表示） */}
+      {/* 問題提起テキスト（ズームアウト終了後に表示） - スタッガーアニメーション */}
       <Sequence from={textStartFrame}>
         <AbsoluteFill
           style={{
@@ -479,49 +483,59 @@ export const Scene1Problem: React.FC = () => {
             pointerEvents: "none",
           }}
         >
-          <div
-            style={{
-              opacity: interpolate(
-                frame - textStartFrame,
-                [0, 40],
-                [0, 1],
-                {
-                  extrapolateLeft: "clamp",
-                  extrapolateRight: "clamp",
-                  easing: Easing.out(Easing.quad),
-                }
-              ),
-              transform: `translateY(${interpolate(
-                frame - textStartFrame,
-                [0, 40],
-                [60, 0],
-                {
-                  extrapolateLeft: "clamp",
-                  extrapolateRight: "clamp",
-                  easing: Easing.out(Easing.back(1.7)),
-                }
-              )}px)`,
-              textAlign: "center",
-            }}
-          >
+          <div style={{ textAlign: "center" }}>
+            {/* Line 1: Heavy spring + opacity fade */}
             <p
               style={{
                 color: "#fff",
                 fontSize: 48,
-                fontWeight: "bold",
+                fontWeight: 700,
+                fontFamily: notoSansJP,
                 margin: 0,
                 textShadow: "0 0 20px rgba(255, 255, 255, 0.5), 0 0 40px rgba(255, 255, 255, 0.3), 0 4px 20px rgba(0, 0, 0, 0.5)",
+                opacity: interpolate(
+                  frame - textStartFrame,
+                  [0, 40],
+                  [0, 1],
+                  { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+                ),
+                transform: `translateY(${interpolate(
+                  spring({
+                    frame: frame - textStartFrame,
+                    fps,
+                    config: { damping: 15, stiffness: 80, mass: 2 },
+                  }),
+                  [0, 1],
+                  [60, 0]
+                )}px)`,
               }}
             >
               求めていない商品ばかり表示されて
             </p>
+            {/* Line 2: 20フレーム遅延スタッガー + scale 0.9→1 + Moderate bounce */}
             <p
               style={{
                 color: "#ff6b6b",
                 fontSize: 56,
-                fontWeight: "bold",
+                fontWeight: 900,
+                fontFamily: notoSansJP,
                 margin: "20px 0 0 0",
                 textShadow: "0 0 30px rgba(255, 107, 107, 0.8), 0 0 60px rgba(255, 107, 107, 0.5), 0 4px 20px rgba(0, 0, 0, 0.5)",
+                opacity: interpolate(
+                  frame - textStartFrame - 20,
+                  [0, 30],
+                  [0, 1],
+                  { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+                ),
+                transform: `scale(${interpolate(
+                  spring({
+                    frame: frame - textStartFrame - 20,
+                    fps,
+                    config: { damping: 12, stiffness: 100 },
+                  }),
+                  [0, 1],
+                  [0.9, 1]
+                )})`,
               }}
             >
               困ったことはありませんか？

@@ -1,5 +1,5 @@
 import { loadFont } from "@remotion/google-fonts/NotoSansJP";
 
 export const { fontFamily: notoSansJP } = loadFont("normal", {
-  weights: ["400", "700"],
+  weights: ["300", "400", "700", "900"],
 });

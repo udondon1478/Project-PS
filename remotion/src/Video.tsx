@@ -1,10 +1,10 @@
 import { AbsoluteFill } from "remotion";
 import {
   TransitionSeries,
-  linearTiming,
   springTiming,
 } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
+import { wipe } from "@remotion/transitions/wipe";
 import { slide } from "@remotion/transitions/slide";
 import { Scene1Problem } from "./scenes/Scene1Problem";
 import { Scene2Solution } from "./scenes/Scene2Solution";
@@ -16,16 +16,19 @@ export const Video: React.FC = () => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
       <TransitionSeries>
-        <TransitionSeries.Sequence durationInFrames={1080}>
+        <TransitionSeries.Sequence durationInFrames={1020}>
           <Scene1Problem />
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition
-          presentation={fade()}
-          timing={linearTiming({ durationInFrames: 60 })}
+          presentation={wipe({ direction: "from-left" })}
+          timing={springTiming({
+            config: { damping: 200 },
+            durationInFrames: 60,
+          })}
         />
 
-        <TransitionSeries.Sequence durationInFrames={300}>
+        <TransitionSeries.Sequence durationInFrames={540}>
           <Scene2Solution />
         </TransitionSeries.Sequence>
 
@@ -37,31 +40,31 @@ export const Video: React.FC = () => {
           })}
         />
 
-        <TransitionSeries.Sequence durationInFrames={600}>
+        <TransitionSeries.Sequence durationInFrames={540}>
           <Scene3SocialTagging />
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition
           presentation={slide({ direction: "from-right" })}
           timing={springTiming({
+            config: { damping: 20, stiffness: 200 },
+            durationInFrames: 60,
+          })}
+        />
+
+        <TransitionSeries.Sequence durationInFrames={1460}>
+          <Scene4Tagging />
+        </TransitionSeries.Sequence>
+
+        <TransitionSeries.Transition
+          presentation={wipe({ direction: "from-top" })}
+          timing={springTiming({
             config: { damping: 200 },
             durationInFrames: 60,
           })}
         />
 
-        <TransitionSeries.Sequence durationInFrames={1400}>
-          <Scene4Tagging />
-        </TransitionSeries.Sequence>
-
-        <TransitionSeries.Transition
-          presentation={slide({ direction: "from-bottom" })}
-          timing={springTiming({
-            config: { damping: 200, stiffness: 100 },
-            durationInFrames: 60,
-          })}
-        />
-
-        <TransitionSeries.Sequence durationInFrames={420}>
+        <TransitionSeries.Sequence durationInFrames={360}>
           <Scene5CTA />
         </TransitionSeries.Sequence>
       </TransitionSeries>

@@ -11,6 +11,7 @@ import {
   Easing,
 } from "remotion";
 import { BRAND_COLORS } from "../../constants";
+import { notoSansJP } from "../../fonts";
 
 // ユーザーとタグの定義
 const TAG_ACTIONS = [
@@ -100,7 +101,7 @@ export const Scene3SocialTagging: React.FC = () => {
       );
 
       // メッセージ表示タイミング
-      const messageStart = 440;
+      const messageStart = 320;
 
       return (
         <AbsoluteFill style={{ backgroundColor: "#000" }}>
@@ -108,7 +109,7 @@ export const Scene3SocialTagging: React.FC = () => {
           <AbsoluteFill
             style={{
               opacity: bgOpacity,
-              background: `radial-gradient(ellipse at center, #222 0%, #111 60%, #000 100%)`, // 緑要素を排除し黒ベースへ
+              background: `radial-gradient(ellipse at center, ${BRAND_COLORS.darkGreen} 0%, #0a1a10 60%, #000 100%)`,
             }}
           />
 
@@ -179,16 +180,15 @@ export const Scene3SocialTagging: React.FC = () => {
                 config: { stiffness: 100, damping: 15 } // 少し落ち着かせる
             });
 
-            // タグ発射（ユーザーから商品へ）
+            // タグ発射（ユーザーから商品へ）- Heavy spring物理
             const flightStart = action.delay + 30;
-            const flightDuration = 60; // 少しゆっくりに
+            const flightDuration = 60;
 
-            const tagProgress = interpolate(
-                frame,
-                [flightStart, flightStart + flightDuration],
-                [0, 1],
-                { extrapolateRight: "clamp", easing: Easing.bezier(0.22, 1, 0.36, 1) } // スマートな到着
-            );
+            const tagProgress = spring({
+                frame: frame - flightStart,
+                fps,
+                config: { damping: 15, stiffness: 80, mass: 2 },
+            });
 
             // 始点と終点の計算
             const startX = action.userPos.x;
@@ -201,14 +201,18 @@ export const Scene3SocialTagging: React.FC = () => {
             const currentX = startX + (endX - startX) * tagProgress;
             const currentY = startY + (endY - startY) * tagProgress;
 
-            // 発射中は少し小さく、着弾で大きく
-            const scaleBase = tagProgress < 0.1 ? 0.3 : 1;
-            // 着弾時のバウンス（控えめに）
-            const bounce = tagProgress >= 1 ?
-                Math.sin((frame - (flightStart + flightDuration)) * 0.4) * 0.03 * Math.max(0, 1 - (frame - (flightStart + flightDuration)) * 0.1)
-                : 0;
+            // 着地バウンス - Bouncy spring
+            const landingBounce = spring({
+                frame: frame - (flightStart + flightDuration),
+                fps,
+                config: { damping: 8 },
+            });
 
-            const currentScale = scaleBase + bounce;
+            // 発射中は少し小さく、着弾でバウンス
+            const scaleBase = tagProgress < 0.1 ? 0.3 : 1;
+            const currentScale = frame > flightStart + flightDuration
+                ? scaleBase * (0.95 + landingBounce * 0.05)
+                : scaleBase;
 
             return (
                 <React.Fragment key={action.id}>
@@ -270,33 +274,53 @@ export const Scene3SocialTagging: React.FC = () => {
             );
           })}
 
-      {/* メッセージ表示 */}
+      {/* メッセージ表示 - スタッガーアニメーション */}
       <Sequence from={messageStart}>
         <div style={{
             position: "absolute",
             bottom: 120,
             width: "100%",
             textAlign: "center",
-            opacity: interpolate(frame, [messageStart, messageStart + 40], [0, 1]),
-            transform: `translateY(${interpolate(frame, [messageStart, messageStart + 40], [20, 0], { extrapolateRight: "clamp", easing: Easing.out(Easing.cubic) })}px)`,
             zIndex: 100,
+            fontFamily: notoSansJP,
         }}>
-            <h2 style={{
+            {/* Line 1: 先に表示 */}
+            <p style={{
                 color: "#fff",
                 fontSize: 52,
-                fontWeight: "bold",
-                // ドロップシャドウを強化し、背景との分離を明確化
+                fontWeight: 700,
+                fontFamily: notoSansJP,
                 textShadow: "0 4px 30px rgba(0,0,0,0.9), 0 2px 10px rgba(0,0,0,0.8)",
                 margin: 0,
                 lineHeight: 1.4,
+                opacity: interpolate(frame, [messageStart, messageStart + 30], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }),
+                transform: `translateY(${interpolate(
+                    spring({ frame: frame - messageStart, fps, config: { damping: 15, stiffness: 80, mass: 2 } }),
+                    [0, 1], [20, 0]
+                )}px)`,
             }}>
-                検索だけでは見えない価値が<br/>
+                公式にはない細かな特徴も
+            </p>
+            {/* Line 2: 15フレーム遅延 + PolySeekをbrightGreen着色 + fontWeight 900 */}
+            <p style={{
+                color: "#fff",
+                fontSize: 52,
+                fontWeight: 900,
+                fontFamily: notoSansJP,
+                textShadow: "0 4px 30px rgba(0,0,0,0.9), 0 2px 10px rgba(0,0,0,0.8)",
+                margin: "8px 0 0 0",
+                lineHeight: 1.4,
+                opacity: interpolate(frame, [messageStart + 15, messageStart + 45], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }),
+                transform: `translateY(${interpolate(
+                    spring({ frame: frame - messageStart - 15, fps, config: { damping: 12, stiffness: 100 } }),
+                    [0, 1], [20, 0]
+                )}px)`,
+            }}>
                 <span style={{
-                    color: "#fff",
-                    // 発光も少し上品に、しかし強く
-                    textShadow: "0 0 25px rgba(0, 0, 0, 0.9)"
-                }}>PolySeek</span>で見つかる
-            </h2>
+                    color: "#ffffff",
+                    // シンプルな白文字に変更し、視認性を最優先（周囲のドロップシャドウは親要素から継承）
+                }}>ユーザー視点でタグ付け</span>
+            </p>
         </div>
       </Sequence>
     </AbsoluteFill>

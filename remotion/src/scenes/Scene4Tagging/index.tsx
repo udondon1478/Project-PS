@@ -6,7 +6,10 @@ import {
   useCurrentFrame,
   interpolate,
   Easing,
+  spring,
+  useVideoConfig,
 } from "remotion";
+import { notoSansJP } from "../../fonts";
 
 /**
  * Scene 4: 実際のタグ付け操作デモ (Easy Tagging)
@@ -17,6 +20,7 @@ import {
 
 export const Scene4Tagging: React.FC = () => {
   const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
   const videoSrc = staticFile("polyseek_tag_adding.mov");
   const width = 1920;
   const height = 1080;
@@ -46,8 +50,8 @@ export const Scene4Tagging: React.FC = () => {
   // 各ポイントへの移動開始タイミング
   // ズームイン完了時点(70f)でPoint 1に到達
   const POINT_2_START = 140;
-  const POINT_3_START = 360;
-  const POINT_4_START = 440;
+  const POINT_3_START = 290;
+  const POINT_4_START = 580;
   const MOVE_DURATION = 30; // 移動にかかる時間
 
   const ZOOM_OUT_START = 1040;
@@ -134,35 +138,35 @@ export const Scene4Tagging: React.FC = () => {
   const showFourthText = frame > 1266;
 
   // テキスト切り替え時のバウンスアニメーション
-  // ベースの出現アニメーション
-  const baseScale = interpolate(
-    frame,
-    [ZOOM_IN_START, ZOOM_IN_START + 10],
-    [0.8, 1],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.out(Easing.back(1.5)) }
-  );
+  // ベースの出現アニメーション - spring化
+  const baseSpring = spring({
+    frame: frame - ZOOM_IN_START,
+    fps,
+    config: { damping: 12, stiffness: 100 },
+  });
+  const baseScale = interpolate(baseSpring, [0, 1], [0.8, 1]);
 
-  // 各切り替えタイミングでのバウンス
-  const bounce1 = interpolate(
-    frame,
-    [150, 156, 170],
-    [1, 1.05, 1],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.quad) }
-  );
+  // 各切り替えタイミングでのバウンス - Snappy spring
+  const bounce1Spring = spring({
+    frame: frame - 150,
+    fps,
+    config: { damping: 20, stiffness: 200 },
+  });
+  const bounce1 = frame > 150 ? 1 + (1 - bounce1Spring) * 0.05 : 1;
 
-  const bounce2 = interpolate(
-    frame,
-    [564, 570, 584],
-    [1, 1.05, 1],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.quad) }
-  );
+  const bounce2Spring = spring({
+    frame: frame - 564,
+    fps,
+    config: { damping: 20, stiffness: 200 },
+  });
+  const bounce2 = frame > 564 ? 1 + (1 - bounce2Spring) * 0.05 : 1;
 
-  const bounce3 = interpolate(
-    frame,
-    [1266, 1272, 1286],
-    [1, 1.05, 1],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.quad) }
-  );
+  const bounce3Spring = spring({
+    frame: frame - 1266,
+    fps,
+    config: { damping: 20, stiffness: 200 },
+  });
+  const bounce3 = frame > 1266 ? 1 + (1 - bounce3Spring) * 0.05 : 1;
 
   // すべてのスケール効果を合成
   const containerScale = baseScale * bounce1 * bounce2 * bounce3;
@@ -224,8 +228,9 @@ export const Scene4Tagging: React.FC = () => {
              }}>
                  <h2 style={{
                      margin: 0,
-                     fontSize: showThirdText && !showFourthText ? 42 : 42,
-                     fontWeight: "bold",
+                     fontSize: 42,
+                     fontWeight: showFourthText ? 900 : 700,
+                     fontFamily: notoSansJP,
                      color: "#333",
                      textAlign: "center",
                  }}>
