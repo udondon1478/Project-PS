@@ -174,6 +174,7 @@ export const Scene4Tagging: React.FC = () => {
         style={{
           width: "100%",
           height: "100%",
+          backgroundColor: "#fff",
           transform: `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`,
           transformOrigin: "center center",
         }}
@@ -187,6 +188,20 @@ export const Scene4Tagging: React.FC = () => {
           }}
         />
       </div>
+
+      {/* 動画下部の黒い領域を白で上書き（633フレーム以降） */}
+      {frame >= 633 && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            width: "100%",
+            height: "3%",
+            backgroundColor: "#fff",
+          }}
+        />
+      )}
 
       {/* テロップオーバーレイ */}
       <AbsoluteFill>

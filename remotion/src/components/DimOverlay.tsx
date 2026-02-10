@@ -59,17 +59,17 @@ export const DimOverlay: React.FC<DimOverlayProps> = ({
     <svg
       style={{
         position: "absolute",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
+        top: -2,
+        left: -2,
+        width: "calc(100% + 4px)",
+        height: "calc(100% + 4px)",
         pointerEvents: "none",
       }}
     >
       <defs>
         <mask id={`dim-mask-${startFrame}`}>
-          {/* 全体を白（表示） */}
-          <rect x="0" y="0" width="100%" height="100%" fill="white" />
+          {/* 全体を白（表示） - サブピクセルギャップ防止のため余裕を持たせる */}
+          <rect x="0" y="0" width="1924" height="1084" fill="white" />
           {/* フォーカス領域を黒（非表示=暗転しない） */}
           <rect
             x={left}
@@ -82,12 +82,12 @@ export const DimOverlay: React.FC<DimOverlayProps> = ({
           />
         </mask>
       </defs>
-      {/* 暗転レイヤー */}
+      {/* 暗転レイヤー - サブピクセルギャップ防止のため余裕を持たせる */}
       <rect
         x="0"
         y="0"
-        width="100%"
-        height="100%"
+        width="1924"
+        height="1084"
         fill="black"
         opacity={opacity}
         mask={`url(#dim-mask-${startFrame})`}

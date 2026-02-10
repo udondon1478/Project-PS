@@ -6,7 +6,6 @@ import {
 } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
 import { slide } from "@remotion/transitions/slide";
-import { wipe } from "@remotion/transitions/wipe";
 import { Scene1Problem } from "./scenes/Scene1Problem";
 import { Scene2Solution } from "./scenes/Scene2Solution";
 import { Scene3SocialTagging } from "./scenes/Scene3SocialTagging";
@@ -31,8 +30,11 @@ export const Video: React.FC = () => {
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition
-          presentation={slide({ direction: "from-right" })}
-          timing={linearTiming({ durationInFrames: 20 })}
+          presentation={fade()}
+          timing={springTiming({
+            config: { damping: 200 },
+            durationInFrames: 30,
+          })}
         />
 
         <TransitionSeries.Sequence durationInFrames={300}>
@@ -40,8 +42,11 @@ export const Video: React.FC = () => {
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition
-          presentation={wipe({ direction: "from-right" })}
-          timing={linearTiming({ durationInFrames: 20 })}
+          presentation={slide({ direction: "from-right" })}
+          timing={springTiming({
+            config: { damping: 200 },
+            durationInFrames: 30,
+          })}
         />
 
         <TransitionSeries.Sequence durationInFrames={700}>
@@ -51,7 +56,7 @@ export const Video: React.FC = () => {
         <TransitionSeries.Transition
           presentation={slide({ direction: "from-bottom" })}
           timing={springTiming({
-            config: { damping: 20, stiffness: 90 },
+            config: { damping: 200, stiffness: 100 },
             durationInFrames: 30,
           })}
         />
