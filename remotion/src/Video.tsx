@@ -11,12 +11,13 @@ import { Scene2Solution } from "./scenes/Scene2Solution";
 import { Scene3SocialTagging } from "./scenes/Scene3SocialTagging";
 import { Scene4Tagging } from "./scenes/Scene4Tagging";
 import { Scene5CTA } from "./scenes/Scene5CTA";
+import { AudioLayer } from "./components/AudioLayer";
 
 export const Video: React.FC = () => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
       <TransitionSeries>
-        <TransitionSeries.Sequence durationInFrames={1020}>
+        <TransitionSeries.Sequence durationInFrames={600}>
           <Scene1Problem />
         </TransitionSeries.Sequence>
 
@@ -68,6 +69,7 @@ export const Video: React.FC = () => {
           <Scene5CTA />
         </TransitionSeries.Sequence>
       </TransitionSeries>
+      <AudioLayer />
     </AbsoluteFill>
   );
 };

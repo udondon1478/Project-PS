@@ -13,6 +13,12 @@ interface FocusHighlightProps {
   zoomScale?: number;
   /** ズームを適用するコールバック */
   onZoomChange?: (scale: number, translateX: number, translateY: number) => void;
+  /** カメラスケールの補正倍率（デフォルト: 1） */
+  renderScale?: number;
+  /** ラベルのX方向オフセット（視覚ピクセル、正=右）デフォルト: 0 */
+  labelOffsetX?: number;
+  /** ラベルのY方向オフセット（視覚ピクセル、正=上＝商品に近づく）デフォルト: 0 */
+  labelOffsetY?: number;
 }
 
 export const FocusHighlight: React.FC<FocusHighlightProps> = ({
@@ -23,6 +29,9 @@ export const FocusHighlight: React.FC<FocusHighlightProps> = ({
   label,
   startFrame,
   duration,
+  renderScale = 1,
+  labelOffsetX = 0,
+  labelOffsetY = 0,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -68,15 +77,15 @@ export const FocusHighlight: React.FC<FocusHighlightProps> = ({
       <div
         style={{
           position: "absolute",
-          bottom: -70,
-          left: "50%",
+          bottom: (-70 + labelOffsetY) / renderScale,
+          left: `calc(50% + ${labelOffsetX / renderScale}px)`,
           transform: `translateX(-50%) scale(${scaleIn})`,
           transformOrigin: "center center",
           backgroundColor: "#ff4444",
           color: "#fff",
-          padding: "12px 28px",
-          borderRadius: 12,
-          fontSize: 48,
+          padding: `${12 / renderScale}px ${28 / renderScale}px`,
+          borderRadius: 12 / renderScale,
+          fontSize: 48 / renderScale,
           fontWeight: "bold",
           whiteSpace: "nowrap",
         }}

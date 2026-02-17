@@ -11,183 +11,75 @@ import {
   useVideoConfig,
 } from "remotion";
 import { FocusHighlight } from "../../components/FocusHighlight";
-import { DimOverlay } from "../../components/DimOverlay";
 import { notoSansJP } from "../../fonts";
 
 /**
  * Scene 1: 問題提起 - BOOTHの検索ノイズを視覚化
  *
  * 動画タイムライン (booth_samples.mov):
- * - 00:00-05:25 (0-162f): トップページ
- * - 05:26-05:29 (163-176f): BOOTH商品表示（スキップ）
- * - 05:30以降 (177f-): 検索結果
+ * - 05:30以降 (360f-): 検索結果表示
  *
- * Remotionタイムライン:
- * - 0-1秒 (0-30f): 動画開始（通常表示）
- * - 1-3秒 (30-90f): 検索窓に3倍ズームイン
- * - 3-5.4秒 (90-162f): 通常表示（動画05:25まで）
- * - 5.4秒以降 (162f-): 動画05:30から再開（スキップ後）
- * - 8秒以降 (240f-): ノイズ商品にフォーカス
+ * Remotionタイムライン (600フレーム = 10秒):
+ * - 0-2秒 (0-119f): エスタブリッシングショット（検索結果表示）
+ * - 2-3秒 (120-179f): 衣装フォーカス (60f)
+ * - 3-4秒 (180-239f): テクスチャフォーカス (60f)
+ * - 4-6秒 (240-359f): ギミックフォーカス (120f)
+ * - 6-6.33秒 (360-379f): ズームアウト + 暗転 (20f)
+ * - 6.33-10秒 (380-599f): 問題提起テキスト表示 (220f)
  */
 
 // 動画フレーム定義（60fps）
-const VIDEO_FREEZE_FRAME = 354; // 動画05:25 - フリーズポイント
-const VIDEO_RESUME_FRAME = 360; // 動画05:30 - 再開ポイント
-const SKIP_DURATION = VIDEO_RESUME_FRAME - VIDEO_FREEZE_FRAME; // スキップするフレーム数
+const VIDEO_START_FROM = 360; // 動画05:30 - 検索結果表示開始
 
 export const Scene1Problem: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
   // ノイズ商品の位置（3商品のみ：衣装、テクスチャ、ギミック）
+  // labelOffsetX/Y: ラベル位置の個別微調整（視覚ピクセル、X正=右、Y正=上）
   const noiseProducts = [
-    { x: 1039, y: 395, label: "衣装", width: 340, height: 560 },
-    { x: 1195, y: 395, label: "テクスチャ", width: 340, height: 560 },
-    { x: 1450, y: 395, label: "ギミック", width: 340, height: 560 },
+    { x: 1039, y: 395, label: "衣装", width: 340, height: 560, labelOffsetX: 70, labelOffsetY: 250 },
+    { x: 1195, y: 395, label: "テクスチャ", width: 340, height: 560, labelOffsetX: 233, labelOffsetY: 250 },
+    { x: 1450, y: 395, label: "ギミック", width: 340, height: 560, labelOffsetX: 233, labelOffsetY: 250 },
   ];
 
-  // 検索窓の位置（動画に合わせて調整）
-  const searchBoxX = 260;
-  const searchBoxY = 0;
+  // 画面中央座標（商品フォーカスで使用）
+  const centerX = 960;
+  const centerY = 540;
 
-  // ズームアニメーション（プロフェッショナルなイージング適用）
-  // 0-60f: 1倍、60-120f: 1→3倍（ease-out）、120-240f: 3倍維持、240-300f: 3→1倍（ease-in-out）
-  const zoomIn = interpolate(
-    frame,
-    [60, 120],
-    [1, 3],
-    {
-      extrapolateLeft: "clamp",
-      extrapolateRight: "clamp",
-      easing: Easing.out(Easing.cubic), // 最初速く、終わりゆっくり
-    }
-  );
+  // フォーカス開始フレーム
+  const focusStartFrame = 120; // 2秒のエスタブリッシングショット後
 
-  const zoomOut = interpolate(
-    frame,
-    [240, 300],
-    [3, 1],
-    {
-      extrapolateLeft: "clamp",
-      extrapolateRight: "clamp",
-      easing: Easing.inOut(Easing.cubic), // なめらかな開始と終了
-    }
-  );
+  // ナレーション同期：衣装1s、テクスチャ1s、ギミック2s
+  const productDurations = [60, 60, 120];
+  const totalFocusDuration = productDurations.reduce((a, b) => a + b, 0); // 240
+  const productStartFrames = productDurations.reduce<number[]>(
+    (acc, _, i) => [...acc, i === 0 ? 0 : acc[i - 1] + productDurations[i - 1]],
+    []
+  ); // [0, 60, 120]
 
-  // フレームに応じてズームスケールを決定
-  let zoomScale: number;
-  if (frame < 60) {
-    zoomScale = 1;
-  } else if (frame < 120) {
-    zoomScale = zoomIn;
-  } else if (frame < 240) {
-    zoomScale = 3;
-  } else if (frame < 300) {
-    zoomScale = zoomOut;
-  } else {
-    zoomScale = 1;
-  }
-
-  // ズーム時のトランスレート（検索窓を中心に）- イージング適用
-  const centerX = 960; // 画面中央X
-  const centerY = 540; // 画面中央Y
-  const maxTranslateX = (centerX - searchBoxX) * (3 - 1);
-  const maxTranslateY = (centerY - searchBoxY) * (3 - 1);
-
-  const translateInX = interpolate(
-    frame,
-    [60, 120],
-    [0, maxTranslateX],
-    {
-      extrapolateLeft: "clamp",
-      extrapolateRight: "clamp",
-      easing: Easing.out(Easing.cubic),
-    }
-  );
-
-  const translateOutX = interpolate(
-    frame,
-    [240, 300],
-    [maxTranslateX, 0],
-    {
-      extrapolateLeft: "clamp",
-      extrapolateRight: "clamp",
-      easing: Easing.inOut(Easing.cubic),
-    }
-  );
-
-  const translateInY = interpolate(
-    frame,
-    [60, 120],
-    [0, maxTranslateY],
-    {
-      extrapolateLeft: "clamp",
-      extrapolateRight: "clamp",
-      easing: Easing.out(Easing.cubic),
-    }
-  );
-
-  const translateOutY = interpolate(
-    frame,
-    [240, 300],
-    [maxTranslateY, 0],
-    {
-      extrapolateLeft: "clamp",
-      extrapolateRight: "clamp",
-      easing: Easing.inOut(Easing.cubic),
-    }
-  );
-
-  // フレームに応じてトランスレートを決定
-  let translateX: number;
-  let translateY: number;
-  if (frame < 60) {
-    translateX = 0;
-    translateY = 0;
-  } else if (frame < 120) {
-    translateX = translateInX;
-    translateY = translateInY;
-  } else if (frame < 240) {
-    translateX = maxTranslateX;
-    translateY = maxTranslateY;
-  } else if (frame < 300) {
-    translateX = translateOutX;
-    translateY = translateOutY;
-  } else {
-    translateX = 0;
-    translateY = 0;
-  }
-
-  // フォーカス開始フレーム（スキップ分を調整）
-  const focusStartFrame = 480 - SKIP_DURATION;
-  const focusDuration = 120; // 各商品のフォーカス時間
-  const totalFocusDuration = focusDuration * noiseProducts.length;
   const focusEndFrame = focusStartFrame + totalFocusDuration;
 
   // フォーカス終了演出のタイミング
-  const focusShrinkDuration = 40; // 0.67秒でフォーカス領域を縮小
-  const zoomOutDuration = 40; // 0.67秒でズームアウト
-  const dimFadeInDuration = 30; // 0.5秒で暗転フェードイン
+  const focusShrinkDuration = 20; // スポットライト縮小
+  const zoomOutDuration = 20; // ズームアウト
+  const dimFadeInDuration = 20; // テキスト前の暗転フェードイン
 
   // 最後の商品（ギミック）の位置
   const lastProduct = noiseProducts[noiseProducts.length - 1];
 
   // ズームアウト後の表示範囲調整（手動調整用）
   // 正の値: 右/下方向、負の値: 左/上方向にシフト
-  const ZOOM_OUT_OFFSET_X = -245; // X方向の調整値（例: -100で左に100pxシフト）
-  const ZOOM_OUT_OFFSET_Y = -410; // Y方向の調整値（例: 50で下に50pxシフト）
+  const ZOOM_OUT_OFFSET_X = -245;
+  const ZOOM_OUT_OFFSET_Y = -410;
 
   // 商品フォーカス時のズーム（1.5倍）- パン方式
   const PRODUCT_ZOOM_SCALE = 1.5;
   const zoomInDuration = 24; // 0.4秒でズームイン
   const panDuration = 30; // 0.5秒でパン移動
 
-  // 現在フォーカス中の商品を判定
+  // フォーカスフェーズのローカルフレーム
   const localFocusFrame = frame - focusStartFrame;
-  const currentProductIndex = Math.min(
-    Math.floor(localFocusFrame / focusDuration),
-    noiseProducts.length - 1
-  );
   const isInFocusPhase = frame >= focusStartFrame && frame < focusEndFrame;
 
   // 商品フォーカス時のズームとパンアニメーション
@@ -231,13 +123,13 @@ export const Scene1Problem: React.FC = () => {
       };
     });
 
-    // 各商品のフォーカス開始フレームを計算
+    // 各商品のフォーカス開始フレームを使用してパンキーフレームを構築
     const keyframes: number[] = [];
     const xValues: number[] = [];
     const yValues: number[] = [];
 
     noiseProducts.forEach((_, i) => {
-      const productStart = i * focusDuration;
+      const productStart = productStartFrames[i];
       if (i === 0) {
         // 最初の商品：ズームインと同時に移動
         keyframes.push(0, zoomInDuration);
@@ -268,18 +160,6 @@ export const Scene1Problem: React.FC = () => {
     });
   }
 
-  // フォーカス領域の縮小アニメーション（ギミックの中心に向かって縮小）
-  const focusShrinkScale = interpolate(
-    frame,
-    [focusEndFrame - focusShrinkDuration, focusEndFrame],
-    [1, 0],
-    {
-      extrapolateLeft: "clamp",
-      extrapolateRight: "clamp",
-      easing: Easing.in(Easing.cubic),
-    }
-  );
-
   // フォーカス終了後のズームアウト（1.5倍 → 1.0倍、ギミックの位置を基準に）
   const zoomOutScale = interpolate(
     frame,
@@ -293,16 +173,12 @@ export const Scene1Problem: React.FC = () => {
   );
 
   // ズームアウト中、ギミックの画面上の位置を維持するためのパン調整
-  // ギミックの画面上の位置 = lastProduct座標 * scale + translate
-  // ズームアウト前: lastProduct.x * 1.5 + focusEndTranslateX
-  // ズームアウト後: lastProduct.x * 1.0 + newTranslateX
-  // これらを等しくするため: newTranslateX = lastProduct.x * 0.5 + focusEndTranslateX
   const zoomOutTranslateX = interpolate(
     frame,
     [focusEndFrame, focusEndFrame + zoomOutDuration],
     [
       productTranslateX,
-      lastProduct.x * (PRODUCT_ZOOM_SCALE - 1) + productTranslateX + ZOOM_OUT_OFFSET_X
+      lastProduct.x * (PRODUCT_ZOOM_SCALE - 1) + productTranslateX + ZOOM_OUT_OFFSET_X,
     ],
     {
       extrapolateLeft: "clamp",
@@ -316,7 +192,7 @@ export const Scene1Problem: React.FC = () => {
     [focusEndFrame, focusEndFrame + zoomOutDuration],
     [
       productTranslateY,
-      lastProduct.y * (PRODUCT_ZOOM_SCALE - 1) + productTranslateY + ZOOM_OUT_OFFSET_Y
+      lastProduct.y * (PRODUCT_ZOOM_SCALE - 1) + productTranslateY + ZOOM_OUT_OFFSET_Y,
     ],
     {
       extrapolateLeft: "clamp",
@@ -331,10 +207,10 @@ export const Scene1Problem: React.FC = () => {
   const currentProductTranslateX = frame >= focusEndFrame ? zoomOutTranslateX : productTranslateX;
   const currentProductTranslateY = frame >= focusEndFrame ? zoomOutTranslateY : productTranslateY;
 
-  // 最終的なズームとトランスレート（検索窓ズーム + 商品フォーカスズーム）
-  const finalZoomScale = zoomScale * currentProductZoom;
-  const finalTranslateX = translateX + currentProductTranslateX;
-  const finalTranslateY = translateY + currentProductTranslateY;
+  // 最終的なズームとトランスレート
+  const finalZoomScale = currentProductZoom;
+  const finalTranslateX = currentProductTranslateX;
+  const finalTranslateY = currentProductTranslateY;
 
   // 動画の共通スタイル
   const videoStyle: React.CSSProperties = {
@@ -358,9 +234,57 @@ export const Scene1Problem: React.FC = () => {
     }
   );
 
+  // === 持続暗転スポットライトの計算 ===
+  // スポットライト中心座標（商品間をスムーズに移動）
+  const spotlightKeyframes = [
+    0,
+    productStartFrames[1],
+    productStartFrames[1] + panDuration,
+    productStartFrames[2],
+    productStartFrames[2] + panDuration,
+    totalFocusDuration,
+  ];
+  const spotlightXValues = [
+    noiseProducts[0].x, noiseProducts[0].x,
+    noiseProducts[1].x, noiseProducts[1].x,
+    noiseProducts[2].x, noiseProducts[2].x,
+  ];
+  const spotlightYValues = [
+    noiseProducts[0].y, noiseProducts[0].y,
+    noiseProducts[1].y, noiseProducts[1].y,
+    noiseProducts[2].y, noiseProducts[2].y,
+  ];
+
+  const spotlightCenterX = interpolate(
+    localFocusFrame, spotlightKeyframes, spotlightXValues,
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+  );
+  const spotlightCenterY = interpolate(
+    localFocusFrame, spotlightKeyframes, spotlightYValues,
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+  );
+
+  // スポットライトサイズ（最後のfocusShrinkDurationで縮小→完全暗転へ）
+  const spotlightShrinkScale = interpolate(
+    localFocusFrame,
+    [totalFocusDuration - focusShrinkDuration, totalFocusDuration],
+    [1, 0],
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.in(Easing.cubic) }
+  );
+  const spotlightW = (noiseProducts[0].width + 20) * spotlightShrinkScale;
+  const spotlightH = (noiseProducts[0].height + 20) * spotlightShrinkScale;
+
+  // 暗転のフェードイン（ズームイン中に1回だけフェードイン、以降0.5を維持）
+  const focusDimOpacity = interpolate(
+    localFocusFrame,
+    [0, zoomInDuration],
+    [0, 0.5],
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+  );
+
   return (
     <AbsoluteFill style={{ backgroundColor: "#000", overflow: "hidden" }}>
-      {/* BOOTH録画動画（ズームアニメーション付き） */}
+      {/* BOOTH録画動画（商品フォーカスズーム付き） */}
       <div
         style={{
           width: "100%",
@@ -369,92 +293,92 @@ export const Scene1Problem: React.FC = () => {
           transformOrigin: "center center",
         }}
       >
-        {/* Part 1: 動画開始から05:25まで（0-162フレーム） */}
-        <Sequence from={0} durationInFrames={VIDEO_FREEZE_FRAME}>
-          <Video
-            src={staticFile("booth_samples.mov")}
-            style={videoStyle}
-          />
-        </Sequence>
+        <Video
+          src={staticFile("booth_samples.mov")}
+          startFrom={VIDEO_START_FROM}
+          style={videoStyle}
+        />
+      </div>
 
-        {/* Part 2: 動画05:30から再開（177フレームから開始） */}
-        <Sequence from={VIDEO_FREEZE_FRAME}>
-          <Video
-            src={staticFile("booth_samples.mov")}
-            startFrom={VIDEO_RESUME_FRAME}
-            style={videoStyle}
-          />
+      {/* 持続暗転オーバーレイ + 移動スポットライト（フォーカスフェーズ全体） */}
+      {isInFocusPhase && (
+        <AbsoluteFill style={{ pointerEvents: "none" }}>
+          <svg
+            style={{
+              position: "absolute",
+              top: -2,
+              left: -2,
+              width: "calc(100% + 4px)",
+              height: "calc(100% + 4px)",
+            }}
+          >
+            <defs>
+              <mask id="persistent-spotlight-mask">
+                {/* 全体を白（表示=暗転する領域） */}
+                <rect x="0" y="0" width="1924" height="1084" fill="white" />
+                {/* スポットライト領域を黒（非表示=暗転しない） */}
+                {spotlightW > 0 && spotlightH > 0 && (
+                  <rect
+                    x={spotlightCenterX - spotlightW / 2}
+                    y={spotlightCenterY - spotlightH / 2}
+                    width={spotlightW}
+                    height={spotlightH}
+                    rx={12}
+                    ry={12}
+                    fill="black"
+                  />
+                )}
+              </mask>
+            </defs>
+            <rect
+              x="0"
+              y="0"
+              width="1924"
+              height="1084"
+              fill="black"
+              opacity={focusDimOpacity}
+              mask="url(#persistent-spotlight-mask)"
+            />
+          </svg>
+        </AbsoluteFill>
+      )}
+
+      {/* ラベル表示（フォーカスフェーズ中） — カメラ変換を適用して商品位置に追従 */}
+      <div
+        style={{
+          position: "absolute",
+          width: "100%",
+          height: "100%",
+          transform: `scale(${finalZoomScale}) translate(${finalTranslateX / finalZoomScale}px, ${finalTranslateY / finalZoomScale}px)`,
+          transformOrigin: "center center",
+          pointerEvents: "none",
+        }}
+      >
+        <Sequence from={focusStartFrame} durationInFrames={totalFocusDuration}>
+          <AbsoluteFill>
+            {noiseProducts.map((product, i) => {
+              const delay = i === 0 ? zoomInDuration : panDuration;
+              return (
+                <FocusHighlight
+                  key={i}
+                  x={product.x}
+                  y={product.y}
+                  width={product.width}
+                  height={product.height}
+                  label={product.label}
+                  startFrame={productStartFrames[i] + delay}
+                  duration={totalFocusDuration - (productStartFrames[i] + delay)}
+                  renderScale={PRODUCT_ZOOM_SCALE}
+                  labelOffsetX={product.labelOffsetX}
+                  labelOffsetY={product.labelOffsetY}
+                />
+              );
+            })}
+          </AbsoluteFill>
         </Sequence>
       </div>
 
-      {/* ノイズ商品へのフォーカスオーバーレイ */}
-      <Sequence from={focusStartFrame} durationInFrames={focusEndFrame - focusStartFrame}>
-        <AbsoluteFill>
-          {/* 暗転オーバーレイ（フォーカス商品以外を暗く） */}
-          {noiseProducts.map((product, i) => {
-            // 最初の商品はズームイン後、それ以降はパン移動後に表示
-            const delay = i === 0 ? zoomInDuration : panDuration;
-            // 最後の商品のみ、フォーカス終了時に縮小アニメーション
-            const isLastProduct = i === noiseProducts.length - 1;
-
-            if (isLastProduct) {
-              // 最後の商品：フォーカス→縮小→完全暗転
-              const shrinkStartFrame = focusEndFrame - focusShrinkDuration;
-              const localShrinkFrame = Math.max(0, frame - shrinkStartFrame);
-              const shrinkProgress = Math.min(1, localShrinkFrame / focusShrinkDuration);
-
-              // フォーカス領域のサイズを縮小（線形ではなく、加速的に）
-              const shrunkWidth = (product.width + 20) * (1 - shrinkProgress);
-              const shrunkHeight = (product.height + 20) * (1 - shrinkProgress);
-
-              return (
-                <DimOverlay
-                  key={`dim-${i}`}
-                  focusX={product.x}
-                  focusY={product.y}
-                  focusWidth={shrunkWidth}
-                  focusHeight={shrunkHeight}
-                  startFrame={i * focusDuration + delay}
-                  duration={focusDuration - delay + focusShrinkDuration}
-                  dimOpacity={0.5}
-                />
-              );
-            } else {
-              return (
-                <DimOverlay
-                  key={`dim-${i}`}
-                  focusX={product.x}
-                  focusY={product.y}
-                  focusWidth={product.width + 20}
-                  focusHeight={product.height + 20}
-                  startFrame={i * focusDuration + delay}
-                  duration={focusDuration - delay}
-                  dimOpacity={0.5}
-                />
-              );
-            }
-          })}
-          {/* ラベル表示（カメラ移動完了後に表示） */}
-          {noiseProducts.map((product, i) => {
-            // 最初の商品はズームイン後、それ以降はパン移動後に表示
-            const delay = i === 0 ? zoomInDuration : panDuration;
-            return (
-              <FocusHighlight
-                key={i}
-                x={product.x}
-                y={product.y}
-                width={product.width}
-                height={product.height}
-                label={product.label}
-                startFrame={i * focusDuration + delay}
-                duration={focusDuration - delay}
-              />
-            );
-          })}
-        </AbsoluteFill>
-      </Sequence>
-
-      {/* 完全暗転（フォーカス縮小完了後） */}
+      {/* 完全暗転（スポットライト縮小完了後） */}
       <Sequence from={focusEndFrame}>
         <AbsoluteFill
           style={{
@@ -510,7 +434,7 @@ export const Scene1Problem: React.FC = () => {
                 )}px)`,
               }}
             >
-              求めていない商品ばかり表示されて
+              欲しい商品とは異なるものが表示されて
             </p>
             {/* Line 2: 20フレーム遅延スタッガー + scale 0.9→1 + Moderate bounce */}
             <p
