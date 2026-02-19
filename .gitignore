@@ -82,3 +82,14 @@ LaTeX/*.toc
 LaTeX/chapters/*.aux
 LaTeX/figures/*.pdf
 LaTeX/figures/*.xbb
+
+# Remotion
+remotion/node_modules/
+remotion/out/
+remotion/dist/
+remotion/.cache/
+
+# Ignore large media files and unused audio
+remotion/public/*.mov
+remotion/public/audio/ダウンロード*.wav
+remotion/public/audio/*_没.wav
