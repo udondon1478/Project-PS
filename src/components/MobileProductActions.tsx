@@ -59,7 +59,7 @@ const MobileProductActions: React.FC<MobileProductActionsProps> = ({
             aria-label={isLiked ? 'いいねを解除' : 'いいね'}
           >
             <Heart className="h-4 w-4" fill={isLiked ? "currentColor" : "none"} />
-            <span>いいね</span>
+            <span>{isLiked ? 'いいね済み' : 'いいね'}</span>
           </Button>
 
           {/* 所有済みボタン */}
