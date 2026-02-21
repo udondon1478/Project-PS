@@ -6,6 +6,17 @@ import { normalizeQueryParam } from './utils';
 import { SAFE_SEARCH_EXCLUDED_TAGS } from '@/constants/safeSearch';
 
 /**
+ * 認証が必要な操作に未ログインでアクセスした場合にスローされるエラー。
+ * route.ts 等でこのクラスを判別して 401 ステータスを返すために使用する。
+ */
+export class AuthRequiredError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AuthRequiredError';
+  }
+}
+
+/**
  * 商品検索のパラメータを定義します。
  */
 export interface SearchParams {
@@ -197,7 +208,7 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
 
     if (params.liked === 'true') {
       if (!userId) {
-        throw new Error('検索条件エラー: いいね済みの商品を検索するにはログインが必要です。');
+        throw new AuthRequiredError('いいね済みの商品を検索するにはログインが必要です。');
       }
       whereConditions.push({
         likes: {
@@ -210,7 +221,7 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
 
     if (params.owned === 'true') {
       if (!userId) {
-        throw new Error('検索条件エラー: 所有済みの商品を検索するにはログインが必要です。');
+        throw new AuthRequiredError('所有済みの商品を検索するにはログインが必要です。');
       }
       whereConditions.push({
         productOwners: {
@@ -367,7 +378,10 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
     };
 
   } catch (error) {
-    // カスタムバリデーションエラーはそのままスローする
+    // 認証エラー・カスタムバリデーションエラーはそのままスローする
+    if (error instanceof AuthRequiredError) {
+      throw error;
+    }
     if (error instanceof Error && (
       error.message.startsWith('検索条件エラー:') ||
       error.message.startsWith('セーフサーチが有効なため')

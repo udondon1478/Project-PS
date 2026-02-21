@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { searchProducts, type SearchParams } from '@/lib/searchProducts';
+import { searchProducts, AuthRequiredError, type SearchParams } from '@/lib/searchProducts';
 import { normalizeQueryParam } from '@/lib/utils';
 
 /**
@@ -74,6 +74,9 @@ export async function GET(request: Request) {
     const products = await searchProducts(params);
     return NextResponse.json(products);
   } catch (error) {
+    if (error instanceof AuthRequiredError) {
+      return NextResponse.json({ error: error.message }, { status: 401 });
+    }
     console.error('商品検索APIエラー:', error);
     return NextResponse.json({ error: '商品の取得に失敗しました' }, { status: 500 });
   }
