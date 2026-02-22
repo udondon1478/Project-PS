@@ -88,3 +88,5 @@ gmail-assistant/
 remotion/node_modules/
 remotion/build/
 remotion/out/
+remotion/dist/
+remotion/.cache/
