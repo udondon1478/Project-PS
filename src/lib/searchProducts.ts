@@ -7,6 +7,17 @@ import { SAFE_SEARCH_EXCLUDED_TAGS } from '@/constants/safeSearch';
 import { resolveTagAliasesForSearch } from '@/lib/tag-resolution';
 
 /**
+ * 認証が必要な操作に未ログインでアクセスした場合にスローされるエラー。
+ * route.ts 等でこのクラスを判別して 401 ステータスを返すために使用する。
+ */
+export class AuthRequiredError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AuthRequiredError';
+  }
+}
+
+/**
  * 商品検索のパラメータを定義します。
  */
 export interface SearchParams {
@@ -61,6 +72,10 @@ export interface SearchParams {
   pageSize?: number;
   /** PolySeek独自のタグのみを検索対象にするかどうか */
   searchPolySeekTagsOnly?: boolean;
+  /** いいね済みの商品のみを表示するか ('true'の場合) */
+  liked?: string;
+  /** 所有済みの商品のみを表示するか ('true'の場合) */
+  owned?: string;
 }
 
 /**
@@ -75,6 +90,20 @@ export interface SearchResult {
   resolvedTags?: Record<string, string>;
 }
 
+/**
+ * 検索条件に基づいて商品を検索します。
+ * 
+ * 主な機能:
+ * - キーワード、カテゴリ、タグによるフィルタリング
+ * - いいね済み/所有済みフィルタリング (要ログイン)
+ * - セーフサーチ (未ログインまたは設定有効時に特定のタグを除外)
+ * - 価格範囲フィルタリング
+ * - ページネーションとソート
+ * 
+ * @param params - 検索パラメータオブジェクト
+ * @returns 検索結果オブジェクト (商品リスト、総件数)
+ * @throws 検索条件に矛盾がある場合や、セーフサーチ制限に抵触した場合、ログインが必要な機能に未認証でアクセスした場合にエラーをスローします。
+ */
 export async function searchProducts(params: SearchParams): Promise<SearchResult> {
   try {
     const session = await auth();
@@ -199,6 +228,32 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
                 },
               },
             },
+          },
+        },
+      });
+    }
+
+    if (params.liked === 'true') {
+      if (!userId) {
+        throw new AuthRequiredError('いいね済みの商品を検索するにはログインが必要です。');
+      }
+      whereConditions.push({
+        likes: {
+          some: {
+            userId: { equals: userId },
+          },
+        },
+      });
+    }
+
+    if (params.owned === 'true') {
+      if (!userId) {
+        throw new AuthRequiredError('所有済みの商品を検索するにはログインが必要です。');
+      }
+      whereConditions.push({
+        productOwners: {
+          some: {
+            userId: { equals: userId },
           },
         },
       });
@@ -351,7 +406,10 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
     };
 
   } catch (error) {
-    // カスタムバリデーションエラーはそのままスローする
+    // 認証エラー・カスタムバリデーションエラーはそのままスローする
+    if (error instanceof AuthRequiredError) {
+      throw error;
+    }
     if (error instanceof Error && (
       error.message.startsWith('検索条件エラー:') ||
       error.message.startsWith('セーフサーチが有効なため')

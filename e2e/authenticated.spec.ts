@@ -99,13 +99,13 @@ test.describe('Authenticated User Features', () => {
       await page.goto(`/products/${LIKE_PRODUCT_ID}`);
 
       // 3. ボタンをクリック
-      const likeButton = page.getByRole('button', { name: '欲しいものに追加' }).filter({ visible: true });
+      const likeButton = page.getByRole('button', { name: 'いいね', exact: true }).filter({ visible: true });
       const likeApiPromise = page.waitForResponse(PRODUCT_LIKE_API_URL(LIKE_PRODUCT_ID));
       await likeButton.click();
       await likeApiPromise;
 
       // 4. UIの更新を確認
-      await expect(page.getByRole('button', { name: '欲しいものから外す' }).filter({ visible: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'いいね済み' }).filter({ visible: true })).toBeVisible();
 
       // 5. リロード後の状態を検証
       // 重要: リロード時はServer ComponentがDBを参照するため、DBの状態も更新しておく必要がある
@@ -130,7 +130,7 @@ test.describe('Authenticated User Features', () => {
       });
 
       await page.reload();
-      await expect(page.getByRole('button', { name: '欲しいものから外す' }).filter({ visible: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'いいね済み' }).filter({ visible: true })).toBeVisible();
 
     } finally {
       // クリーンアップ

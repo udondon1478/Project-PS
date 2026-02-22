@@ -26,6 +26,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
           canonicalId: true,
           tagCategoryId: true,
           tagCategory: true,
+          seller: {
+             select: {
+                 id: true,
+                 name: true,
+                 sellerUrl: true,
+                 iconUrl: true,
+             }
+          },
           createdAt: true,
           updatedAt: true,
         },

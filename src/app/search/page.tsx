@@ -1,6 +1,6 @@
 import { Product } from "@/types/product";
 import type { Metadata } from 'next';
-import { searchProducts } from '@/lib/searchProducts';
+import { searchProducts, AuthRequiredError } from '@/lib/searchProducts';
 import type { SearchParams } from '@/lib/searchProducts';
 import { normalizeTagsToString } from '@/lib/utils';
 import { Button } from "@/components/ui/button";
@@ -125,7 +125,9 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
     total = result.total;
   } catch (err: unknown) {
     console.error("Search page failed to fetch products:", err);
-    if (err instanceof Error && (
+    if (err instanceof AuthRequiredError) {
+      error = err.message;
+    } else if (err instanceof Error && (
       err.message.startsWith('セーフサーチが有効なため') ||
       err.message.startsWith('検索条件エラー')
     )) {

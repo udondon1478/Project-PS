@@ -62,7 +62,7 @@ test.describe('Verify Like API Header Removal', () => {
         response.status() === 201
     );
 
-    await page.getByRole('button', { name: '欲しいものに追加' }).click();
+    await page.getByRole('button', { name: 'いいね', exact: true }).click();
 
     const request = await requestPromise;
     const response = await responsePromise;
@@ -74,6 +74,6 @@ test.describe('Verify Like API Header Removal', () => {
     expect(response.status()).toBe(201);
 
     // UIが更新されたことを確認
-    await expect(page.getByRole('button', { name: '欲しいものから外す' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'いいね済み' })).toBeVisible();
   });
 });

@@ -1,7 +1,16 @@
 import { NextResponse } from 'next/server';
-import { searchProducts, type SearchParams } from '@/lib/searchProducts';
+import { searchProducts, AuthRequiredError, type SearchParams } from '@/lib/searchProducts';
 import { normalizeQueryParam } from '@/lib/utils';
 
+/**
+ * GET Handler for product search API.
+ * 
+ * Parses query parameters from the URL and delegates to `searchProducts`.
+ * Handles numeric parsing and validation for price and pagination fields.
+ * 
+ * @param request - The incoming HTTP request.
+ * @returns JSON response containing the search results or error object.
+ */
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -18,6 +27,12 @@ export async function GET(request: Request) {
 
     const negativeTags = normalizeQueryParam(searchParams.getAll('negativeTags'));
     if (negativeTags) params.negativeTags = negativeTags;
+
+    const liked = searchParams.get('liked');
+    if (liked) params.liked = liked;
+
+    const owned = searchParams.get('owned');
+    if (owned) params.owned = owned;
 
     const sort = searchParams.get('sort');
     if (sort) params.sort = sort;
@@ -59,6 +74,9 @@ export async function GET(request: Request) {
     const products = await searchProducts(params);
     return NextResponse.json(products);
   } catch (error) {
+    if (error instanceof AuthRequiredError) {
+      return NextResponse.json({ error: error.message }, { status: 401 });
+    }
     console.error('商品検索APIエラー:', error);
     return NextResponse.json({ error: '商品の取得に失敗しました' }, { status: 500 });
   }
