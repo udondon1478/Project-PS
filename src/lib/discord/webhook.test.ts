@@ -2,7 +2,12 @@ import { sendDiscordNotification } from './webhook';
 import { describe, it, expect, beforeEach, afterAll, vi, type Mock } from 'vitest';
 
 // Mock fetch
-global.fetch = vi.fn() as any;
+global.fetch = vi.fn(() => Promise.resolve({
+    ok: true,
+    status: 200,
+    statusText: 'OK',
+    json: () => Promise.resolve({}),
+})) as any;
 
 describe('sendDiscordNotification', () => {
     const mockProduct = {

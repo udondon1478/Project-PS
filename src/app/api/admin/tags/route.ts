@@ -198,11 +198,23 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { name, displayName, tagCategoryId, language, description, isAlias, canonicalId: canonicalTagName } = body; // categoryとcolorを削除し、tagCategoryIdを受け取る
+    const { name, displayName, tagCategoryId: rawTagCategoryId, language, description, isAlias, canonicalId: canonicalTagName } = body; // categoryとcolorを削除し、tagCategoryIdを受け取る
+
+    // 空文字列のtagCategoryIdはnullに変換
+    const tagCategoryId = rawTagCategoryId || null;
 
     // 必須フィールドの検証
     if (!name || !tagCategoryId || !language) {
       return NextResponse.json({ message: '必須フィールドが不足しています (name, tagCategoryId, language)。' }, { status: 400 });
+    }
+
+    // tagCategoryIdの存在確認
+    const categoryExists = await prisma.tagCategory.findUnique({
+      where: { id: tagCategoryId },
+      select: { id: true },
+    });
+    if (!categoryExists) {
+      return NextResponse.json({ message: `指定されたカテゴリID '${tagCategoryId}' が存在しません。`, field: 'tagCategoryId' }, { status: 400 });
     }
 
     let canonicalTagId = null;
@@ -254,11 +266,26 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const { id, name, displayName, tagCategoryId, language, description, isAlias, canonicalId: canonicalTagName } = body; // categoryとcolorを削除し、tagCategoryIdを受け取る
+    const { id, name, displayName, tagCategoryId: rawTagCategoryId, language, description, isAlias, canonicalId: canonicalTagName } = body; // categoryとcolorを削除し、tagCategoryIdを受け取る
+
+    // 空文字列のtagCategoryIdはnullに変換（FK制約違反を防止）
+    // undefined（未送信）はundefinedのまま維持しPrismaの更新対象から除外
+    const tagCategoryId = rawTagCategoryId === '' ? null : (rawTagCategoryId ?? undefined);
 
     // idは必須
     if (!id) {
       return NextResponse.json({ message: '更新対象のタグID (id) が必要です。', field: 'id' }, { status: 400 });
+    }
+
+    // tagCategoryIdが指定されている場合、存在確認
+    if (tagCategoryId) {
+      const categoryExists = await prisma.tagCategory.findUnique({
+        where: { id: tagCategoryId },
+        select: { id: true },
+      });
+      if (!categoryExists) {
+        return NextResponse.json({ message: `指定されたカテゴリID '${tagCategoryId}' が存在しません。`, field: 'tagCategoryId' }, { status: 400 });
+      }
     }
 
     // canonicalIdが指定されている場合は、そのタグが存在するか確認
