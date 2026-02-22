@@ -49,17 +49,17 @@ const MobileProductActions: React.FC<MobileProductActionsProps> = ({
       {/* CTAバー */}
       <div className="bg-background/95 backdrop-blur-sm border-t dark:border-gray-800 p-3">
         <div className="flex items-center gap-2">
-          {/* 欲しいボタン */}
+          {/* いいねボタン */}
           <Button
             onClick={onLikeToggle}
             disabled={isProcessingLike}
             variant={isLiked ? "default" : "outline"}
             size="sm"
             className="flex-1"
-            aria-label={isLiked ? '欲しいものから外す' : '欲しいものに追加'}
+            aria-label={isLiked ? 'いいねを解除' : 'いいね'}
           >
             <Heart className="h-4 w-4" fill={isLiked ? "currentColor" : "none"} />
-            <span>欲しい</span>
+            <span>{isLiked ? 'いいね済み' : 'いいね'}</span>
           </Button>
 
           {/* 所有済みボタン */}

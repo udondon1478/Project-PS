@@ -82,3 +82,8 @@ LaTeX/*.toc
 LaTeX/chapters/*.aux
 LaTeX/figures/*.pdf
 LaTeX/figures/*.xbb
+gmail-assistant/
+
+# Remotion
+remotion/node_modules/
+remotion/build/
