@@ -418,7 +418,7 @@ test.describe('Anonymous User Core Features', () => {
     await page.goto(`/products/${prodId1}`);
 
     // 4. いいねボタンをクリック
-    const likeButton = page.getByRole('button', { name: '欲しいものに追加' });
+    const likeButton = page.getByRole('button', { name: 'いいね', exact: true });
     await likeButton.scrollIntoViewIfNeeded();
     await expect(likeButton).toBeVisible();
 
@@ -457,7 +457,7 @@ test.describe('Anonymous User Core Features', () => {
     // ハートアイコンが再び塗りつぶされていないことを確認 (APIエラーにより楽観的更新がロールバックされるのを待つ)
     await expect(heartIcon).toHaveAttribute('fill', 'none', { timeout: 10000 });
 
-    await expect(page.getByRole('button', { name: '欲しいものに追加' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'いいね', exact: true })).toBeVisible();
     await expect(heartIcon).toHaveAttribute('fill', 'none');
   });
 });
