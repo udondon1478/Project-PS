@@ -349,7 +349,7 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
                 <div className="space-y-3">
                   <Button onClick={handleLikeToggle} disabled={isProcessingLike} variant={isLiked ? "default" : "outline"} className="w-full justify-start">
                     <Heart className="mr-2 h-4 w-4" fill={isLiked ? "currentColor" : "none"} />
-                    {isLiked ? '欲しいものから外す' : '欲しいものに追加'}
+                    {isLiked ? 'いいね済み' : 'いいね'}
                   </Button>
                   <Button onClick={handleOwnToggle} disabled={isProcessingOwn} variant={isOwned ? "default" : "outline"} className="w-full justify-start">
                     <Check className="mr-2 h-4 w-4" />
