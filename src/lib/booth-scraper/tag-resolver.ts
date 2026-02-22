@@ -241,7 +241,11 @@ export class TagResolver {
             });
         } catch (e) {
             // Race condition
-             tag = await this.db.tag.findUnique({ where: { name: normalized }});
+            try {
+                tag = await this.db.tag.findUnique({ where: { name: normalized }});
+            } catch (findError) {
+                // Ignore find error; tag validity checked below
+            }
         }
     } else {
         // If tag exists but has no category, set it to creator

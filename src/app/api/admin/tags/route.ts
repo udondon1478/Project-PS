@@ -269,7 +269,8 @@ export async function PUT(request: Request) {
     const { id, name, displayName, tagCategoryId: rawTagCategoryId, language, description, isAlias, canonicalId: canonicalTagName } = body; // categoryとcolorを削除し、tagCategoryIdを受け取る
 
     // 空文字列のtagCategoryIdはnullに変換（FK制約違反を防止）
-    const tagCategoryId = rawTagCategoryId || null;
+    // undefined（未送信）はundefinedのまま維持しPrismaの更新対象から除外
+    const tagCategoryId = rawTagCategoryId === '' ? null : (rawTagCategoryId ?? undefined);
 
     // idは必須
     if (!id) {

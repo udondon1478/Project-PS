@@ -241,7 +241,7 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
                 const allBaseTags = creatorTagId && !baseTags.includes(creatorTagId)
                   ? [...baseTags, creatorTagId]
                   : baseTags;
-                return [...allBaseTags, ...detectedAvatarTagIds];
+                return [...new Set([...allBaseTags, ...detectedAvatarTagIds])];
               })(),
               removedTags: [],
               keptTags: [],
