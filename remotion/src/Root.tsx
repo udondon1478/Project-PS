@@ -1,6 +1,8 @@
+import React from "react";
 import { Composition } from "remotion";
 import { Video } from "./Video";
 import { FeatureVideo } from "./feature-pv/FeatureVideo";
+import { FEATURE_TIMING } from "./feature-pv/featureConstants";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -16,8 +18,8 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="FeatureTagAlias"
         component={FeatureVideo}
-        durationInFrames={1800}
-        fps={60}
+        durationInFrames={FEATURE_TIMING.totalFrames}
+        fps={FEATURE_TIMING.fps}
         width={1920}
         height={1080}
       />

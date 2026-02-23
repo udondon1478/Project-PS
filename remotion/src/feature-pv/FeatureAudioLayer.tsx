@@ -1,6 +1,5 @@
 import React from "react";
-import { Audio, Sequence, staticFile, useCurrentFrame } from "remotion";
-import { interpolate } from "remotion";
+import { Audio, Sequence, staticFile, useCurrentFrame, interpolate } from "remotion";
 import {
   FEATURE_AUDIO_CONFIG,
   FEATURE_BGM_ENTRIES,
@@ -102,6 +101,7 @@ export const FeatureAudioLayer: React.FC = () => {
           key={key}
           from={cfg.start}
           durationInFrames={cfg.durationInFrames}
+          layout="none"
         >
           <BgmTrack
             file={cfg.file}
@@ -118,6 +118,7 @@ export const FeatureAudioLayer: React.FC = () => {
           key={key}
           from={cfg.start}
           durationInFrames={cfg.durationInFrames}
+          layout="none"
         >
           <Audio src={staticFile(cfg.file)} />
         </Sequence>

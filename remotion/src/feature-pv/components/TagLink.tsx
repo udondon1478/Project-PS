@@ -63,7 +63,6 @@ const TagPill: React.FC<TagPillProps> = ({
         color: connected ? FEATURE_COLORS.gold : FEATURE_COLORS.white,
         boxShadow: glowShadow,
         whiteSpace: "nowrap",
-        transition: "box-shadow 0.3s",
       }}
     >
       {label}

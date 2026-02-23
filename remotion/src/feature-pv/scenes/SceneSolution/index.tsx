@@ -234,6 +234,7 @@ export const SceneSolution: React.FC = () => {
             >
               <span
                 style={{
+                  display: "inline-block",
                   fontSize: 72,
                   fontWeight: 900,
                   color: FEATURE_COLORS.gold,

@@ -2,7 +2,7 @@ import { FEATURE_TIMING } from "./featureConstants";
 
 const TOTAL_DURATION = FEATURE_TIMING.totalFrames;
 
-const BGM_FADEOUT_START = 24 * 60; // 24秒 = 1440フレーム
+const BGM_FADEOUT_START = FEATURE_TIMING.sceneProblem + FEATURE_TIMING.sceneCause + FEATURE_TIMING.sceneSolution - 2 * FEATURE_TIMING.transitionFrames;
 const BGM_FADEOUT_DURATION = TOTAL_DURATION - BGM_FADEOUT_START;
 
 export const FEATURE_AUDIO_CONFIG = {

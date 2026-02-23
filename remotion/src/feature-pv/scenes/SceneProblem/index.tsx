@@ -5,7 +5,6 @@ import {
   spring,
   useCurrentFrame,
   useVideoConfig,
-  Easing,
 } from "remotion";
 import { notoSansJP } from "../../../fonts";
 import { FEATURE_COLORS, SPRING_CONFIGS } from "../../featureConstants";
@@ -35,14 +34,8 @@ export const SceneProblem: React.FC = () => {
 
   // First search: "トップス" (frames 60-180)
   const firstSearchText = "トップス";
-  const firstSearchDone = frame >= 180;
 
   // First search button pulse (frames 180-210)
-  const firstPulseProgress = interpolate(frame, [180, 210], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-    easing: Easing.out(Easing.cubic),
-  });
   const showFirstPulse = frame >= 180 && frame < 270;
 
   // First "0件" display (frames 210-270)

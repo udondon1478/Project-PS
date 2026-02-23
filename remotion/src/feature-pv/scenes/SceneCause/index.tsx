@@ -105,7 +105,7 @@ export const SceneCause: React.FC = () => {
             centerY={420}
             leftDelay={30}
             rightDelay={50}
-            connectionDelay={9999}
+            connectionDelay={Infinity}
             connected={false}
             disconnected={showDisconnected}
             disconnectOpacity={disconnectOpacity}
