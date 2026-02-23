@@ -4,6 +4,7 @@ import { Product } from '@/types/product';
 import { auth } from '@/auth';
 import { normalizeQueryParam } from './utils';
 import { SAFE_SEARCH_EXCLUDED_TAGS } from '@/constants/safeSearch';
+import { resolveTagAliasesForSearch } from '@/lib/tag-resolution';
 
 /**
  * 認証が必要な操作に未ログインでアクセスした場合にスローされるエラー。
@@ -85,6 +86,8 @@ export interface SearchResult {
   products: Product[];
   /** 総件数 */
   total: number;
+  /** タグ解決情報 (入力タグ -> 解決された正規タグ) */
+  resolvedTags?: Record<string, string>;
 }
 
 /**
@@ -113,12 +116,36 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
 
     const initialTagNames = normalizeQueryParam(params.tags) || [];
     const ageRatingTagNames = normalizeQueryParam(params.ageRatingTags) || [];
-    const tagNames = [...new Set([...initialTagNames, ...ageRatingTagNames])];
-    
-    let negativeTagNames = normalizeQueryParam(params.negativeTags);
+    const rawNegativeTagNames = normalizeQueryParam(params.negativeTags);
 
-    // タグの衝突を検証 (ユーザーの元の意図に基づいてチェック)
-    if (tagNames && negativeTagNames) {
+    // Combine all tags for a single resolution call and deduplicate
+    const allRawTags = Array.from(new Set([
+      ...initialTagNames,
+      ...ageRatingTagNames,
+      ...(rawNegativeTagNames || [])
+    ]));
+
+    let tagNames: string[] = [];
+    let negativeTagNames = rawNegativeTagNames;
+    let resolvedTagMap = new Map<string, string>();
+
+    if (allRawTags.length > 0) {
+      resolvedTagMap = await resolveTagAliasesForSearch(allRawTags);
+
+      // Map positive tags to resolved names and deduplicate
+      const rawTagNames = [...initialTagNames, ...ageRatingTagNames];
+      if (rawTagNames.length > 0) {
+        tagNames = [...new Set(rawTagNames.map(t => resolvedTagMap.get(t) || t))];
+      }
+
+      // Map negative tags to resolved names and deduplicate
+      if (negativeTagNames && negativeTagNames.length > 0) {
+        negativeTagNames = [...new Set(negativeTagNames.map(t => resolvedTagMap.get(t) || t))];
+      }
+    }
+
+    // タグの衝突を検証 (ユーザーの元の意図に基づいてチェック - Resolved names for accuracy)
+    if (tagNames.length > 0 && negativeTagNames && negativeTagNames.length > 0) {
       const negativeSet = new Set(negativeTagNames);
       const intersection = tagNames.filter(tag => negativeSet.has(tag));
       if (intersection.length > 0) {
@@ -375,6 +402,7 @@ export async function searchProducts(params: SearchParams): Promise<SearchResult
         } : null,
       })),
       total,
+      resolvedTags: resolvedTagMap.size > 0 ? Object.fromEntries(resolvedTagMap) : undefined,
     };
 
   } catch (error) {

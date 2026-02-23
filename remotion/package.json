@@ -5,6 +5,7 @@
   "scripts": {
     "start": "remotion studio",
     "build": "remotion render Video out/video.mp4",
+    "build:feature": "remotion render FeatureTagAlias out/feature-tag-alias.mp4",
     "upgrade": "remotion upgrade"
   },
   "dependencies": {
