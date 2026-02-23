@@ -26,8 +26,8 @@ jobs:
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           nvm use 22
           cd /home/ubuntu/PolySeek/
-          git checkout -- package-lock.json
-          git pull origin main
+          git fetch origin
+          git reset --hard origin/main
           npm install
           npx prisma generate
           npm run build
