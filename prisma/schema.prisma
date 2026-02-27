@@ -50,6 +50,9 @@ model User {
   reports       Report[]         // ユーザーが行った通報
   searchHistories SearchHistory[] // 検索履歴
   favorites       SearchFavorite[] // お気に入り検索
+  tagProposals  TagProposal[]    // ユーザーが行ったタグ提案
+  resolvedTagProposals TagProposal[] @relation("ResolvedByUser") // ユーザーが解決したタグ提案
+  tagProposalVotes TagProposalVote[] // ユーザーが行ったタグ提案への投票
 
   @@index([name])
   @@index([email])
@@ -567,4 +570,73 @@ model AvatarItem {
   suggestedTags     String[] @default([])   // 提案・自動付与するタグのリスト (例: ["マヌカ", "マヌカ対応"])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// タグ提案のステータス
+enum TagProposalStatus {
+  PENDING   // 承認待ち
+  APPROVED  // 承認済み
+  REJECTED  // 却下
+}
+
+// タグ提案の種類
+enum TagProposalType {
+  NEW_TAG           // 新規タグ作成
+  TAG_EDIT          // タグメタデータ編集
+  TAG_MERGE         // タグのマージ
+  TAG_IMPLICATION   // タグ含意関係の追加
+  TAG_ALIAS         // エイリアスの追加
+}
+
+// タグ提案テーブル
+model TagProposal {
+  id          String            @id @default(cuid())
+  proposerId  String            // 提案者のユーザーID
+  proposer    User              @relation(fields: [proposerId], references: [id], onDelete: Cascade)
+
+  type        TagProposalType   // 提案の種類
+  status      TagProposalStatus @default(PENDING)
+
+  // 提案内容（JSON形式で柔軟に記録）
+  // 例: { "tagName": "新しいタグ", "description": "説明", "category": "カテゴリ" }
+  // または: { "sourceTagId": "xxx", "targetTagId": "yyy", "reason": "理由" }
+  content     Json
+
+  reason      String?           @db.Text // 提案理由
+
+  upvotes     Int               @default(0) // 賛成票数
+  downvotes   Int               @default(0) // 反対票数
+
+  resolvedAt  DateTime?         // 解決日時
+  resolvedById String?          // 解決したユーザーID（管理者）
+  resolvedBy   User?            @relation("ResolvedByUser", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  votes       TagProposalVote[] // この提案に対する投票
+
+  @@index([proposerId])
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+}
+
+// タグ提案への投票テーブル
+model TagProposalVote {
+  id          String        @id @default(cuid())
+  proposalId  String        // 投票対象の提案ID
+  proposal    TagProposal   @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  voterId     String        // 投票したユーザーID
+  voter       User          @relation(fields: [voterId], references: [id], onDelete: Cascade)
+
+  isUpvote    Boolean       // true: 賛成, false: 反対
+  comment     String?       @db.Text // 投票コメント
+
+  createdAt   DateTime      @default(now())
+
+  @@unique([proposalId, voterId]) // 同じユーザーが同じ提案に複数回投票できないように
+  @@index([proposalId])
+  @@index([voterId])
 }
