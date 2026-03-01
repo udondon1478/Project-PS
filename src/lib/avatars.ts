@@ -14,6 +14,28 @@ export interface AvatarDefinition {
   suggestedTags: string[];
 }
 
+// インメモリキャッシュ（スタンドアロン環境向け）
+let cachedDefinitions: AvatarDefinition[] | null = null;
+let cacheTimestamp = 0;
+const CACHE_TTL_MS = 60 * 1000; // 1分
+
+async function fetchAvatarDefinitions(): Promise<AvatarDefinition[]> {
+  const now = Date.now();
+  if (cachedDefinitions && now - cacheTimestamp < CACHE_TTL_MS) {
+    return cachedDefinitions;
+  }
+  cachedDefinitions = await prisma.avatarItem.findMany({
+    select: {
+      itemId: true,
+      avatarName: true,
+      aliases: true,
+      suggestedTags: true,
+    },
+  });
+  cacheTimestamp = now;
+  return cachedDefinitions;
+}
+
 /**
  * 全アバター定義を取得します。
  * itemId (BOOTH商品ID)、avatarName (アバター名)、aliases (エイリアス配列) を含むオブジェクトの配列を返します。
@@ -21,16 +43,7 @@ export interface AvatarDefinition {
  */
 export const getAvatarDefinitions = unstable_cache(
   async () => {
-    const avatars = await prisma.avatarItem.findMany({
-      select: {
-        itemId: true,
-        avatarName: true,
-        aliases: true,
-        suggestedTags: true,
-      },
-    });
-
-    return avatars;
+    return fetchAvatarDefinitions();
   },
   [AVATAR_DEFINITIONS_TAG],
   {
@@ -40,18 +53,11 @@ export const getAvatarDefinitions = unstable_cache(
 );
 
 /**
- * 全アバター定義を取得します（キャッシュなし）。
+ * 全アバター定義を取得します（インメモリキャッシュ付き）。
  * スタンドアロン環境（booth-cron等）向け - Next.jsのunstable_cacheに依存しません。
  */
 export async function getAvatarDefinitionsDirect(): Promise<AvatarDefinition[]> {
-  return prisma.avatarItem.findMany({
-    select: {
-      itemId: true,
-      avatarName: true,
-      aliases: true,
-      suggestedTags: true,
-    },
-  });
+  return fetchAvatarDefinitions();
 }
 
 /**
