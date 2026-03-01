@@ -171,6 +171,44 @@ async function main() {
     });
   }
 
+  // 美学（aesthetic）カテゴリのタグをシード
+  let aestheticCategory = await prisma.tagCategory.findUnique({
+    where: { id: 'aesthetic' },
+  });
+
+  if (!aestheticCategory) {
+    const cat = tagCategories.find(c => c.id === 'aesthetic');
+    if (cat) {
+      aestheticCategory = await prisma.tagCategory.upsert({
+        where: { id: 'aesthetic' },
+        update: { name: cat.name, color: cat.color },
+        create: { id: 'aesthetic', name: cat.name, color: cat.color },
+      });
+    }
+  }
+
+  if (aestheticCategory) {
+    const aestheticTags = [
+      'お姉さん系', 'おしとやか系', '清楚系', 'ワイルド系', 'リアルお姉さん系',
+      '小悪魔系', 'ロリータ系', '気さく系', 'ファンシー系', 'お嬢様系',
+      'セクシー系', '学者メガネ系', '和装系', 'ほんわか系', 'しっとり系',
+      'モード系', 'ダーク系', 'クール系', 'サイバー系', 'アンドロイド系',
+      'ロック系', '中性系(男性)', '青年系', '少年系', 'ケモノ系',
+      'ロボット・メカ系', '活発系', '児童系', 'デフォルメ系', 'おっとり系',
+      '働き者系', 'ちょいワイルド系', 'ふわふわ系', 'ボーイッシュ系', 'ファンタジー系',
+      'マスコット系', 'エスニック系', '壮年系', '人外系',
+    ];
+
+    for (const name of aestheticTags) {
+      await prisma.tag.upsert({
+        where: { name },
+        update: { tagCategoryId: aestheticCategory.id },
+        create: { name, language: 'ja', tagCategoryId: aestheticCategory.id },
+      });
+    }
+    console.log(`Seeded ${aestheticTags.length} aesthetic tags`);
+  }
+
   if (process.env.SEED_ENV === 'test') {
     // テスト用商品データの作成
     const testUser = await prisma.user.findUnique({ where: { email: 'test@example.com' } });
@@ -212,19 +250,20 @@ async function main() {
     if (avatarTag) {
       await prisma.productTag.upsert({
         where: {
-          productId_tagId_isOfficial: {
+          productId_tagId_source_isOfficial: {
             productId: product1.id,
             tagId: avatarTag.id,
+            source: 'booth',
             isOfficial: false,
           }
         },
-        // update: {} のため、既存レコードがある場合は更新されません。
         update: {},
         create: {
           productId: product1.id,
           tagId: avatarTag.id,
           userId: testUser.id,
           isOfficial: false,
+          source: 'booth',
         }
       });
     }
@@ -253,19 +292,20 @@ async function main() {
     if (costumeTag) {
       await prisma.productTag.upsert({
         where: {
-          productId_tagId_isOfficial: {
+          productId_tagId_source_isOfficial: {
             productId: product2.id,
             tagId: costumeTag.id,
+            source: 'booth',
             isOfficial: false,
           }
         },
-        // update: {} のため、既存レコードがある場合は更新されません。
         update: {},
         create: {
           productId: product2.id,
           tagId: costumeTag.id,
           userId: testUser.id,
           isOfficial: false,
+          source: 'booth',
         }
       });
     }

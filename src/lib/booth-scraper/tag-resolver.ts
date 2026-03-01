@@ -265,6 +265,66 @@ export class TagResolver {
     return tag.id;
   }
 
+  /**
+   * タグ名とカテゴリIDを受け取り、Tag IDを返す。
+   * 存在しないタグは新規作成（カテゴリ付き）。
+   * 既存タグが見つかった場合、カテゴリ未設定なら設定する。
+   */
+  async resolveTagWithCategory(tagName: string, categoryId: string): Promise<string> {
+    const normalized = this.normalizeTagName(tagName);
+
+    // カテゴリの存在を確認・作成
+    let category = await this.db.tagCategory.findUnique({
+      where: { id: categoryId },
+    });
+
+    if (!category) {
+      // カテゴリ名で検索（seedで名前で作成されている場合）
+      category = await this.db.tagCategory.findFirst({
+        where: { name: categoryId },
+      });
+    }
+
+    // タグを検索
+    let tag = await this.db.tag.findUnique({
+      where: { name: normalized },
+    });
+
+    if (!tag) {
+      // 新規作成（カテゴリ付き）
+      try {
+        tag = await this.db.tag.create({
+          data: {
+            name: normalized,
+            displayName: tagName,
+            language: this.defaultLanguage,
+            ...(category ? { tagCategoryId: category.id } : {}),
+          },
+        });
+      } catch (error) {
+        // レースコンディション対策
+        tag = await this.db.tag.findUnique({
+          where: { name: normalized },
+        });
+        if (!tag) {
+          throw new Error(`Failed to create or find tag: ${normalized}`);
+        }
+      }
+    } else if (!tag.tagCategoryId && category) {
+      // 既存タグのカテゴリが未設定の場合のみ設定
+      try {
+        await this.db.tag.update({
+          where: { id: tag.id },
+          data: { tagCategoryId: category.id },
+        });
+      } catch (e) {
+        console.warn(`Failed to update category for tag ${normalized}:`, e);
+      }
+    }
+
+    return tag.id;
+  }
+
   private normalizeTagName(name: string): string {
     const normalized = name
       .normalize('NFKC')

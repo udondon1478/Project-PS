@@ -51,6 +51,15 @@ export const tagCategories: TagCategoryInfo[] = [
     priority: 4
   },
   {
+    id: 'aesthetic',
+    name: '美学・雰囲気',
+    nameEn: 'Aesthetic',
+    color: '#FF69B4',
+    description: 'アバター・商品の外見的な雰囲気や美学的分類を表します。',
+    examples: ['お姉さん系', 'ケモノ系', 'クール系', 'ダーク系', 'ファンタジー系'],
+    priority: 4.5
+  },
+  {
     id: 'style',
     name: 'スタイル',
     nameEn: 'Style',

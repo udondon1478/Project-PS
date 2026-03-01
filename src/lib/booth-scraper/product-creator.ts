@@ -3,6 +3,20 @@ import { TagResolver } from './tag-resolver';
 import { sendDiscordNotification } from '../discord/webhook';
 import { validateUserExists } from '@/lib/user-validation';
 import { getAvatarDefinitionsDirect } from '@/lib/avatars';
+import { createAITagger, type AITagResult } from './ai-tagger';
+
+/** 次の日本時間0:00 (UTC 15:00) を取得 */
+function getNextMidnight(): Date {
+  const now = new Date();
+  const jstOffset = 9 * 60 * 60 * 1000;
+  const jstNow = new Date(now.getTime() + jstOffset);
+  const jstMidnight = new Date(jstNow);
+  jstMidnight.setUTCHours(0, 0, 0, 0);
+  if (jstMidnight <= jstNow) {
+    jstMidnight.setUTCDate(jstMidnight.getUTCDate() + 1);
+  }
+  return new Date(jstMidnight.getTime() - jstOffset);
+}
 
 export interface ScrapedProductData {
   boothJpUrl: string;
@@ -109,6 +123,49 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
       }
       // --- Avatar Auto-Tagging End ---
 
+      // --- AI Auto-Tagging Start ---
+      let aiTags: AITagResult | null = null;
+      const config = await tx.scraperConfig.findFirst();
+      if (config?.enableAITagging) {
+        // 日次コストリセットチェック
+        const now = new Date();
+        if (config.aiCostResetAt && config.aiCostResetAt < now) {
+          await tx.scraperConfig.update({
+            where: { id: config.id },
+            data: { aiTodayCostYen: 0, aiCostResetAt: getNextMidnight() },
+          });
+          config.aiTodayCostYen = 0;
+        }
+
+        if (config.aiTodayCostYen < config.aiDailyCostLimitYen) {
+          try {
+            const aiTagger = createAITagger(
+              config.aiProvider,
+              config.aiModel,
+              config.aiMaxImagesPerProduct,
+              config.aiMaxImageSize,
+            );
+            aiTags = await aiTagger.analyzeProduct({
+              title,
+              description: description || '',
+              imageUrls: images.slice(0, config.aiMaxImagesPerProduct),
+              ageRating,
+            });
+            // コスト記録
+            await tx.scraperConfig.update({
+              where: { id: config.id },
+              data: {
+                aiTodayCostYen: { increment: aiTags.estimatedCostYen },
+                ...(!config.aiCostResetAt ? { aiCostResetAt: getNextMidnight() } : {}),
+              },
+            });
+          } catch (error) {
+            console.warn('[ProductCreator] AI tagging failed, continuing with BOOTH tags only:', error);
+          }
+        }
+      }
+      // --- AI Auto-Tagging End ---
+
       // 1. Resolve Tags
       const tagIds = await tagResolver.resolveTags(tags);
       const detectedAvatarTagIds = await tagResolver.resolveTags(detectedAvatarTags);
@@ -160,7 +217,7 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
         isMain: true
       }];
 
-      return tx.product.create({
+      const product = await tx.product.create({
         data: {
           boothJpUrl,
           boothEnUrl: boothEnUrl || boothJpUrl, // Fallback
@@ -260,6 +317,56 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
           seller: true,
         }
       });
+
+      // --- AI Tags: 商品作成後にAIタグを追加 ---
+      if (aiTags) {
+        const aiConfidenceThreshold = config?.aiConfidenceThreshold ?? 0.5;
+        for (const suggestion of aiTags.tags) {
+          if (suggestion.confidence < aiConfidenceThreshold) continue;
+          try {
+            const resolvedTagId = await tagResolver.resolveTagWithCategory(
+              suggestion.name,
+              suggestion.category,
+            );
+            await tx.productTag.create({
+              data: {
+                productId: product.id,
+                tagId: resolvedTagId,
+                source: 'ai',
+                confidence: suggestion.confidence,
+                isOfficial: false,
+              },
+            });
+          } catch (e) {
+            // 重複や解決失敗はスキップ
+            console.warn(`[ProductCreator] AI tag creation failed for "${suggestion.name}":`, e);
+          }
+        }
+
+        // 美学カテゴリタグも保存
+        if (aiTags.aestheticCategory) {
+          try {
+            const aestheticTagId = await tagResolver.resolveTagWithCategory(
+              aiTags.aestheticCategory,
+              'aesthetic',
+            );
+            await tx.productTag.create({
+              data: {
+                productId: product.id,
+                tagId: aestheticTagId,
+                source: 'ai',
+                confidence: 1.0,
+                isOfficial: false,
+              },
+            });
+          } catch (e) {
+            console.warn(`[ProductCreator] Aesthetic tag creation failed:`, e);
+          }
+        }
+      }
+      // --- AI Tags End ---
+
+      return product;
     });
 
     // Persistence Verification

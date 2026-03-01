@@ -117,14 +117,23 @@ export async function PATCH(req: Request) {
 
   try {
     const body = await req.json();
-    const { 
-        isSchedulerEnabled, 
-        newScanIntervalMin, 
-        newScanPageLimit, 
+    const {
+        isSchedulerEnabled,
+        newScanIntervalMin,
+        newScanPageLimit,
         backfillIntervalMin,
         backfillPageCount,
         backfillProductLimit,
-        requestIntervalMs
+        requestIntervalMs,
+        // AI Tagging settings
+        enableAITagging,
+        aiProvider,
+        aiModel,
+        aiMaxImagesPerProduct,
+        aiDailyCostLimitYen,
+        aiConfidenceThreshold,
+        aiMaxImageSize,
+        aiBackfillEnabled,
     } = body;
 
     // Minimum validation
@@ -167,6 +176,23 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ error: `Request interval must be at most ${MAX_REQUEST_INTERVAL_MS}ms` }, { status: 400 });
     }
 
+    // AI Tagging validation
+    if (aiProvider !== undefined && !['gemini', 'anthropic'].includes(aiProvider)) {
+        return NextResponse.json({ error: 'AI provider must be "gemini" or "anthropic"' }, { status: 400 });
+    }
+    if (aiMaxImagesPerProduct !== undefined && (aiMaxImagesPerProduct < 1 || aiMaxImagesPerProduct > 10)) {
+        return NextResponse.json({ error: 'AI max images must be between 1 and 10' }, { status: 400 });
+    }
+    if (aiDailyCostLimitYen !== undefined && (aiDailyCostLimitYen < 0 || aiDailyCostLimitYen > 10000)) {
+        return NextResponse.json({ error: 'AI daily cost limit must be between ¥0 and ¥10,000' }, { status: 400 });
+    }
+    if (aiConfidenceThreshold !== undefined && (aiConfidenceThreshold < 0 || aiConfidenceThreshold > 1)) {
+        return NextResponse.json({ error: 'AI confidence threshold must be between 0.0 and 1.0' }, { status: 400 });
+    }
+    if (aiMaxImageSize !== undefined && (aiMaxImageSize < 128 || aiMaxImageSize > 2048)) {
+        return NextResponse.json({ error: 'AI max image size must be between 128 and 2048 pixels' }, { status: 400 });
+    }
+
     // Singleton: use upsert with fixed ID to ensure only one record exists
     const config = await prisma.scraperConfig.upsert({
       where: { id: SCRAPER_CONFIG_SINGLETON_ID },
@@ -178,6 +204,15 @@ export async function PATCH(req: Request) {
         backfillPageCount,
         backfillProductLimit,
         requestIntervalMs,
+        // AI Tagging fields
+        enableAITagging,
+        aiProvider,
+        aiModel,
+        aiMaxImagesPerProduct,
+        aiDailyCostLimitYen,
+        aiConfidenceThreshold,
+        aiMaxImageSize,
+        aiBackfillEnabled,
         lastUpdatedBy: session.user.id,
       },
       create: {
@@ -200,5 +235,36 @@ export async function PATCH(req: Request) {
     // Return detailed error for debugging
     const msg = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ error: `Failed to update config: ${msg}` }, { status: 500 });
+  }
+}
+
+/**
+ * POST: AI日次コストリセット
+ */
+export async function POST(req: Request) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== Role.ADMIN) {
+    return new NextResponse('Unauthorized', { status: 403 });
+  }
+
+  try {
+    const body = await req.json();
+
+    if (body.action === 'resetAICost') {
+      const config = await prisma.scraperConfig.update({
+        where: { id: SCRAPER_CONFIG_SINGLETON_ID },
+        data: {
+          aiTodayCostYen: 0,
+          aiCostResetAt: new Date(),
+          lastUpdatedBy: session.user.id,
+        },
+      });
+      return NextResponse.json(config);
+    }
+
+    return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
+  } catch (error) {
+    console.error('Failed to process scraper config action:', error);
+    return NextResponse.json({ error: 'Failed to process action' }, { status: 500 });
   }
 }

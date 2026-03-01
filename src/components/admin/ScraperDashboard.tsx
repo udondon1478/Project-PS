@@ -96,6 +96,19 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
     requestIntervalMs: 5000,
   });
 
+  // AI Tagging Config State
+  const [aiConfig, setAiConfig] = useState({
+    enableAITagging: false,
+    aiProvider: 'gemini',
+    aiModel: 'gemini-2.0-flash',
+    aiMaxImagesPerProduct: 5,
+    aiDailyCostLimitYen: 200,
+    aiTodayCostYen: 0,
+    aiConfidenceThreshold: 0.5,
+    aiMaxImageSize: 512,
+    aiBackfillEnabled: true,
+  });
+
   const [schedulerStatus, setSchedulerStatus] = useState<SchedulerStatusType | null>(null);
 
   // Remote task logs state (for polling)
@@ -241,6 +254,18 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
              backfillProductLimit: data.backfillProductLimit ?? 9,
              requestIntervalMs: data.requestIntervalMs ?? 5000,
            });
+           // AI Tagging Config
+           setAiConfig({
+             enableAITagging: data.enableAITagging ?? false,
+             aiProvider: data.aiProvider ?? 'gemini',
+             aiModel: data.aiModel ?? 'gemini-2.0-flash',
+             aiMaxImagesPerProduct: data.aiMaxImagesPerProduct ?? 5,
+             aiDailyCostLimitYen: data.aiDailyCostLimitYen ?? 200,
+             aiTodayCostYen: data.aiTodayCostYen ?? 0,
+             aiConfidenceThreshold: data.aiConfidenceThreshold ?? 0.5,
+             aiMaxImageSize: data.aiMaxImageSize ?? 512,
+             aiBackfillEnabled: data.aiBackfillEnabled ?? true,
+           });
            if (data.schedulerStatus) {
              setSchedulerStatus(data.schedulerStatus);
            }
@@ -277,6 +302,43 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
        console.error('Error saving scheduler settings:', e);
        toast.error(`Error saving settings: ${errorMessage}`);
      }
+  };
+
+  const saveAIConfig = async () => {
+    try {
+      const res = await fetch('/api/admin/scraper-config', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(aiConfig),
+      });
+      if (res.ok) {
+        toast.success('AI Tagging settings saved');
+      } else {
+        const err = await res.json();
+        toast.error(`Failed to save AI settings: ${err.error}`);
+      }
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      toast.error(`Error saving AI settings: ${errorMessage}`);
+    }
+  };
+
+  const resetAICost = async () => {
+    try {
+      const res = await fetch('/api/admin/scraper-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'resetAICost' }),
+      });
+      if (res.ok) {
+        setAiConfig(prev => ({ ...prev, aiTodayCostYen: 0 }));
+        toast.success('AI cost reset');
+      } else {
+        toast.error('Failed to reset AI cost');
+      }
+    } catch {
+      toast.error('Error resetting AI cost');
+    }
   };
 
   // Fetch logs logic
@@ -891,6 +953,164 @@ export default function ScraperDashboard({ recentRuns }: DashboardProps) {
                   </div>
               </div>
           </div>
+      </div>
+
+      {/* AI Tagging Settings Section */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold">AI Auto-Tagging</h2>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={aiConfig.enableAITagging}
+                onChange={e => setAiConfig(prev => ({ ...prev, enableAITagging: e.target.checked }))}
+                className="w-4 h-4"
+              />
+              <span className="text-sm font-medium">{aiConfig.enableAITagging ? 'ON' : 'OFF'}</span>
+            </label>
+          </div>
+        </div>
+
+        {/* Cost Display */}
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Today&apos;s Cost</p>
+              <p className="text-2xl font-bold">
+                ¥{aiConfig.aiTodayCostYen.toFixed(1)}
+                <span className="text-sm text-gray-500 font-normal"> / ¥{aiConfig.aiDailyCostLimitYen}</span>
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div
+                  className="bg-blue-500 h-2 rounded-full transition-all"
+                  style={{ width: `${Math.min((aiConfig.aiTodayCostYen / aiConfig.aiDailyCostLimitYen) * 100, 100)}%` }}
+                />
+              </div>
+              <Button variant="outline" size="sm" onClick={resetAICost}>Reset</Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Provider */}
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Provider</label>
+            <select
+              value={aiConfig.aiProvider}
+              onChange={e => {
+                const provider = e.target.value;
+                const defaultModel = provider === 'gemini' ? 'gemini-2.0-flash' : 'claude-haiku-4-5-20251001';
+                setAiConfig(prev => ({ ...prev, aiProvider: provider, aiModel: defaultModel }));
+              }}
+              className="w-full border rounded px-3 py-2 text-sm dark:bg-gray-700 dark:border-gray-600"
+            >
+              <option value="gemini">Gemini</option>
+              <option value="anthropic">Anthropic (Claude)</option>
+            </select>
+          </div>
+
+          {/* Model */}
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Model</label>
+            <select
+              value={aiConfig.aiModel}
+              onChange={e => setAiConfig(prev => ({ ...prev, aiModel: e.target.value }))}
+              className="w-full border rounded px-3 py-2 text-sm dark:bg-gray-700 dark:border-gray-600"
+            >
+              {aiConfig.aiProvider === 'gemini' ? (
+                <>
+                  <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                  <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite</option>
+                </>
+              ) : (
+                <>
+                  <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+                  <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
+                </>
+              )}
+            </select>
+          </div>
+
+          {/* Max Images */}
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Max Images per Product (1-10)</label>
+            <input
+              type="number"
+              min={1}
+              max={10}
+              value={aiConfig.aiMaxImagesPerProduct}
+              onChange={e => setAiConfig(prev => ({ ...prev, aiMaxImagesPerProduct: parseInt(e.target.value) || 5 }))}
+              className="w-full border rounded px-3 py-2 text-sm dark:bg-gray-700 dark:border-gray-600"
+            />
+          </div>
+
+          {/* Daily Cost Limit */}
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Daily Cost Limit (¥)</label>
+            <input
+              type="number"
+              min={0}
+              max={10000}
+              value={aiConfig.aiDailyCostLimitYen}
+              onChange={e => setAiConfig(prev => ({ ...prev, aiDailyCostLimitYen: parseFloat(e.target.value) || 200 }))}
+              className="w-full border rounded px-3 py-2 text-sm dark:bg-gray-700 dark:border-gray-600"
+            />
+          </div>
+
+          {/* Confidence Threshold */}
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">
+              Confidence Threshold: {aiConfig.aiConfidenceThreshold.toFixed(2)}
+            </label>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.05}
+              value={aiConfig.aiConfidenceThreshold}
+              onChange={e => setAiConfig(prev => ({ ...prev, aiConfidenceThreshold: parseFloat(e.target.value) }))}
+              className="w-full"
+            />
+          </div>
+
+          {/* Max Image Size */}
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Max Image Size (px)</label>
+            <select
+              value={aiConfig.aiMaxImageSize}
+              onChange={e => setAiConfig(prev => ({ ...prev, aiMaxImageSize: parseInt(e.target.value) }))}
+              className="w-full border rounded px-3 py-2 text-sm dark:bg-gray-700 dark:border-gray-600"
+            >
+              <option value={256}>256px</option>
+              <option value={512}>512px</option>
+              <option value={768}>768px</option>
+              <option value={1024}>1024px</option>
+            </select>
+          </div>
+
+          {/* Backfill Enabled */}
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="aiBackfillEnabled"
+              checked={aiConfig.aiBackfillEnabled}
+              onChange={e => setAiConfig(prev => ({ ...prev, aiBackfillEnabled: e.target.checked }))}
+              className="w-4 h-4"
+            />
+            <label htmlFor="aiBackfillEnabled" className="text-sm">
+              Auto-backfill existing products with remaining daily budget
+            </label>
+          </div>
+        </div>
+
+        <div className="flex justify-end mt-4">
+          <Button onClick={saveAIConfig}>
+            Save AI Settings
+          </Button>
+        </div>
       </div>
 
        {/* Confirmation Dialog */}
