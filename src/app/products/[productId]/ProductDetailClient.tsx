@@ -45,6 +45,8 @@ interface ProductTagData {
     };
   };
   isOfficial: boolean;
+  source?: string; // "booth" | "ai" | "user" | "import"
+  confidence?: number | null; // AI confidence (0.0-1.0)
 }
 
 interface TagEditHistoryData {
@@ -249,6 +251,8 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
   // - tagCategoryId: null → '' (ProductTag type requires string for type safety)
   const normalizeProductTag = (pt: ProductTagData) => ({
     isOfficial: pt.isOfficial,
+    source: pt.source ?? 'booth',
+    confidence: pt.confidence ?? null,
     tag: {
       id: pt.tag.id,
       name: pt.tag.name,
@@ -260,8 +264,9 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
   });
 
   const normalizedProductTags = product.productTags?.map(normalizeProductTag) || [];
-  const polyseekTags = normalizedProductTags.filter(pt => !pt.isOfficial);
+  const polyseekTags = normalizedProductTags.filter(pt => !pt.isOfficial && pt.source !== 'ai');
   const officialTags = normalizedProductTags.filter(pt => pt.isOfficial);
+  const aiTags = normalizedProductTags.filter(pt => pt.source === 'ai');
 
 
   return (
@@ -423,6 +428,37 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
                   </Dialog>
                 </div>
               </div>
+
+              {/* AI推定タグブロック */}
+              {aiTags.length > 0 && (
+                <div className="p-6 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
+                  <h2 className="text-lg font-semibold text-purple-700 dark:text-purple-300 mb-4">AI推定タグ</h2>
+                  <TooltipProvider>
+                    <ScrollArea className="h-32">
+                      <div className="flex flex-wrap gap-2">
+                        {aiTags.map((pt, idx) => (
+                          <button
+                            key={`ai-${idx}`}
+                            onClick={() => handleViewTagDetails(pt.tag.id)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-sm rounded-full border transition-colors hover:bg-purple-100 dark:hover:bg-purple-800/50"
+                            style={{
+                              borderColor: pt.tag.tagCategory?.color || '#a855f7',
+                              color: pt.tag.tagCategory?.color || '#a855f7',
+                            }}
+                          >
+                            <span>{pt.tag.displayName || pt.tag.name}</span>
+                            {pt.confidence != null && (
+                              <span className="text-xs opacity-60">
+                                {Math.round(pt.confidence * 100)}%
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </TooltipProvider>
+                </div>
+              )}
 
               {/* 公式タグ（BOOTH由来）ブロック */}
               {officialTags.length > 0 && (

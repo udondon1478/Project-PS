@@ -291,21 +291,24 @@ model ProductTag {
   id         String    @id @default(cuid())
   productId  String
   tagId      String
-  userId     String    // タグを付けたユーザー
+  userId     String?   // タグを付けたユーザー (AI/importの場合はnull)
   isImplied  Boolean   @default(false) // 含意により自動付与されたタグかどうか
   isOfficial Boolean   @default(false) // BOOTH由来の公式タグかどうか
+  source     String    @default("booth") // "booth" | "ai" | "user" | "import"
+  confidence Float?    // AI confidence (0.0-1.0)
   createdAt  DateTime  @default(now())
 
   product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
   tag        Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  user       User      @relation(fields: [userId], references: [id])
+  user       User?     @relation(fields: [userId], references: [id])
 
-  // 同じ商品・同じタグであっても、公式・独自それぞれの区分で登録可能
-  @@unique([productId, tagId, isOfficial])
+  // sourceとisOfficialの組み合わせで独立管理
+  @@unique([productId, tagId, source, isOfficial])
   @@index([productId])
   @@index([tagId])
   @@index([userId])
   @@index([isOfficial])
+  @@index([source])
 
   reports    Report[]      // この商品タグに対する通報
 }
@@ -522,6 +525,18 @@ model ScraperConfig {
   requestIntervalMs  Int @default(5000) // スクレイピング時のリクエスト間隔(ms)
   lastUpdatedBy   String?
   updatedAt       DateTime @updatedAt
+
+  // AI Tagging Configuration
+  enableAITagging       Boolean   @default(false)
+  aiProvider            String    @default("gemini")    // "gemini" | "anthropic"
+  aiModel               String    @default("gemini-2.0-flash")
+  aiMaxImagesPerProduct Int       @default(5)
+  aiDailyCostLimitYen   Float     @default(200)
+  aiTodayCostYen        Float     @default(0)
+  aiCostResetAt         DateTime?
+  aiConfidenceThreshold Float     @default(0.5)
+  aiMaxImageSize        Int       @default(512)
+  aiBackfillEnabled     Boolean   @default(true)
 }
 
 // 検索履歴テーブル

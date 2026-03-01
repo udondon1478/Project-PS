@@ -18,6 +18,8 @@ export default async function ProductPage({ params }: { params: Promise<{ produc
       productTags: {
         select: {
           isOfficial: true,
+          source: true,
+          confidence: true,
           tag: {
             select: {
               id: true,
@@ -134,6 +136,8 @@ export default async function ProductPage({ params }: { params: Promise<{ produc
     })),
     productTags: product.productTags.map(pt => ({
       isOfficial: pt.isOfficial,
+      source: pt.source,
+      confidence: pt.confidence,
       tag: {
         id: pt.tag.id,
         name: pt.tag.name,

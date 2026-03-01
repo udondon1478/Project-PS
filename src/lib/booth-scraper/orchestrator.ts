@@ -9,6 +9,8 @@ import { createProductFromScraper, ScrapedProductData } from './product-creator'
 import { waitJitter } from './utils';
 import crypto from 'crypto';
 import type { ScraperRun, ScraperMode, ScraperOptions, ScraperLog, ScraperStatus, QueueItem } from './types';
+import { createAITagger } from './ai-tagger';
+import { TagResolver } from './tag-resolver';
 
 // Re-export types for backward compatibility (if needed) but prefer importing from types.ts directly
 export type { ScraperRun, ScraperMode, ScraperOptions, ScraperLog, ScraperStatus, QueueItem };
@@ -220,6 +222,13 @@ class BoothScraperOrchestrator {
 
     this.isProcessingQueue = false;
     console.log('[Orchestrator] Queue drained.');
+
+    // キュー処理完了後、AIバックフィルを実行
+    try {
+      await this.runAIBackfill();
+    } catch (e) {
+      console.error('[Orchestrator] AI backfill error:', e);
+    }
   }
 
   private async runItem(item: QueueItem): Promise<void> {
@@ -557,6 +566,179 @@ class BoothScraperOrchestrator {
     }
     this.addLog(`Run finalized.`);
   }
+
+  /**
+   * AIバックフィル: 日次予算の残りで既存商品をAI分析
+   * スクレイピングキュー処理後に呼び出される
+   */
+  public async runAIBackfill(): Promise<{ processed: number; tagged: number }> {
+    const config = await prisma.scraperConfig.findFirst();
+    if (!config?.enableAITagging || !config.aiBackfillEnabled) {
+      return { processed: 0, tagged: 0 };
+    }
+
+    // 日次コストリセットチェック
+    const now = new Date();
+    let todayCost = config.aiTodayCostYen;
+    if (config.aiCostResetAt && config.aiCostResetAt < now) {
+      await prisma.scraperConfig.update({
+        where: { id: config.id },
+        data: { aiTodayCostYen: 0, aiCostResetAt: getNextMidnightJST() },
+      });
+      todayCost = 0;
+    }
+
+    const remainingBudget = config.aiDailyCostLimitYen - todayCost;
+    if (remainingBudget <= 0) {
+      console.log('[AIBackfill] No remaining budget for today');
+      return { processed: 0, tagged: 0 };
+    }
+
+    // AI未分析の商品を古い順に取得
+    const estimatedCostPerProduct = 0.8; // ¥0.7-1.0の中間値
+    const maxProducts = Math.floor(remainingBudget / estimatedCostPerProduct);
+    if (maxProducts <= 0) return { processed: 0, tagged: 0 };
+
+    const products = await prisma.product.findMany({
+      where: {
+        productTags: { none: { source: 'ai' } },
+      },
+      orderBy: { createdAt: 'asc' },
+      take: Math.min(maxProducts, 50), // 一度に最大50商品
+      include: {
+        images: { orderBy: { order: 'asc' }, take: config.aiMaxImagesPerProduct },
+      },
+    });
+
+    if (products.length === 0) {
+      console.log('[AIBackfill] No products without AI tags found');
+      return { processed: 0, tagged: 0 };
+    }
+
+    console.log(`[AIBackfill] Processing ${products.length} products (budget: ¥${remainingBudget.toFixed(1)})`);
+
+    const aiTagger = createAITagger(
+      config.aiProvider,
+      config.aiModel,
+      config.aiMaxImagesPerProduct,
+      config.aiMaxImageSize,
+    );
+    const tagResolver = new TagResolver(prisma);
+
+    let processed = 0;
+    let tagged = 0;
+
+    for (const product of products) {
+      // 予算チェック（最新のコスト情報を取得）
+      const latestConfig = await prisma.scraperConfig.findFirst({
+        select: { aiTodayCostYen: true, aiDailyCostLimitYen: true },
+      });
+      if (latestConfig && latestConfig.aiTodayCostYen >= latestConfig.aiDailyCostLimitYen) {
+        console.log('[AIBackfill] Daily budget exhausted');
+        break;
+      }
+
+      try {
+        const aiResult = await aiTagger.analyzeProduct({
+          title: product.title,
+          description: product.description || '',
+          imageUrls: product.images.map((img) => img.imageUrl),
+          ageRating: null,
+        });
+
+        // コスト記録
+        await prisma.scraperConfig.update({
+          where: { id: config.id },
+          data: { aiTodayCostYen: { increment: aiResult.estimatedCostYen } },
+        });
+
+        // タグ保存
+        const confidenceThreshold = config.aiConfidenceThreshold;
+        for (const suggestion of aiResult.tags) {
+          if (suggestion.confidence < confidenceThreshold) continue;
+          try {
+            const resolvedTagId = await tagResolver.resolveTagWithCategory(
+              suggestion.name,
+              suggestion.category,
+            );
+            await prisma.productTag.upsert({
+              where: {
+                productId_tagId_source_isOfficial: {
+                  productId: product.id,
+                  tagId: resolvedTagId,
+                  source: 'ai',
+                  isOfficial: false,
+                },
+              },
+              create: {
+                productId: product.id,
+                tagId: resolvedTagId,
+                source: 'ai',
+                confidence: suggestion.confidence,
+                isOfficial: false,
+              },
+              update: { confidence: suggestion.confidence },
+            });
+            tagged++;
+          } catch (e) {
+            // 重複はスキップ
+          }
+        }
+
+        // 美学カテゴリ
+        if (aiResult.aestheticCategory) {
+          try {
+            const aestheticTagId = await tagResolver.resolveTagWithCategory(
+              aiResult.aestheticCategory,
+              'aesthetic',
+            );
+            await prisma.productTag.upsert({
+              where: {
+                productId_tagId_source_isOfficial: {
+                  productId: product.id,
+                  tagId: aestheticTagId,
+                  source: 'ai',
+                  isOfficial: false,
+                },
+              },
+              create: {
+                productId: product.id,
+                tagId: aestheticTagId,
+                source: 'ai',
+                confidence: 1.0,
+                isOfficial: false,
+              },
+              update: {},
+            });
+            tagged++;
+          } catch (e) {
+            // スキップ
+          }
+        }
+
+        processed++;
+        console.log(`[AIBackfill] Processed ${product.id}: ${aiResult.tags.length} tags, ¥${aiResult.estimatedCostYen}`);
+      } catch (error) {
+        console.error(`[AIBackfill] Failed to process product ${product.id}:`, error);
+      }
+    }
+
+    console.log(`[AIBackfill] Complete: ${processed} processed, ${tagged} tags added`);
+    return { processed, tagged };
+  }
+}
+
+/** 次の日本時間0:00 (UTC 15:00) を取得 */
+function getNextMidnightJST(): Date {
+  const now = new Date();
+  const jstOffset = 9 * 60 * 60 * 1000;
+  const jstNow = new Date(now.getTime() + jstOffset);
+  const jstMidnight = new Date(jstNow);
+  jstMidnight.setUTCHours(0, 0, 0, 0);
+  if (jstMidnight <= jstNow) {
+    jstMidnight.setUTCDate(jstMidnight.getUTCDate() + 1);
+  }
+  return new Date(jstMidnight.getTime() - jstOffset);
 }
 
 export const orchestrator = BoothScraperOrchestrator.getInstance();
