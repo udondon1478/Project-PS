@@ -65,6 +65,8 @@ export async function getAvatarDefinitionsDirect(): Promise<AvatarDefinition[]> 
  * 定義の追加・更新・削除時に呼び出してください。
  */
 export const revalidateAvatarDefinitions = () => {
+  cachedDefinitions = null;
+  cacheTimestamp = 0;
   // @ts-expect-error Next.js type definition expects 2 arguments but runtime only needs 1
   revalidateTag(AVATAR_DEFINITIONS_TAG);
 };
