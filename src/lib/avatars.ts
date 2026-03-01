@@ -40,6 +40,21 @@ export const getAvatarDefinitions = unstable_cache(
 );
 
 /**
+ * 全アバター定義を取得します（キャッシュなし）。
+ * スタンドアロン環境（booth-cron等）向け - Next.jsのunstable_cacheに依存しません。
+ */
+export async function getAvatarDefinitionsDirect(): Promise<AvatarDefinition[]> {
+  return prisma.avatarItem.findMany({
+    select: {
+      itemId: true,
+      avatarName: true,
+      aliases: true,
+      suggestedTags: true,
+    },
+  });
+}
+
+/**
  * アバター定義のキャッシュを無効化します。
  * 定義の追加・更新・削除時に呼び出してください。
  */

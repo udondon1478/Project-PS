@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { TagResolver } from './tag-resolver';
 import { sendDiscordNotification } from '../discord/webhook';
 import { validateUserExists } from '@/lib/user-validation';
-import { getAvatarDefinitions } from '@/lib/avatars';
+import { getAvatarDefinitionsDirect } from '@/lib/avatars';
 
 export interface ScrapedProductData {
   boothJpUrl: string;
@@ -76,7 +76,7 @@ export async function createProductFromScraper(data: ScrapedProductData, systemU
       const tagResolver = new TagResolver(tx);
 
       // --- Avatar Auto-Tagging Start ---
-      const avatarDefinitions = await getAvatarDefinitions();
+      const avatarDefinitions = await getAvatarDefinitionsDirect();
       const detectedAvatarTags: string[] = [];
       const normalizedDescription = description ? description.toLowerCase() : '';
 
