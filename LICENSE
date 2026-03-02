@@ -1,0 +1,23 @@
+Copyright (c) 2025-2026 PolySeek. All Rights Reserved.
+
+本ソフトウェアおよび関連するドキュメントファイル（以下「本ソフトウェア」）の著作権は
+PolySeek に帰属します。
+
+以下の行為は明示的に禁止されています:
+- 本ソフトウェアの全部または一部の複製、改変、配布
+- 本ソフトウェアの商用利用
+- 本ソフトウェアを基にした派生物の作成
+- 本ソフトウェアのサブライセンス、販売
+
+本リポジトリのソースコードは閲覧目的でのみ公開されています。
+
+例外として、CodeRabbit等の自動コードレビューツールによる本ソフトウェアの
+解析・レビューは許可されます。
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
