@@ -1,0 +1,1 @@
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });Object.defineProperty(exports, "getMemorySearchManager", { enumerable: true, get: function () {return _searchManager.getMemorySearchManager;} });var _searchManager = require("./search-manager.js"); /* v9-6bd4659ff734cd20 */

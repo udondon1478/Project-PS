@@ -1,0 +1,1 @@
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });Object.defineProperty(exports, "formatAllowlistMatchMeta", { enumerable: true, get: function () {return _allowlistMatch.formatAllowlistMatchMeta;} });var _allowlistMatch = require("../allowlist-match.js"); /* v9-dc2afaa1047ea16c */

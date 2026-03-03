@@ -1,0 +1,102 @@
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.auditDiscordChannelPermissions = auditDiscordChannelPermissions;exports.collectDiscordAuditChannelIds = collectDiscordAuditChannelIds;var _accounts = require("./accounts.js");
+var _send = require("./send.js");
+const REQUIRED_CHANNEL_PERMISSIONS = ["ViewChannel", "SendMessages"];
+function isRecord(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+function shouldAuditChannelConfig(config) {
+  if (!config) {
+    return true;
+  }
+  if (config.allow === false) {
+    return false;
+  }
+  if (config.enabled === false) {
+    return false;
+  }
+  return true;
+}
+function listConfiguredGuildChannelKeys(guilds) {
+  if (!guilds) {
+    return [];
+  }
+  const ids = new Set();
+  for (const entry of Object.values(guilds)) {
+    if (!entry || typeof entry !== "object") {
+      continue;
+    }
+    const channelsRaw = entry.channels;
+    if (!isRecord(channelsRaw)) {
+      continue;
+    }
+    for (const [key, value] of Object.entries(channelsRaw)) {
+      const channelId = String(key).trim();
+      if (!channelId) {
+        continue;
+      }
+      if (!shouldAuditChannelConfig(value)) {
+        continue;
+      }
+      ids.add(channelId);
+    }
+  }
+  return [...ids].toSorted((a, b) => a.localeCompare(b));
+}
+function collectDiscordAuditChannelIds(params) {
+  const account = (0, _accounts.resolveDiscordAccount)({
+    cfg: params.cfg,
+    accountId: params.accountId
+  });
+  const keys = listConfiguredGuildChannelKeys(account.config.guilds);
+  const channelIds = keys.filter((key) => /^\d+$/.test(key));
+  const unresolvedChannels = keys.length - channelIds.length;
+  return { channelIds, unresolvedChannels };
+}
+async function auditDiscordChannelPermissions(params) {
+  const started = Date.now();
+  const token = params.token?.trim() ?? "";
+  if (!token || params.channelIds.length === 0) {
+    return {
+      ok: true,
+      checkedChannels: 0,
+      unresolvedChannels: 0,
+      channels: [],
+      elapsedMs: Date.now() - started
+    };
+  }
+  const required = [...REQUIRED_CHANNEL_PERMISSIONS];
+  const channels = [];
+  for (const channelId of params.channelIds) {
+    try {
+      const perms = await (0, _send.fetchChannelPermissionsDiscord)(channelId, {
+        token,
+        accountId: params.accountId ?? undefined
+      });
+      const missing = required.filter((p) => !perms.permissions.includes(p));
+      channels.push({
+        channelId,
+        ok: missing.length === 0,
+        missing: missing.length ? missing : undefined,
+        error: null,
+        matchKey: channelId,
+        matchSource: "id"
+      });
+    }
+    catch (err) {
+      channels.push({
+        channelId,
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+        matchKey: channelId,
+        matchSource: "id"
+      });
+    }
+  }
+  return {
+    ok: channels.every((c) => c.ok),
+    checkedChannels: channels.length,
+    unresolvedChannels: 0,
+    channels,
+    elapsedMs: Date.now() - started
+  };
+} /* v9-67d14feb00545534 */

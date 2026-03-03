@@ -1,0 +1,332 @@
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.resolveBlueBubblesGroupRequireMention = resolveBlueBubblesGroupRequireMention;exports.resolveBlueBubblesGroupToolPolicy = resolveBlueBubblesGroupToolPolicy;exports.resolveDiscordGroupRequireMention = resolveDiscordGroupRequireMention;exports.resolveDiscordGroupToolPolicy = resolveDiscordGroupToolPolicy;exports.resolveGoogleChatGroupRequireMention = resolveGoogleChatGroupRequireMention;exports.resolveGoogleChatGroupToolPolicy = resolveGoogleChatGroupToolPolicy;exports.resolveIMessageGroupRequireMention = resolveIMessageGroupRequireMention;exports.resolveIMessageGroupToolPolicy = resolveIMessageGroupToolPolicy;exports.resolveSlackGroupRequireMention = resolveSlackGroupRequireMention;exports.resolveSlackGroupToolPolicy = resolveSlackGroupToolPolicy;exports.resolveTelegramGroupRequireMention = resolveTelegramGroupRequireMention;exports.resolveTelegramGroupToolPolicy = resolveTelegramGroupToolPolicy;exports.resolveWhatsAppGroupRequireMention = resolveWhatsAppGroupRequireMention;exports.resolveWhatsAppGroupToolPolicy = resolveWhatsAppGroupToolPolicy;var _groupPolicy = require("../../config/group-policy.js");
+var _accounts = require("../../slack/accounts.js");
+function normalizeDiscordSlug(value) {
+  if (!value) {
+    return "";
+  }
+  let text = value.trim().toLowerCase();
+  if (!text) {
+    return "";
+  }
+  text = text.replace(/^[@#]+/, "");
+  text = text.replace(/[\s_]+/g, "-");
+  text = text.replace(/[^a-z0-9-]+/g, "-");
+  text = text.replace(/-{2,}/g, "-").replace(/^-+|-+$/g, "");
+  return text;
+}
+function normalizeSlackSlug(raw) {
+  const trimmed = raw?.trim().toLowerCase() ?? "";
+  if (!trimmed) {
+    return "";
+  }
+  const dashed = trimmed.replace(/\s+/g, "-");
+  const cleaned = dashed.replace(/[^a-z0-9#@._+-]+/g, "-");
+  return cleaned.replace(/-{2,}/g, "-").replace(/^[-.]+|[-.]+$/g, "");
+}
+function parseTelegramGroupId(value) {
+  const raw = value?.trim() ?? "";
+  if (!raw) {
+    return { chatId: undefined, topicId: undefined };
+  }
+  const parts = raw.split(":").filter(Boolean);
+  if (parts.length >= 3 &&
+  parts[1] === "topic" &&
+  /^-?\d+$/.test(parts[0]) &&
+  /^\d+$/.test(parts[2])) {
+    return { chatId: parts[0], topicId: parts[2] };
+  }
+  if (parts.length >= 2 && /^-?\d+$/.test(parts[0]) && /^\d+$/.test(parts[1])) {
+    return { chatId: parts[0], topicId: parts[1] };
+  }
+  return { chatId: raw, topicId: undefined };
+}
+function resolveTelegramRequireMention(params) {
+  const { cfg, chatId, topicId } = params;
+  if (!chatId) {
+    return undefined;
+  }
+  const groupConfig = cfg.channels?.telegram?.groups?.[chatId];
+  const groupDefault = cfg.channels?.telegram?.groups?.["*"];
+  const topicConfig = topicId && groupConfig?.topics ? groupConfig.topics[topicId] : undefined;
+  const defaultTopicConfig = topicId && groupDefault?.topics ? groupDefault.topics[topicId] : undefined;
+  if (typeof topicConfig?.requireMention === "boolean") {
+    return topicConfig.requireMention;
+  }
+  if (typeof defaultTopicConfig?.requireMention === "boolean") {
+    return defaultTopicConfig.requireMention;
+  }
+  if (typeof groupConfig?.requireMention === "boolean") {
+    return groupConfig.requireMention;
+  }
+  if (typeof groupDefault?.requireMention === "boolean") {
+    return groupDefault.requireMention;
+  }
+  return undefined;
+}
+function resolveDiscordGuildEntry(guilds, groupSpace) {
+  if (!guilds || Object.keys(guilds).length === 0) {
+    return null;
+  }
+  const space = groupSpace?.trim() ?? "";
+  if (space && guilds[space]) {
+    return guilds[space];
+  }
+  const normalized = normalizeDiscordSlug(space);
+  if (normalized && guilds[normalized]) {
+    return guilds[normalized];
+  }
+  if (normalized) {
+    const match = Object.values(guilds).find((entry) => normalizeDiscordSlug(entry?.slug ?? undefined) === normalized);
+    if (match) {
+      return match;
+    }
+  }
+  return guilds["*"] ?? null;
+}
+function resolveTelegramGroupRequireMention(params) {
+  const { chatId, topicId } = parseTelegramGroupId(params.groupId);
+  const requireMention = resolveTelegramRequireMention({
+    cfg: params.cfg,
+    chatId,
+    topicId
+  });
+  if (typeof requireMention === "boolean") {
+    return requireMention;
+  }
+  return (0, _groupPolicy.resolveChannelGroupRequireMention)({
+    cfg: params.cfg,
+    channel: "telegram",
+    groupId: chatId ?? params.groupId,
+    accountId: params.accountId
+  });
+}
+function resolveWhatsAppGroupRequireMention(params) {
+  return (0, _groupPolicy.resolveChannelGroupRequireMention)({
+    cfg: params.cfg,
+    channel: "whatsapp",
+    groupId: params.groupId,
+    accountId: params.accountId
+  });
+}
+function resolveIMessageGroupRequireMention(params) {
+  return (0, _groupPolicy.resolveChannelGroupRequireMention)({
+    cfg: params.cfg,
+    channel: "imessage",
+    groupId: params.groupId,
+    accountId: params.accountId
+  });
+}
+function resolveDiscordGroupRequireMention(params) {
+  const guildEntry = resolveDiscordGuildEntry(params.cfg.channels?.discord?.guilds, params.groupSpace);
+  const channelEntries = guildEntry?.channels;
+  if (channelEntries && Object.keys(channelEntries).length > 0) {
+    const groupChannel = params.groupChannel;
+    const channelSlug = normalizeDiscordSlug(groupChannel);
+    const entry = (params.groupId ? channelEntries[params.groupId] : undefined) ?? (
+    channelSlug ?
+    channelEntries[channelSlug] ?? channelEntries[`#${channelSlug}`] :
+    undefined) ?? (
+    groupChannel ? channelEntries[normalizeDiscordSlug(groupChannel)] : undefined);
+    if (entry && typeof entry.requireMention === "boolean") {
+      return entry.requireMention;
+    }
+  }
+  if (typeof guildEntry?.requireMention === "boolean") {
+    return guildEntry.requireMention;
+  }
+  return true;
+}
+function resolveGoogleChatGroupRequireMention(params) {
+  return (0, _groupPolicy.resolveChannelGroupRequireMention)({
+    cfg: params.cfg,
+    channel: "googlechat",
+    groupId: params.groupId,
+    accountId: params.accountId
+  });
+}
+function resolveGoogleChatGroupToolPolicy(params) {
+  return (0, _groupPolicy.resolveChannelGroupToolsPolicy)({
+    cfg: params.cfg,
+    channel: "googlechat",
+    groupId: params.groupId,
+    accountId: params.accountId,
+    senderId: params.senderId,
+    senderName: params.senderName,
+    senderUsername: params.senderUsername,
+    senderE164: params.senderE164
+  });
+}
+function resolveSlackGroupRequireMention(params) {
+  const account = (0, _accounts.resolveSlackAccount)({
+    cfg: params.cfg,
+    accountId: params.accountId
+  });
+  const channels = account.channels ?? {};
+  const keys = Object.keys(channels);
+  if (keys.length === 0) {
+    return true;
+  }
+  const channelId = params.groupId?.trim();
+  const groupChannel = params.groupChannel;
+  const channelName = groupChannel?.replace(/^#/, "");
+  const normalizedName = normalizeSlackSlug(channelName);
+  const candidates = [
+  channelId ?? "",
+  channelName ? `#${channelName}` : "",
+  channelName ?? "",
+  normalizedName].
+  filter(Boolean);
+  let matched;
+  for (const candidate of candidates) {
+    if (candidate && channels[candidate]) {
+      matched = channels[candidate];
+      break;
+    }
+  }
+  const fallback = channels["*"];
+  const resolved = matched ?? fallback;
+  if (typeof resolved?.requireMention === "boolean") {
+    return resolved.requireMention;
+  }
+  return true;
+}
+function resolveBlueBubblesGroupRequireMention(params) {
+  return (0, _groupPolicy.resolveChannelGroupRequireMention)({
+    cfg: params.cfg,
+    channel: "bluebubbles",
+    groupId: params.groupId,
+    accountId: params.accountId
+  });
+}
+function resolveTelegramGroupToolPolicy(params) {
+  const { chatId } = parseTelegramGroupId(params.groupId);
+  return (0, _groupPolicy.resolveChannelGroupToolsPolicy)({
+    cfg: params.cfg,
+    channel: "telegram",
+    groupId: chatId ?? params.groupId,
+    accountId: params.accountId,
+    senderId: params.senderId,
+    senderName: params.senderName,
+    senderUsername: params.senderUsername,
+    senderE164: params.senderE164
+  });
+}
+function resolveWhatsAppGroupToolPolicy(params) {
+  return (0, _groupPolicy.resolveChannelGroupToolsPolicy)({
+    cfg: params.cfg,
+    channel: "whatsapp",
+    groupId: params.groupId,
+    accountId: params.accountId,
+    senderId: params.senderId,
+    senderName: params.senderName,
+    senderUsername: params.senderUsername,
+    senderE164: params.senderE164
+  });
+}
+function resolveIMessageGroupToolPolicy(params) {
+  return (0, _groupPolicy.resolveChannelGroupToolsPolicy)({
+    cfg: params.cfg,
+    channel: "imessage",
+    groupId: params.groupId,
+    accountId: params.accountId,
+    senderId: params.senderId,
+    senderName: params.senderName,
+    senderUsername: params.senderUsername,
+    senderE164: params.senderE164
+  });
+}
+function resolveDiscordGroupToolPolicy(params) {
+  const guildEntry = resolveDiscordGuildEntry(params.cfg.channels?.discord?.guilds, params.groupSpace);
+  const channelEntries = guildEntry?.channels;
+  if (channelEntries && Object.keys(channelEntries).length > 0) {
+    const groupChannel = params.groupChannel;
+    const channelSlug = normalizeDiscordSlug(groupChannel);
+    const entry = (params.groupId ? channelEntries[params.groupId] : undefined) ?? (
+    channelSlug ?
+    channelEntries[channelSlug] ?? channelEntries[`#${channelSlug}`] :
+    undefined) ?? (
+    groupChannel ? channelEntries[normalizeDiscordSlug(groupChannel)] : undefined);
+    const senderPolicy = (0, _groupPolicy.resolveToolsBySender)({
+      toolsBySender: entry?.toolsBySender,
+      senderId: params.senderId,
+      senderName: params.senderName,
+      senderUsername: params.senderUsername,
+      senderE164: params.senderE164
+    });
+    if (senderPolicy) {
+      return senderPolicy;
+    }
+    if (entry?.tools) {
+      return entry.tools;
+    }
+  }
+  const guildSenderPolicy = (0, _groupPolicy.resolveToolsBySender)({
+    toolsBySender: guildEntry?.toolsBySender,
+    senderId: params.senderId,
+    senderName: params.senderName,
+    senderUsername: params.senderUsername,
+    senderE164: params.senderE164
+  });
+  if (guildSenderPolicy) {
+    return guildSenderPolicy;
+  }
+  if (guildEntry?.tools) {
+    return guildEntry.tools;
+  }
+  return undefined;
+}
+function resolveSlackGroupToolPolicy(params) {
+  const account = (0, _accounts.resolveSlackAccount)({
+    cfg: params.cfg,
+    accountId: params.accountId
+  });
+  const channels = account.channels ?? {};
+  const keys = Object.keys(channels);
+  if (keys.length === 0) {
+    return undefined;
+  }
+  const channelId = params.groupId?.trim();
+  const groupChannel = params.groupChannel;
+  const channelName = groupChannel?.replace(/^#/, "");
+  const normalizedName = normalizeSlackSlug(channelName);
+  const candidates = [
+  channelId ?? "",
+  channelName ? `#${channelName}` : "",
+  channelName ?? "",
+  normalizedName].
+  filter(Boolean);
+  let matched;
+  for (const candidate of candidates) {
+    if (candidate && channels[candidate]) {
+      matched = channels[candidate];
+      break;
+    }
+  }
+  const resolved = matched ?? channels["*"];
+  const senderPolicy = (0, _groupPolicy.resolveToolsBySender)({
+    toolsBySender: resolved?.toolsBySender,
+    senderId: params.senderId,
+    senderName: params.senderName,
+    senderUsername: params.senderUsername,
+    senderE164: params.senderE164
+  });
+  if (senderPolicy) {
+    return senderPolicy;
+  }
+  if (resolved?.tools) {
+    return resolved.tools;
+  }
+  return undefined;
+}
+function resolveBlueBubblesGroupToolPolicy(params) {
+  return (0, _groupPolicy.resolveChannelGroupToolsPolicy)({
+    cfg: params.cfg,
+    channel: "bluebubbles",
+    groupId: params.groupId,
+    accountId: params.accountId,
+    senderId: params.senderId,
+    senderName: params.senderName,
+    senderUsername: params.senderUsername,
+    senderE164: params.senderE164
+  });
+} /* v9-717a343f60b3dffb */

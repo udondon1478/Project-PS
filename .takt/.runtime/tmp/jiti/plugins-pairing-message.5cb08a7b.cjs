@@ -1,0 +1,1 @@
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.PAIRING_APPROVED_MESSAGE = void 0;const PAIRING_APPROVED_MESSAGE = exports.PAIRING_APPROVED_MESSAGE = "✅ OpenClaw access approved. Send a message to start chatting."; /* v9-e543172a5e464129 */
