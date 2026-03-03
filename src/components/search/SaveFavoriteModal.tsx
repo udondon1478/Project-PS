@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   Dialog,
   DialogContent,
@@ -74,7 +75,7 @@ export const SaveFavoriteModal: React.FC<SaveFavoriteModalProps> = ({
           <DialogFooter>
             <Button variant="outline" onClick={onClose}>キャンセル</Button>
             <Button asChild>
-              <a href="/api/auth/signin">ログイン</a>
+              <Link href="/api/auth/signin">ログイン</Link>
             </Button>
           </DialogFooter>
         </DialogContent>
