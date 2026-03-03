@@ -68,6 +68,17 @@ describe('AuthErrorPage', () => {
     });
   });
 
+  describe('Default error code', () => {
+    it('should display default error heading for Default code', async () => {
+      // Given: a Default error code (sent by NextAuth for generic errors)
+      // When: rendering the error page
+      await renderPage('Default');
+
+      // Then: a generic authentication error heading is shown
+      expect(screen.getByText('認証エラー')).toBeTruthy();
+    });
+  });
+
   describe('missing error parameter', () => {
     it('should display default error heading when error is undefined', async () => {
       // Given: no error parameter

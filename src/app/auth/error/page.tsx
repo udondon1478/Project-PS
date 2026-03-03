@@ -20,6 +20,10 @@ const ERROR_MESSAGES: Record<string, { title: string; description: string }> = {
     title: '認証リンクの有効期限切れ',
     description: '認証リンクの有効期限が切れました。もう一度お試しください。',
   },
+  Default: {
+    title: '認証エラー',
+    description: '認証中にエラーが発生しました。もう一度お試しください。',
+  },
 };
 
 const DEFAULT_ERROR = {
@@ -33,7 +37,7 @@ export default async function AuthErrorPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
-  const { title, description } = ERROR_MESSAGES[error ?? ''] ?? DEFAULT_ERROR;
+  const { title, description } = ERROR_MESSAGES[error ?? 'Default'] ?? DEFAULT_ERROR;
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 text-center px-4">
