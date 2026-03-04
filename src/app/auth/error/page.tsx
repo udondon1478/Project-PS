@@ -26,18 +26,14 @@ const ERROR_MESSAGES: Record<string, { title: string; description: string }> = {
   },
 };
 
-const DEFAULT_ERROR = {
-  title: '認証エラー',
-  description: '認証中にエラーが発生しました。もう一度お試しください。',
-};
-
 export default async function AuthErrorPage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
-  const { title, description } = ERROR_MESSAGES[error ?? 'Default'] ?? DEFAULT_ERROR;
+  const { title, description } =
+    ERROR_MESSAGES[error ?? 'Default'] ?? ERROR_MESSAGES.Default;
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 text-center px-4">
