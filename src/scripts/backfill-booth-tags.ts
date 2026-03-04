@@ -105,7 +105,7 @@ export async function main(): Promise<void> {
 }
 
 // テストからimport時にmain()自動実行を防ぐ
-if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()!)) {
+if (import.meta.main) {
   main().catch((error) => {
     console.error(error);
     process.exit(1);
