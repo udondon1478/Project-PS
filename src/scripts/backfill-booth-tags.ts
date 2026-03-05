@@ -72,7 +72,7 @@ export async function main(): Promise<void> {
         const tagIds = await tagResolver.resolveTags(fetchResult.tagNames);
         const ageRatingTagId = await tagResolver.resolveAgeRating(fetchResult.ageRating);
 
-        const allTagIds = [...tagIds, ...(ageRatingTagId ? [ageRatingTagId] : [])];
+        const allTagIds = [...new Set([...tagIds, ...(ageRatingTagId ? [ageRatingTagId] : [])])];
 
         if (allTagIds.length === 0) {
           skipCount++;
