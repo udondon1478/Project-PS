@@ -30,7 +30,7 @@ export function TagDescriptionHistory({ history }: TagDescriptionHistoryProps) {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Image
-                src={item.editor.image || '/images/PolySeek_10_export_icon.svg'}
+                src={item.editor.image || '/images/PolySeek_icon.svg'}
                 alt={item.editor.name || 'ユーザー'}
                 width={24}
                 height={24}

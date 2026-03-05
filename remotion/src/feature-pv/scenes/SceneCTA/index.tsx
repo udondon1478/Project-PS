@@ -107,7 +107,7 @@ export const SceneCTA: React.FC = () => {
           }}
         >
           <Img
-            src={staticFile("images/PolySeek_10_export_icon.svg")}
+            src={staticFile("images/PolySeek_icon.svg")}
             style={{ height: 140, width: "auto" }}
           />
           <Img

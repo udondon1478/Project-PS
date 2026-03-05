@@ -12,7 +12,7 @@ export function HeaderNavigationSkeleton({
       <>
         <div className="h-8 w-20 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
         <Link href="/" className="flex items-center">
-          <Image src="/images/PolySeek_10_export_icon.svg" alt="PolySeek Logo" width={32} height={32} className="h-8 w-auto" />
+          <Image src="/images/PolySeek_icon.svg" alt="PolySeek Logo" width={32} height={32} className="h-8 w-auto" />
         </Link>
         <div className="h-8 w-28 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
       </>

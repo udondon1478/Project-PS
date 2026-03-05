@@ -137,7 +137,7 @@ export default function Header() {
              {/* Logo - Centered */}
              <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
                 <Link href="/" className="flex items-center">
-                  <Image src="/images/PolySeek_10_export_icon.svg" alt="PolySeek Logo" width={32} height={32} className="h-8 w-auto" />
+                  <Image src="/images/PolySeek_icon.svg" alt="PolySeek Logo" width={32} height={32} className="h-8 w-auto" />
                 </Link>
              </div>
  
@@ -231,7 +231,7 @@ export default function Header() {
  
           {/* Desktop Navigation (Hidden on small screens) */}
           <Link href="/" className="hidden md:flex items-center space-x-2">
-            <Image src="/images/PolySeek_10_export_icon.svg" alt="PolySeek Logo" width={32} height={32} className="h-8 w-auto" />
+            <Image src="/images/PolySeek_icon.svg" alt="PolySeek Logo" width={32} height={32} className="h-8 w-auto" />
             <Image src="/images/PolySeek_logo_type.svg" alt="PolySeek" width={100} height={24} className="h-6 w-auto" />
           </Link>
           <nav className="hidden md:flex items-center space-x-2" suppressHydrationWarning>
