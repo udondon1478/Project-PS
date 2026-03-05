@@ -19,6 +19,10 @@ export const authConfig = {
             clientSecret: process.env.DISCORD_CLIENT_SECRET,
         }),
     ],
+    pages: {
+        signIn: '/auth/signin',
+        error: '/auth/error',
+    },
     trustHost: true,
     session: { strategy: "jwt" },
     cookies: {
