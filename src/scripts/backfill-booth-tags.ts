@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { PrismaClient } from '@prisma/client';
 import { boothHttpClient } from '@/lib/booth-scraper/http-client';
 import { parseProductJson, parseProductPage } from '@/lib/booth-scraper/product-parser';
@@ -105,7 +107,8 @@ export async function main(): Promise<void> {
 }
 
 // テストからimport時にmain()自動実行を防ぐ
-if (import.meta.main) {
+// resolve()でパスを正規化し、Windows/Unix両方で動作するようにする
+if (resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main().catch((error) => {
     console.error(error);
     process.exit(1);
