@@ -437,3 +437,4 @@ export const ProductDetailsForm = memo(({
     </Card>
   );
 });
+ProductDetailsForm.displayName = 'ProductDetailsForm';

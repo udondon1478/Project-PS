@@ -79,6 +79,10 @@ export default function Header() {
 
   const [isSpotlightActive, setIsSpotlightActive] = useState(false);
 
+  const handleSpotlightClose = () => {
+    setIsSpotlightActive(false);
+  };
+
   useEffect(() => {
     const handleSpotlight = () => {
       setIsSpotlightActive(true);
@@ -99,10 +103,6 @@ export default function Header() {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isSpotlightActive]);
-
-  const handleSpotlightClose = () => {
-    setIsSpotlightActive(false);
-  };
 
   return (
     // Apply bg-white to the outer header to ensure ProductSearch background blends correctly

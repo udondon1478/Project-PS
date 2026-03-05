@@ -42,3 +42,4 @@ export const CompletionScreen = memo(({ message, onReset, isError = false }: Com
     </Card>
   );
 });
+CompletionScreen.displayName = 'CompletionScreen';

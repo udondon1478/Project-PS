@@ -68,3 +68,4 @@ export const URLInputForm = memo(({ onSubmit, isLoading, message, isError = fals
     </Card>
   );
 });
+URLInputForm.displayName = 'URLInputForm';
