@@ -2,6 +2,20 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 
+/**
+ * Retrieves detailed information for a specific tag.
+ * 
+ * This endpoint fetches:
+ * - Basic tag information (including Wiki content, external links, and distinguishing features)
+ * - Parent and child tag relationships (hierarchy)
+ * - Associated products (top 5 by view count)
+ * - Metadata edit history (description and Wiki updates)
+ * - User report status (if authenticated)
+ * 
+ * @param request - The HTTP request object.
+ * @param params - Route parameters containing the tag ID.
+ * @returns A JSON response containing the tag details or an error message.
+ */
 export async function GET(request: Request, { params }: { params: Promise<{ tagId: string }> }) {
   try {
     const { tagId } = await params;
@@ -12,7 +26,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
     }
 
     const [tag, parentTagRelations, childTagRelations, productRelations, history] = await prisma.$transaction([
-      // 1. Fetch the tag itself
+      // 1. Fetch the tag itself (including Wiki fields - Issue #252)
       prisma.tag.findUnique({
         where: { id: tagId },
         select: {
@@ -20,6 +34,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
           name: true,
           displayName: true,
           description: true,
+          wikiContent: true,
+          externalLinks: true,
+          distinguishingFeatures: true,
           count: true,
           language: true,
           isAlias: true,
@@ -94,11 +111,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
         },
       }),
 
-      // 5. Fetch description edit history
+      // 5. Fetch metadata edit history (including Wiki changes - Issue #252)
       prisma.tagMetadataHistory.findMany({
         where: {
           tagId: tagId,
-          changeType: 'description_update',
+          changeType: {
+            in: [
+              'description_update',
+              'wiki_content_update',
+              'external_links_update',
+              'distinguishing_features_update',
+            ],
+          },
         },
         include: {
           editor: {

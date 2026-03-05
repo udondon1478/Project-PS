@@ -2,6 +2,8 @@
 
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import DOMPurify from 'dompurify';
 import {
   Dialog,
   DialogContent,
@@ -16,20 +18,31 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { TagDescriptionEditor } from './TagDescriptionEditor';
+import { TagDescriptionEditor, TagForEditor } from './TagDescriptionEditor';
 import { TagDescriptionHistory } from './TagDescriptionHistory';
 import { Tag, TagMetadataHistory } from '@prisma/client';
 import { REPORT_TARGET_TAG } from '@/lib/constants';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Flag } from 'lucide-react';
+import { Flag, ExternalLink, CheckCircle } from 'lucide-react';
 import { ReportDialog } from './reports/ReportDialog';
 
 // Extend Tag type to include API-returned displayName
 type TagWithDisplayName = Tag & { displayName?: string };
 
-// Define the shape of the data expected from the API
-interface TagDetails extends Tag {
+/**
+ * Interface for external links returned from the API.
+ */
+interface ExternalLinkData {
+  id: string;
+  name: string;
+  url: string;
+}
+
+/**
+ * Extended Tag interface including relations and additional metadata returned by the API.
+ */
+type TagDetails = Omit<Tag, 'wikiContent' | 'externalLinks' | 'distinguishingFeatures' | 'productTags' | 'tagCategory' | 'tagCategoryId' | 'count' | 'sourceTranslations' | 'translatedTranslations' | 'implyingRelations' | 'impliedRelations' | 'parentRelations' | 'childRelations' | 'metadataHistory' | 'reports'> & {
   parentTags: TagWithDisplayName[];
   childTags: TagWithDisplayName[];
   products: {
@@ -39,14 +52,54 @@ interface TagDetails extends Tag {
   }[];
   history: (TagMetadataHistory & { editor: { id: string; name: string | null; image: string | null; }})[];
   hasReported?: boolean;
+  /** Markdown content for the tag wiki */
+  wikiContent?: string | null;
+  /** List of external references */
+  externalLinks?: ExternalLinkData[] | null;
+  /** Array of distinguishing features text */
+  distinguishingFeatures?: string[] | null;
 }
 
+/**
+ * Props for the TagDetailModal component.
+ */
 interface TagDetailModalProps {
+  /** The ID of the tag to display. Null if no tag is selected. */
   tagId: string | null;
+  /** Boolean indicating if the modal is open */
   open: boolean;
+  /** Callback to handle modal open/close state changes */
   onOpenChange: (open: boolean) => void;
 }
 
+/**
+ * Validates and normalizes URLs to prevent XSS attacks via javascript: URIs.
+ * 
+ * @param url - The URL to validate.
+ * @returns The sanitized URL if valid (http/https), otherwise '#'.
+ */
+function safeUrl(url: string): string {
+  try {
+    const parsed = new URL(url, window.location.origin);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return url;
+    }
+    return '#';
+  } catch {
+    return '#';
+  }
+}
+
+/**
+ * A modal component for displaying detailed information about a tag.
+ * 
+ * Features:
+ * - Displays tag description, Wiki content, external links, and distinguishing features.
+ * - Shows tag hierarchy (parent/child tags) and associated products.
+ * - Provides access to edit functionality (TagDescriptionEditor) and change history.
+ * - Allows users to report inappropriate tags.
+ * - Fetches data dynamically when opened.
+ */
 export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProps) {
   const { data: session } = useSession();
   const [details, setDetails] = useState<TagDetails | null>(null);
@@ -150,6 +203,73 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
                 {showHistory && <div className="mt-4"><TagDescriptionHistory history={details.history} /></div>}
               </section>
 
+              {/* Wiki Content Section (Issue #252) */}
+              {details.wikiContent && (
+                <section>
+                  <h3 className="text-lg font-semibold border-b mb-2">詳細Wiki</h3>
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <ReactMarkdown
+                      components={{
+                        // Sanitize links to prevent XSS
+                        a: ({ href, children }) => {
+                          if (!href) return <span>{children}</span>;
+                          const sanitizedHref = safeUrl(href);
+                          return (
+                            <a
+                              href={sanitizedHref}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 dark:text-blue-400 hover:underline"
+                            >
+                              {children}
+                            </a>
+                          );
+                        },
+                      }}
+                    >
+                      {details.wikiContent}
+                    </ReactMarkdown>
+                  </div>
+                </section>
+              )}
+
+              {/* Distinguishing Features Section (Issue #252) */}
+              {details.distinguishingFeatures && details.distinguishingFeatures.length > 0 && (
+                <section>
+                  <h3 className="text-lg font-semibold border-b mb-2">識別要素</h3>
+                  <ul className="space-y-1">
+                    {details.distinguishingFeatures.map((feature, index) => (
+                      <li key={index} className="flex items-center gap-2 text-sm">
+                        <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {/* External Links Section (Issue #252) */}
+              {details.externalLinks && details.externalLinks.length > 0 && (
+                <section>
+                  <h3 className="text-lg font-semibold border-b mb-2">外部リンク</h3>
+                  <ul className="space-y-2">
+                    {details.externalLinks.map((link) => (
+                      <li key={link.id}>
+                        <a
+                          href={safeUrl(link.url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          <ExternalLink className="h-4 w-4 flex-shrink-0" />
+                          <span>{link.name}</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
               {/* Tag Hierarchy Section */}
               {(details.parentTags.length > 0 || details.childTags.length > 0) && (
                 <section>
@@ -201,7 +321,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
         {details && (
           <>
             <TagDescriptionEditor
-              tag={details}
+              tag={details as TagForEditor}
               open={isEditorOpen}
               onOpenChange={setIsEditorOpen}
               onSuccess={handleEditorSuccess}
