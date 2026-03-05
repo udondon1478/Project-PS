@@ -86,7 +86,7 @@
     "@types/dompurify": "^3.2.0",
     "@types/he": "^1.2.3",
     "@types/jsdom": "^28",
-    "@types/node": "^22",
+    "@types/node": "^20",
     "@types/node-cron": "^3.0.11",
     "@types/react": "^19",
     "@types/react-dom": "^19",
