@@ -65,7 +65,7 @@ export default async function ProductPage({ params }: { params: Promise<{ produc
   }
 
   // Fetch user's votes for the history items
-  let userVotesMap: { [key: string]: { score: number } } = {};
+  const userVotesMap: { [key: string]: { score: number } } = {};
   if (userId && product.tagEditHistory.length > 0) {
     const historyIds = product.tagEditHistory.map(h => h.id);
     const votes = await prisma.tagEditVote.findMany({

@@ -91,5 +91,5 @@ remotion/out/
 remotion/dist/
 remotion/.cache/
 
-# takt
+# takt (CLI runtime cache and run logs)
 .takt/

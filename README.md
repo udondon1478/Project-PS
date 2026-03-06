@@ -1,51 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PolySeek
 
-## Getting Started
+> BOOTHのVRChatアバター・アクセサリをコミュニティタグで検索するプラットフォーム
 
-First, run the development server:
+## サービスについて
+
+**PolySeek** は、[BOOTH](https://booth.pm/) で販売されているVRChatアバターやアクセサリに対して、ユーザーコミュニティが自由にタグ付けできる検索プラットフォームです。
+
+BOOTHの公式カテゴリや検索だけでは見つけにくい商品を、コミュニティが作成した詳細なタグで横断的に検索できるようにすることで、クリエイターとユーザーの両方を支援します。
+
+**サービスURL**: [https://polyseek.jp](https://polyseek.jp)
+
+## スクリーンショット
+
+<!-- TODO: 実際のスクリーンショットに差し替え -->
+
+| トップページ | 検索結果 | 商品詳細 |
+|:---:|:---:|:---:|
+| *準備中* | *準備中* | *準備中* |
+
+## 主な機能
+
+- **コミュニティタグシステム** - ユーザーが自由にタグを作成・投票して商品を分類
+- **高度な検索・フィルタリング** - タグの組み合わせや価格帯、対応アバターなど多彩な条件で検索
+- **タグの階層・エイリアス・含意関係** - タグ同士の関係性を管理し、検索精度を向上
+- **AI自動タグ提案** - 商品情報からAIが適切なタグを自動提案
+- **BOOTHスクレイピング** - BOOTH商品情報の自動取得・更新
+- **管理者ダッシュボード** - タグ管理、ユーザー管理、スクレイピング制御などの管理機能
+- **多言語対応** - 日本語・英語のUI切り替え
+
+## 技術スタック
+
+| カテゴリ | 技術 |
+|---------|------|
+| フレームワーク | Next.js 16 / React 19 / TypeScript |
+| データベース | PostgreSQL / Prisma ORM |
+| 認証 | NextAuth.js (GitHub, Google, Discord OAuth) |
+| UI | Tailwind CSS 4 / Radix UI |
+| 監視 | Sentry |
+| テスト | Vitest / Playwright |
+| CI/CD | GitHub Actions |
+| ホスティング | VPS (PM2) |
+
+## 開発を始める
+
+詳しいセットアップ手順は [Wiki: 開発環境セットアップ](../../wiki/開発環境セットアップ) を参照してください。
+
+### 前提条件
+
+- Node.js 20+
+- PostgreSQL (Docker推奨)
+- Docker Desktop
+
+### クイックスタート
 
 ```bash
+git clone https://github.com/udondon1478/Project-PS.git
+cd Project-PS
+cp .env.example .env.local  # 環境変数を設定
+docker-compose up -d         # DB起動
+npm install
+npx prisma migrate dev
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 関連リンク
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- [Wiki](../../wiki) - 開発・運用ドキュメント
+- [Projects](https://github.com/udondon1478/Project-PS/projects) - 開発Kanbanボード
+- [Discussions](https://github.com/udondon1478/Project-PS/discussions) - お知らせ・議論
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## ライセンス
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-## Recent Changes
-
-`npm run build` 時に発生していた複数の型エラーとビルドエラーを解決しました。主な変更点は以下の通りです。
-
-*   **`src/app/api/products/[productId]/route.ts`**: `GET` 関数の `params` 引数の型を `Promise` でラップするように修正しました。
-*   **`src/app/api/admin/tag-types/route.ts`**: `Tag` モデルに存在しない `type` プロパティを参照していた問題を修正し、`TagCategory` モデルからカテゴリ名を取得するように変更しました。
-*   **`src/app/api/admin/tags/route.ts`**: `Tag` モデルに存在しない `type` プロパティを参照していた `where` 句と `select` 句、および `POST`/`PUT` メソッドの `type` 参照を修正しました。また、`Prisma` 名前空間のインポートを追加しました。
-*   **`src/app/api/categories/route.ts`**: `Category` モデルに存在しない `category` プロパティを参照していた問題を修正し、`TagCategory` モデルからカテゴリを取得するように変更しました。
-*   **`src/app/api/items/update/route.ts`**: 新しいタグを作成する際に `Tag` モデルに存在しない `type`, `category`, `color` プロパティを設定しようとしていた問題を修正し、デフォルトの `general` カテゴリを `upsert` で作成し、その `id` を `tagCategoryId` として使用するように変更しました。
-*   **`src/components/admin/TagForm.tsx`**: `Tag` モデルに存在しない `type` プロパティを参照していた問題を修正し、`isNewType` 状態と `handleCheckboxChange` 関数、および関連するUI要素を削除しました。
-*   **`src/components/theme-provider.tsx`**: `next-themes/dist/types` からの `ThemeProviderProps` のインポートパスを `next-themes` から直接インポートするように修正しました。
-*   **`src/app/search/page.tsx`**: `useSearchParams()` の使用によるビルドエラーを解決するため、`src/components/search/SearchContent.tsx` を削除し、`src/app/search/page.tsx` をサーバーコンポーネントとして `searchParams` prop を `Promise` で受け取るように修正しました。また、未使用の `redirect` インポートを削除しました。
-*   **`src/components/Header.tsx`**: `ProductSearch` コンポーネントが `useSearchParams` を使用していることによるビルドエラーを解決するため、`ProductSearch` を `<Suspense>` でラップし、`Suspense` を `react` からインポートするように修正しました。
-*   **`src/app/dev/page.tsx`**: 開発専用ページであり、ビルド時に `fetch failed` エラーを引き起こしていたため、このファイルを削除しました。
+All Rights Reserved. 詳細は [LICENSE](./LICENSE) を参照してください。
