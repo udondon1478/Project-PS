@@ -90,3 +90,6 @@ remotion/build/
 remotion/out/
 remotion/dist/
 remotion/.cache/
+
+# takt
+.takt/
