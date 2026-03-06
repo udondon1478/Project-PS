@@ -85,6 +85,7 @@ describe('Icon rename: PolySeek_10_export_icon.svg → PolySeek_icon.svg', () =>
     it('should not reference old filename in any source file under src/', () => {
       // Given: all source files in src/
       const sourceFiles = collectSourceFiles(path.join(PROJECT_ROOT, 'src'));
+      expect(sourceFiles.length).toBeGreaterThan(0);
 
       // When: checking each file for the old icon base name
       const filesWithOldRef = sourceFiles.filter(file =>
@@ -98,6 +99,7 @@ describe('Icon rename: PolySeek_10_export_icon.svg → PolySeek_icon.svg', () =>
     it('should not reference old filename in any source file under remotion/src/', () => {
       // Given: all source files in remotion/src/
       const sourceFiles = collectSourceFiles(path.join(PROJECT_ROOT, 'remotion/src'));
+      expect(sourceFiles.length).toBeGreaterThan(0);
 
       // When: checking each file for the old icon base name
       const filesWithOldRef = sourceFiles.filter(file =>
