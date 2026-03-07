@@ -22,8 +22,9 @@ import { Tag, TagMetadataHistory } from '@prisma/client';
 import { REPORT_TARGET_TAG } from '@/lib/constants';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Flag } from 'lucide-react';
+import { Flag, Lightbulb } from 'lucide-react';
 import { ReportDialog } from './reports/ReportDialog';
+import { TagProposalDialog } from './proposals/TagProposalDialog';
 
 // Extend Tag type to include API-returned displayName
 type TagWithDisplayName = Tag & { displayName?: string };
@@ -55,6 +56,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [isProposalOpen, setIsProposalOpen] = useState(false);
 
   const fetchDetails = async (id: string) => {
     setLoading(true);
@@ -105,8 +107,25 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
           <div className="flex justify-between items-start pr-8">
             <DialogTitle>タグ詳細</DialogTitle>
             {details && session?.user && (
-              // Note: Tags are global entities and do not have an owner, so we don't check for ownership here.
-              // Users can report any tag unless they are suspended or have already reported it.
+              <div className="flex gap-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-primary"
+                    onClick={() => setIsProposalOpen(true)}
+                    aria-label={session?.user?.status === 'SUSPENDED' ? "アカウントが停止されています" : "タグの提案をする"}
+                    disabled={session?.user?.status === 'SUSPENDED'}
+                    data-testid="proposal-tag-button"
+                  >
+                    <Lightbulb className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{session?.user?.status === 'SUSPENDED' ? "アカウントが停止されています" : "タグの提案をする"}</p>
+                </TooltipContent>
+              </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span className="inline-block" tabIndex={details.hasReported || session?.user?.status === 'SUSPENDED' ? 0 : -1}>
@@ -127,6 +146,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
                   <p>{session?.user?.status === 'SUSPENDED' ? "アカウントが停止されています" : details.hasReported ? "既に通報済みです" : "このタグを通報する"}</p>
                 </TooltipContent>
               </Tooltip>
+              </div>
             )}
           </div>
         </DialogHeader>
@@ -217,6 +237,12 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
               targetType={REPORT_TARGET_TAG}
               targetId={details.id}
               targetName={details.name}
+            />
+            <TagProposalDialog
+              open={isProposalOpen}
+              onOpenChange={setIsProposalOpen}
+              tagId={details.id}
+              tagName={details.displayName || details.name}
             />
           </>
         )}
