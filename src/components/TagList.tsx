@@ -8,11 +8,15 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { getTagStyle, hexToRgb } from '@/lib/guidelines/categoryColors';
 import { tagCategories } from '@/data/guidelines/tagCategories';
 
-// タグの型定義
+/**
+ * Interface representing a tag with optional category information.
+ */
 export interface TagWithCategoryInfo {
   id: string;
   name: string;
   description?: string | null;
+  /** Whether the tag was automatically implied by another tag */
+  isImplied?: boolean;
   tagCategory?: {
     id?: string;
     name?: string;
@@ -20,12 +24,21 @@ export interface TagWithCategoryInfo {
   } | null;
 }
 
+/**
+ * Props for the TagList component.
+ */
 interface TagListProps {
+  /** List of tags to display */
   tags: TagWithCategoryInfo[];
+  /** Callback when the user clicks the add to search (plus) button */
   onAddTagToSearch: (tagName: string) => void;
+  /** Callback when the user clicks the exclude from search (minus) button */
   onAddNegativeTagToSearch: (tagName: string) => void;
+  /** Callback when the user clicks the info button */
   onViewTagDetails: (tagId: string) => void;
+  /** Visual variant of the list */
   variant: 'manual' | 'official';
+  /** View mode affecting sizing (desktop vs mobile) */
   viewMode?: 'mobile' | 'desktop';
 }
 
@@ -48,7 +61,10 @@ tagCategories.forEach(cat => {
   categoryNameMap.set(cat.id, cat.name);
 });
 
-// カテゴリの優先度を取得する関数
+/**
+ * Retrieves the display priority for a given category ID.
+ * Returns the lowest priority (highest number) if undefined.
+ */
 function getCategoryPriority(categoryId: string | undefined): number {
   if (!categoryId) return UNCATEGORIZED_CATEGORY.priority;
   return categoryPriorityMap.get(categoryId) ?? UNCATEGORIZED_CATEGORY.priority;
@@ -92,7 +108,17 @@ function CategoryLabel({ categoryName, color, isDark }: CategoryLabelProps) {
   );
 }
 
-// タグをカテゴリ別にグループ化し、優先度順にソート
+/**
+ * Groups tags by their category and sorts both categories and tags within them.
+ * 
+ * Sorting rules:
+ * 1. Categories are sorted by priority defined in `tagCategories`.
+ * 2. Tags within a category are sorted alphabetically by name.
+ * 3. "Uncategorized" is always last.
+ * 
+ * @param tags - The array of tags to group and sort.
+ * @returns An array of category groups containing their respective tags.
+ */
 function groupAndSortTags(
   tags: TagWithCategoryInfo[]
 ): { categoryId: string; categoryName: string; color: string; tags: TagWithCategoryInfo[] }[] {
@@ -142,6 +168,15 @@ function groupAndSortTags(
   });
 }
 
+/**
+ * A component that renders a list of tags grouped by category.
+ * 
+ * Features:
+ * - Groups tags by category with visual headers.
+ * - Supports dark mode theming.
+ * - Provides action buttons for search inclusion/exclusion and details view.
+ * - Visually distinguishes implied tags (dashed border, opacity).
+ */
 export const TagList: React.FC<TagListProps> = ({
   tags,
   onAddTagToSearch,
@@ -203,20 +238,25 @@ export const TagList: React.FC<TagListProps> = ({
             {group.tags.map((tag) => {
               const categoryColor = group.color;
               const tagStyle = getTagStyle(categoryColor, isDark);
+              const isImplied = tag.isImplied;
 
               return (
                 <div
                   key={`${variant}-${tag.id}`}
-                  className={`flex items-center justify-between gap-2 p-2 rounded-md transition-colors ${containerHoverClass}`}
+                  className={`flex items-center justify-between gap-2 p-2 rounded-md transition-colors ${containerHoverClass} ${isImplied ? 'opacity-75' : ''}`}
                 >
                   <span
-                    className="text-sm font-medium min-w-0 truncate px-2.5 py-0.5 rounded-full inline-block max-w-full"
+                    className="text-sm font-medium min-w-0 truncate px-2.5 py-0.5 rounded-full inline-block max-w-full relative group/tag"
                     style={{
                       backgroundColor: tagStyle.backgroundColor,
                       color: tagStyle.color,
+                      border: isImplied ? `1px dashed ${tagStyle.color}` : undefined,
                     }}
                   >
                     {tag.name}
+                    {isImplied && (
+                      <span className="sr-only">（自動付与）</span>
+                    )}
                   </span>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <Button
@@ -250,7 +290,10 @@ export const TagList: React.FC<TagListProps> = ({
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>{tag.description || '説明文はありません。'}</p>
+                        <p>
+                            {isImplied && <span className="block text-xs text-muted-foreground mb-1">※他のタグから自動的に付与されました</span>}
+                            {tag.description || '説明文はありません。'}
+                        </p>
                       </TooltipContent>
                     </Tooltip>
                   </div>
