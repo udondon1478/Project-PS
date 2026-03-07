@@ -19,6 +19,29 @@ export const ReportStatus = {
 
 export type ReportStatus = (typeof ReportStatus)[keyof typeof ReportStatus];
 
+// Proposal Types
+export const PROPOSAL_TYPE_CATEGORY = 'CATEGORY' as const;
+export const PROPOSAL_TYPE_TRANSLATION = 'TRANSLATION' as const;
+export const PROPOSAL_TYPE_IMPLICATION = 'IMPLICATION' as const;
+
+export const PROPOSAL_TYPES = [
+  PROPOSAL_TYPE_CATEGORY,
+  PROPOSAL_TYPE_TRANSLATION,
+  PROPOSAL_TYPE_IMPLICATION,
+] as const;
+
+export type ProposalType = typeof PROPOSAL_TYPES[number];
+
+// Proposal Rate Limit
+export const PROPOSAL_RATE_LIMIT_MAX = 5;
+export const PROPOSAL_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+
+// Proposal Reason
+export const PROPOSAL_REASON_MAX_LENGTH = 1000;
+
+// Supported languages for tag proposals
+export const PROPOSAL_SUPPORTED_LANGUAGES = ['ja', 'en'] as const;
+
 export const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://polyseek.jp';
 
 // Stale run recovery: Mark RUNNING records older than this as FAILED
