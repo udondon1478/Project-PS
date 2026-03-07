@@ -4,9 +4,9 @@ import "./globals.css";
 import { config } from '@fortawesome/fontawesome-svg-core'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 config.autoAddCss = false
-import { SessionProvider } from "next-auth/react"; // SessionProviderをインポート
+import { SessionProvider } from "next-auth/react";
 import Header from "@/components/Header";
-import { ThemeProvider } from "@/components/theme-provider"; // ThemeProviderをインポート
+import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import AuthGuard from "@/components/AuthGuard";
 import MainLayout from "@/components/MainLayout";
@@ -15,6 +15,10 @@ import { CookieConsentProvider } from "@/contexts/CookieConsentContext";
 import CookieBanner from "@/components/CookieBanner";
 import AnalyticsLoader from "@/components/AnalyticsLoader";
 import { BASE_URL } from "@/lib/constants";
+
+const SITE_DESCRIPTION =
+  'PolySeekは、VRChat向けの3Dアバターやアクセサリーをタグベースで検索できるサービスです。一つの商品に対し、みんなでタグを付与していくことで検索性が向上します。';
+const OG_IMAGE_PATH = '/images/PolySeek_icon_and_typo_1200.png';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,7 +36,7 @@ export const metadata: Metadata = {
     template: '%s - PolySeek',
     default: 'PolySeek',
   },
-  description: "PolySeek - VRChatアバター・衣装・ギミック検索プラットフォーム",
+  description: SITE_DESCRIPTION,
   icons: {
     icon: [
       { url: '/images/PolySeek_10_export_icon.svg', type: 'image/svg+xml', sizes: 'any' },
@@ -42,6 +46,20 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: BASE_URL,
+  },
+  openGraph: {
+    title: 'PolySeek',
+    description: SITE_DESCRIPTION,
+    images: [OG_IMAGE_PATH],
+    type: 'website',
+    url: BASE_URL,
+    siteName: 'PolySeek',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'PolySeek',
+    description: SITE_DESCRIPTION,
+    images: [OG_IMAGE_PATH],
   },
 };
 
@@ -55,9 +73,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SessionProvider> {/* SessionProviderでラップ */}
+        <SessionProvider>
           <CookieConsentProvider>
-            <ThemeProvider // ThemeProviderでラップ
+            <ThemeProvider
               attribute="class"
               defaultTheme="system"
               enableSystem
