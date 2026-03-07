@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
 import { tagCategories } from '@/data/guidelines/tagCategories';
 import { TagWithCategory } from "@/types/tag";
 
@@ -168,12 +169,12 @@ const TagEditModal = ({ tag, open, onOpenChange, onSuccess }: TagEditModalProps)
         throw new Error(data.message || 'Failed to update tag');
       }
 
-      alert('タグを更新しました。');
+      toast.success('タグを更新しました。');
       onSuccess();
       onOpenChange(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
-      alert(`タグの更新に失敗しました: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      toast.error(`タグの更新に失敗しました: ${err instanceof Error ? err.message : 'Unknown error'}`);
       console.error('Error updating tag:', err);
     } finally {
       setLoading(false);
