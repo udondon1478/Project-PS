@@ -107,7 +107,7 @@ export const Scene5CTA: React.FC = () => {
           gap: 40
         }}>
            <Img
-            src={staticFile("images/PolySeek_10_export_icon.svg")}
+            src={staticFile("images/PolySeek_icon.svg")}
             style={{ height: 160, width: "auto" }}
           />
            <Img

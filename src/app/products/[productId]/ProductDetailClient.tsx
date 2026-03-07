@@ -274,7 +274,7 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
               {product.seller && (
                 <a href={product.seller.sellerUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300 hover:underline">
                   <Image
-                    src={product.seller.iconUrl || '/images/PolySeek_10_export_icon.svg'}
+                    src={product.seller.iconUrl || '/images/PolySeek_icon.svg'}
                     alt={product.seller.name}
                     width={28} height={28} className="rounded-full"
                   />
@@ -290,7 +290,7 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
                     {product.images.map((image, index) => (
                       <CarouselItem key={`${image.imageUrl}-${image.order}`} className="aspect-video flex justify-center items-center bg-gray-100 dark:bg-gray-900">
                         <Image
-                          src={failedImages.has(image.imageUrl) ? '/images/PolySeek_10_export_icon.svg' : image.imageUrl}
+                          src={failedImages.has(image.imageUrl) ? '/images/PolySeek_icon.svg' : image.imageUrl}
                           alt={failedImages.has(image.imageUrl) ? '画像読み込みエラー' : `商品画像 ${index + 1}`}
                           onError={() => handleImageError(image.imageUrl)}
                           width={800}
@@ -315,7 +315,7 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
                           className={`aspect-square w-full rounded-md overflow-hidden transition-all ${index === selectedIndex ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-950' : 'opacity-60 hover:opacity-100'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500`}
                         >
                           <Image
-                            src={failedImages.has(image.imageUrl) ? '/images/PolySeek_10_export_icon.svg' : image.imageUrl}
+                            src={failedImages.has(image.imageUrl) ? '/images/PolySeek_icon.svg' : image.imageUrl}
                             alt={failedImages.has(image.imageUrl) ? '画像読み込みエラー' : `サムネイル ${index + 1}`}
                             onError={() => handleImageError(image.imageUrl)}
                             width={100}

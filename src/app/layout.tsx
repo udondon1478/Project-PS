@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
   icons: {
     icon: [
-      { url: '/images/PolySeek_10_export_icon.svg', type: 'image/svg+xml', sizes: 'any' },
+      { url: '/images/PolySeek_icon.svg', type: 'image/svg+xml', sizes: 'any' },
       { url: '/images/PolySeek_icon.png', type: 'image/png', sizes: '32x32' },
     ],
     apple: { url: '/images/PolySeek_icon.png', sizes: '180x180' },
