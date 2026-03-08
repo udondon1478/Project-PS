@@ -15,10 +15,10 @@ import { CookieConsentProvider } from "@/contexts/CookieConsentContext";
 import CookieBanner from "@/components/CookieBanner";
 import AnalyticsLoader from "@/components/AnalyticsLoader";
 import { BASE_URL } from "@/lib/constants";
+import { OG_IMAGE_PATH } from "./og-image-path";
 
 const SITE_DESCRIPTION =
   'PolySeekは、VRChat向けの3Dアバターやアクセサリーをタグベースで検索できるサービスです。一つの商品に対し、みんなでタグを付与していくことで検索性が向上します。';
-const OG_IMAGE_PATH = '/images/PolySeek_icon_and_typo_1200.png';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
