@@ -1,0 +1,43 @@
+{
+  "language": "言語",
+  "nav": {
+    "registerItem": "商品登録",
+    "profile": "プロフィール",
+    "editProfile": "プロフィール編集",
+    "likedItems": "いいねした商品",
+    "ownedItems": "所有済み商品",
+    "admin": "管理者画面",
+    "logout": "ログアウト",
+    "signup": "新規登録",
+    "login": "ログイン"
+  },
+  "cookie": {
+    "consent": "Cookie同意",
+    "description": "当サイトでは、サービス改善のためGoogle AnalyticsおよびSentryを使用しています。これらのツールはCookieやsessionStorageを使用して匿名の利用統計を収集します。",
+    "privacyNote": "詳細は<link>プライバシーポリシー</link>をご覧ください。",
+    "reject": "拒否する",
+    "accept": "同意する",
+    "rejectLabel": "Cookieを拒否する",
+    "acceptLabel": "Cookieに同意する"
+  },
+  "notFound": {
+    "title": "ページが見つかりません",
+    "description": "お探しのページは削除されたか、URLが変更された可能性があります。URLをご確認の上、再度お試しください。",
+    "backToHome": "トップページへ戻る"
+  },
+  "error": {
+    "loginFailed": "ログインに失敗しました。もう一度お試しください。",
+    "generic": "エラーが発生しました"
+  },
+  "columnSelector": {
+    "label": "表示列数"
+  },
+  "aria": {
+    "x": "公式X（旧Twitter）",
+    "discord": "公式Discordサーバー",
+    "sort": "並び替え"
+  },
+  "report": {
+    "onContext": "上で {{context}}"
+  }
+}

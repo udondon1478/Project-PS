@@ -15,6 +15,7 @@ import { CookieConsentProvider } from "@/contexts/CookieConsentContext";
 import CookieBanner from "@/components/CookieBanner";
 import AnalyticsLoader from "@/components/AnalyticsLoader";
 import { BASE_URL } from "@/lib/constants";
+import I18nProvider from "@/i18n/I18nProvider";
 
 const SITE_DESCRIPTION =
   'PolySeekは、VRChat向けの3Dアバターやアクセサリーをタグベースで検索できるサービスです。一つの商品に対し、みんなでタグを付与していくことで検索性が向上します。';
@@ -73,29 +74,31 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SessionProvider>
-          <CookieConsentProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
-              <Header />
-              <AuthGuard>
-                <MainLayout>
-                  {children}
-                </MainLayout>
-              </AuthGuard>
-              <Footer />
-              <Toaster />
-              <CookieBanner />
-            </ThemeProvider>
-            {process.env.NEXT_PUBLIC_GA_ID && (
-              <AnalyticsLoader gaId={process.env.NEXT_PUBLIC_GA_ID} />
-            )}
-          </CookieConsentProvider>
-        </SessionProvider>
+        <I18nProvider>
+          <SessionProvider>
+            <CookieConsentProvider>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+              >
+                <Header />
+                <AuthGuard>
+                  <MainLayout>
+                    {children}
+                  </MainLayout>
+                </AuthGuard>
+                <Footer />
+                <Toaster />
+                <CookieBanner />
+              </ThemeProvider>
+              {process.env.NEXT_PUBLIC_GA_ID && (
+                <AnalyticsLoader gaId={process.env.NEXT_PUBLIC_GA_ID} />
+              )}
+            </CookieConsentProvider>
+          </SessionProvider>
+        </I18nProvider>
       </body>
     </html>
   );

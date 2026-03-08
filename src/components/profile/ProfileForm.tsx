@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,6 +19,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const { t } = useTranslation('profile');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,12 +34,12 @@ export default function ProfileForm({ user }: ProfileFormProps) {
     });
 
     if (res.ok) {
-      setSuccess('Profile updated successfully!');
+      setSuccess(t('form.updateSuccess'));
       // Refresh the page to show the new data
       router.refresh();
     } else {
       const data = await res.json();
-      setError(data.error || 'Failed to update profile.');
+      setError(data.error || t('form.updateFailed'));
     }
     setIsLoading(false);
   };
@@ -46,7 +48,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
     <div className="space-y-8 max-w-md">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="name">ユーザー名</Label>
+          <Label htmlFor="name">{t('form.username')}</Label>
           <Input
             id="name"
             value={name}
@@ -55,7 +57,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="gyazoUrl">新しいプロフィールアイコンのURL (Gyazo URL)</Label>
+          <Label htmlFor="gyazoUrl">{t('form.profileIconUrl')}</Label>
           <Input
             id="gyazoUrl"
             placeholder="https://gyazo.com/..."
@@ -63,7 +65,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
             onChange={(e) => setGyazoUrl(e.target.value)}
           />
           <p className="text-sm text-gray-500">
-            GyazoのページURLを指定してプロフィールアイコンを更新します。現在のアイコンを保持するには空白のままにしてください。
+            {t('form.profileIconDescription')}
           </p>
         </div>
 
@@ -71,7 +73,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
         {success && <p className="text-green-500">{success}</p>}
 
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? 'Saving...' : '変更を保存'}
+          {isLoading ? t('form.saving') : t('form.save')}
         </Button>
       </form>
     </div>

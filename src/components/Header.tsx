@@ -38,12 +38,15 @@ import { HeaderNavigationSkeleton } from '@/components/HeaderNavigationSkeleton'
 import { TRIGGER_SEARCH_SPOTLIGHT } from '@/constants/events';
 import { XIcon, DiscordIcon } from '@/components/SocialIcons';
 import { DISCORD_INVITE_URL, X_ACCOUNT_URL } from '@/lib/constants';
+import { useTranslation } from 'react-i18next';
 
 // 認証状態のプレースホルダーは削除
 
 export default function Header() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { t } = useTranslation();
+  const { t: tAuth } = useTranslation('auth');
 
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [prevScrollPos, setPrevScrollPos] = useState(0);
@@ -161,22 +164,22 @@ export default function Header() {
                       <>
                         <SheetClose asChild>
                           <Link href="/register-item">
-                             <Button variant="ghost" className="w-full justify-start">商品登録</Button>
+                             <Button variant="ghost" className="w-full justify-start">{t('nav.registerItem')}</Button>
                           </Link>
                         </SheetClose>
                         <SheetClose asChild>
                           <Link href="/profile">
-                             <Button variant="ghost" className="w-full justify-start">プロフィール編集</Button>
+                             <Button variant="ghost" className="w-full justify-start">{t('nav.editProfile')}</Button>
                           </Link>
                         </SheetClose>
                         <SheetClose asChild>
                           <Link href="/profile/likes">
-                             <Button variant="ghost" className="w-full justify-start">いいねした商品</Button>
+                             <Button variant="ghost" className="w-full justify-start">{t('nav.likedItems')}</Button>
                           </Link>
                         </SheetClose>
                         <SheetClose asChild>
                           <Link href="/profile/owned">
-                             <Button variant="ghost" className="w-full justify-start">所有済み商品</Button>
+                             <Button variant="ghost" className="w-full justify-start">{t('nav.ownedItems')}</Button>
                           </Link>
                         </SheetClose>
                         {session?.user?.role === 'ADMIN' && (
@@ -185,21 +188,21 @@ export default function Header() {
                             <SheetClose asChild>
                               <Link href="/admin">
                                 <Button variant="ghost" className="w-full justify-start">
-                                  🛡️ 管理者画面
+                                  🛡️ {t('nav.admin')}
                                 </Button>
                               </Link>
                             </SheetClose>
                           </>
                         )}
                         <SheetClose asChild>
-                          <Button variant="ghost" className="w-full justify-start" onClick={() => signOut()}>ログアウト</Button>
+                          <Button variant="ghost" className="w-full justify-start" onClick={() => signOut()}>{t('nav.logout')}</Button>
                         </SheetClose>
                       </>
                     ) : (
                       <>
-                         <Button variant="ghost" className="w-full justify-start" onClick={() => { setActiveDialog('register'); setIsSheetOpen(false); }}>商品登録</Button>
-                         <Button variant="ghost" className="w-full justify-start" onClick={() => { setActiveDialog('signup'); setIsSheetOpen(false); }}>新規登録</Button>
-                         <Button variant="ghost" className="w-full justify-start" onClick={() => { setActiveDialog('login'); setIsSheetOpen(false); }}>ログイン</Button>
+                         <Button variant="ghost" className="w-full justify-start" onClick={() => { setActiveDialog('register'); setIsSheetOpen(false); }}>{t('nav.registerItem')}</Button>
+                         <Button variant="ghost" className="w-full justify-start" onClick={() => { setActiveDialog('signup'); setIsSheetOpen(false); }}>{t('nav.signup')}</Button>
+                         <Button variant="ghost" className="w-full justify-start" onClick={() => { setActiveDialog('login'); setIsSheetOpen(false); }}>{t('nav.login')}</Button>
                       </>
                     )}
                  </div>
@@ -210,7 +213,7 @@ export default function Header() {
                        target="_blank"
                        rel="noopener noreferrer"
                        className="text-muted-foreground hover:text-foreground transition-colors"
-                       aria-label="公式X（旧Twitter）"
+                       aria-label={t('aria.x')}
                      >
                        <XIcon className="h-6 w-6" />
                      </a>
@@ -219,7 +222,7 @@ export default function Header() {
                        target="_blank"
                        rel="noopener noreferrer"
                        className="text-muted-foreground hover:text-[#5865F2] transition-colors"
-                       aria-label="公式Discordサーバー"
+                       aria-label={t('aria.discord')}
                      >
                        <DiscordIcon className="h-6 w-6" />
                      </a>
@@ -242,7 +245,7 @@ export default function Header() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-accent"
-                aria-label="公式X（旧Twitter）"
+                aria-label={t('aria.x')}
               >
                 <XIcon className="h-5 w-5" />
               </a>
@@ -251,7 +254,7 @@ export default function Header() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 text-muted-foreground hover:text-[#5865F2] transition-colors rounded-md hover:bg-accent"
-                aria-label="公式Discordサーバー"
+                aria-label={t('aria.discord')}
               >
                 <DiscordIcon className="h-5 w-5" />
               </a>
@@ -262,21 +265,21 @@ export default function Header() {
             ) : status === "authenticated" ? (
               <React.Fragment>
                 <Link href="/register-item">
-                  <Button variant="ghost" size="sm" id="tour-register-item-desktop">商品登録</Button>
+                  <Button variant="ghost" size="sm" id="tour-register-item-desktop">{t('nav.registerItem')}</Button>
                 </Link>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild data-testid="profile-trigger">
-                    <Button variant="ghost" size="sm">プロフィール</Button>
+                    <Button variant="ghost" size="sm">{t('nav.profile')}</Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
                     <DropdownMenuItem>
-                      <Link href="/profile">プロフィール編集</Link>
+                      <Link href="/profile">{t('nav.editProfile')}</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem>
-                      <Link href="/profile/likes">いいねした商品</Link>
+                      <Link href="/profile/likes">{t('nav.likedItems')}</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem>
-                      <Link href="/profile/owned">所有済み商品</Link>
+                      <Link href="/profile/owned">{t('nav.ownedItems')}</Link>
                     </DropdownMenuItem>
                     {session?.user?.role === 'ADMIN' && (
                       <>
@@ -284,7 +287,7 @@ export default function Header() {
                         <DropdownMenuItem>
                           <Link href="/admin" className="flex items-center gap-2">
                             <span>🛡️</span>
-                            <span>管理者画面</span>
+                            <span>{t('nav.admin')}</span>
                           </Link>
                         </DropdownMenuItem>
                       </>
@@ -292,14 +295,14 @@ export default function Header() {
                   </DropdownMenuContent>
                 </DropdownMenu>
                 <Button variant="ghost" size="sm" onClick={() => signOut()}>
-                  ログアウト
+                  {t('nav.logout')}
                 </Button>
               </React.Fragment>
             ) : (
               <React.Fragment>
-                <Button variant="ghost" size="sm" id="tour-register-item-desktop" onClick={() => setActiveDialog('register')}>商品登録</Button>
-                <Button variant="ghost" size="sm" onClick={() => setActiveDialog('signup')}>新規登録</Button>
-                <Button variant="ghost" size="sm" onClick={() => setActiveDialog('login')}>ログイン</Button>
+                <Button variant="ghost" size="sm" id="tour-register-item-desktop" onClick={() => setActiveDialog('register')}>{t('nav.registerItem')}</Button>
+                <Button variant="ghost" size="sm" onClick={() => setActiveDialog('signup')}>{t('nav.signup')}</Button>
+                <Button variant="ghost" size="sm" onClick={() => setActiveDialog('login')}>{t('nav.login')}</Button>
               </React.Fragment>
             )}
           </nav>
@@ -320,14 +323,14 @@ export default function Header() {
             {activeDialog === 'register' && (
                <>
                 <DialogHeader>
-                  <DialogTitle>商品登録にはログインが必要です</DialogTitle>
+                  <DialogTitle>{tAuth('dialog.register.title')}</DialogTitle>
                   <DialogDescription>
-                    商品登録を行うには、以下のいずれかの方法でログインしてください。
+                    {tAuth('dialog.register.description')}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="flex flex-col space-y-4">
-                  <Button onClick={() => signIn('google')}>Googleでログイン</Button>
-                  <Button onClick={() => signIn('discord')}>Discordでログイン</Button>
+                  <Button onClick={() => signIn('google')}>{tAuth('provider.google.login')}</Button>
+                  <Button onClick={() => signIn('discord')}>{tAuth('provider.discord.login')}</Button>
                 </div>
                 <AuthDialogNotice onClose={() => setActiveDialog(null)} />
               </>
@@ -335,14 +338,14 @@ export default function Header() {
             {activeDialog === 'signup' && (
               <>
                 <DialogHeader>
-                  <DialogTitle>新規登録</DialogTitle>
+                  <DialogTitle>{tAuth('dialog.signup.title')}</DialogTitle>
                   <DialogDescription>
-                    以下のいずれかの方法で登録してください。
+                    {tAuth('dialog.signup.description')}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="flex flex-col space-y-4">
-                  <Button onClick={() => signIn('google')}>Googleで登録</Button>
-                  <Button onClick={() => signIn('discord')}>Discordで登録</Button>
+                  <Button onClick={() => signIn('google')}>{tAuth('provider.google.signup')}</Button>
+                  <Button onClick={() => signIn('discord')}>{tAuth('provider.discord.signup')}</Button>
                 </div>
                 <AuthDialogNotice onClose={() => setActiveDialog(null)} />
               </>
@@ -350,14 +353,14 @@ export default function Header() {
             {activeDialog === 'login' && (
                <>
                 <DialogHeader>
-                  <DialogTitle>ログイン</DialogTitle>
+                  <DialogTitle>{tAuth('dialog.login.title')}</DialogTitle>
                   <DialogDescription>
-                    以下のいずれかの方法でログインしてください。
+                    {tAuth('dialog.login.description')}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="flex flex-col space-y-4">
-                  <Button onClick={() => signIn('google')}>Googleでログイン</Button>
-                  <Button onClick={() => signIn('discord')}>Discordでログイン</Button>
+                  <Button onClick={() => signIn('google')}>{tAuth('provider.google.login')}</Button>
+                  <Button onClick={() => signIn('discord')}>{tAuth('provider.discord.login')}</Button>
                 </div>
                 <AuthDialogNotice onClose={() => setActiveDialog(null)} />
               </>

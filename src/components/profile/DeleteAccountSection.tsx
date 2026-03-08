@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -19,6 +20,7 @@ import { signOut } from "next-auth/react";
 export default function DeleteAccountSection() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation('profile');
 
   const handleDeleteAccount = async () => {
     setError(null);
@@ -40,28 +42,28 @@ export default function DeleteAccountSection() {
 
   return (
     <div className="pt-6 border-t mt-8">
-      <h3 className="text-lg font-medium text-red-600">Danger Zone</h3>
+      <h3 className="text-lg font-medium text-red-600">{t('deleteAccount.title')}</h3>
       <p className="text-sm text-gray-500 mb-4">
-        アカウントを削除すると、元に戻すことはできません。
+        {t('deleteAccount.description')}
       </p>
-      
+
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button variant="destructive" disabled={isDeleting}>
-            アカウント削除
+            {t('deleteAccount.button')}
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>本当に削除しますか？</AlertDialogTitle>
+            <AlertDialogTitle>{t('deleteAccount.confirm.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              この操作は取り消せません。あなたのアカウント情報は匿名化され、ログインできなくなります。
+              {t('deleteAccount.confirm.description')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogCancel>{t('deleteAccount.confirm.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
@@ -70,7 +72,7 @@ export default function DeleteAccountSection() {
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
               disabled={isDeleting}
             >
-              {isDeleting ? '削除中...' : '削除する'}
+              {isDeleting ? t('deleteAccount.confirm.deleting') : t('deleteAccount.confirm.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

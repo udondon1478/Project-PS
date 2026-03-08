@@ -62,6 +62,7 @@
     "embla-carousel-react": "^8.6.0",
     "he": "^1.2.0",
     "i18next": "^25.8.13",
+    "i18next-browser-languagedetector": "^8.2.1",
     "lru-cache": "^11.2.6",
     "lucide-react": "^0.576.0",
     "mermaid": "^11.12.3",

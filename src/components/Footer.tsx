@@ -1,33 +1,37 @@
+'use client';
+
 import Link from 'next/link';
 import { ExternalLink } from 'lucide-react';
 import { XIcon, DiscordIcon } from '@/components/SocialIcons';
 import { DISCORD_INVITE_URL, X_ACCOUNT_URL } from '@/lib/constants';
+import { useTranslation } from 'react-i18next';
 
 export default function Footer() {
+  const { t } = useTranslation('footer');
+  const { t: tCommon } = useTranslation();
   return (
     <footer className="border-t bg-background py-8 md:py-0 pb-28 lg:pb-8">
       <div className="container flex flex-col items-center justify-between gap-4 px-4 md:h-24 md:flex-row">
         <div className="flex flex-col items-center md:items-start order-2 md:order-1">
           <p className="text-center text-xs text-muted-foreground md:text-left mb-2">
-            本サービスはBOOTH非公式のファンサイトです。<br className="md:hidden" />
-            BOOTHおよびピクシブ株式会社とは一切関係ありません。
+            {t('disclaimer.unofficial')}<br className="md:hidden" />{t('disclaimer.noAffiliation')}
           </p>
           <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
-            © 2025 PolySeek
+            {t('copyright')}
           </p>
         </div>
         <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 items-center order-1 md:order-2">
           <Link href="/about" className="text-sm font-medium hover:underline underline-offset-4 text-muted-foreground">
-            PolySeekについて
+            {t('links.about')}
           </Link>
           <Link href="/faq" className="text-sm font-medium hover:underline underline-offset-4 text-muted-foreground">
-            ヘルプ
+            {t('links.faq')}
           </Link>
           <Link href="/terms" className="text-sm font-medium hover:underline underline-offset-4 text-muted-foreground">
-            利用規約
+            {t('links.terms')}
           </Link>
           <Link href="/privacy" className="text-sm font-medium hover:underline underline-offset-4 text-muted-foreground">
-            プライバシーポリシー
+            {t('links.privacy')}
           </Link>
           <a
             href="https://forms.gle/PVdUpKCM4ZgMyK5fA"
@@ -35,7 +39,7 @@ export default function Footer() {
             rel="noopener noreferrer"
             className="text-sm font-medium hover:underline underline-offset-4 flex items-center gap-1 text-muted-foreground"
           >
-            お問い合わせ
+            {t('links.contact')}
             <ExternalLink className="h-3 w-3" aria-hidden="true" />
           </a>
 
@@ -45,7 +49,7 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="公式X（旧Twitter）"
+              aria-label={tCommon('aria.x')}
             >
               <XIcon className="h-5 w-5" />
             </a>
@@ -54,7 +58,7 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-[#5865F2] transition-colors"
-              aria-label="公式Discordサーバー"
+              aria-label={tCommon('aria.discord')}
             >
               <DiscordIcon className="h-5 w-5" />
             </a>

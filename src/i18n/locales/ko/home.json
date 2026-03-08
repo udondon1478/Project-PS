@@ -1,0 +1,30 @@
+{
+  "hero": {
+    "title": "태그로 VRChat 상품을 효율적으로 검색",
+    "description": "PolySeek은 VRChat용 3D 아바타와 액세서리를 태그 기반으로 검색할 수 있는 서비스입니다. 하나의 상품에 여러 사람이 태그를 추가하여 검색성이 향상됩니다."
+  },
+  "serviceIntro": {
+    "label": "서비스 소개"
+  },
+  "latestItems": {
+    "title": "데이터베이스에 등록된 최신 상품"
+  },
+  "features": {
+    "advancedSearch": {
+      "title": "풍부한 검색 조건",
+      "description": "마이너스 검색과 다양한 필터로\n원하는 상품을 빠르게 찾을 수 있습니다."
+    },
+    "tagSystem": {
+      "title": "태그 시스템",
+      "description": "커뮤니티 주도의 태그 시스템으로\n마이너 장르의 상품도\n쉽게 찾을 수 있습니다."
+    },
+    "productRegistration": {
+      "title": "상품 등록",
+      "description": "BOOTH.pm URL을 입력하기만 하면 상품 정보를 쉽게 등록할 수 있습니다."
+    },
+    "userAuth": {
+      "title": "로그인 기능",
+      "description": "PolySeek 계정에 원하는 상품이나\n구매한 상품을 등록하여 리스트에서\nPolySeek 고유의 태그로\n검색할 수 있습니다\n※BOOTH 연동 기능이 아닙니다"
+    }
+  }
+}

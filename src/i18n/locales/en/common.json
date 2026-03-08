@@ -1,0 +1,43 @@
+{
+  "language": "Language",
+  "nav": {
+    "registerItem": "Register Item",
+    "profile": "Profile",
+    "editProfile": "Edit Profile",
+    "likedItems": "Liked Items",
+    "ownedItems": "Owned Items",
+    "admin": "Admin",
+    "logout": "Log Out",
+    "signup": "Sign Up",
+    "login": "Log In"
+  },
+  "cookie": {
+    "consent": "Cookie Consent",
+    "description": "This site uses Google Analytics and Sentry to improve our services. These tools use cookies and sessionStorage to collect anonymous usage statistics.",
+    "privacyNote": "For details, see our <link>Privacy Policy</link>.",
+    "reject": "Reject",
+    "accept": "Accept",
+    "rejectLabel": "Reject cookies",
+    "acceptLabel": "Accept cookies"
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "description": "The page you're looking for may have been deleted or the URL may have changed. Please check the URL and try again.",
+    "backToHome": "Back to Home"
+  },
+  "error": {
+    "loginFailed": "Login failed. Please try again.",
+    "generic": "An error occurred"
+  },
+  "columnSelector": {
+    "label": "Columns"
+  },
+  "aria": {
+    "x": "Official X (formerly Twitter)",
+    "discord": "Official Discord Server",
+    "sort": "Sort"
+  },
+  "report": {
+    "onContext": "on {{context}}"
+  }
+}

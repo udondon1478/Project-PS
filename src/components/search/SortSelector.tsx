@@ -10,23 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { SORT_VALUES, type SortOption } from '@/constants/sort';
-
-/**
- * ソートオプションのラベル定義
- */
-const SORT_LABELS: Record<SortOption, string> = {
-  'newest': '登録が新しい順',
-  'oldest': '登録が古い順',
-  'published-new': '公開日が新しい順',
-  'published-old': '公開日が古い順',
-  'price-low': '価格の安い順',
-  'price-high': '価格の高い順',
-};
-
-const SORT_OPTIONS = SORT_VALUES.map((value) => ({
-  value,
-  label: SORT_LABELS[value],
-}));
+import { useTranslation } from 'react-i18next';
 
 interface SortSelectorProps {
   /** 現在のソート値 */
@@ -43,15 +27,22 @@ interface SortSelectorProps {
  * 商品検索のソートセレクターコンポーネント
  */
 export function SortSelector({ value, onChange, disabled = false, className }: SortSelectorProps) {
+  const { t } = useTranslation('search');
+
+  const SORT_OPTIONS = SORT_VALUES.map((value) => ({
+    value,
+    label: t(`sort.${value}`),
+  }));
+
   return (
     <Select value={value} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger 
+      <SelectTrigger
         className={`w-[140px] md:w-[160px] shrink-0 ${className || ''}`}
         size="sm"
-        aria-label="並び替え"
+        aria-label={t('sort.label')}
       >
         <ArrowUpDown className="size-4 mr-1" />
-        <SelectValue placeholder="並び替え" />
+        <SelectValue placeholder={t('sort.label')} />
       </SelectTrigger>
       <SelectContent>
         {SORT_OPTIONS.map((option) => (

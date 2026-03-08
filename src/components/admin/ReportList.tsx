@@ -17,7 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { Loader2, AlertCircle, RefreshCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import "@/lib/i18n"; // Initialize i18n
+import "@/i18n/config"; // Initialize i18n
 
 const getLocalizedErrorMessage = (error: unknown): string => {
   const message = error instanceof Error ? error.message : String(error);
