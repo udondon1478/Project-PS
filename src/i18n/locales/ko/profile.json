@@ -1,0 +1,48 @@
+{
+  "page": {
+    "title": "프로필 편집",
+    "viewPublic": "공개 프로필 보기",
+    "icon": "프로필 아이콘",
+    "accountDetails": "계정 정보",
+    "displaySettings": "표시 설정",
+    "languageSettings": "언어 설정"
+  },
+  "form": {
+    "username": "사용자 이름",
+    "profileIconUrl": "새 프로필 아이콘 URL (Gyazo URL)",
+    "profileIconDescription": "Gyazo 페이지 URL을 입력하여 프로필 아이콘을 업데이트합니다. 현재 아이콘을 유지하려면 비워두세요.",
+    "save": "변경사항 저장",
+    "saving": "저장 중...",
+    "updateSuccess": "프로필이 업데이트되었습니다",
+    "updateFailed": "프로필 업데이트에 실패했습니다"
+  },
+  "safeSearch": {
+    "label": "세이프 서치",
+    "description": "R-18 콘텐츠를 검색 결과에서 제외합니다.",
+    "enabled": "활성",
+    "disabled": "비활성",
+    "processing": "처리 중...",
+    "enabledMessage": "세이프 서치가 활성화되었습니다",
+    "disabledMessage": "세이프 서치가 비활성화되었습니다",
+    "updateFailed": "설정 업데이트에 실패했습니다",
+    "error": "오류가 발생했습니다",
+    "ageVerification": {
+      "title": "연령 확인",
+      "description": "세이프 서치를 끄면 R-18 콘텐츠가 표시될 수 있습니다.\n18세 이상이신가요?",
+      "no": "아니요",
+      "yes": "네, 18세 이상입니다"
+    }
+  },
+  "deleteAccount": {
+    "title": "Danger Zone",
+    "description": "계정을 삭제하면 되돌릴 수 없습니다.",
+    "button": "계정 삭제",
+    "confirm": {
+      "title": "정말 삭제하시겠습니까?",
+      "description": "이 작업은 취소할 수 없습니다. 계정 정보가 익명화되며 로그인할 수 없게 됩니다.",
+      "cancel": "취소",
+      "delete": "삭제",
+      "deleting": "삭제 중..."
+    }
+  }
+}

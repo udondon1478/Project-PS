@@ -1,0 +1,24 @@
+{
+  "sort": {
+    "newest": "登録が新しい順",
+    "oldest": "登録が古い順",
+    "published-new": "公開日が新しい順",
+    "published-old": "公開日が古い順",
+    "price-low": "価格の安い順",
+    "price-high": "価格の高い順",
+    "label": "並び替え"
+  },
+  "empty": {
+    "title": "条件に一致する商品は見つかりませんでした",
+    "description": "検索条件を変更して再度お試しください。",
+    "tips": {
+      "title": "検索のヒント",
+      "reduceTags": "タグの数を減らしてみる",
+      "removeExclusion": "マイナス検索（除外キーワード）を解除してみる",
+      "changeKeyword": "キーワードの表記を変えてみる（例: \"アバター\" → \"Avatar\"）"
+    },
+    "notFound": "探している商品が見つかりませんか？",
+    "registerNew": "商品登録ページから新しく追加する",
+    "community": "「ないなら登録しよう」の精神で、コミュニティに貢献しましょう！"
+  }
+}

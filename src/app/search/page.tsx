@@ -3,11 +3,9 @@ import type { Metadata } from 'next';
 import { searchProducts, AuthRequiredError } from '@/lib/searchProducts';
 import type { SearchParams } from '@/lib/searchProducts';
 import { normalizeTagsToString } from '@/lib/utils';
-import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
-import Link from "next/link";
-import { PlusCircle, SearchX } from "lucide-react";
 import { SearchResults } from "@/components/search/SearchResults";
+import { SearchEmptyState } from "@/components/search/SearchEmptyState";
 
 /** 1ページあたりの商品件数 */
 const PAGE_SIZE = 24;
@@ -147,44 +145,7 @@ const SearchPage = async ({ searchParams }: SearchPageProps) => {
   }
 
   if (products.length === 0) {
-    return (
-      <div className="container mx-auto px-4 py-16 flex flex-col items-center justify-center text-center space-y-6">
-        <div className="bg-muted/30 p-4 rounded-full">
-          <SearchX className="w-12 h-12 text-muted-foreground" />
-        </div>
-        
-        <div className="space-y-2">
-          <h2 className="text-xl font-semibold">条件に一致する商品は見つかりませんでした</h2>
-          <p className="text-muted-foreground max-w-md mx-auto">
-            検索条件を変更して再度お試しください。
-          </p>
-        </div>
-
-        <div className="bg-card border rounded-lg p-6 max-w-lg w-full text-left space-y-4 shadow-sm">
-          <h3 className="font-medium flex items-center gap-2">
-            <span className="text-primary">💡</span> 検索のヒント
-          </h3>
-          <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 ml-2">
-            <li>タグの数を減らしてみる</li>
-            <li>マイナス検索（除外キーワード）を解除してみる</li>
-            <li>キーワードの表記を変えてみる（例: &quot;アバター&quot; → &quot;Avatar&quot;）</li>
-          </ul>
-        </div>
-
-        <div className="pt-4 space-y-3">
-          <p className="text-sm font-medium">探している商品が見つかりませんか？</p>
-          <Button asChild size="lg" className="gap-2">
-            <Link href="/register-item">
-              <PlusCircle className="w-4 h-4" />
-              商品登録ページから新しく追加する
-            </Link>
-          </Button>
-          <p className="text-xs text-muted-foreground">
-            「ないなら登録しよう」の精神で、コミュニティに貢献しましょう！
-          </p>
-        </div>
-      </div>
-    );
+    return <SearchEmptyState />;
   }
 
   // 検索パラメータを文字列に変換（Reelsモード用）

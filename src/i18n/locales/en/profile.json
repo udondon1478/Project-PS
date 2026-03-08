@@ -1,0 +1,48 @@
+{
+  "page": {
+    "title": "Edit Profile",
+    "viewPublic": "View Public Profile",
+    "icon": "Profile Icon",
+    "accountDetails": "Account Details",
+    "displaySettings": "Display Settings",
+    "languageSettings": "Language Settings"
+  },
+  "form": {
+    "username": "Username",
+    "profileIconUrl": "New Profile Icon URL (Gyazo URL)",
+    "profileIconDescription": "Enter a Gyazo page URL to update your profile icon. Leave blank to keep your current icon.",
+    "save": "Save Changes",
+    "saving": "Saving...",
+    "updateSuccess": "Profile updated successfully",
+    "updateFailed": "Failed to update profile"
+  },
+  "safeSearch": {
+    "label": "Safe Search",
+    "description": "Exclude R-18 content from search results.",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "processing": "Processing...",
+    "enabledMessage": "Safe search enabled",
+    "disabledMessage": "Safe search disabled",
+    "updateFailed": "Failed to update setting",
+    "error": "An error occurred",
+    "ageVerification": {
+      "title": "Age Verification",
+      "description": "Turning off safe search may show R-18 content.\nAre you 18 or older?",
+      "no": "No",
+      "yes": "Yes, I'm 18 or older"
+    }
+  },
+  "deleteAccount": {
+    "title": "Danger Zone",
+    "description": "Deleting your account is irreversible.",
+    "button": "Delete Account",
+    "confirm": {
+      "title": "Are you sure?",
+      "description": "This action cannot be undone. Your account information will be anonymized and you will no longer be able to log in.",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "deleting": "Deleting..."
+    }
+  }
+}

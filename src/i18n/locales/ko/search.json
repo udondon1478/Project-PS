@@ -1,0 +1,24 @@
+{
+  "sort": {
+    "newest": "최신 등록순",
+    "oldest": "오래된 등록순",
+    "published-new": "최신 공개순",
+    "published-old": "오래된 공개순",
+    "price-low": "낮은 가격순",
+    "price-high": "높은 가격순",
+    "label": "정렬"
+  },
+  "empty": {
+    "title": "조건에 맞는 상품을 찾을 수 없습니다",
+    "description": "검색 조건을 변경하여 다시 시도해 주세요.",
+    "tips": {
+      "title": "검색 팁",
+      "reduceTags": "태그 수를 줄여보세요",
+      "removeExclusion": "마이너스 검색(제외 키워드)을 해제해 보세요",
+      "changeKeyword": "키워드 표기를 변경해 보세요 (예: \"아바타\" → \"Avatar\")"
+    },
+    "notFound": "찾고 있는 상품이 없나요?",
+    "registerNew": "상품 등록 페이지에서 새로 추가하기",
+    "community": "\"없으면 등록하자\"는 정신으로 커뮤니티에 기여해 주세요!"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "language": "언어",
+  "nav": {
+    "registerItem": "상품 등록",
+    "profile": "프로필",
+    "editProfile": "프로필 편집",
+    "likedItems": "좋아요한 상품",
+    "ownedItems": "소유한 상품",
+    "admin": "관리자",
+    "logout": "로그아웃",
+    "signup": "회원가입",
+    "login": "로그인"
+  },
+  "cookie": {
+    "consent": "쿠키 동의",
+    "description": "본 사이트는 서비스 개선을 위해 Google Analytics 및 Sentry를 사용하고 있습니다. 이 도구들은 쿠키와 sessionStorage를 사용하여 익명의 이용 통계를 수집합니다.",
+    "privacyNote": "자세한 내용은 <link>개인정보처리방침</link>을 참조하세요.",
+    "reject": "거부",
+    "accept": "동의",
+    "rejectLabel": "쿠키 거부",
+    "acceptLabel": "쿠키 동의"
+  },
+  "notFound": {
+    "title": "페이지를 찾을 수 없습니다",
+    "description": "찾으시는 페이지가 삭제되었거나 URL이 변경되었을 수 있습니다. URL을 확인하고 다시 시도해 주세요.",
+    "backToHome": "홈으로 돌아가기"
+  },
+  "error": {
+    "loginFailed": "로그인에 실패했습니다. 다시 시도해 주세요.",
+    "generic": "오류가 발생했습니다"
+  },
+  "columnSelector": {
+    "label": "표시 열 수"
+  },
+  "aria": {
+    "x": "공식 X (구 Twitter)",
+    "discord": "공식 Discord 서버",
+    "sort": "정렬"
+  },
+  "report": {
+    "onContext": "{{context}}에서"
+  }
+}

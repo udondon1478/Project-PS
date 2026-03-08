@@ -1,0 +1,30 @@
+{
+  "hero": {
+    "title": "Search VRChat Items Efficiently by Tags",
+    "description": "PolySeek is a service for searching VRChat 3D avatars and accessories by tags. As the community adds tags to items, search capability improves."
+  },
+  "serviceIntro": {
+    "label": "Service Introduction"
+  },
+  "latestItems": {
+    "title": "Latest Items in the Database"
+  },
+  "features": {
+    "advancedSearch": {
+      "title": "Advanced Search",
+      "description": "Find what you need quickly with\nnegative search and various filters."
+    },
+    "tagSystem": {
+      "title": "Tag System",
+      "description": "Community-driven tagging makes it\neasy to find niche items."
+    },
+    "productRegistration": {
+      "title": "Item Registration",
+      "description": "Simply enter a BOOTH.pm URL to easily register item information."
+    },
+    "userAuth": {
+      "title": "Login Features",
+      "description": "Register wanted and owned items\nto your PolySeek account to\nsearch within your lists using\nPolySeek's unique tags.\n*Not a BOOTH integration feature"
+    }
+  }
+}

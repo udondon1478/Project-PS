@@ -1,0 +1,48 @@
+{
+  "page": {
+    "title": "プロフィールの編集",
+    "viewPublic": "公開プロフィールを見る",
+    "icon": "プロフィールアイコン",
+    "accountDetails": "アカウント詳細",
+    "displaySettings": "表示設定",
+    "languageSettings": "言語設定"
+  },
+  "form": {
+    "username": "ユーザー名",
+    "profileIconUrl": "新しいプロフィールアイコンのURL (Gyazo URL)",
+    "profileIconDescription": "GyazoのページURLを指定してプロフィールアイコンを更新します。現在のアイコンを保持するには空白のままにしてください。",
+    "save": "変更を保存",
+    "saving": "保存中...",
+    "updateSuccess": "プロフィールが更新されました",
+    "updateFailed": "プロフィールの更新に失敗しました"
+  },
+  "safeSearch": {
+    "label": "セーフサーチ",
+    "description": "R-18コンテンツを検索結果から除外します。",
+    "enabled": "有効",
+    "disabled": "無効",
+    "processing": "処理中...",
+    "enabledMessage": "セーフサーチを有効にしました",
+    "disabledMessage": "セーフサーチを無効にしました",
+    "updateFailed": "設定の更新に失敗しました",
+    "error": "エラーが発生しました",
+    "ageVerification": {
+      "title": "年齢確認",
+      "description": "セーフサーチをオフにすると、R-18コンテンツが表示される可能性があります。\nあなたは18歳以上ですか？",
+      "no": "いいえ",
+      "yes": "はい、18歳以上です"
+    }
+  },
+  "deleteAccount": {
+    "title": "Danger Zone",
+    "description": "アカウントを削除すると、元に戻すことはできません。",
+    "button": "アカウント削除",
+    "confirm": {
+      "title": "本当に削除しますか？",
+      "description": "この操作は取り消せません。あなたのアカウント情報は匿名化され、ログインできなくなります。",
+      "cancel": "キャンセル",
+      "delete": "削除する",
+      "deleting": "削除中..."
+    }
+  }
+}

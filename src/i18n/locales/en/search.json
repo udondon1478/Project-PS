@@ -1,0 +1,24 @@
+{
+  "sort": {
+    "newest": "Newest First",
+    "oldest": "Oldest First",
+    "published-new": "Newest Published",
+    "published-old": "Oldest Published",
+    "price-low": "Lowest Price",
+    "price-high": "Highest Price",
+    "label": "Sort"
+  },
+  "empty": {
+    "title": "No items matching your criteria were found",
+    "description": "Try changing your search criteria.",
+    "tips": {
+      "title": "Search Tips",
+      "reduceTags": "Try reducing the number of tags",
+      "removeExclusion": "Try removing negative search (exclusion keywords)",
+      "changeKeyword": "Try different keyword forms (e.g., \"Avatar\" → \"アバター\")"
+    },
+    "notFound": "Can't find what you're looking for?",
+    "registerNew": "Add a new item from the registration page",
+    "community": "If it doesn't exist, register it! Contribute to the community!"
+  }
+}

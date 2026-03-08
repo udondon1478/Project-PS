@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import type { MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useTranslation } from 'react-i18next';
 import { updateSafeSearchSetting } from "@/app/actions/user";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +29,7 @@ export default function SafeSearchToggle({ initialEnabled }: SafeSearchTogglePro
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { update } = useSession();
+  const { t } = useTranslation('profile');
 
   const handleToggle = async () => {
     if (isLoading) return;
@@ -44,7 +46,6 @@ export default function SafeSearchToggle({ initialEnabled }: SafeSearchTogglePro
     e.preventDefault();
     // Prevent double submission if already loading
     if (isLoading) return;
-    // ダイアログのクローズは updateSetting(false) 内で成功時にのみ行う
     await updateSetting(false);
   };
 
@@ -55,18 +56,18 @@ export default function SafeSearchToggle({ initialEnabled }: SafeSearchTogglePro
       if (result.success) {
         setIsEnabled(enabled);
         await update({ isSafeSearchEnabled: enabled });
-        toast.success(enabled ? "セーフサーチを有効にしました" : "セーフサーチを無効にしました");
+        toast.success(enabled ? t('safeSearch.enabledMessage') : t('safeSearch.disabledMessage'));
         router.refresh();
         // Close dialog only on success if we were disabling
         if (!enabled) {
           setShowConfirm(false);
         }
       } else {
-        toast.error("設定の更新に失敗しました");
+        toast.error(t('safeSearch.updateFailed'));
       }
     } catch (error) {
       console.error("セーフサーチ設定の更新に失敗しました:", error);
-      toast.error("エラーが発生しました");
+      toast.error(t('safeSearch.error'));
     } finally {
       setIsLoading(false);
     }
@@ -75,9 +76,9 @@ export default function SafeSearchToggle({ initialEnabled }: SafeSearchTogglePro
   return (
     <div className="flex items-center justify-between p-4 border rounded-lg bg-card text-card-foreground shadow-sm">
       <div className="space-y-0.5">
-        <Label className="text-base font-semibold">セーフサーチ</Label>
+        <Label className="text-base font-semibold">{t('safeSearch.label')}</Label>
         <p className="text-sm text-muted-foreground">
-          R-18コンテンツを検索結果から除外します。
+          {t('safeSearch.description')}
         </p>
       </div>
       <div className="flex items-center">
@@ -88,23 +89,24 @@ export default function SafeSearchToggle({ initialEnabled }: SafeSearchTogglePro
             aria-pressed={isEnabled}
             className={isEnabled ? "bg-green-600 hover:bg-green-700" : "text-muted-foreground"}
         >
-            {isLoading ? "処理中..." : (isEnabled ? "有効" : "無効")}
+            {isLoading ? t('safeSearch.processing') : (isEnabled ? t('safeSearch.enabled') : t('safeSearch.disabled'))}
         </Button>
       </div>
 
       <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>年齢確認</AlertDialogTitle>
+            <AlertDialogTitle>{t('safeSearch.ageVerification.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              セーフサーチをオフにすると、R-18コンテンツが表示される可能性があります。<br />
-              あなたは18歳以上ですか？
+              {t('safeSearch.ageVerification.description').split('\n').map((line, i) => (
+                <span key={i}>{i > 0 && <br />}{line}</span>
+              ))}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>いいえ</AlertDialogCancel>
+            <AlertDialogCancel>{t('safeSearch.ageVerification.no')}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDisable} disabled={isLoading} className="bg-red-600 hover:bg-red-700">
-              はい、18歳以上です
+              {t('safeSearch.ageVerification.yes')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

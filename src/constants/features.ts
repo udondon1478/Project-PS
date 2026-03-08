@@ -3,12 +3,11 @@ import { Search, Tags, Link as LinkIcon, User, type LucideIcon } from "lucide-re
 export interface Feature {
   id: string;
   icon: LucideIcon;
-  title: string;
-  description: string;
-  href: string; // リンク先を追加
+  titleKey: string;
+  descriptionKey: string;
+  href: string;
 }
 
-// Feature IDs constant
 export const FEATURE_IDS = {
   ADVANCED_SEARCH: 'advanced-search',
   TAG_SYSTEM: 'tag-system',
@@ -20,29 +19,29 @@ export const features: Feature[] = [
   {
     id: FEATURE_IDS.ADVANCED_SEARCH,
     icon: Search,
-    title: "豊富な検索条件",
-    description: "マイナス検索や多様なフィルターで、\n欲しい商品を素早く見つけられます。",
+    titleKey: "features.advancedSearch.title",
+    descriptionKey: "features.advancedSearch.description",
     href: "/search",
   },
   {
     id: FEATURE_IDS.TAG_SYSTEM,
     icon: Tags,
-    title: "タグシステム",
-    description: "コミュニティ主導のタグ付けで、\nマイナージャンルの商品も\n簡単に見つけられます。",
+    titleKey: "features.tagSystem.title",
+    descriptionKey: "features.tagSystem.description",
     href: "/about",
   },
   {
     id: FEATURE_IDS.PRODUCT_REGISTRATION,
     icon: LinkIcon,
-    title: "商品登録",
-    description: "BOOTH.pmのURLを入力するだけで、商品情報を簡単に登録できます。",
+    titleKey: "features.productRegistration.title",
+    descriptionKey: "features.productRegistration.description",
     href: "/register-item",
   },
   {
     id: FEATURE_IDS.USER_AUTH,
     icon: User,
-    title: "ログイン機能",
-    description: "PolySeekアカウントに欲しい商品や\n購入済み商品を登録していくことで、リスト内からPolySeek独自のタグを\n用いた検索も可能です\n※BOOTHとの連携機能ではありません",
+    titleKey: "features.userAuth.title",
+    descriptionKey: "features.userAuth.description",
     href: "/profile",
   },
 ];

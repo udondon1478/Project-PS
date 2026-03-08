@@ -4,9 +4,11 @@ import { useCookieConsent } from '@/contexts/CookieConsentContext';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { initSentry } from '../../sentry.client.config';
+import { Trans, useTranslation } from 'react-i18next';
 
 export default function CookieBanner() {
   const { hasConsent, acceptCookies, rejectCookies, isHydrated } = useCookieConsent();
+  const { t } = useTranslation();
 
   // ハイドレーション完了前は何も表示しない（ちらつき防止）
   if (!isHydrated) {
@@ -22,16 +24,15 @@ export default function CookieBanner() {
     <section 
       className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
       aria-live="polite"
-      aria-label="Cookie同意"
+      aria-label={t('cookie.consent')}
       aria-describedby="cookie-banner-description"
     >
       <div className="container mx-auto px-4 py-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex-1">
             <p id="cookie-banner-description" className="text-sm text-muted-foreground">
-              当サイトでは、サービス改善のためGoogle AnalyticsおよびSentryを使用しています。
-              これらのツールはCookieやsessionStorageを使用して匿名の利用統計を収集します。
-              詳細は<Link href="/privacy" className="text-primary hover:underline">プライバシーポリシー</Link>をご覧ください。
+              {t('cookie.description')}
+              <Trans i18nKey="cookie.privacyNote" components={{ link: <Link href="/privacy" className="text-primary hover:underline" /> }} />
             </p>
           </div>
           <div className="flex flex-shrink-0 gap-2">
@@ -39,9 +40,9 @@ export default function CookieBanner() {
               variant="outline"
               size="sm"
               onClick={rejectCookies}
-              aria-label="Cookieを拒否する"
+              aria-label={t('cookie.rejectLabel')}
             >
-              拒否する
+              {t('cookie.reject')}
             </Button>
             <Button
               size="sm"
@@ -49,9 +50,9 @@ export default function CookieBanner() {
                 acceptCookies();
                 initSentry();
               }}
-              aria-label="Cookieに同意する"
+              aria-label={t('cookie.acceptLabel')}
             >
-              同意する
+              {t('cookie.accept')}
             </Button>
           </div>
         </div>
