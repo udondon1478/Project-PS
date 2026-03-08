@@ -27,6 +27,7 @@ export function CategoryProposalForm({ onDataChange }: CategoryProposalFormProps
   const [categoryId, setCategoryId] = useState("");
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -35,7 +36,11 @@ export function CategoryProposalForm({ onDataChange }: CategoryProposalFormProps
         if (res.ok) {
           const data = await res.json();
           setCategories(data);
+        } else {
+          setError("カテゴリの取得に失敗しました");
         }
+      } catch {
+        setError("カテゴリの取得に失敗しました");
       } finally {
         setLoading(false);
       }
@@ -56,6 +61,9 @@ export function CategoryProposalForm({ onDataChange }: CategoryProposalFormProps
 
   return (
     <div className="grid gap-4">
+      {error && (
+        <p className="text-sm text-destructive">{error}</p>
+      )}
       <div className="grid gap-2">
         <Label htmlFor="category-select">カテゴリ</Label>
         <Select value={categoryId} onValueChange={setCategoryId} disabled={loading}>

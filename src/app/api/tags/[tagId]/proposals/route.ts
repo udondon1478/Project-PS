@@ -23,8 +23,8 @@ const tagRefFields = {
 const tagRefRefinements = [
   {
     check: (data: { existingTagId?: string; newTagName?: string }) =>
-      Boolean(data.existingTagId || data.newTagName),
-    message: 'existingTagId or newTagName is required',
+      Boolean(data.existingTagId) !== Boolean(data.newTagName),
+    message: 'existingTagId か newTagName のどちらか一方のみを指定してください',
   },
   {
     check: (data: { newTagName?: string; language?: string }) =>
@@ -152,9 +152,29 @@ export async function POST(req: Request, context: RouteContext) {
     };
 
     if (validatedData.type === 'CATEGORY') {
+      const categoryExists = await prisma.tagCategory.findUnique({
+        where: { id: validatedData.categoryId },
+        select: { id: true },
+      });
+      if (!categoryExists) {
+        return NextResponse.json(
+          { error: '指定されたカテゴリが見つかりません' },
+          { status: 404 }
+        );
+      }
       createData.category = { connect: { id: validatedData.categoryId } };
     } else {
       if (validatedData.existingTagId) {
+        const existingTag = await prisma.tag.findUnique({
+          where: { id: validatedData.existingTagId },
+          select: { id: true },
+        });
+        if (!existingTag) {
+          return NextResponse.json(
+            { error: PROPOSAL_ERROR_MESSAGES.TAG_NOT_FOUND },
+            { status: 404 }
+          );
+        }
         createData.existingTag = { connect: { id: validatedData.existingTagId } };
       }
       if (validatedData.newTagName) {
@@ -169,16 +189,6 @@ export async function POST(req: Request, context: RouteContext) {
 
     return NextResponse.json(proposal, { status: 201 });
   } catch (error) {
-    if (
-      error instanceof Error &&
-      'code' in error &&
-      (error as { code: string }).code === 'P2002'
-    ) {
-      return NextResponse.json(
-        { error: PROPOSAL_ERROR_MESSAGES.DUPLICATE_PROPOSAL },
-        { status: 409 }
-      );
-    }
     console.error('Error creating tag proposal:', error);
     return NextResponse.json(
       { error: PROPOSAL_ERROR_MESSAGES.INTERNAL_SERVER_ERROR },

@@ -179,7 +179,9 @@ describe('POST /api/tags/[tagId]/proposals', () => {
       mockAuth.mockResolvedValueOnce({
         user: { id: 'user-1', status: 'ACTIVE' },
       } as any);
-      mockPrisma.tag.findUnique.mockResolvedValueOnce({ id: 'tag-1' } as any);
+      mockPrisma.tag.findUnique
+        .mockResolvedValueOnce({ id: 'tag-1' } as any)
+        .mockResolvedValueOnce({ id: 'existing-tag-id' } as any);
       mockPrisma.tagProposal.count.mockResolvedValueOnce(0);
       mockPrisma.tagProposal.create.mockResolvedValueOnce({
         id: 'proposal-1',
@@ -259,6 +261,7 @@ describe('POST /api/tags/[tagId]/proposals', () => {
       } as any);
       mockPrisma.tag.findUnique.mockResolvedValueOnce({ id: 'tag-1' } as any);
       mockPrisma.tagProposal.count.mockResolvedValueOnce(0);
+      mockPrisma.tagCategory.findUnique.mockResolvedValueOnce({ id: 'cat-1' } as any);
       mockPrisma.tagProposal.create.mockResolvedValueOnce({
         id: 'proposal-1',
         type: 'CATEGORY',
@@ -280,6 +283,7 @@ describe('POST /api/tags/[tagId]/proposals', () => {
       } as any);
       mockPrisma.tag.findUnique.mockResolvedValueOnce({ id: 'tag-1' } as any);
       mockPrisma.tagProposal.count.mockResolvedValueOnce(0);
+      mockPrisma.tagCategory.findUnique.mockResolvedValueOnce({ id: 'cat-1' } as any);
       mockPrisma.tagProposal.create.mockResolvedValueOnce({
         id: 'proposal-2',
         type: 'CATEGORY',
@@ -338,6 +342,7 @@ describe('POST /api/tags/[tagId]/proposals', () => {
       } as any);
       mockPrisma.tag.findUnique.mockResolvedValueOnce({ id: 'tag-1' } as any);
       mockPrisma.tagProposal.count.mockResolvedValueOnce(2);
+      mockPrisma.tagCategory.findUnique.mockResolvedValueOnce({ id: 'cat-1' } as any);
       mockPrisma.tagProposal.create.mockResolvedValueOnce({
         id: 'proposal-1',
         type: 'CATEGORY',
@@ -361,6 +366,7 @@ describe('POST /api/tags/[tagId]/proposals', () => {
       } as any);
       mockPrisma.tag.findUnique.mockResolvedValueOnce({ id: 'tag-1' } as any);
       mockPrisma.tagProposal.count.mockResolvedValueOnce(0);
+      mockPrisma.tagCategory.findUnique.mockResolvedValueOnce({ id: 'cat-1' } as any);
       mockPrisma.tagProposal.create.mockResolvedValueOnce({
         id: 'proposal-1',
         type: 'CATEGORY',
@@ -383,7 +389,9 @@ describe('POST /api/tags/[tagId]/proposals', () => {
       mockAuth.mockResolvedValueOnce({
         user: { id: 'user-1', status: 'ACTIVE' },
       } as any);
-      mockPrisma.tag.findUnique.mockResolvedValueOnce({ id: 'tag-1' } as any);
+      mockPrisma.tag.findUnique
+        .mockResolvedValueOnce({ id: 'tag-1' } as any)
+        .mockResolvedValueOnce({ id: 'existing-trans-tag' } as any);
       mockPrisma.tagProposal.count.mockResolvedValueOnce(0);
       mockPrisma.tagProposal.create.mockResolvedValueOnce({
         id: 'proposal-2',
@@ -438,7 +446,9 @@ describe('POST /api/tags/[tagId]/proposals', () => {
       mockAuth.mockResolvedValueOnce({
         user: { id: 'user-1', status: 'ACTIVE' },
       } as any);
-      mockPrisma.tag.findUnique.mockResolvedValueOnce({ id: 'tag-1' } as any);
+      mockPrisma.tag.findUnique
+        .mockResolvedValueOnce({ id: 'tag-1' } as any)
+        .mockResolvedValueOnce({ id: 'implied-tag-id' } as any);
       mockPrisma.tagProposal.count.mockResolvedValueOnce(0);
       mockPrisma.tagProposal.create.mockResolvedValueOnce({
         id: 'proposal-4',
@@ -494,6 +504,7 @@ describe('POST /api/tags/[tagId]/proposals', () => {
       } as any);
       mockPrisma.tag.findUnique.mockResolvedValueOnce({ id: 'tag-1' } as any);
       mockPrisma.tagProposal.count.mockResolvedValueOnce(0);
+      mockPrisma.tagCategory.findUnique.mockResolvedValueOnce({ id: 'cat-1' } as any);
       mockPrisma.tagProposal.create.mockResolvedValueOnce({
         id: 'proposal-6',
         type: 'CATEGORY',
@@ -517,24 +528,52 @@ describe('POST /api/tags/[tagId]/proposals', () => {
     });
   });
 
-  describe('Duplicate proposal handling', () => {
-    it('should return 409 when duplicate proposal exists', async () => {
+  describe('Error handling', () => {
+    it('should return 500 when create fails unexpectedly', async () => {
       mockAuth.mockResolvedValueOnce({
         user: { id: 'user-1', status: 'ACTIVE' },
       } as any);
       mockPrisma.tag.findUnique.mockResolvedValueOnce({ id: 'tag-1' } as any);
       mockPrisma.tagProposal.count.mockResolvedValueOnce(0);
-
-      // Prisma unique constraint violation
-      const prismaError = new Error('Unique constraint failed');
-      (prismaError as any).code = 'P2002';
-      mockPrisma.tagProposal.create.mockRejectedValueOnce(prismaError);
+      mockPrisma.tagCategory.findUnique.mockResolvedValueOnce({ id: 'cat-1' } as any);
+      mockPrisma.tagProposal.create.mockRejectedValueOnce(new Error('Database error'));
 
       const req = createRequest({ type: 'CATEGORY', categoryId: 'cat-1' });
 
       const res = await POST(req, createContext('tag-1'));
 
-      expect(res.status).toBe(409);
+      expect(res.status).toBe(500);
+    });
+
+    it('should return 404 when categoryId does not exist', async () => {
+      mockAuth.mockResolvedValueOnce({
+        user: { id: 'user-1', status: 'ACTIVE' },
+      } as any);
+      mockPrisma.tag.findUnique.mockResolvedValueOnce({ id: 'tag-1' } as any);
+      mockPrisma.tagProposal.count.mockResolvedValueOnce(0);
+      mockPrisma.tagCategory.findUnique.mockResolvedValueOnce(null);
+
+      const req = createRequest({ type: 'CATEGORY', categoryId: 'non-existent' });
+
+      const res = await POST(req, createContext('tag-1'));
+
+      expect(res.status).toBe(404);
+    });
+
+    it('should return 404 when existingTagId does not exist', async () => {
+      mockAuth.mockResolvedValueOnce({
+        user: { id: 'user-1', status: 'ACTIVE' },
+      } as any);
+      mockPrisma.tag.findUnique
+        .mockResolvedValueOnce({ id: 'tag-1' } as any)
+        .mockResolvedValueOnce(null);
+      mockPrisma.tagProposal.count.mockResolvedValueOnce(0);
+
+      const req = createRequest({ type: 'TRANSLATION', existingTagId: 'non-existent' });
+
+      const res = await POST(req, createContext('tag-1'));
+
+      expect(res.status).toBe(404);
     });
   });
 });

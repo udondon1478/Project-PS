@@ -86,6 +86,7 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
   };
 
   useEffect(() => {
+    setIsProposalOpen(false);
     if (open && tagId) {
       fetchDetails(tagId);
     } else {
@@ -110,17 +111,19 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
               <div className="flex gap-1">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-primary"
-                    onClick={() => setIsProposalOpen(true)}
-                    aria-label={session?.user?.status === 'SUSPENDED' ? "アカウントが停止されています" : "タグの提案をする"}
-                    disabled={session?.user?.status === 'SUSPENDED'}
-                    data-testid="proposal-tag-button"
-                  >
-                    <Lightbulb className="h-4 w-4" />
-                  </Button>
+                  <span className="inline-block" tabIndex={session?.user?.status === 'SUSPENDED' ? 0 : -1}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-primary"
+                      onClick={() => setIsProposalOpen(true)}
+                      aria-label={session?.user?.status === 'SUSPENDED' ? "アカウントが停止されています" : "タグの提案をする"}
+                      disabled={session?.user?.status === 'SUSPENDED'}
+                      data-testid="proposal-tag-button"
+                    >
+                      <Lightbulb className="h-4 w-4" />
+                    </Button>
+                  </span>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>{session?.user?.status === 'SUSPENDED' ? "アカウントが停止されています" : "タグの提案をする"}</p>

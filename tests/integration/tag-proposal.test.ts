@@ -13,8 +13,6 @@ describe('TagProposal Feature Integration Tests', () => {
       where: {
         proposer: { email: testEmail },
       },
-    }).catch(() => {
-      // tagProposal table may not exist yet during TDD
     });
     await prisma.tag.deleteMany({
       where: {

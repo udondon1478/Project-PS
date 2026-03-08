@@ -50,7 +50,7 @@ export function TagSearchProposalForm({
       return;
     }
     try {
-      const res = await fetch(`/api/tags/search?q=${encodeURIComponent(query)}&limit=10`);
+      const res = await fetch(`/api/tags/search?query=${encodeURIComponent(query)}`);
       if (res.ok) {
         const data = await res.json();
         setSearchResults(data.tags || data);
