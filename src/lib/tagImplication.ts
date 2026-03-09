@@ -7,6 +7,10 @@ type DbClient = Prisma.TransactionClient | typeof prisma;
 
 /**
  * BFS で含意チェーンを辿り、入力タグIDに含まれない含意タグIDを返す。
+ *
+ * MAX_DEPTH（現在 10）に達した場合、探索を打ち切り警告をログ出力する。
+ * visitedセットにより無限ループは防止されるが、MAX_DEPTHは異常に深いチェーンへの
+ * パフォーマンス保護として機能する。
  */
 export async function resolveImplications(
   tagIds: string[],
@@ -40,6 +44,12 @@ export async function resolveImplications(
     }
 
     currentBatch = nextBatch;
+
+    if (depth === MAX_DEPTH - 1 && currentBatch.length > 0) {
+      console.warn(
+        `resolveImplications: MAX_DEPTH (${MAX_DEPTH}) に到達しました。含意チェーンが異常に深い可能性があります。入力タグ: [${tagIds.join(', ')}]`
+      );
+    }
   }
 
   return implied;
@@ -47,6 +57,9 @@ export async function resolveImplications(
 
 /**
  * implyingTagId → impliedTagId の含意を追加したとき循環が生じるか BFS で判定する。
+ *
+ * MAX_DEPTH（現在 10）に達した場合、探索を打ち切り警告をログ出力する。
+ * 安全側に倒すため、打ち切り時は false を返す（循環なしとみなす）。
  */
 export async function wouldCreateCycle(
   implyingTagId: string,
@@ -82,6 +95,12 @@ export async function wouldCreateCycle(
     }
 
     currentBatch = nextBatch;
+
+    if (depth === MAX_DEPTH - 1 && currentBatch.length > 0) {
+      console.warn(
+        `wouldCreateCycle: MAX_DEPTH (${MAX_DEPTH}) に到達しました。含意チェーンが異常に深い可能性があります。implyingTagId: ${implyingTagId}, impliedTagId: ${impliedTagId}`
+      );
+    }
   }
 
   return false;

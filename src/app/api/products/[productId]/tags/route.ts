@@ -42,7 +42,7 @@ export async function PUT(
         include: { tag: true },
       });
 
-      const manualProductTags = currentProductTags.filter(pt => !pt.isOfficial);
+      const manualProductTags = currentProductTags.filter(pt => !pt.isOfficial && !pt.isImplied);
 
       const currentManualTagNames = new Set(
         manualProductTags.map((pt: { tag: { name: string } }) => pt.tag.name)

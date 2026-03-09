@@ -96,31 +96,34 @@ export async function POST(request: Request) {
       );
     }
 
-    if (await wouldCreateCycle(implyingTagId, impliedTagId)) {
+    const created = await prisma.$transaction(async (tx) => {
+      if (await wouldCreateCycle(implyingTagId, impliedTagId, tx)) {
+        throw Object.assign(new Error('cycle'), { _appCode: 400, _appMessage: 'この含意を追加すると循環参照が発生します。' });
+      }
+
+      return tx.tagImplication.create({
+        data: { implyingTagId, impliedTagId },
+      });
+    });
+
+    return NextResponse.json(created, { status: 201 });
+  } catch (error) {
+    if (error && typeof error === 'object' && '_appCode' in error) {
+      const appError = error as { _appCode: number; _appMessage: string };
       return NextResponse.json(
-        { message: 'この含意を追加すると循環参照が発生します。' },
-        { status: 400 }
+        { message: appError._appMessage },
+        { status: appError._appCode }
       );
     }
-
-    const existing = await prisma.tagImplication.findUnique({
-      where: {
-        implyingTagId_impliedTagId: { implyingTagId, impliedTagId },
-      },
-    });
-    if (existing) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
       return NextResponse.json(
         { message: 'この含意関係は既に存在します。' },
         { status: 409 }
       );
     }
-
-    const created = await prisma.tagImplication.create({
-      data: { implyingTagId, impliedTagId },
-    });
-
-    return NextResponse.json(created, { status: 201 });
-  } catch (error) {
     console.error('Error creating tag implication:', error);
     return NextResponse.json(
       { message: 'タグ含意の作成に失敗しました。' },

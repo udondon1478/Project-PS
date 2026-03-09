@@ -72,7 +72,10 @@ describe('PUT /api/products/[productId]/tags - implication auto-apply', () => {
       .mockResolvedValueOnce([{ tagId: 'tag-a' }]) // manual tags query
       .mockResolvedValueOnce([{ tagId: 'tag-a' }]); // existing tags query
 
-    mockTagFindUnique.mockResolvedValue({ id: 'tag-a', name: 'panties' });
+    mockTagFindUnique.mockImplementation(({ where }: { where: { name: string } }) => {
+      if (where.name === 'panties') return Promise.resolve({ id: 'tag-a', name: 'panties' });
+      return Promise.resolve(null);
+    });
     mockResolveImplications.mockResolvedValueOnce(['tag-b']);
 
     // When: saving tags
@@ -99,9 +102,11 @@ describe('PUT /api/products/[productId]/tags - implication auto-apply', () => {
       .mockResolvedValueOnce([{ tagId: 'tag-a' }, { tagId: 'tag-b' }]) // manual tags
       .mockResolvedValueOnce([{ tagId: 'tag-a' }, { tagId: 'tag-b' }]); // existing tags
 
-    mockTagFindUnique
-      .mockResolvedValueOnce({ id: 'tag-a', name: 'panties' })
-      .mockResolvedValueOnce({ id: 'tag-b', name: 'clothing' });
+    mockTagFindUnique.mockImplementation(({ where }: { where: { name: string } }) => {
+      if (where.name === 'panties') return Promise.resolve({ id: 'tag-a', name: 'panties' });
+      if (where.name === 'clothing') return Promise.resolve({ id: 'tag-b', name: 'clothing' });
+      return Promise.resolve(null);
+    });
     mockResolveImplications.mockResolvedValueOnce(['tag-b']);
 
     // When: saving tags
@@ -126,9 +131,11 @@ describe('PUT /api/products/[productId]/tags - implication auto-apply', () => {
       .mockResolvedValueOnce([{ tagId: 'tag-a' }, { tagId: 'tag-c' }])
       .mockResolvedValueOnce([{ tagId: 'tag-a' }, { tagId: 'tag-c' }]);
 
-    mockTagFindUnique
-      .mockResolvedValueOnce({ id: 'tag-a', name: 'panties' })
-      .mockResolvedValueOnce({ id: 'tag-c', name: 'underwear' });
+    mockTagFindUnique.mockImplementation(({ where }: { where: { name: string } }) => {
+      if (where.name === 'panties') return Promise.resolve({ id: 'tag-a', name: 'panties' });
+      if (where.name === 'underwear') return Promise.resolve({ id: 'tag-c', name: 'underwear' });
+      return Promise.resolve(null);
+    });
     mockResolveImplications.mockResolvedValueOnce([]);
 
     // When: saving tags
