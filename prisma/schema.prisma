@@ -50,6 +50,7 @@ model User {
   reports       Report[]         // ユーザーが行った通報
   searchHistories SearchHistory[] // 検索履歴
   favorites       SearchFavorite[] // お気に入り検索
+  tagProposals    TagProposal[]   // ユーザーが行ったタグ提案
 
   @@index([name])
   @@index([email])
@@ -248,7 +249,9 @@ model Tag {
   metadataHistory TagMetadataHistory[]
   
   reports       Report[]         // このタグに対する通報
-  
+  proposals     TagProposal[]    @relation("ProposalTarget") // このタグに対する提案
+  proposalRefs  TagProposal[]    @relation("ProposalExistingTag") // 提案で参照されるタグ
+
   seller        Seller?          // クリエイタータグの場合の販売者情報
 }
 
@@ -386,6 +389,7 @@ model TagCategory {
   name      String    @unique // カテゴリ名
   color     String    // カテゴリの色 (例: '#FF0000')
   tags      Tag[]     // このカテゴリに属するタグ
+  proposals TagProposal[] // このカテゴリへの提案
 
   @@map("tag_categories") // データベース上のテーブル名
 }
@@ -402,6 +406,53 @@ model Seller {
   tag       Tag?      @relation(fields: [tagId], references: [id], onDelete: SetNull)
  
   @@map("sellers") // MongoDBの場合のコレクション名
+}
+
+// タグ提案の種別
+enum ProposalType {
+  CATEGORY
+  TRANSLATION
+  IMPLICATION
+}
+
+// タグ提案のステータス
+enum ProposalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// タグ提案モデル
+model TagProposal {
+  id          String         @id @default(cuid())
+  tagId       String
+  tag         Tag            @relation("ProposalTarget", fields: [tagId], references: [id], onDelete: Cascade)
+  proposerId  String
+  proposer    User           @relation(fields: [proposerId], references: [id])
+  type        ProposalType
+  status      ProposalStatus @default(PENDING)
+  reason      String?        @db.Text
+
+  // CATEGORY用
+  categoryId  String?
+  category    TagCategory?   @relation(fields: [categoryId], references: [id])
+
+  // TRANSLATION/IMPLICATION用: 既存タグへの紐付け
+  existingTagId String?
+  existingTag   Tag?         @relation("ProposalExistingTag", fields: [existingTagId], references: [id])
+
+  // TRANSLATION/IMPLICATION用: 新規タグ提案
+  newTagName  String?
+  language    String?
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([tagId])
+  @@index([proposerId])
+  @@index([status])
+  @@index([type])
+  @@map("tag_proposals")
 }
 
 // 通報の対象種別

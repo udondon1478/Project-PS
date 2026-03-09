@@ -138,11 +138,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ tagI
       ...tag,
       parentTags: parentTagRelations.map(pt => pt.parent),
       childTags: childTagRelations.map(ct => ct.child),
-      products: productRelations.map(p => ({
+      products: [...new Map(productRelations.map(p => [p.product.id, {
         id: p.product.id,
         title: p.product.title,
         mainImageUrl: p.product.images[0]?.imageUrl || null,
-      })),
+      }])).values()],
       history: history,
       hasReported,
     };
