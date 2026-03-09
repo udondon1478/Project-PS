@@ -165,6 +165,12 @@ export async function POST(req: Request, context: RouteContext) {
       createData.category = { connect: { id: validatedData.categoryId } };
     } else {
       if (validatedData.existingTagId) {
+        if (validatedData.existingTagId === tagId) {
+          return NextResponse.json(
+            { error: '自分自身を参照先として指定することはできません' },
+            { status: 400 }
+          );
+        }
         const existingTag = await prisma.tag.findUnique({
           where: { id: validatedData.existingTagId },
           select: { id: true },

@@ -111,7 +111,13 @@ export function TagDetailModal({ tagId, open, onOpenChange }: TagDetailModalProp
               <div className="flex gap-1">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="inline-block" tabIndex={session?.user?.status === 'SUSPENDED' ? 0 : -1}>
+                  <span
+                    className="inline-block"
+                    tabIndex={session?.user?.status === 'SUSPENDED' ? 0 : -1}
+                    role={session?.user?.status === 'SUSPENDED' ? "button" : undefined}
+                    aria-label={session?.user?.status === 'SUSPENDED' ? "アカウントが停止されています" : undefined}
+                    aria-disabled={session?.user?.status === 'SUSPENDED' ? true : undefined}
+                  >
                     <Button
                       variant="ghost"
                       size="icon"

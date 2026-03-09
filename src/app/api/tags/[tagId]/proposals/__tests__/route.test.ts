@@ -528,6 +528,44 @@ describe('POST /api/tags/[tagId]/proposals', () => {
     });
   });
 
+  describe('Self-reference validation', () => {
+    it('should return 400 when existingTagId equals tagId for TRANSLATION', async () => {
+      mockAuth.mockResolvedValueOnce({
+        user: { id: 'user-1', status: 'ACTIVE' },
+      } as any);
+      mockPrisma.tag.findUnique.mockResolvedValueOnce({ id: 'tag-1' } as any);
+      mockPrisma.tagProposal.count.mockResolvedValueOnce(0);
+      const req = createRequest({
+        type: 'TRANSLATION',
+        existingTagId: 'tag-1',
+      });
+
+      const res = await POST(req, createContext('tag-1'));
+
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data.error).toContain('自分自身');
+    });
+
+    it('should return 400 when existingTagId equals tagId for IMPLICATION', async () => {
+      mockAuth.mockResolvedValueOnce({
+        user: { id: 'user-1', status: 'ACTIVE' },
+      } as any);
+      mockPrisma.tag.findUnique.mockResolvedValueOnce({ id: 'tag-1' } as any);
+      mockPrisma.tagProposal.count.mockResolvedValueOnce(0);
+      const req = createRequest({
+        type: 'IMPLICATION',
+        existingTagId: 'tag-1',
+      });
+
+      const res = await POST(req, createContext('tag-1'));
+
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data.error).toContain('自分自身');
+    });
+  });
+
   describe('Error handling', () => {
     it('should return 500 when create fails unexpectedly', async () => {
       mockAuth.mockResolvedValueOnce({
