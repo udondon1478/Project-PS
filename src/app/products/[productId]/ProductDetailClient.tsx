@@ -45,6 +45,7 @@ interface ProductTagData {
     };
   };
   isOfficial: boolean;
+  isImplied?: boolean;
 }
 
 interface TagEditHistoryData {
@@ -256,6 +257,7 @@ const ProductDetailClient = ({ initialProduct, initialTagMap }: ProductDetailCli
       description: pt.tag.description,
       tagCategoryId: pt.tag.tagCategoryId ?? '',
       tagCategory: pt.tag.tagCategory,
+      isImplied: pt.isImplied,
     },
   });
 
