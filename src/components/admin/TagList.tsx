@@ -27,6 +27,17 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from '@/lib/utils';
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface TagListProps {
   onEditClick: (tag: TagWithCategory) => void;
@@ -37,6 +48,7 @@ function TagListContent({ onEditClick }: TagListProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalTags, setTotalTags] = useState(0);
+  const [deletingTag, setDeletingTag] = useState<TagWithCategory | null>(null);
   const itemsPerPage = 20;
 
   const {
@@ -96,34 +108,35 @@ function TagListContent({ onEditClick }: TagListProps) {
     fetchTags();
   }, [fetchTags]);
 
-  const handleDelete = async (tag: TagWithCategory) => {
-    const usageCount = tag._count?.productTags || 0;
-    const warningMessage = usageCount > 0
-      ? `このタグは ${usageCount} 件の商品で使用中です。本当に削除しますか？`
-      : '本当にこのタグを削除しますか？';
+  const handleDeleteClick = (tag: TagWithCategory) => {
+    setDeletingTag(tag);
+  };
 
-    if (confirm(warningMessage)) {
-      try {
-        const res = await fetch(`/api/admin/tags`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ id: tag.id }),
-        });
+  const confirmDelete = async () => {
+    if (!deletingTag) return;
+    
+    try {
+      const res = await fetch(`/api/admin/tags`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: deletingTag.id }),
+      });
 
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(`Failed to delete tag: ${errorData.message || res.statusText}`);
-        }
-
-        setTags(tags.filter(t => t.id !== tag.id));
-        setTotalTags(prev => prev - 1);
-        alert('タグを削除しました。');
-      } catch (err) {
-        alert(`タグの削除に失敗しました: ${err instanceof Error ? err.message : 'Unknown error'}`);
-        console.error('Error deleting tag:', err);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(`Failed to delete tag: ${errorData.message || res.statusText}`);
       }
+
+      setTags(tags.filter(t => t.id !== deletingTag.id));
+      setTotalTags(prev => prev - 1);
+      toast.success('タグを削除しました。');
+    } catch (err) {
+      toast.error(`タグの削除に失敗しました: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      console.error('Error deleting tag:', err);
+    } finally {
+      setDeletingTag(null);
     }
   };
 
@@ -289,11 +302,11 @@ function TagListContent({ onEditClick }: TagListProps) {
                     <TableCell className="max-w-[300px] truncate">{tag.description || '-'}</TableCell>
                     <TableCell className="text-right">{tag._count?.productTags || 0}</TableCell>
                     <TableCell>
-                      <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
-                        <Button variant="outline" size="sm" onClick={() => onEditClick(tag)}>
+                      <div className="flex space-x-2">
+                        <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); onEditClick(tag); }}>
                           <PencilIcon className="h-4 w-4" />
                         </Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDelete(tag)}>
+                        <Button variant="destructive" size="sm" onClick={(e) => { e.stopPropagation(); handleDeleteClick(tag); }}>
                           削除
                         </Button>
                       </div>
@@ -328,6 +341,25 @@ function TagListContent({ onEditClick }: TagListProps) {
           次へ
         </Button>
       </div>
+
+      <AlertDialog open={!!deletingTag} onOpenChange={(open) => !open && setDeletingTag(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>本当に削除しますか？</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deletingTag && (deletingTag._count?.productTags || 0) > 0
+                ? `このタグは ${deletingTag._count?.productTags} 件の商品で使用中です。削除すると、これらの商品からタグが外れます。`
+                : 'この操作は取り消せません。このタグを削除してもよろしいですか？'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              削除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
     </TooltipProvider>
   );

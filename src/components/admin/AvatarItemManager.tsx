@@ -9,6 +9,17 @@ import {
   rescanProductsForAvatar
 } from '@/app/actions/avatar-items';
 import { Loader2, Plus, Trash2, Edit2, RefreshCw, AlertCircle } from 'lucide-react';
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface AvatarItem {
   id: string;
@@ -39,6 +50,10 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  
+  // Dialog states
+  const [deletingItem, setDeletingItem] = useState<AvatarItem | null>(null);
+  const [rescanningItem, setRescanningItem] = useState<AvatarItem | null>(null);
 
   // Action states
   const [rescanStatus, setRescanStatus] = useState<{ id: string, loading: boolean, message?: string } | null>(null);
@@ -148,41 +163,61 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
     });
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('本当に削除しますか？')) return;
+  const handleDeleteClick = (item: AvatarItem) => {
+    setDeletingItem(item);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingItem) return;
 
     try {
-      const result = await deleteAvatarItem(id);
+      const result = await deleteAvatarItem(deletingItem.id);
       if (result.success) {
-        setItems(prev => prev.filter(item => item.id !== id));
+        setItems(prev => prev.filter(item => item.id !== deletingItem.id));
+        toast.success('削除しました');
       } else {
-        alert('削除に失敗しました');
+        toast.error('削除に失敗しました');
       }
     } catch (err) {
       console.error('Delete failed:', err);
-      alert('削除に失敗しました');
+      toast.error('削除に失敗しました');
+    } finally {
+      setDeletingItem(null);
     }
   };
 
-  const handleRescan = async (id: string, name: string) => {
+  const handleRescanClick = (item: AvatarItem) => {
     if (!isAdmin) {
-      alert('権限がありません');
+      toast.error('権限がありません');
       return;
     }
-    if (!confirm(`${name} の定義に基づいて既存商品を再スキャンしますか？\nこの処理には時間がかかる場合があります。`)) return;
+    setRescanningItem(item);
+  };
+
+  const confirmRescan = async () => {
+    if (!rescanningItem) return;
+    const { id, avatarName } = rescanningItem;
 
     setRescanStatus({ id, loading: true });
+    // Close dialog immediately
+    setRescanningItem(null);
+
     try {
       const result = await rescanProductsForAvatar(id);
       if (result.success) {
         setRescanStatus({ id, loading: false, message: `完了: ${result.count}件の商品を更新しました` });
-        // Clear message after 5 seconds
-        setTimeout(() => setRescanStatus(null), 5000);
+        toast.success(`${avatarName}: 再スキャン完了 (${result.count}件更新)`);
+        // Clear message after 5 seconds, but only if it still belongs to this id
+        setTimeout(() => {
+          setRescanStatus(prev => prev?.id === id ? null : prev);
+        }, 5000);
       } else {
         setRescanStatus({ id, loading: false, message: `エラー: ${result.error}` });
+        toast.error(`エラー: ${result.error}`);
       }
     } catch (err) {
       setRescanStatus({ id, loading: false, message: '予期せぬエラーが発生しました' });
+      toast.error('予期せぬエラーが発生しました');
       console.error(err);
     }
   };
@@ -382,7 +417,7 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
                           {isAdmin && (
                             <button
                               type="button"
-                              onClick={() => handleRescan(item.id, item.avatarName)}
+                              onClick={() => handleRescanClick(item)}
                               disabled={rescanStatus?.id === item.id && rescanStatus.loading}
                               className="text-orange-600 hover:text-orange-900 p-1 disabled:opacity-50"
                               title="既存商品を再スキャン"
@@ -411,7 +446,7 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleDelete(item.id)}
+                          onClick={() => handleDeleteClick(item)}
                           className="text-red-600 hover:text-red-900 p-1"
                           title="削除"
                         >
@@ -426,6 +461,42 @@ export default function AvatarItemManager({ isAdmin }: AvatarItemManagerProps) {
           </table>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingItem} onOpenChange={(open) => !open && setDeletingItem(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>本当に削除しますか？</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deletingItem && `「${deletingItem.avatarName}」のアバター定義を削除します。この操作は取り消せません。`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              削除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Rescan Confirmation Dialog */}
+      <AlertDialog open={!!rescanningItem} onOpenChange={(open) => !open && setRescanningItem(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>再スキャンを実行しますか？</AlertDialogTitle>
+            <AlertDialogDescription>
+              {rescanningItem && `${rescanningItem.avatarName} の定義に基づいて既存商品を再スキャンします。\nこの処理には時間がかかる場合があります。`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRescan}>
+              実行
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
