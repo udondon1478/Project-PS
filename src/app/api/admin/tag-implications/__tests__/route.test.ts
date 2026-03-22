@@ -21,6 +21,13 @@ vi.mock('@/lib/prisma', () => ({
     tag: {
       findUnique: (...args: unknown[]) => mockTagFindUnique(...args),
     },
+    $transaction: (fn: (tx: unknown) => Promise<unknown>) =>
+      fn({
+        tagImplication: {
+          create: (...args: unknown[]) => mockImplicationCreate(...args),
+          findUnique: (...args: unknown[]) => mockImplicationFindUnique(...args),
+        },
+      }),
   },
 }));
 
@@ -299,15 +306,18 @@ describe('POST /api/admin/tag-implications', () => {
   });
 
   it('should return 409 when duplicate implication exists', async () => {
-    // Given: admin user, valid tags, no cycle, but duplicate exists
+    // Given: admin user, valid tags, no cycle, but unique constraint violation on create
     mockIsAdmin.mockResolvedValueOnce(true);
     mockTagFindUnique
       .mockResolvedValueOnce({ id: 'tag-a', name: 'panties' })
       .mockResolvedValueOnce({ id: 'tag-b', name: 'clothing' });
     mockWouldCreateCycle.mockResolvedValueOnce(false);
-    mockImplicationFindUnique.mockResolvedValueOnce({
-      id: 'existing-impl',
-    }); // duplicate found
+    mockImplicationCreate.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+        code: 'P2002',
+        clientVersion: '1',
+      })
+    );
 
     // When: creating duplicate implication
     const request = new Request('http://localhost/api/admin/tag-implications', {
