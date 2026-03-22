@@ -19,6 +19,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { href: '/admin/avatars', label: '🤖 アバター管理' },
     { href: '/admin/users', label: '👥 ユーザー管理' },
     { href: '/admin/booth-scraper', label: '🔄 BOOTHスクレイパー' },
+    { href: '/admin/tag-implications', label: '🔗 含意タグ管理' },
   ];
 
   const isActive = (href: string, exact?: boolean) => {
